@@ -1,0 +1,29 @@
+@use '../../library/genericStyles/containers';
+
+@mixin overviewCard {
+  padding: var(--space-5);
+  background-color: var(--indigo-a2);
+  border-radius: var(--radius-5);
+}
+.overview {
+  @include containers.flexRowSpaceBetweenCenter;
+  @include overviewCard;
+  & table {
+    all: unset;
+    border-collapse: collapse;
+  }
+  & th {
+    text-align: left;
+  }
+  & td {
+    text-align: right;
+    min-width: 200px;
+  }
+  & tr {
+    border-bottom: solid thin black;
+  }
+}
+.overviewLoading {
+  @include containers.flexRowCenterCenter;
+  @include overviewCard;
+}

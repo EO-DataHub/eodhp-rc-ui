@@ -1,0 +1,47 @@
+@use '../../library/genericStyles/containers';
+
+.drawerHeader {
+  @include containers.flexRowSpaceBetweenCenter;
+  width: 100%;
+}
+
+.activityList {
+  @include containers.flexColumnStartCenter;
+  gap: var(--space-3);
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none; // IE and Edge
+  scrollbar-width: none; // Firefox
+
+  &::-webkit-scrollbar {
+    display: none; // Safari and Opera
+  }
+}
+.activityCard {
+  @include containers.flexColumnSpaceBetweenStart;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: solid thin var(--slate-5);
+  box-sizing: border-box;
+  border-radius: var(--radius-5);
+  width: 100%;
+}
+.portfolioName {
+  margin-top: var(--space-2);
+}
+
+.dateRow {
+  @include containers.flexRowSpaceBetweenCenter;
+  width: 100%;
+}
+
+.workflowActivityButton {
+  @include containers.flexRowStartCenter;
+  gap: 0.5em;
+}
+.aboveActivityListRow {
+  @include containers.flexRowEndCenter;
+  width: 100%;
+}

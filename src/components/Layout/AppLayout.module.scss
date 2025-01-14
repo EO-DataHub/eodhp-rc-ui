@@ -1,0 +1,7 @@
+@use '../../library/genericStyles/containers';
+
+.layoutWrapper {
+  @include containers.flexRowStartCenter;
+  height: 100vh;
+  gap: 0;
+}

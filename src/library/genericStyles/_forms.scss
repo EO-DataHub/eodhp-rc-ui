@@ -1,0 +1,20 @@
+@use './containers';
+
+@mixin formLabel {
+  font-size: var(--font-size-1);
+  font-weight: var(--font-weight-bold);
+}
+
+@mixin inputLabelContainer {
+  @include containers.flexColumnStartStart;
+
+  gap: var(--space-1);
+
+  & label {
+    @include formLabel;
+  }
+
+  button:not(:global(.iconButton)) {
+    width: 100%;
+  }
+}

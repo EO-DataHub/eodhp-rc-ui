@@ -1,0 +1,57 @@
+@use '../../library/genericStyles/containers';
+.drawerWrapper {
+  gap: 0;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 56px; // leave space for action bar
+  z-index: 3;
+  pointer-events: none; // allow pointer events to pass through the drawer wrapper;
+}
+
+.drawer {
+  position: relative;
+  z-index: 3;
+  @include containers.flexColumnSpaceBetweenCenter;
+  width: 430px;
+  height: 100%;
+  background-color: var(--app-background-light);
+  box-shadow: var(--shadow-6);
+  padding: var(--space-5) var(--space-5) var(--space-1) var(--space-5);
+  box-sizing: border-box;
+  transition: transform 0.5s;
+  transform: translateX(-430px);
+  pointer-events: auto; // allow pointer events to impact drawer
+}
+.openDrawer {
+  transform: translateX(0);
+}
+.closedDrawer {
+  transform: translateX(-430px);
+}
+
+.overlay {
+  z-index: 2;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 56px;
+  height: 100%;
+  width: 100%;
+  pointer-events: auto; // block pointer-events from passing through the overlay;
+  display: none;
+  transition:
+    background-color 0.5s,
+    display 0.5s allow-discrete;
+}
+.overlayOpen {
+  background-color: var(--color-overlay);
+  display: block;
+  // @starting-style is a valid at-rule in css although not supported by all browsers.
+  // It ensures a smooth initial transition. Transition tested for Firefox, Chrome, Safari
+  @starting-style {
+    background-color: transparent;
+  }
+}

@@ -1,0 +1,7 @@
+@use '../../library/genericStyles/containers';
+@use '../../library/genericStyles/forms';
+
+.container {
+  @include forms.inputLabelContainer;
+  width: 100%;
+}

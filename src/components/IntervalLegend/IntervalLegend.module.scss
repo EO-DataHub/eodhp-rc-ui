@@ -1,0 +1,9 @@
+@use '../../library/genericStyles/containers.scss';
+
+.legendWrapper {
+  @include containers.flexColumnStartStart;
+  height: 80px;
+  width: 320px; // if ticks dont align, try adjusting width. Test with indicator with the most bins and the longest labels.
+  padding: var(--space-2);
+  gap: var(--space-1);
+}

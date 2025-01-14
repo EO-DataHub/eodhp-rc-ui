@@ -1,0 +1,53 @@
+@use './containers';
+
+.flexRowSpaceBetweenCenter {
+  @include containers.flexRowSpaceBetweenCenter;
+}
+.flexRowSpaceBetweenEnd {
+  @include containers.flexRowSpaceBetweenEnd;
+}
+.flexRowSpaceBetweenStart {
+  @include containers.flexRowSpaceBetweenStart;
+}
+.flexRowStartCenter {
+  @include containers.flexRowStartCenter;
+}
+.flexRowCenterCenterFullDimensions {
+  @include containers.flexRowCenterCenter;
+  width: 100%;
+  height: 100%;
+}
+.flexRowStartStart {
+  @include containers.flexRowStartStart;
+}
+.flexRowEndCenter {
+  @include containers.flexRowEndCenter;
+}
+.flexRowEndEnd {
+  @include containers.flexRowEndEnd;
+}
+.flexColumnSpaceBetweenCenter {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-5);
+}
+.flexColumnSpaceBetweenStart {
+  @include containers.flexColumnSpaceBetweenStart;
+}
+.flexColumnStartCenter {
+  @include containers.flexColumnStartCenter;
+}
+.flexColumnStartStart {
+  @include containers.flexColumnStartStart;
+}
+.flexColumnEndCenter {
+  @include containers.flexColumnEndCenter;
+}
+.modalTopRow {
+  @include containers.flexRowSpaceBetweenCenter;
+  & button:global(.close) {
+    align-self: flex-start;
+  }
+}

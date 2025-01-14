@@ -1,0 +1,43 @@
+@use './containers';
+.tableWrapper {
+  width: 100%;
+}
+.table {
+  margin: var(--space-2) 0;
+}
+.selectedTableRow {
+  background-color: var(--accent-a3);
+}
+.highlightedTableRow {
+  background-color: var(--accent-a6);
+}
+.tableInputWrapper {
+  @include containers.flexRowEndEnd;
+  gap: var(--space-4);
+}
+.tableCell {
+  text-wrap: nowrap;
+}
+.sortIconWrapper {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.hiddenSortIcon {
+  visibility: hidden;
+}
+
+.sortIconWrapper:hover {
+  & svg {
+    visibility: visible;
+  }
+}
+
+.tableHeader:hover {
+  & svg {
+    visibility: visible;
+  }
+}
+.tableHeaderWithClickableCursorOnHover:hover {
+  cursor: pointer;
+}

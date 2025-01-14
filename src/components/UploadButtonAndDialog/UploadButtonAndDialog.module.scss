@@ -1,0 +1,52 @@
+@use '../../library/genericStyles/containers';
+
+.dropzone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-5);
+  border-width: 2px;
+  border-style: dashed;
+  border-color: var(--gray-5);
+  text-align: center;
+  white-space: pre;
+  margin-top: var(--space-5);
+  margin-bottom: var(--space-7);
+}
+.dropzoneActive {
+  background-color: var(--accent-2);
+  border-color: var(--accent-5);
+}
+.fileDescription {
+  @include containers.flexRowStartStart;
+  width: 100%;
+  & td {
+    vertical-align: top;
+    text-align: start;
+  }
+  & td:first-child {
+    max-width: 450px;
+    text-wrap: wrap;
+    word-break: break-word;
+    padding-right: var(--space-3);
+  }
+}
+.dialogContent {
+  max-width: 500px;
+
+  & svg {
+    height: 48px;
+    width: 48px;
+    fill: var(--slate-11);
+  }
+}
+
+.fileRejectedError {
+  color: var(--error-color);
+  font-size: var(--font-size-2);
+  text-wrap: wrap;
+}
+.assetsFileFinePrint {
+  margin-top: var(--space-5);
+}

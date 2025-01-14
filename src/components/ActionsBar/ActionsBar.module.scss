@@ -1,0 +1,60 @@
+@use '../../library/genericStyles/containers';
+
+.actionsWrapper {
+  @include containers.flexColumnSpaceBetweenCenter;
+  background-color: var(--app-background-dark);
+  height: 100%;
+  padding: var(--space-5) var(--space-2);
+  box-sizing: border-box;
+  z-index: 4; // ensure actions bar is above drawer
+
+  button {
+    all: unset;
+  }
+
+  & a svg,
+  button svg {
+    height: 18px;
+    width: 18px;
+    fill: var(--accent-6);
+  }
+
+  & a,
+  button {
+    padding: 11px;
+    border-radius: var(--radius-4);
+    transition: background-color 0.4s;
+    display: flex;
+  }
+
+  & .homeLink {
+    & svg {
+      width: 30px;
+      height: auto;
+      fill: var(--white);
+    }
+    padding: 5px;
+    margin-bottom: var(--space-6);
+  }
+
+  & :global(a.active) svg,
+  a:hover svg,
+  button:hover svg {
+    fill: var(--white);
+  }
+  & :global(a.active),
+  a:hover,
+  button:hover {
+    background-color: var(--accent-9);
+  }
+}
+.nav1 {
+  @include containers.flexColumnStartCenter;
+  gap: var(--space-4);
+  flex-grow: 1;
+  width: 100%;
+}
+.nav2 {
+  @include containers.flexColumnEndCenter;
+  gap: var(--space-4);
+}

@@ -1,0 +1,27 @@
+.map {
+  width: 100%;
+  height: 100%;
+}
+.mapContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.extraMapControlsContainer {
+  position: fixed;
+  right: 10px;
+  top: 145px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legendContainer {
+  padding: var(--space-2);
+  position: fixed;
+  right: var(--space-3);
+  bottom: var(--space-7);
+  background-color: var(--white);
+  border-radius: var(--radius-4);
+  box-shadow: var(--shadow-3);
+}

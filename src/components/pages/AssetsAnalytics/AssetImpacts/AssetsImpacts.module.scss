@@ -1,0 +1,13 @@
+@use '../../../../library/genericStyles/containers';
+
+.assetImpactsWrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.impactsListDetailSelector {
+  @include containers.flexRowStartStart;
+  gap: var(--space-6);
+  margin: var(--space-5) 0;
+}

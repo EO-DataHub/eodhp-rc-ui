@@ -1,0 +1,24 @@
+@use '../../../library/genericStyles/containers';
+
+.filterInputWrapper {
+  @include containers.flexColumnStartStart;
+  gap: var(--space-1);
+}
+.tabsRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.tabsContent {
+  height: 100%;
+  width: 100%;
+}
+.subSubtitle {
+  margin-top: var(--space-1);
+  color: var(--slate-11);
+}
+.downloadMenuContent {
+  & *[role='menuitem'] a {
+    all: unset;
+  }
+}

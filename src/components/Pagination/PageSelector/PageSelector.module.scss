@@ -1,0 +1,17 @@
+.selectorButton {
+  border-width: 0;
+  background-color: transparent;
+
+  & svg {
+    fill: var(--button-svg-fill);
+  }
+}
+
+.selectorButton:disabled {
+  & svg {
+    fill: var(--button-svg-fill-disabled);
+  }
+}
+.currentPage {
+  background-color: var(--accent-a3);
+}

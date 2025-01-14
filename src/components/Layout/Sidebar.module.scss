@@ -1,0 +1,55 @@
+@use '../../library/genericStyles/containers';
+@use '../../library/genericStyles/forms';
+
+.content {
+  @include containers.flexColumnSpaceBetweenStart;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+.contentMidSection {
+  @include containers.flexColumnStartStart;
+  width: 100%;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+.contentBottomButtonRow {
+  @include containers.flexRowSpaceBetweenCenter;
+  width: 100%;
+  box-sizing: border-box;
+  & > div,
+  & > button {
+    flex-basis: 0;
+    flex-grow: 1;
+  }
+}
+
+.contentForm {
+  @include containers.flexColumnStartStart;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.selectAssetsButtonWrapper {
+  @include containers.flexColumnEndCenter;
+  height: 100%;
+  & > button {
+    width: 100%;
+  }
+}
+
+.selectAssetsWrapper {
+  & label {
+    @include forms.formLabel;
+  }
+}
+
+.tabsContentWrapper {
+  padding: var(--space-5) 0;
+}
+.tabsRoot {
+  overflow-y: auto;
+  width: 100%;
+  height: 100%;
+}

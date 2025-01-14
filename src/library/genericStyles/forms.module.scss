@@ -1,0 +1,19 @@
+@use '../../library/genericStyles/containers';
+@use '../../library/genericStyles/forms';
+
+.labelWithInfoPopoverRow {
+  @include containers.flexRowStartCenter;
+  gap: var(--space-1);
+  & label {
+    text-wrap: nowrap;
+  }
+}
+
+.formLabel {
+  @include forms.formLabel;
+}
+
+.multipleInputsRow {
+  @include containers.flexRowSpaceBetweenCenter;
+  width: 100%;
+}
