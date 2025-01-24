@@ -13,7 +13,7 @@ CDK_DEPLOY_REGION = (
 
 DEPLOY_PROJECT_CONFIG = ProjectConfig(
     environment=DEPLOY_ENV,
-    project=os.environ.get("PROJECT", "eodh"),
+    project=os.environ.get("PROJECT", "eodhrc"),
     cdk_deploy_account=CDK_DEPLOY_ACCOUNT,
     cdk_deploy_region=CDK_DEPLOY_REGION,
 )

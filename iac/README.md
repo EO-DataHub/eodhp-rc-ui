@@ -1,7 +1,6 @@
-# IAC for EOdatahub UI
+# IAC for EOdatahub UI Resource Catalog
 
-This is a CDK development project with Python.
-
+see [deploy.md](iac/deploy.md) for deployment steps
 ---
 
 This process requires some manual intervention the first time it is run.
@@ -31,13 +30,7 @@ step to activate your virtualenv.
 
 ```
 $ source .venv/bin/activate
-```
-
-If you are a Windows platform, you would activate the virtualenv like this:
-
-```
-% .venv\Scripts\activate.bat
-```
+````
 
 Once the virtualenv is activated, you can install the required dependencies.
 
@@ -62,5 +55,3 @@ command.
 - `cdk deploy` deploy this stack to your default AWS account/region
 - `cdk diff` compare deployed stack with current state
 - `cdk docs` open CDK documentation
-
-Enjoy!

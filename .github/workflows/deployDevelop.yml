@@ -1,10 +1,10 @@
 name: Deploy demo branch build
 
-# on:
-#   push:
-#     branches:
-#       - develop
-#       - demo
+on:
+  push:
+    branches:
+      - develop
+      - demo
 
 permissions:
   contents: read
