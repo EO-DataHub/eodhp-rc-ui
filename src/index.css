@@ -1,10 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
 body {
   margin: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
 }
 :root {
   /* not all Radix tokens are available in this scope, such as --accent-x */
@@ -24,27 +23,79 @@ body {
   --maplibre-control-color: #333333;
 }
 .radix-themes {
-  --default-font-family: 'Roboto', sans-serif;
-}
-.maplibregl-popup-content {
-  box-shadow: var(--shadow-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-4);
-  background-color: var(--accent-1);
-  width: fit-content;
-  height: fit-content;
+  --default-font-family: "Roboto", sans-serif;
 }
 
-/* Mui date input overrides */
-.MuiOutlinedInput-root {
-  padding-right: var(--space-1);
-}
-.MuiOutlinedInput-root input {
-  padding: var(--space-1);
+:root,
+.light,
+.light-theme {
+  --blue-1: #fcfdff;
+  --blue-2: #f7f9fe;
+  --blue-3: #edf2fe;
+  --blue-4: #e2e9fe;
+  --blue-5: #d4defb;
+  --blue-6: #c4d0f7;
+  --blue-7: #afbeed;
+  --blue-8: #92a5e1;
+  --blue-9: #2b3559;
+  --blue-10: #3c476d;
+  --blue-11: #54649c;
+  --blue-12: #293357;
 
-  font-size: var(--font-size-2);
+  --blue-a1: #0055ff03;
+  --blue-a2: #0040e008;
+  --blue-a3: #0047f112;
+  --blue-a4: #003ef71d;
+  --blue-a5: #013ce82b;
+  --blue-a6: #0134dd3b;
+  --blue-a7: #0030c650;
+  --blue-a8: #002db96d;
+  --blue-a9: #000c37d4;
+  --blue-a10: #000f40c3;
+  --blue-a11: #00186cab;
+  --blue-a12: #000c37d6;
+
+  --blue-contrast: #fff;
+  --blue-surface: #f5f8fecc;
+  --blue-indicator: #2b3559;
+  --blue-track: #2b3559;
 }
-.MuiFormHelperText-root {
-  margin-left: 0.1em !important;
-  font-weight: normal !important;
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root,
+    .light,
+    .light-theme {
+      --blue-1: oklch(99.4% 0.0026 270.9);
+      --blue-2: oklch(98.1% 0.0074 270.9);
+      --blue-3: oklch(96.1% 0.0172 270.9);
+      --blue-4: oklch(93.5% 0.0294 270.9);
+      --blue-5: oklch(90.3% 0.0414 270.9);
+      --blue-6: oklch(86.2% 0.0549 270.9);
+      --blue-7: oklch(80.6% 0.0681 270.9);
+      --blue-8: oklch(73% 0.091 270.9);
+      --blue-9: oklch(33.8% 0.0649 270.9);
+      --blue-10: oklch(40.7% 0.0649 270.9);
+      --blue-11: oklch(51.7% 0.091 270.9);
+      --blue-12: oklch(33.1% 0.0649 270.9);
+
+      --blue-a1: color(display-p3 0.0235 0.349 1 / 0.012);
+      --blue-a2: color(display-p3 0.0196 0.2667 0.8784 / 0.032);
+      --blue-a3: color(display-p3 0.0078 0.2392 0.8863 / 0.067);
+      --blue-a4: color(display-p3 0.0039 0.2157 0.8941 / 0.11);
+      --blue-a5: color(display-p3 0.0039 0.2 0.8314 / 0.161);
+      --blue-a6: color(display-p3 0.0039 0.1804 0.8078 / 0.224);
+      --blue-a7: color(display-p3 0.0039 0.1569 0.7176 / 0.302);
+      --blue-a8: color(display-p3 0.0039 0.1373 0.6706 / 0.412);
+      --blue-a9: color(display-p3 0 0.0392 0.1961 / 0.824);
+      --blue-a10: color(display-p3 0 0.0471 0.2275 / 0.757);
+      --blue-a11: color(display-p3 0 0.0784 0.3882 / 0.659);
+      --blue-a12: color(display-p3 0 0.0392 0.1922 / 0.832);
+
+      --blue-contrast: #fff;
+      --blue-surface: color(display-p3 0.9608 0.9725 0.9922 / 0.8);
+      --blue-indicator: oklch(33.8% 0.0649 270.9);
+      --blue-track: oklch(33.8% 0.0649 270.9);
+    }
+  }
 }

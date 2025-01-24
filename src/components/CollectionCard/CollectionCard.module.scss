@@ -1,0 +1,18 @@
+.card {
+  background-color: #1c2024;
+
+  .button {
+    background-color: #60646c;
+    color: var(--blue-contrast);
+  }
+
+  .text {
+    color: var(--blue-contrast);
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}

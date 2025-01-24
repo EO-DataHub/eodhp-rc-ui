@@ -1,0 +1,62 @@
+@use "../../library/genericStyles/containers";
+
+@mixin iconHeight {
+  height: var(--space-5);
+  width: var(--space-5);
+}
+
+.dropdownContent {
+  @include containers.flexColumnSpaceBetweenStart;
+  background-color: var(--app-background-dark);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-4);
+  color: var(--white);
+  gap: 0;
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  z-index: 4;
+
+  & a {
+    all: unset;
+  }
+  & svg,
+  a svg {
+    fill: var(--white);
+    @include iconHeight;
+  }
+  & div[role="menuitem"],
+  a {
+    @include containers.flexRowStartCenter;
+    gap: var(--space-4);
+    padding: var(--space-3);
+  }
+
+  & div[role="menuitem"]:hover,
+  a:hover {
+    background-color: transparent;
+    color: var(--accent-6);
+  }
+  & div[role="menuitem"]:hover svg,
+  a:hover svg {
+    fill: var(--accent-6);
+  }
+  & div[role="menuitem"]:focus-visible {
+    outline: none;
+  }
+}
+
+.userInfo {
+  @include containers.flexRowStartCenter;
+  font-weight: bold;
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
+  padding: var(--space-3);
+}
+
+.userIcon {
+  @include containers.flexColumnCenterCenter;
+  @include iconHeight;
+  background-color: var(--accent-9);
+  border-radius: var(--radius-3);
+  font-size: 0.7em;
+}

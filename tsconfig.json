@@ -23,7 +23,13 @@
       "vitest/globals",
       "@testing-library/jest-dom",
       "vite-plugin-svgr/client"
-    ]
+    ],
+
+    /* Alias */
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src", "./setupTests.ts", "./vitest.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]

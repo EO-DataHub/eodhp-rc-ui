@@ -1,5 +1,5 @@
-@use '../../library/genericStyles/containers';
-@use '../../library/genericStyles/forms';
+@use "../../library/genericStyles/containers";
+@use "../../library/genericStyles/forms";
 
 .labelWithInfoPopoverRow {
   @include containers.flexRowStartCenter;

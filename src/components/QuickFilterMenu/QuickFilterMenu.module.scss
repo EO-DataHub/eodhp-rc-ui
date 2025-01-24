@@ -1,0 +1,13 @@
+.container {
+  border-bottom: 0.25px solid #000;
+  width: 100%;
+
+  .button {
+    background-color: var(--blue-9);
+    color: var(--blue-contrast);
+  }
+
+  .text {
+    color: var(--blue-contrast);
+  }
+}

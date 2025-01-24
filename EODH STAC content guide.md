@@ -1,4 +1,3 @@
-
 # Best Practice Guide for Creating Well-Formed Records for a Spatio-Temporal Asset Catalogue
 
 This guide provides best practices for ensuring that records in a Spatio-Temporal Asset Catalogue (STAC) are well-formed, consistent, and user-friendly. Following these principles will improve usability, searchability, and interoperability of the catalogue.

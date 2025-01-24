@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 
 export const PageSizeSelector = ({
   pageSize,
@@ -11,34 +11,36 @@ export const PageSizeSelector = ({
   isMethodFilterEnabled = false,
   isSearchFilterEnabled = false,
 }: {
-  pageSize: number
-  pageSizeOptions: number[]
-  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
-  unfilteredRowLength: number
-  methodFilteredRowLength?: number | null
-  searchFilteredRowLength?: number | null
-  isMethodFilterEnabled?: boolean
-  isSearchFilterEnabled?: boolean
+  pageSize: number;
+  pageSizeOptions: number[];
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  unfilteredRowLength: number;
+  methodFilteredRowLength?: number | null;
+  searchFilteredRowLength?: number | null;
+  isMethodFilterEnabled?: boolean;
+  isSearchFilterEnabled?: boolean;
 }) => {
-  const [pageOptionsToDisplay, setPageOptionsToDisplay] = useState<number[]>([])
+  const [pageOptionsToDisplay, setPageOptionsToDisplay] = useState<number[]>(
+    [],
+  );
   const [filteredAmountToDisplay, setFilteredAmountToDisplay] = useState<
     number | null
-  >(null)
+  >(null);
 
   useEffect(
     function findFilteredAmountToDisplay() {
       // the search results will be method filtered already, which is not the case the opposite way around
       if (isSearchFilterEnabled && isMethodFilterEnabled) {
-        return setFilteredAmountToDisplay(searchFilteredRowLength)
+        return setFilteredAmountToDisplay(searchFilteredRowLength);
       }
       if (!isSearchFilterEnabled && isMethodFilterEnabled) {
-        return setFilteredAmountToDisplay(methodFilteredRowLength)
+        return setFilteredAmountToDisplay(methodFilteredRowLength);
       }
       if (isSearchFilterEnabled && !isMethodFilterEnabled) {
-        return setFilteredAmountToDisplay(searchFilteredRowLength)
+        return setFilteredAmountToDisplay(searchFilteredRowLength);
       }
 
-      return setFilteredAmountToDisplay(unfilteredRowLength)
+      return setFilteredAmountToDisplay(unfilteredRowLength);
     },
     [
       isMethodFilterEnabled,
@@ -47,34 +49,34 @@ export const PageSizeSelector = ({
       searchFilteredRowLength,
       unfilteredRowLength,
     ],
-  )
+  );
 
   useEffect(
     function findPageOptionsToDisplay() {
-      if (filteredAmountToDisplay === null) return
+      if (filteredAmountToDisplay === null) return;
       let pageOptionsLessThanRowLength = pageSizeOptions.filter(
         (option) => option < filteredAmountToDisplay,
-      )
+      );
 
       if (pageOptionsLessThanRowLength.length === 0) {
         // show the exact number of items as the only selection in the drop down
-        pageOptionsLessThanRowLength = [filteredAmountToDisplay]
+        pageOptionsLessThanRowLength = [filteredAmountToDisplay];
       } else if (
         pageOptionsLessThanRowLength[pageOptionsLessThanRowLength.length - 1] <
         filteredAmountToDisplay
       ) {
         // show the exact number of items as the last selection in the drop down
-        pageOptionsLessThanRowLength.push(filteredAmountToDisplay)
+        pageOptionsLessThanRowLength.push(filteredAmountToDisplay);
       }
 
-      setPageOptionsToDisplay(pageOptionsLessThanRowLength)
+      setPageOptionsToDisplay(pageOptionsLessThanRowLength);
     },
     [pageSizeOptions, filteredAmountToDisplay],
-  )
+  );
 
   return (
     <label htmlFor="page-size-selector">
-      Showing{' '}
+      Showing{" "}
       <select
         value={pageSize}
         onChange={onChange}
@@ -89,10 +91,10 @@ export const PageSizeSelector = ({
       </select>
       of {filteredAmountToDisplay}
       {isSearchFilterEnabled || isMethodFilterEnabled
-        ? `${' '}(filtered from ${unfilteredRowLength} item${
-            unfilteredRowLength > 1 ? 's' : ''
+        ? `${" "}(filtered from ${unfilteredRowLength} item${
+            unfilteredRowLength > 1 ? "s" : ""
           })`
         : null}
     </label>
-  )
-}
+  );
+};
