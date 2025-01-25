@@ -1,10 +1,16 @@
 import React from "react";
+import { Collection } from "@/types";
 import { InfoCircledIcon } from "@radix-ui/react-icons";
 import { Flex, Text, Card, Inset, IconButton } from "@radix-ui/themes";
 import styles from "./CollectionCard.module.scss";
 import PoundSterlingSymbolIcon from "../../../public/pound-sterling-symbol.svg?react";
 
-export const CollectionCard: React.FC = () => {
+
+interface CollectionCardProps {
+  collection: Collection;
+}
+
+export const CollectionCard: React.FC<CollectionCardProps> = ({collection}) => {
   return (
     <Card size="2" className={styles.card}>
       <Inset clip="padding-box" side="top" pb="current">
@@ -28,10 +34,10 @@ export const CollectionCard: React.FC = () => {
         </IconButton>
       </Flex>
       <Text as="p" size="3" className={styles.text}>
-        Airbus PNEO Data (0.3m)
+        {collection.title}
       </Text>
       <Text as="p" size="3" className={styles.text}>
-        13/8/2021 – 10/12/2024
+        {collection.extent.temporal.interval}
       </Text>
     </Card>
   );
