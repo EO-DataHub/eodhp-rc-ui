@@ -103,7 +103,7 @@ jobs:
 
       - name: transfer to S3
         run: |
-          aws s3 sync ./dist s3://${{ github.ref_name }}-eodh-website-files
+          aws s3 sync ./dist s3://${{ github.ref_name }}-eodhrc-website-files
 
       - name: invalidate cloudfront
         run: |
