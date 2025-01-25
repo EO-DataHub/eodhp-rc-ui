@@ -1,5 +1,8 @@
 name: Deploy demo branch build
 
+env:
+  AWS_REGION: us-east-1
+
 on:
   push:
     branches:
