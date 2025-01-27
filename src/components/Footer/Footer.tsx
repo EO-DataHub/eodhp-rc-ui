@@ -1,6 +1,6 @@
-import React from "react";
-import { Flex, Button, Text } from "@radix-ui/themes";
-import styles from "./Footer.module.scss";
+import React from 'react'
+import { Flex, Button, Text } from '@radix-ui/themes'
+import styles from './Footer.module.scss'
 
 export const Footer: React.FC = () => {
   return (
@@ -26,5 +26,5 @@ export const Footer: React.FC = () => {
         ©2024 Earth Observation Data Hub (EODH)
       </Text>
     </Flex>
-  );
-};
+  )
+}

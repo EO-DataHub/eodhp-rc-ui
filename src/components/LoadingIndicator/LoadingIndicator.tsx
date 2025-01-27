@@ -1,10 +1,8 @@
-import { Spinner } from "@radix-ui/themes";
-import loadingIndicatorStyles from "./LoadingIndicator.module.scss";
+import { Spinner } from '@radix-ui/themes'
+import loadingIndicatorStyles from './LoadingIndicator.module.scss'
 
 export const LoadingIndicator = ({ light = false }: { light?: boolean }) => {
-  const colorSpecificationClassName = light
-    ? loadingIndicatorStyles.loadingIndicatorLight
-    : null;
+  const colorSpecificationClassName = light ? loadingIndicatorStyles.loadingIndicatorLight : null
 
   return (
     <div className={loadingIndicatorStyles.wrapper}>
@@ -12,5 +10,5 @@ export const LoadingIndicator = ({ light = false }: { light?: boolean }) => {
         className={`${loadingIndicatorStyles.loadingIndicator} ${colorSpecificationClassName}`}
       />
     </div>
-  );
-};
+  )
+}

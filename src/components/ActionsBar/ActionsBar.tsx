@@ -1,6 +1,6 @@
-import React from "react";
-import { MagnifyingGlassIcon } from "@radix-ui/react-icons";
-import { Flex, Text, TextField } from "@radix-ui/themes";
+import React from 'react'
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
+import { Flex, Text, TextField } from '@radix-ui/themes'
 
 export const ActionsBar: React.FC = () => {
   return (
@@ -14,5 +14,5 @@ export const ActionsBar: React.FC = () => {
         </TextField.Slot>
       </TextField.Root>
     </Flex>
-  );
-};
+  )
+}

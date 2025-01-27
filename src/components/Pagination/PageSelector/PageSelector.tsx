@@ -1,9 +1,9 @@
-import { Button, ButtonProps } from "@radix-ui/themes";
-import { useEffect, useState, ReactNode, ReactElement } from "react";
-import BackIcon from "@material-design-icons/svg/filled/chevron_left.svg?react";
-import NextIcon from "@material-design-icons/svg/filled/chevron_right.svg?react";
+import { Button, ButtonProps } from '@radix-ui/themes'
+import { useEffect, useState, ReactNode, ReactElement } from 'react'
+import BackIcon from '@material-design-icons/svg/filled/chevron_left.svg?react'
+import NextIcon from '@material-design-icons/svg/filled/chevron_right.svg?react'
 
-import pageSelectorStyles from "./PageSelector.module.scss";
+import pageSelectorStyles from './PageSelector.module.scss'
 
 const SelectorButton = ({ className, ...restOfProps }: ButtonProps) => {
   return (
@@ -13,34 +13,34 @@ const SelectorButton = ({ className, ...restOfProps }: ButtonProps) => {
       {...restOfProps}
       className={`${pageSelectorStyles.selectorButton} ${className}`}
     />
-  );
-};
+  )
+}
 
 const PageButton = ({
   pageIndex,
   currentPageIndex,
   onGoToPage,
 }: {
-  currentPageIndex: number;
-  onGoToPage: (pageIndex: number) => void;
-  pageIndex: number;
+  currentPageIndex: number
+  onGoToPage: (pageIndex: number) => void
+  pageIndex: number
 }) => {
-  const pageLabel = pageIndex + 1;
-  const isCurrentPage = currentPageIndex === pageIndex;
+  const pageLabel = pageIndex + 1
+  const isCurrentPage = currentPageIndex === pageIndex
 
   return (
     <SelectorButton
       className={isCurrentPage ? pageSelectorStyles.currentPage : undefined}
       aria-current={isCurrentPage}
       onClick={() => {
-        onGoToPage(pageIndex);
+        onGoToPage(pageIndex)
       }}
       key={`pagination-button-${pageIndex}`}
     >
       {pageLabel}
     </SelectorButton>
-  );
-};
+  )
+}
 
 /**
  * Pagination control - for user to select which page is shown
@@ -55,21 +55,21 @@ export const PageSelector = ({
   pageCount,
   previousDisabled,
 }: {
-  currentPageIndex: number;
-  nextDisabled: boolean;
-  onGoToPage: (pageIndex: number) => void;
-  onNextClick: () => void;
-  onPreviousClick: () => void;
-  pageCount: number;
-  previousDisabled: boolean;
+  currentPageIndex: number
+  nextDisabled: boolean
+  onGoToPage: (pageIndex: number) => void
+  onNextClick: () => void
+  onPreviousClick: () => void
+  pageCount: number
+  previousDisabled: boolean
 }) => {
-  const [pageButtons, setPageButtons] = useState<ReactElement[]>([]);
+  const [pageButtons, setPageButtons] = useState<ReactElement[]>([])
 
   useEffect(() => {
-    const pageButtonPropsThatChangeLess = { currentPageIndex, onGoToPage };
+    const pageButtonPropsThatChangeLess = { currentPageIndex, onGoToPage }
 
     const getNotTooManyButtons = () => {
-      const buttons = [];
+      const buttons = []
 
       for (let page = 1; page <= pageCount; page += 1) {
         buttons.push(
@@ -78,79 +78,58 @@ export const PageSelector = ({
             pageIndex={page - 1}
             key={`pagination-button-${page}`}
           />,
-        );
+        )
       }
 
-      return buttons;
-    };
+      return buttons
+    }
     const getTooManyButtons = () => {
-      const middleButtons: ReactNode[] = [];
+      const middleButtons: ReactNode[] = []
 
-      const lastPage = pageCount;
-      const currentlySelectedPage = currentPageIndex + 1;
+      const lastPage = pageCount
+      const currentlySelectedPage = currentPageIndex + 1
 
       const populateMiddleButtons = () => {
         if (currentlySelectedPage === 3) {
-          middleButtons.push(
-            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={1} />,
-          );
+          middleButtons.push(<PageButton {...pageButtonPropsThatChangeLess} pageIndex={1} />)
         }
         if (currentlySelectedPage > 3) {
           middleButtons.push(
-            <PageButton
-              {...pageButtonPropsThatChangeLess}
-              pageIndex={currentPageIndex - 2}
-            />,
-            <PageButton
-              {...pageButtonPropsThatChangeLess}
-              pageIndex={currentPageIndex - 1}
-            />,
-          );
+            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={currentPageIndex - 2} />,
+            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={currentPageIndex - 1} />,
+          )
         }
         if (currentlySelectedPage !== 1 && currentlySelectedPage !== lastPage) {
           middleButtons.push(
-            <PageButton
-              {...pageButtonPropsThatChangeLess}
-              pageIndex={currentPageIndex}
-            />,
-          );
+            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={currentPageIndex} />,
+          )
         }
         if (currentlySelectedPage < lastPage - 1) {
           middleButtons.push(
-            <PageButton
-              {...pageButtonPropsThatChangeLess}
-              pageIndex={currentPageIndex + 1}
-            />,
-          );
+            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={currentPageIndex + 1} />,
+          )
         }
         if (currentlySelectedPage < lastPage - 2) {
           middleButtons.push(
-            <PageButton
-              {...pageButtonPropsThatChangeLess}
-              pageIndex={currentPageIndex + 2}
-            />,
-          );
+            <PageButton {...pageButtonPropsThatChangeLess} pageIndex={currentPageIndex + 2} />,
+          )
         }
-      };
+      }
 
       const manageMiddleButtonEllipses = () => {
         if (currentlySelectedPage > 4) {
-          middleButtons.unshift(<span>...</span>);
+          middleButtons.unshift(<span>...</span>)
         }
         if (currentlySelectedPage < lastPage - 3) {
-          middleButtons.push(<span>...</span>);
+          middleButtons.push(<span>...</span>)
         }
-      };
+      }
 
-      populateMiddleButtons();
-      manageMiddleButtonEllipses();
+      populateMiddleButtons()
+      manageMiddleButtonEllipses()
 
       return [
-        <PageButton
-          {...pageButtonPropsThatChangeLess}
-          pageIndex={0}
-          key="first"
-        />,
+        <PageButton {...pageButtonPropsThatChangeLess} pageIndex={0} key="first" />,
         ...middleButtons.map(
           (button, index) =>
             ({
@@ -158,20 +137,16 @@ export const PageSelector = ({
               key: `middle-button-${index}`,
             }) as ReactElement,
         ),
-        <PageButton
-          {...pageButtonPropsThatChangeLess}
-          pageIndex={lastPage - 1}
-          key="last"
-        />,
-      ];
-    };
+        <PageButton {...pageButtonPropsThatChangeLess} pageIndex={lastPage - 1} key="last" />,
+      ]
+    }
 
     if (pageCount > 8) {
-      setPageButtons(getTooManyButtons());
+      setPageButtons(getTooManyButtons())
     } else {
-      setPageButtons(getNotTooManyButtons());
+      setPageButtons(getNotTooManyButtons())
     }
-  }, [pageCount, currentPageIndex, onGoToPage]);
+  }, [pageCount, currentPageIndex, onGoToPage])
 
   return (
     <div data-testid="page-control">
@@ -183,5 +158,5 @@ export const PageSelector = ({
         Next <NextIcon />
       </SelectorButton>
     </div>
-  );
-};
+  )
+}
