@@ -23,4 +23,10 @@ dist-ssr
 *.sln
 *.sw?
 
+# Yarn directories
+.yarn/*
+!.yarn/cache
+yarn.lock
+.yarnrc.yml
+
 .env
