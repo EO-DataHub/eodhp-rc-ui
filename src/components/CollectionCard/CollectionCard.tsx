@@ -1,27 +1,26 @@
-import React from "react";
-import { Collection } from "@/types";
-import { InfoCircledIcon } from "@radix-ui/react-icons";
-import { Flex, Text, Card, Inset, IconButton } from "@radix-ui/themes";
-import styles from "./CollectionCard.module.scss";
-import PoundSterlingSymbolIcon from "../../../public/pound-sterling-symbol.svg?react";
-
+import React from 'react'
+import { Collection } from '@/types'
+import { InfoCircledIcon } from '@radix-ui/react-icons'
+import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
+import styles from './CollectionCard.module.scss'
+import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
 
 interface CollectionCardProps {
-  collection: Collection;
+  collection: Collection
 }
 
-export const CollectionCard: React.FC<CollectionCardProps> = ({collection}) => {
+export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
   return (
     <Card size="2" className={styles.card}>
       <Inset clip="padding-box" side="top" pb="current">
         <img
           src="../../../public/default-thumbnail.jpg"
           style={{
-            display: "block",
-            objectFit: "cover",
-            width: "100%",
+            display: 'block',
+            objectFit: 'cover',
+            width: '100%',
             height: 140,
-            backgroundColor: "var(--gray-5)",
+            backgroundColor: 'var(--gray-5)',
           }}
         />
       </Inset>
@@ -40,5 +39,5 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({collection}) => {
         {collection.extent.temporal.interval}
       </Text>
     </Card>
-  );
-};
+  )
+}

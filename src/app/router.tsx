@@ -1,23 +1,23 @@
-import { createBrowserRouter } from "react-router-dom";
-import { AppLayout } from "../components/Layout/AppLayout";
-import { DataDiscoveryPage } from "../pages/DataDiscoveryPage/DataDiscoveryPage";
-import { DataFinderPage } from "../pages/DataFinderPage/DataFinderPage";
+import { createBrowserRouter } from 'react-router-dom'
+import { AppLayout } from '../components/Layout/AppLayout'
+import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
+import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
 
 const routes = [
   {
-    path: "/",
+    path: '/',
     element: <DataDiscoveryPage />,
   },
   {
-    path: "/finder",
+    path: '/finder',
     element: <DataFinderPage />,
   },
-];
+]
 
 const routesWithErrorFallback = routes.map((route) => ({
   ...route,
   errorElement: <div>&nbsp;We&apos;re sorry. Something is broken. </div>,
-}));
+}))
 
 export const router = createBrowserRouter(
   [
@@ -28,4 +28,4 @@ export const router = createBrowserRouter(
     },
   ],
   { basename: import.meta.env.VITE_BASE_PATH },
-);
+)

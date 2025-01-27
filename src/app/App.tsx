@@ -1,11 +1,11 @@
-import { Theme } from "@radix-ui/themes";
-import "./App.module.css";
-import "@radix-ui/themes/styles.css";
-import "react-toastify/dist/ReactToastify.css";
-import { ErrorBoundary } from "react-error-boundary";
-import { RouterProvider } from "react-router-dom";
-import { AuthenticationContextProvider } from "../context/AuthenticationContext";
-import { router } from "./router";
+import { Theme } from '@radix-ui/themes'
+import './App.module.css'
+import '@radix-ui/themes/styles.css'
+import 'react-toastify/dist/ReactToastify.css'
+import { ErrorBoundary } from 'react-error-boundary'
+import { RouterProvider } from 'react-router-dom'
+import { AuthenticationContextProvider } from '../context/AuthenticationContext'
+import { router } from './router'
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         </Theme>
       </AuthenticationContextProvider>
     </ErrorBoundary>
-  );
+  )
 }
 
-export default App;
+export default App
