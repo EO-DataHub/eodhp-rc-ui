@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit && eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "prettier": "prettier --write ./src/**/*.{js,tsx}",
     "preview": "vite preview",
     "prepare": "husky",
     "test": "vitest"
@@ -78,6 +79,12 @@
     "vite-plugin-svgr": "^4.2.0",
     "vitest": "^1.5.3",
     "vitest-canvas-mock": "^0.3.3"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "yarn run prettier",
+      "pre-push": "yarn run lint"
+    }
   },
   "engines": {
     "node": ">=21.7.1"
