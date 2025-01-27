@@ -23,4 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+
+.yarn/*
+!.yarn/cache
+yarn.lock
+
 .env
