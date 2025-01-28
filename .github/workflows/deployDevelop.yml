@@ -107,5 +107,5 @@ jobs:
 
       - name: invalidate cloudfront
         run: |
-          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, '${{ github.ref_name }}.eodh.sparkgeo.dev')].Id" --output text)
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions --query "DistributionList.Items[?contains(Aliases.Items, '${{ github.ref_name }}.eodh.sparkgeo.dev')].Id | [0]" --output text)
           aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
