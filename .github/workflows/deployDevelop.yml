@@ -73,8 +73,8 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: ${{vars.GHA_AWS_DEPLOY_ROLE}} # Role in Sparkgeo Management account
-          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{vars.GHA_AWS_DEPLOY_ROLE_EODH}} # Role in Sparkgeo Management account
+          aws-region: us-east-1
       
       - name: Install AWS CDK
         run: npm install -g aws-cdk
