@@ -1,0 +1,33 @@
+.card {
+  background-color: var(--blue-contrast);
+
+  .button {
+    background-color: var(--app-background-dark-2);
+    color: var(--blue-contrast);
+    width: 16px;
+    height: 16px;
+  }
+
+  .purchaiceButton {
+    background-color: var(--blue-contrast);
+    color: var(--app-background-dark-2);
+    width: 16px;
+    height: 16px;
+  }
+
+  .text {
+    color: var(--app-background-dark-2);
+    max-width: 168px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  .thumbnail {
+    display: block;
+    width: 100px; 
+    height: 119px; 
+    object-fit: cover;
+    background-color: var(--app-background-dark-2);
+  }
+}
+
