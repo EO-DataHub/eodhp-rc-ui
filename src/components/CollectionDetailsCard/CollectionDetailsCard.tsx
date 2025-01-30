@@ -2,6 +2,7 @@ import React from 'react'
 import { Collection } from '@/types'
 import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
+import styles from './CollectionDetailsCard.module.scss'
 
 interface CollectionDetailsCardProps {
   collection: Collection
@@ -14,61 +15,52 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   isOpen,
   onClose,
 }) => {
-  const dateInterval = collection?.extent?.temporal?.interval[0]
+  const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
-  const getFormattedDateRange = (interval: any): string => {
+  const thumbnailUrl =
+    typeof collection.assets?.thumbnail === 'string'
+      ? collection.assets.thumbnail
+      : '../../../public/placeholder-img.png'
+
+  const getFormattedDateRange = (interval: (string | null)[]): string => {
     if (!Array.isArray(interval) || interval.length !== 2) {
       return 'Invalid Date Range'
     }
 
     const [startDateStr, endDateStr] = interval
 
+    if (!startDateStr) {
+      return 'Invalid Date Range'
+    }
     const startDate = new Date(startDateStr)
     if (isNaN(startDate.getTime())) {
       return 'Invalid Date Range'
     }
 
-    const endDate = new Date(endDateStr)
+    const endDate = endDateStr ? new Date(endDateStr) : new Date()
     if (isNaN(endDate.getTime())) {
       return 'Invalid Date Range'
     }
 
-    if (!endDateStr) {
-      return `${startDate.toLocaleDateString('en-GB')} to present`
-    }
-
-    return `${startDate.toLocaleDateString('en-GB')} - ${endDate.toLocaleDateString('en-GB')}`
+    return `${startDate.toLocaleDateString('en-GB')} - ${endDateStr ? endDate.toLocaleDateString('en-GB') : 'present'}`
   }
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Content maxWidth="750px" style={{ borderRadius: '0px' }}>
+      <Dialog.Content maxWidth="750px" className={styles.dialogContent}>
         <Dialog.Close>
-          <Button
-            variant="ghost"
-            aria-label="Close"
-            style={{ position: 'absolute', top: '15px', right: '20px' }}
-          >
+          <Button variant="ghost" aria-label="Close" className={styles.closeButton}>
             <Cross1Icon />
           </Button>
         </Dialog.Close>
-        <Flex direction="row" gap="7" style={{ padding: '1em' }}>
+        <Flex direction="row" gap="7" className={styles.flexContainer}>
           <Flex>
             <Inset>
-              <img
-                src="../../../public/placeholder-img.png"
-                style={{
-                  display: 'block',
-                  objectFit: 'cover',
-                  width: 210,
-                  height: 210,
-                  backgroundColor: 'var(--gray-5)',
-                }}
-              />
+              <img src={thumbnailUrl} alt="Collection thumbnail" className={styles.thumbnail} />
             </Inset>
           </Flex>
-          <Flex direction="column" style={{ width: '100%' }}>
-            <Dialog.Title style={{ marginTop: '-1.1em' }}>{collection.title}</Dialog.Title>
+          <Flex direction="column" className={styles.details}>
+            <Dialog.Title className={styles.dialogTitle}>{collection.title}</Dialog.Title>
             <Text size="2" color="gray" mb="2">
               {getFormattedDateRange(dateInterval)}
             </Text>
@@ -77,13 +69,13 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             </Dialog.Description>
             <Flex direction="row" gap="3" style={{ flexWrap: 'wrap' }}>
               {collection.keywords?.map((keyword) => (
-                <Kbd size="2" style={{ borderRadius: '12px' }}>
+                <Kbd key={keyword} size="2" className={styles.keyword}>
                   {keyword}
                 </Kbd>
               ))}
             </Flex>
-            <Flex style={{ marginTop: '1em', justifyContent: 'flex-end' }}>
-              <Link size="1" href="#">
+            <Flex className={styles.linkWrapper}>
+              <Link size="1" href="#" aria-label={`Open ${collection.title} collection`}>
                 Open Collection
               </Link>
             </Flex>
