@@ -19,11 +19,11 @@ export const DataFinderPage: React.FC = () => {
   const items: Item[] = isLoading || error ? [] : data ?? []
 
   return (
-    <Box height="100vh" position="relative">
+    <Box height="calc(100vh - var(--nav-bar-height))" position="relative">
       <Box className={styles.floatingContainer}>
         <SidePanel items={items} isLoading={isLoading} error={!!error} />
       </Box>
-      <Box height="100vh">
+      <Box height="100%">
         <Map />
       </Box>
     </Box>

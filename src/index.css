@@ -5,8 +5,10 @@ body {
   width: 100%;
   height: 100%;
 }
+
 :root {
   /* not all Radix tokens are available in this scope, such as --accent-x */
+  --nav-bar-height: 100px;
   --error-color: var(--red-11);
   --unclustered-marker-color: #3e63dd;
   --marker-stroke-color: #eeeeeeee;
@@ -23,6 +25,7 @@ body {
   --toastify-color-success: var(--green-11);
   --maplibre-control-color: #333333;
 }
+
 .radix-themes {
   --default-font-family: "Roboto", sans-serif;
 }
@@ -64,6 +67,7 @@ body {
 
 @supports (color: color(display-p3 1 1 1)) {
   @media (color-gamut: p3) {
+
     :root,
     .light,
     .light-theme {
