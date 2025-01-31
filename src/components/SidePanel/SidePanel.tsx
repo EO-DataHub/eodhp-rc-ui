@@ -5,7 +5,7 @@ import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
-import styles from './sidePanel.module.scss'
+import styles from './SidePanel.module.scss'
 
 interface SidePanelProps {
   items: Item[]
