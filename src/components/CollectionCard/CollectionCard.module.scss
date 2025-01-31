@@ -2,7 +2,7 @@
   background-color: #1c2024;
 
   .button {
-    background-color: #60646c;
+    background-color: var(--app-background-dark-2);
     color: var(--blue-contrast);
   }
 
@@ -15,4 +15,12 @@
 .card::after {
   content: none;
   background: none;
+}
+
+.thumbnail {
+  display: block;
+  object-fit: cover;
+  width: 100%;
+  height: 140px;
+  background-color: var(--gray-5);
 }

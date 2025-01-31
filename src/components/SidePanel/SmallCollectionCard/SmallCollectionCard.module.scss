@@ -1,0 +1,20 @@
+.card {
+  background-color: #1c2024;
+
+  .button {
+    background-color: var(--app-background-dark-2);
+    color: var(--blue-contrast);
+    width: 16px;
+    height: 16px;
+  }
+
+  .text {
+    color: var(--blue-contrast);
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}

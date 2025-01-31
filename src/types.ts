@@ -1,4 +1,3 @@
-
 export interface Catalog {
   type: string;
   stac_version: string;
@@ -52,6 +51,70 @@ export interface Collection {
       title?: string;
       type?: string;
       roles?: string[];
+    };
+  };
+}
+
+export interface Item {
+  type: string;
+  stac_version: string;
+  stac_extensions: string[];
+  id: string;
+  collection: string;
+  geometry: {
+    type: string;
+    coordinates: number[][][];
+  };
+  bbox: [number, number, number, number];
+  properties: {
+    datetime: string;
+    updated: string;
+    start_datetime: string;
+    end_datetime: string;
+    "proj:code": string;
+    esa_file_name: string;
+    "Instrument Family Name": string;
+    "Instrument Family Name Abbreviation": string;
+    "Platform Number": string;
+    "NSSDC Identifier": string;
+    "Start Relative Orbit Number": string;
+    "Start Orbit Number": string;
+    "Ground Tracking Direction": string;
+    "Instrument Mode": string | null;
+    "eo:cloud_cover": string;
+    "Product Type": string;
+    "Datatake Type": string;
+    data_path: string;
+    "proj:shape": [number, number];
+    "proj:transform": [number, number, number, number, number, number, number, number, number];
+    instance_id: string;
+    created: string;
+  };
+  links: {
+    rel: string;
+    type: string;
+    href: string;
+    method?: string;
+  }[];
+  assets: {
+    thumbnail: {
+      href: string;
+      roles: string[];
+      size: number;
+      location: string;
+    };
+    [key: string]: {
+      href: string;
+      roles: string[];
+      size: number;
+      location: string;
+      "eo:bands"?: {
+        "eo:central_wavelength": number;
+        "eo:common_name": string;
+        description: string;
+        "eo: full_width_half_max": number;
+        name: string;
+      }[];
     };
   };
 }
