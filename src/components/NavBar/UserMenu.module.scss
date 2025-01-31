@@ -7,7 +7,7 @@
 
 .dropdownContent {
   @include containers.flexColumnSpaceBetweenStart;
-  background-color: var(--app-background-dark);
+  background-color: var(--app-background-dark-1);
   border-radius: var(--radius-3);
   box-shadow: var(--shadow-4);
   color: var(--white);
