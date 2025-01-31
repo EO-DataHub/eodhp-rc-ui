@@ -36,6 +36,7 @@ const initOptions = {
 
 const authenticationInstance = new Keycloak(initOptions)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AuthenticationContext = createContext<AuthenticationContextValue>({
   isAuthenticated: false,
   isAuthenticating: false,
