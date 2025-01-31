@@ -6,14 +6,52 @@ import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
+import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 
 interface SidePanelProps {
   items: Item[]
   isLoading: boolean
   error: boolean
+  page: number
+  setPage: (page: number) => void
 }
 
-export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error }) => {
+const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Flex justify="center" className={styles.paginationContainer}>
+      {children}
+    </Flex>
+  )
+}
+
+const ItemList = ({
+  items,
+  isLoading,
+  error,
+}: {
+  items: Item[]
+  isLoading: boolean
+  error: boolean
+}) => {
+  if (isLoading) {
+    return <Text>Loading Items...</Text>
+  }
+
+  if (error) {
+    return <Text color="red">Error loading items!</Text>
+  }
+
+  return (
+    <div className={styles.listContainer}>
+      <ul>
+        {items.map((item) => (
+          <ItemCard key={item.id} item={item} />
+        ))}
+      </ul>
+    </div>
+  )
+}
+export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, page, setPage }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const toggleFilterPanel = () => {
@@ -37,15 +75,18 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
             25 of 125
           </Text>
         </Flex>
-        {isLoading && <Text>Loading Items...</Text>}
-        {error && <Text color="red">Error loading items!</Text>}
-        <div className={styles.listContainer}>
-          <ul>
-            {items.map((item) => (
-              <ItemCard key={item.id} item={item} />
-            ))}
-          </ul>
-        </div>
+        <ItemList items={items} isLoading={isLoading} error={error} />
+        <PaginationContainer>
+          <PageSelector
+            currentPageIndex={page}
+            nextDisabled={false}
+            onGoToPage={setPage}
+            onNextClick={() => setPage(page + 1)}
+            onPreviousClick={() => setPage(page - 1)}
+            pageCount={5}
+            previousDisabled={page === 0}
+          />
+        </PaginationContainer>
       </Flex>
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
     </Flex>
