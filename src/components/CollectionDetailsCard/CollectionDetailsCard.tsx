@@ -3,6 +3,8 @@ import { Collection } from '@/types'
 import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
+import PlaceholderImage from '../../../public/placeholder-img.png'
+
 
 interface CollectionDetailsCardProps {
   collection: Collection
@@ -20,7 +22,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   const thumbnailUrl =
     typeof collection.assets?.thumbnail === 'string'
       ? collection.assets.thumbnail
-      : '../../../public/placeholder-img.png'
+      : PlaceholderImage
 
   const getFormattedDateRange = (interval: (string | null)[]): string => {
     if (!Array.isArray(interval) || interval.length !== 2) return 'Invalid Date Range'

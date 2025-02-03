@@ -5,6 +5,8 @@ import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
+import DefaultThumbnail from '../../../public/default-thumbnail.jpg'
+
 
 interface CollectionCardProps {
   collection: Collection
@@ -17,7 +19,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     <>
       <Card size="2" className={styles.card}>
         <Inset clip="padding-box" side="top" pb="current">
-          <img src="../../../public/default-thumbnail.jpg" className={styles.thumbnail} />
+          <img src={DefaultThumbnail} className={styles.thumbnail} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
           <IconButton radius="full" variant="solid" className={styles.button}>
