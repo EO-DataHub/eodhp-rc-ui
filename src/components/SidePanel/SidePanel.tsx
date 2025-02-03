@@ -7,13 +7,12 @@ import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
+import { MAX_TOTAL_ITEMS, PAGE_COUNT, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 
 interface SidePanelProps {
   items: Item[]
   isLoading: boolean
   error: boolean
-  page: number
-  setPage: (page: number) => void
 }
 
 const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
@@ -21,6 +20,18 @@ const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
     <Flex justify="center" className={styles.paginationContainer}>
       {children}
     </Flex>
+  )
+}
+
+const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCount: number }) => {
+  const totalCountLabel =
+    totalItemsCount > MAX_TOTAL_ITEMS ? `${MAX_TOTAL_ITEMS}+` : totalItemsCount
+  const startItem = page * PAGE_SIZE + 1
+  const endItem = Math.min((page + 1) * PAGE_SIZE, totalItemsCount)
+  return (
+    <Text size="2" weight="bold">
+      {`${startItem}-${endItem} of ${totalCountLabel}`}
+    </Text>
   )
 }
 
@@ -51,7 +62,8 @@ const ItemList = ({
     </div>
   )
 }
-export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, page, setPage }) => {
+export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error }) => {
+  const [page, setPage] = useState(0)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   const toggleFilterPanel = () => {
@@ -71,19 +83,23 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
         </Flex>
         <SmallCollectionCard />
         <Flex justify="end">
-          <Text weight="bold" size="2">
-            25 of 125
-          </Text>
+          <PageIndicator page={page} totalItemsCount={items.length} />
         </Flex>
-        <ItemList items={items} isLoading={isLoading} error={error} />
+        <ItemList
+          items={items.filter(
+            (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
+          )}
+          isLoading={isLoading}
+          error={error}
+        />
         <PaginationContainer>
           <PageSelector
             currentPageIndex={page}
-            nextDisabled={false}
+            nextDisabled={page === PAGE_COUNT - 1}
             onGoToPage={setPage}
             onNextClick={() => setPage(page + 1)}
             onPreviousClick={() => setPage(page - 1)}
-            pageCount={5}
+            pageCount={PAGE_COUNT}
             previousDisabled={page === 0}
           />
         </PaginationContainer>

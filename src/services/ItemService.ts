@@ -4,13 +4,7 @@ const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
 //This fetch is just illustrative; we are retrieving specific items to validate the behavior.
 //The search functionality will change with future tickets.
-export const fetchItems = async ({
-  page,
-  limit,
-}: {
-  page: number
-  limit: number
-}): Promise<Item[]> => {
+export const fetchItems = async ({ limit }: { limit: number }): Promise<Item[]> => {
   const response = await fetch(`${API_URL}/api/catalogue/stac/search`, {
     method: 'POST',
     headers: {
@@ -21,7 +15,6 @@ export const fetchItems = async ({
       catalog_paths: ['supported-datasets/ceda-stac-catalogue'],
       collections: ['sentinel2_ard'],
       limit,
-      page: page + 1, // 1-based index
     }),
   })
 
