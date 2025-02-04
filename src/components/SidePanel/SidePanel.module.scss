@@ -7,9 +7,13 @@
     padding-left: 0;
     margin: 0;
   }
+
+  .paginationContainer {
+    margin-top: auto;
+  }
   
   .listContainer {
-    height: 100%;
+    flex: 1;
     overflow-y: auto;
 
     /* hide scrollbar for Chrome or extensions */
