@@ -7,7 +7,6 @@ import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?r
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
 import DefaultThumbnail from '../../../public/default-thumbnail.jpg'
 
-
 interface CollectionCardProps {
   collection: Collection
 }

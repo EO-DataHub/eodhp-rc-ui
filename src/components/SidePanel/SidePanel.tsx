@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -6,6 +7,8 @@ import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
+import { fetchCollections } from '@/services/collectionService'
+import { Collection } from '@/types'
 
 interface SidePanelProps {
   items: Item[]
@@ -19,6 +22,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
   }
+
+  const { data: collectionsData } = useQuery({
+    queryKey: ['Collections'],
+    queryFn: fetchCollections,
+    refetchOnWindowFocus: false,
+    enabled: true,
+  })
+
+  const collections: Collection[] = collectionsData ?? []
+
+  // this example is illustrative only (same as in itemService)
+  // the target collection will be based on user selection input in the future
+  const targetCollectionId = 'sentinel2_ard'
+  const targetCollection = collections?.find((col) => col.id === targetCollectionId)
+  const isLicenseProprietary = targetCollection?.license === 'proprietary'
+  const isSARData = (): boolean => targetCollection?.stac_extensions?.[0].includes('/sar/') ?? false
 
   return (
     <Flex height="100vh">
@@ -42,7 +61,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
         <div className={styles.listContainer}>
           <ul>
             {items.map((item) => (
-              <ItemCard key={item.id} item={item} />
+              <ItemCard
+                key={item.id}
+                item={item}
+                isLicenseProprietary={isLicenseProprietary}
+                isSARData={isSARData()}
+              />
             ))}
           </ul>
         </div>

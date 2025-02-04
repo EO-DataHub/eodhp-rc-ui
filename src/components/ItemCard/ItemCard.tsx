@@ -1,17 +1,22 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Button } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
-import ShoppingCartFilled from '../../../public/shopping-cart-filled.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
-
 
 interface ItemCardProps {
   item: Item
+  isLicenseProprietary?: boolean
+  isSARData?: boolean
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary }) => {
+  // we will be adding an additional check in the future to determine if the user has purchase credits available
+  // if so, the user will be able to click the purchase button
+  // otherwise an error message will be displayed
+  // this is pending on api updates
+
   return (
     <Card className={styles.card}>
       <Flex gap="2">
@@ -32,13 +37,21 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
           <Text size="1" className={styles.text}>
             HH, VV
           </Text>
-          <Flex justify="end" gap="2">
-            <IconButton radius="full" variant="solid" className={styles.button}>
+          <Flex gap="3" className={styles.buttonGroup}>
+            <IconButton radius="full" variant="solid" className={styles.iconButton}>
               <InfoCircledIcon />
             </IconButton>
-            <IconButton radius="full" variant="solid" className={styles.purchaiceButton}>
-              <ShoppingCartFilled />
-            </IconButton>
+            {isLicenseProprietary ? (
+              <Button
+                variant="ghost"
+                className={styles.button}
+                onClick={() => {
+                  console.log({ item })
+                }}
+              >
+                Purchase
+              </Button>
+            ) : null}
           </Flex>
         </Flex>
       </Flex>

@@ -1,7 +1,7 @@
 .card {
   background-color: var(--blue-contrast);
 
-  .button {
+  .iconButton {
     background-color: var(--app-background-dark-2);
     color: var(--blue-contrast);
     width: 16px;
@@ -24,10 +24,18 @@
 
   .thumbnail {
     display: block;
-    width: 100px; 
-    height: 119px; 
+    width: 100px;
+    height: 119px;
     object-fit: cover;
     background-color: var(--app-background-dark-2);
   }
-}
 
+  .buttonGroup {
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .button {
+    cursor: pointer;
+  }
+}
