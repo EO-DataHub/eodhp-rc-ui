@@ -71,7 +71,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   }
 
   return (
-    <Flex height={'calc(100vh - var(--nav-bar-height))'} position="relative">
+    <Flex height={'var(--content-height)'} position="relative">
       <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2">
         <Flex justify="end">
           <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
