@@ -11,6 +11,7 @@ const initOptions = {
   realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
   clientId: import.meta.env.VITE_KEYCLOAK_CLIENT_ID as string,
   onLoad: 'check-sso',
+  scope: 'workspaces',
 }
 
 const authenticationInstance = new Keycloak(initOptions)

@@ -1,0 +1,10 @@
+.button {
+  border-radius: var(--Radius-3-max, 6px);
+  background: #4c72ba;
+  border: none;
+  color: white;
+  padding: 0.3em;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+}

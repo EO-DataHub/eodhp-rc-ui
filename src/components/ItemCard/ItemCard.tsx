@@ -4,6 +4,8 @@ import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import ShoppingCartFilled from '../../../public/shopping-cart-filled.svg?react'
+import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+
 
 interface ItemCardProps {
   item: Item
@@ -14,7 +16,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
     <Card className={styles.card}>
       <Flex gap="2">
         <img
-          src={item.assets?.thumbnail?.href || '../../../public/default-item-thumbnail.jpg'}
+          src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
           className={styles.thumbnail}
         />
         <Flex direction="column">
