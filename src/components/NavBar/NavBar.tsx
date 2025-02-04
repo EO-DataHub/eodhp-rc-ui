@@ -16,7 +16,9 @@ export const NavBar: React.FC = () => {
 
   return (
     <Flex p="3" align="center" justify="between" className={styles.container}>
-      <EarthObservationDataHubLogo className={styles.logo} />
+      <Link href="/">
+        <EarthObservationDataHubLogo className={styles.logo} />
+      </Link>
       <Flex gap="6">
         <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
           <Flex gap="2" className={styles.flex}>

@@ -5,8 +5,8 @@ import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
-import DefaultThumbnail from '../../../public/default-thumbnail.jpg'
-
+import PlaceholderImage from '../../../public/placeholder-img.png'
+import { getFormattedDateRange } from '@/library/getFormattedDateRange'
 
 interface CollectionCardProps {
   collection: Collection
@@ -15,15 +15,22 @@ interface CollectionCardProps {
 export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
   const [isDetailsCardOpen, setIsDetailsCardOpen] = useState(false)
 
+  const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
+
+  const thumbnailUrl =
+    typeof collection.assets?.thumbnail === 'string'
+      ? collection.assets.thumbnail
+      : PlaceholderImage
+
   return (
     <>
       <Card size="2" className={styles.card}>
         <Inset clip="padding-box" side="top" pb="current">
-          <img src={DefaultThumbnail} className={styles.thumbnail} />
+          <img src={thumbnailUrl} className={styles.thumbnail} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
           <IconButton radius="full" variant="solid" className={styles.button}>
-            <PoundSterlingSymbolIcon width="18" height="18" />
+            <PoundSterlingSymbolIcon width="16" height="16" />
           </IconButton>
           <IconButton
             radius="full"
@@ -38,7 +45,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
           {collection.title}
         </Text>
         <Text as="p" size="3" className={styles.text}>
-          {collection.extent.temporal.interval}
+          {getFormattedDateRange(dateInterval)}
         </Text>
       </Card>
 
