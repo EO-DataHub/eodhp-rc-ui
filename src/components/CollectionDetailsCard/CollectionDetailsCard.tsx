@@ -19,10 +19,9 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 }) => {
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
-  const thumbnailUrl =
-    typeof collection.assets?.thumbnail === 'string'
-      ? collection.assets.thumbnail
-      : PlaceholderImage
+  const thumbnailUrl = collection.assets?.thumbnail?.href
+    ? collection.assets.thumbnail.href
+    : PlaceholderImage
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -35,7 +34,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
         <Flex direction="row" gap="7" className={styles.flexContainer}>
           <Flex>
             <Inset>
-              <img src={thumbnailUrl} alt="Collection thumbnail" className={styles.thumbnail} />
+              <img
+                src={thumbnailUrl as string}
+                alt="Collection thumbnail"
+                className={styles.thumbnail}
+              />
             </Inset>
           </Flex>
           <Flex direction="column" className={styles.details}>
