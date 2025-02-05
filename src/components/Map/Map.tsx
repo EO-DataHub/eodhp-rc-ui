@@ -1,9 +1,10 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+import { StacCatalogueBbox } from '@/services/ItemService'
 
 interface DrawConstants {
   classes: {
@@ -49,11 +50,24 @@ function DrawControl() {
   return null
 }
 
-export const Map: React.FC = () => {
+export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | null) => void }) => {
   const mapRef = useRef<MapRef>(null)
 
+  const handleMapChange = () => {
+    if (mapRef.current) {
+      const bounds = mapRef.current.getMap().getBounds()
+      setMapBbox([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()])
+    }
+  }
+
   return (
-    <Maplibre initialViewState={DEFAULT_MAP_VIEW} mapStyle={MAP_STYLE} ref={mapRef}>
+    <Maplibre
+      initialViewState={DEFAULT_MAP_VIEW}
+      mapStyle={MAP_STYLE}
+      ref={mapRef}
+      onLoad={handleMapChange}
+      onMoveEnd={handleMapChange}
+    >
       <NavigationControl />
       <DrawControl />
     </Maplibre>
