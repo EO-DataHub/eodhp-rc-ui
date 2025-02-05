@@ -4,6 +4,7 @@ import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import { Link } from 'react-router-dom'
 
 interface ItemCardProps {
   item: Item
@@ -41,16 +42,19 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary }
             <IconButton radius="full" variant="solid" className={styles.iconButton}>
               <InfoCircledIcon />
             </IconButton>
-            {isLicenseProprietary ? (
-              <Button
-                variant="ghost"
-                className={styles.button}
-                onClick={() => {
-                  console.log({ item })
-                }}
-              >
-                Purchase
-              </Button>
+            {/* {isLicenseProprietary ? ( */}
+            {true ? (
+              <Link to={`/order-details/${item.id}`}>
+                <Button
+                  variant="ghost"
+                  className={styles.button}
+                  onClick={() => {
+                    console.log('future function that will check if user has purchase credits')
+                  }}
+                >
+                  Purchase
+                </Button>
+              </Link>
             ) : null}
           </Flex>
         </Flex>
