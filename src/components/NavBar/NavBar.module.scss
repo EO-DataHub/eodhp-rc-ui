@@ -1,6 +1,7 @@
 .container {
   background-color: var(--blue-9);
   width: 100%;
+  min-height: var(--nav-bar-height);
 
   .logo {
     width: 180px;

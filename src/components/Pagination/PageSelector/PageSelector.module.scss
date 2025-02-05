@@ -1,6 +1,7 @@
 .selectorButton {
   border-width: 0;
   background-color: transparent;
+  padding-inline: 6px;
 
   & svg {
     fill: var(--button-svg-fill);

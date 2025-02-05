@@ -4,7 +4,7 @@ import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import PlaceholderImage from '../../../public/placeholder-img.png'
-
+import { getFormattedDateRange } from '@/library/getFormattedDateRange'
 
 interface CollectionDetailsCardProps {
   collection: Collection
@@ -19,24 +19,9 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 }) => {
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
-  const thumbnailUrl =
-    typeof collection.assets?.thumbnail === 'string'
-      ? collection.assets.thumbnail
-      : PlaceholderImage
-
-  const getFormattedDateRange = (interval: (string | null)[]): string => {
-    if (!Array.isArray(interval) || interval.length !== 2) return 'Invalid Date Range'
-
-    const [startDateStr, endDateStr] = interval
-
-    const startDate = new Date(startDateStr ?? '')
-    if (isNaN(startDate.getTime())) return 'Invalid Date Range'
-
-    const endDate = endDateStr ? new Date(endDateStr) : new Date()
-    if (isNaN(endDate.getTime())) return 'Invalid Date Range'
-
-    return `${startDate.toLocaleDateString('en-GB')} - ${endDateStr ? endDate.toLocaleDateString('en-GB') : 'present'}`
-  }
+  const thumbnailUrl = collection.assets?.thumbnail?.href
+    ? collection.assets.thumbnail.href
+    : PlaceholderImage
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -49,7 +34,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
         <Flex direction="row" gap="7" className={styles.flexContainer}>
           <Flex>
             <Inset>
-              <img src={thumbnailUrl} alt="Collection thumbnail" className={styles.thumbnail} />
+              <img
+                src={thumbnailUrl as string}
+                alt="Collection thumbnail"
+                className={styles.thumbnail}
+              />
             </Inset>
           </Flex>
           <Flex direction="column" className={styles.details}>
