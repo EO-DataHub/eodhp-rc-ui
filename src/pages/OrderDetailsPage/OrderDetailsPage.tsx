@@ -6,36 +6,9 @@ import { fetchCollections } from '@/services/collectionService'
 import { Item, Collection } from '@/types'
 import { Flex, Text, Kbd, Button } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
-import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { OrderSelections } from './OrderSelections'
 import { TermsAndConditionsContainer } from './TermsAndConditions'
-
-interface ItemInfoProps {
-  item: Item
-}
-
-const ItemInfo: React.FC<ItemInfoProps> = ({ item }) => {
-  return (
-    <Flex gap="2" className={styles.itemInfoContainer}>
-      <Flex>
-        <img
-          src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
-          className={styles.thumbnail}
-        />
-      </Flex>
-      <Flex direction="column" gap="0.5">
-        <Text>Item Name</Text>
-        <Text>Area</Text>
-        <Text>Date: {new Date(item.properties.datetime).toLocaleString()}</Text>
-        <Text>Data Source</Text>
-        <Text>Item Type</Text>
-        <Text>Cloud Cover</Text>
-        <Text>Look Angle</Text>
-        <Text>Heading</Text>
-      </Flex>
-    </Flex>
-  )
-}
+import { ItemInfo } from './ItemInfo'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
