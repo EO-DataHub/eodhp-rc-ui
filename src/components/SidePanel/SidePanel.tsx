@@ -43,13 +43,11 @@ const ItemList = ({
   isLoading,
   error,
   isLicenseProprietary,
-  isSARData,
 }: {
   items: Item[]
   isLoading: boolean
   error: boolean
   isLicenseProprietary: boolean
-  isSARData: boolean
 }) => {
   if (isLoading) {
     return <Text>Loading Items...</Text>
@@ -63,12 +61,7 @@ const ItemList = ({
     <div className={styles.listContainer}>
       <ul>
         {items.map((item) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            isLicenseProprietary={isLicenseProprietary}
-            isSARData={isSARData}
-          />
+          <ItemCard key={item.id} item={item} isLicenseProprietary={isLicenseProprietary} />
         ))}
       </ul>
     </div>
@@ -96,7 +89,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   const targetCollectionId = 'sentinel2_ard'
   const targetCollection = collections?.find((col) => col.id === targetCollectionId)
   const isLicenseProprietary = targetCollection?.license === 'proprietary'
-  const isSARData = (): boolean => targetCollection?.stac_extensions?.[0].includes('/sar/') ?? false
 
   return (
     <Flex height={'var(--content-height)'} position="relative">
@@ -120,7 +112,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
           isLoading={isLoading}
           error={error}
           isLicenseProprietary={isLicenseProprietary}
-          isSARData={isSARData()}
         />
         <PaginationContainer>
           <PageSelector

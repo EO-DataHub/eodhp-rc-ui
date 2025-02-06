@@ -46,6 +46,18 @@
 
   .itemInfoContainer {
     flex: 1;
+    height: fit-content;
+    border-radius: var(--Radius-2, 4px);
+    border: 1px solid var(--Colors-Neutral-Neutral-Alpha-6, rgba(0, 0, 47, 0.15));
+    background: var(--Panel-default, rgba(255, 255, 255, 0.8));
+
+    .thumbnail {
+      display: block;
+      width: 150pxpx;
+      height: 200px;
+      object-fit: cover;
+      background-color: var(--app-background-dark-2);
+    }
   }
 }
 

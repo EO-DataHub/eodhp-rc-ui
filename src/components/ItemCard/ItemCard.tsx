@@ -9,10 +9,9 @@ import { Link } from 'react-router-dom'
 interface ItemCardProps {
   item: Item
   isLicenseProprietary?: boolean
-  isSARData?: boolean
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary, isSARData }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary }) => {
   // we will be adding an additional check in the future to determine if the user has purchase credits available
   // if so, the user will be able to click the purchase button
   // otherwise an error message will be displayed
@@ -49,7 +48,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary, 
                   variant="ghost"
                   className={styles.button}
                   onClick={() => {
-                    console.log('future function that will check if user has purchase credits')
+                    /* future function that will check if user has purchase credits */
                   }}
                 >
                   Purchase
