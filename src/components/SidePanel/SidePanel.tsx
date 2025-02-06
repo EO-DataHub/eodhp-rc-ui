@@ -109,11 +109,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
 
   const collections: Collection[] = collectionsData ?? []
 
-  // this example is illustrative only (same as in itemService)
   // the target collection will be based on user selection input in the future
   const targetCollectionId = 'sentinel2_ard'
   const targetCollection = collections?.find((col) => col.id === targetCollectionId)
   const isLicenseProprietary = targetCollection?.license === 'proprietary'
+
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
   const handleSelectItem = (item: Item) => {

@@ -39,6 +39,7 @@ const ItemInfo: React.FC<ItemInfoProps> = ({ item }) => {
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
+  const MAX_TOTAL_ITEMS = 100
 
   const {
     data: items,
@@ -46,7 +47,7 @@ export const OrderDetailsPage: React.FC = () => {
     error,
   } = useQuery({
     queryKey: ['Items'],
-    queryFn: fetchItems,
+    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, bbox: null }),
     refetchOnWindowFocus: false,
   })
 
@@ -61,7 +62,6 @@ export const OrderDetailsPage: React.FC = () => {
 
   const collections: Collection[] = collectionsData ?? []
 
-  // this example is illustrative only (same as in itemService)
   // the target collection will be based on user selection input in the future
   const targetCollectionId = 'sentinel2_ard'
   const targetCollection = collections?.find((col) => col.id === targetCollectionId)
