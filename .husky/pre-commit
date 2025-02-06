@@ -4,3 +4,5 @@
 
 yarn prettier . --write
 yarn run lint --fix
+
+git add .
