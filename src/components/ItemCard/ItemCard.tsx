@@ -41,8 +41,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary }
             <IconButton radius="full" variant="solid" className={styles.iconButton}>
               <InfoCircledIcon />
             </IconButton>
-            {/* {isLicenseProprietary ? ( */}
-            {true ? (
+            {isLicenseProprietary ? (
               <Link to={`/order-details/${item.id}`}>
                 <Button
                   variant="ghost"

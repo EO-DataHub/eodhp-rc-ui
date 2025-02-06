@@ -4,7 +4,7 @@ const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
 //This fetch is just illustrative; we are retrieving specific items to validate the behavior.
 //The search functionality will change with future tickets.
-export const fetchItems = async (): Promise<Item[]> => {
+export const fetchItems = async (p0: { limit: number; bbox: any }): Promise<Item[]> => {
   const response = await fetch(`${API_URL}/api/catalogue/stac/search`, {
     method: 'POST',
     headers: {
