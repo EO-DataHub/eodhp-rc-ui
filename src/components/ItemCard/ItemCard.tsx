@@ -1,27 +1,69 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Checkbox, Link } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
-import ShoppingCartFilled from '../../../public/shopping-cart-filled.svg?react'
+import MapsIcon from '../../../public/maps-icon.svg?react'
+import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 
 interface ItemCardProps {
   item: Item
+  isSelected: boolean
+  isThumbnailSelected: boolean
+  isChecked: boolean
+  onSelect: (item: Item) => void
+  onThumbnailSelect: (item: Item) => void
+  onCheckboxChange: (item: Item, isChecked: boolean) => void
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({
+  item,
+  isSelected,
+  isThumbnailSelected,
+  isChecked,
+  onSelect,
+  onCheckboxChange,
+  onThumbnailSelect,
+}) => {
   return (
-    <Card className={styles.card}>
-      <Flex gap="2">
-        <img
-          src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
-          className={styles.thumbnail}
-        />
-        <Flex direction="column">
-          <Text weight="bold" size="2" className={styles.text}>
-            {item.id}
-          </Text>
+    <Card
+      className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+      onClick={() => onSelect(item)}
+    >
+      <Flex gap="1">
+        <Flex
+          align="center"
+          justify="center"
+          p="4"
+          className={`${styles.thumbnailContainer} ${
+            isThumbnailSelected ? styles.thumbnailSelected : ''
+          }`}
+          onClick={(e) => {
+            e.stopPropagation()
+            onThumbnailSelect(item)
+          }}
+        >
+          <img
+            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+            className={styles.thumbnail}
+          />
+          <div className={`${styles.overlay} ${isThumbnailSelected ? styles.overlayActive : ''}`}>
+            {isThumbnailSelected ? <CancelIcon /> : <MapsIcon />}
+          </div>
+        </Flex>
+        <Flex direction="column" p="2">
+          <Flex gap="2">
+            <Text weight="bold" size="2" className={styles.text}>
+              {item.id}
+            </Text>
+            <Checkbox
+              mt="1"
+              variant="surface"
+              checked={isChecked}
+              onCheckedChange={(checked) => onCheckboxChange(item, Boolean(checked))}
+            />
+          </Flex>
           <Text size="1" className={styles.text}>
             {new Date(item.properties.datetime).toLocaleString()}
           </Text>
@@ -35,9 +77,9 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item }) => {
             <IconButton radius="full" variant="solid" className={styles.button}>
               <InfoCircledIcon />
             </IconButton>
-            <IconButton radius="full" variant="solid" className={styles.purchaiceButton}>
-              <ShoppingCartFilled />
-            </IconButton>
+            <Link href="#" size="1" className={styles.text}>
+              Purchase
+            </Link>
           </Flex>
         </Flex>
       </Flex>
