@@ -4,20 +4,21 @@ import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { useQuery } from '@tanstack/react-query'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
-import { fetchItems } from '@/services/ItemService'
+import { fetchItems, StacCatalogueBbox } from '@/services/ItemService'
 import { Item } from '@/types'
 import styles from './DataFinderPage.module.scss'
 
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
-export const PAGE_COUNT = MAX_TOTAL_ITEMS / PAGE_SIZE
 
 export const DataFinderPage: React.FC = () => {
+  const [mapBbox, setMapBbox] = React.useState<StacCatalogueBbox | null>(null)
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['Items'],
-    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1 }), // Fetch one more than the max to see if there are more items
+    queryKey: ['Items', mapBbox?.toString()],
+    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, bbox: mapBbox }), // Fetch one more than the max to see if there are more items
     refetchOnWindowFocus: false,
-    enabled: true,
+    enabled: mapBbox !== null,
   })
 
   const items: Item[] = isLoading || error ? [] : data ?? []
@@ -28,7 +29,7 @@ export const DataFinderPage: React.FC = () => {
         <SidePanel items={items} isLoading={isLoading} error={!!error} />
       </Box>
       <Box height="100%">
-        <Map />
+        <Map setMapBbox={setMapBbox} />
       </Box>
     </Box>
   )

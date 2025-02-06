@@ -10,7 +10,7 @@ import styles from './SidePanel.module.scss'
 import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
-import { MAX_TOTAL_ITEMS, PAGE_COUNT, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
+import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 
 interface SidePanelProps {
   items: Item[]
@@ -43,11 +43,23 @@ const ItemList = ({
   isLoading,
   error,
   isLicenseProprietary,
+  selectedItem,
+  selectedThumbnail,
+  checkedItems,
+  onSelectItem,
+  onThumbnailSelect,
+  onCheckboxItemChange,
 }: {
   items: Item[]
   isLoading: boolean
   error: boolean
   isLicenseProprietary: boolean
+  selectedItem: Item | null
+  selectedThumbnail: Item | null
+  checkedItems: Item[]
+  onSelectItem: (item: Item) => void
+  onThumbnailSelect: (item: Item) => void
+  onCheckboxItemChange: (item: Item, isChecked: boolean) => void
 }) => {
   if (isLoading) {
     return <Text>Loading Items...</Text>
@@ -61,7 +73,17 @@ const ItemList = ({
     <div className={styles.listContainer}>
       <ul>
         {items.map((item) => (
-          <ItemCard key={item.id} item={item} isLicenseProprietary={isLicenseProprietary} />
+          <ItemCard
+            key={item.id}
+            item={item}
+            isSelected={selectedItem?.id === item.id}
+            isThumbnailSelected={selectedThumbnail?.id === item.id}
+            isChecked={checkedItems.some((checked) => checked.id === item.id)}
+            onSelect={onSelectItem}
+            onThumbnailSelect={onThumbnailSelect}
+            onCheckboxChange={onCheckboxItemChange}
+            isLicenseProprietary={isLicenseProprietary}
+          />
         ))}
       </ul>
     </div>
@@ -70,6 +92,9 @@ const ItemList = ({
 export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error }) => {
   const [page, setPage] = useState(0)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
+  const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
+  const [checkedItems, setCheckedItems] = useState<Item[]>([])
 
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
@@ -89,6 +114,37 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   const targetCollectionId = 'sentinel2_ard'
   const targetCollection = collections?.find((col) => col.id === targetCollectionId)
   const isLicenseProprietary = targetCollection?.license === 'proprietary'
+  const pageCount = Math.ceil(items.length / PAGE_SIZE)
+
+  const handleSelectItem = (item: Item) => {
+    setSelectedItem(item)
+  }
+
+  const handleThumbnailSelect = (item: Item) => {
+    setSelectedThumbnail((prev) => {
+      const isCurrentlySelected = prev?.id === item.id
+
+      if (isCurrentlySelected) {
+        setCheckedItems((prevChecked) =>
+          prevChecked.filter((checkedItem) => checkedItem.id !== item.id),
+        )
+        return null
+      }
+
+      setCheckedItems((prevChecked) => {
+        const isAlreadyChecked = prevChecked.some((i) => i.id === item.id)
+        return isAlreadyChecked ? prevChecked : [...prevChecked, item]
+      })
+
+      return item
+    })
+  }
+
+  const handleCheckboxItemChange = (item: Item, isChecked: boolean) => {
+    setCheckedItems((prevChecked) =>
+      isChecked ? [...prevChecked, item] : prevChecked.filter((checked) => checked.id !== item.id),
+    )
+  }
 
   return (
     <Flex height={'var(--content-height)'} position="relative">
@@ -112,15 +168,21 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
           isLoading={isLoading}
           error={error}
           isLicenseProprietary={isLicenseProprietary}
+          selectedItem={selectedItem}
+          selectedThumbnail={selectedThumbnail}
+          checkedItems={checkedItems}
+          onSelectItem={handleSelectItem}
+          onThumbnailSelect={handleThumbnailSelect}
+          onCheckboxItemChange={handleCheckboxItemChange}
         />
         <PaginationContainer>
           <PageSelector
             currentPageIndex={page}
-            nextDisabled={page === PAGE_COUNT - 1}
+            nextDisabled={page === pageCount - 1}
             onGoToPage={setPage}
             onNextClick={() => setPage(page + 1)}
             onPreviousClick={() => setPage(page - 1)}
-            pageCount={PAGE_COUNT}
+            pageCount={pageCount}
             previousDisabled={page === 0}
           />
         </PaginationContainer>
