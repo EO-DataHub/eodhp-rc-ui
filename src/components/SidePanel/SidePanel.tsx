@@ -7,7 +7,7 @@ import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
-import { MAX_TOTAL_ITEMS, PAGE_COUNT, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
+import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 
 interface SidePanelProps {
   items: Item[]
@@ -70,6 +70,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
     setIsFilterOpen((prev) => !prev)
   }
 
+  const pageCount = Math.ceil(items.length / PAGE_SIZE)
+
   return (
     <Flex height={'var(--content-height)'} position="relative">
       <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2">
@@ -95,11 +97,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
         <PaginationContainer>
           <PageSelector
             currentPageIndex={page}
-            nextDisabled={page === PAGE_COUNT - 1}
+            nextDisabled={page === pageCount - 1}
             onGoToPage={setPage}
             onNextClick={() => setPage(page + 1)}
             onPreviousClick={() => setPage(page - 1)}
-            pageCount={PAGE_COUNT}
+            pageCount={pageCount}
             previousDisabled={page === 0}
           />
         </PaginationContainer>

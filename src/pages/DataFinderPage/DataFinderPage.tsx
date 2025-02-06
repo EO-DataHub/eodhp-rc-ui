@@ -10,7 +10,6 @@ import styles from './DataFinderPage.module.scss'
 
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
-export const PAGE_COUNT = MAX_TOTAL_ITEMS / PAGE_SIZE
 
 export const DataFinderPage: React.FC = () => {
   const [mapBbox, setMapBbox] = React.useState<StacCatalogueBbox | null>(null)
