@@ -32,8 +32,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "yarn"
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
 
       - name: Install dependencies
         uses: borales/actions-yarn@v5
@@ -45,7 +45,7 @@ jobs:
         with:
           cmd: build
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
+          NODE_OPTIONS: '--max_old_space_size=4096'
           VITE_AWS_BUCKET_NAME: ${{ secrets.VITE_AWS_BUCKET_NAME }}
           VITE_AWS_REGION: ${{ secrets.VITE_AWS_REGION }}
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
@@ -75,7 +75,7 @@ jobs:
         with:
           role-to-assume: ${{vars.GHA_AWS_DEPLOY_ROLE_EODH}} # Role in Sparkgeo Management account
           aws-region: us-east-1
-      
+
       - name: Install AWS CDK
         run: npm install -g aws-cdk
 

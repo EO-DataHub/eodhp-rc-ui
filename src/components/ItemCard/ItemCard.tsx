@@ -6,7 +6,6 @@ import styles from './ItemCard.module.scss'
 import ShoppingCartFilled from '../../../public/shopping-cart-filled.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 
-
 interface ItemCardProps {
   item: Item
 }

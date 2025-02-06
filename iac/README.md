@@ -1,7 +1,6 @@
 # IAC for EOdatahub UI Resource Catalog
 
-see [deploy.md](iac/deploy.md) for deployment steps
----
+## see [deploy.md](iac/deploy.md) for deployment steps
 
 This process requires some manual intervention the first time it is run.
 
@@ -30,7 +29,7 @@ step to activate your virtualenv.
 
 ```
 $ source .venv/bin/activate
-````
+```
 
 Once the virtualenv is activated, you can install the required dependencies.
 

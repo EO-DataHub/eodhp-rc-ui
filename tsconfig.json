@@ -19,11 +19,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "types": [
-      "vitest/globals",
-      "@testing-library/jest-dom",
-      "vite-plugin-svgr/client"
-    ],
+    "types": ["vitest/globals", "@testing-library/jest-dom", "vite-plugin-svgr/client"],
 
     /* Alias */
     "baseUrl": "./",
