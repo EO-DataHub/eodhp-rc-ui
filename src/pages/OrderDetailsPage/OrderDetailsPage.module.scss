@@ -1,0 +1,67 @@
+.tag {
+  border-radius: var(--Radius-full, 9999px);
+  background: var(--Colors-Neutral-Neutral-9, #8b8d98);
+  color: #fff;
+  width: fit-content;
+}
+
+.mainContainer {
+  align-items: left;
+  margin: 3em 10em;
+  padding-bottom: 3em;
+}
+
+.buttonsContainer {
+  justify-content: right;
+  margin-top: 2em;
+
+  .cancelButton {
+    border-radius: var(--Radius-2-max, 4px);
+    border: 1px solid var(--Colors-Accent-Accent-Alpha-8, rgba(0, 67, 189, 0.46));
+    background: #fff;
+    color: var(--Colors-Accent-Accent-9, #4c72ba);
+    cursor: pointer;
+  }
+
+  .purchaseButton {
+    border-radius: var(--Radius-2-max, 4px);
+    background: var(--Colors-Accent-Accent-9, #4c72ba);
+    cursor: pointer;
+  }
+}
+
+.bodyContainer {
+  margin-top: 2em;
+  margin-bottom: 2em;
+  justify-content: space-between;
+
+  .selectionsContainer {
+    flex: 1;
+
+    .selection {
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .itemInfoContainer {
+    flex: 1;
+  }
+}
+
+.conditionsContainer {
+  margin-top: 2em;
+}
+
+.checkGroup {
+  align-items: center;
+  font-size: small;
+
+  .checkbox {
+    cursor: pointer;
+  }
+
+  .linkText {
+    cursor: pointer;
+  }
+}

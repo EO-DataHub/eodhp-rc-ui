@@ -67,7 +67,7 @@ const ItemList = ({
             key={item.id}
             item={item}
             isLicenseProprietary={isLicenseProprietary}
-            isSARData={isSARData()}
+            isSARData={isSARData}
           />
         ))}
       </ul>

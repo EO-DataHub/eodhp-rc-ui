@@ -12,7 +12,7 @@ interface ItemCardProps {
   isSARData?: boolean
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({ item, isLicenseProprietary, isSARData }) => {
   // we will be adding an additional check in the future to determine if the user has purchase credits available
   // if so, the user will be able to click the purchase button
   // otherwise an error message will be displayed
