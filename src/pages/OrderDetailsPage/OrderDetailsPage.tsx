@@ -38,7 +38,7 @@ export const OrderDetailsPage: React.FC = () => {
   // the target collection will be based on user selection input in the future
   const targetCollectionId = 'sentinel2_ard'
   const targetCollection = collections?.find((col) => col.id === targetCollectionId)
-  const isOpticalData = (): boolean => !targetCollection?.stac_extensions?.[0].includes('/sar/')
+  const isOpticalData = (): boolean => !targetCollection?.stac_extensions?.[0]?.includes('/sar/')
 
   if (isLoading) return <Flex>Loading...</Flex>
   if (error) return <Flex>Error loading items.</Flex>

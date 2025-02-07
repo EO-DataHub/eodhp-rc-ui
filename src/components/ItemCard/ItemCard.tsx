@@ -1,11 +1,12 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Checkbox, Link, Button } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Checkbox, Button } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import { useNavigate } from 'react-router-dom'
 
 interface ItemCardProps {
   item: Item
@@ -28,6 +29,13 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onThumbnailSelect,
   isLicenseProprietary,
 }) => {
+  const navigate = useNavigate()
+
+  const handlePurchase = () => {
+    // Future function: check if user has purchase credits.
+    // If the check passes, navigate to the order details page.
+    navigate(`/order-details/${item.id}`)
+  }
   return (
     <Card
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
@@ -80,17 +88,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               <InfoCircledIcon />
             </IconButton>
             {isLicenseProprietary ? (
-              <Link href={`/order-details/${item.id}`}>
-                <Button
-                  variant="ghost"
-                  className={styles.button}
-                  onClick={() => {
-                    /* future function that will check if user has purchase credits */
-                  }}
-                >
-                  Purchase
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                className={styles.button}
+                onClick={() => {
+                  handlePurchase()
+                }}
+              >
+                Purchase
+              </Button>
             ) : null}
           </Flex>
         </Flex>

@@ -20,7 +20,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item }) => {
       <Flex direction="column" gap="0.5">
         <Text>Item Name</Text>
         <Text>Area</Text>
-        <Text>Date: {new Date(item.properties.datetime).toLocaleString()}</Text>
+        <Text>{new Date(item.properties.datetime).toLocaleString()}</Text>
         <Text>Data Source</Text>
         <Text>Item Type</Text>
         <Text>Cloud Cover</Text>
