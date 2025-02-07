@@ -29,13 +29,13 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({ isOptical }) =
       {isOptical ? (
         <>
           <Field label="Product ID">
-            <TextField.Root style={{ width: '100%' }} placeholder="Enter ID" />
+            <TextField.Root className={styles.selectTrigger} placeholder="Enter ID" />
           </Field>
 
           <Field label="Product Bundle">
             <Select.Root size="3">
-              <Select.Trigger style={{ width: '100%' }} placeholder="Select" />
-              <Select.Content style={{ marginTop: '45px', width: '100%' }}>
+              <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
+              <Select.Content className={styles.selectContent}>
                 <Select.Group>
                   <Select.Item value="analytic">Analytic</Select.Item>
                   <Select.Item value="basic">Basic</Select.Item>
@@ -50,8 +50,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({ isOptical }) =
 
       <Field label="End User Country">
         <Select.Root size="3">
-          <Select.Trigger style={{ width: '100%' }} placeholder="Select" />
-          <Select.Content style={{ marginTop: '45px', width: '100%' }}>
+          <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
+          <Select.Content className={styles.selectContent}>
             <Select.Group>
               {countries.map((country) => (
                 <Select.Item key={country.code} value={country.name} className={styles.item}>
@@ -65,8 +65,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({ isOptical }) =
 
       <Field label="License">
         <Select.Root size="3">
-          <Select.Trigger style={{ width: '100%' }} placeholder="Select" />
-          <Select.Content style={{ marginTop: '45px', width: '100%' }}>
+          <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
+          <Select.Content className={styles.selectContent}>
             <Select.Group>
               <Select.Item value="single use">Single Use</Select.Item>
               <Select.Item value="multi use">Multi Use</Select.Item>
