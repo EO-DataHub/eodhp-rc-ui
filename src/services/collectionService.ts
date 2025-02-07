@@ -2,9 +2,9 @@ import { Collection } from '@/types'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
-export const fetchCollections = async (): Promise<Collection[]> => {
+export const fetchCollections = async (catalog: string): Promise<Collection[]> => {
   const response = await fetch(
-    `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/ceda-stac-catalogue/collections`,
+    `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections`,
     {
       method: 'GET',
       headers: {

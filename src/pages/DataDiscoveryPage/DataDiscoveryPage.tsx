@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Flex, Box, Text, Grid, Select } from '@radix-ui/themes'
 import { Footer } from '@/components/Footer/Footer'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
@@ -10,12 +10,23 @@ import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import { Collection } from '@/types'
 
 export const DataDiscoveryPage: React.FC = () => {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['Collections'],
-    queryFn: fetchCollections,
-    refetchOnWindowFocus: false,
-    enabled: true,
-  })
+  // The name of the catalog as declared in the catalog's ID field.
+  const catalogs = [
+    "airbus",
+    "ceda-stac-catalogue",
+    "planet"
+  ];
+
+  const queries = useQueries({
+    queries: catalogs.map((catalog, index) => ({
+      queryKey: ["Collections", index],
+      queryFn: () => fetchCollections(catalog),
+    })),
+  });
+
+  const isLoading = queries.some((query) => query.isLoading);
+  const error = queries.some((query) => query.isError);
+  const errorMessages = queries.map((query) => query.error?.message).filter(Boolean);
 
   if (isLoading) {
     return (
@@ -28,12 +39,15 @@ export const DataDiscoveryPage: React.FC = () => {
   if (error) {
     return (
       <Flex justify="center" align="center">
-        <Text color="red">Error loading Collections!</Text>
+        {errorMessages.map((errorMessage, index) => (
+          <Text key={index} color="red">Error loading Collection: {errorMessage}</Text>
+        ))}
       </Flex>
     )
   }
 
-  const collections: Collection[] = data ?? []
+  const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? []);
+  const collections = [...mergedCollections].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
 
   return (
     <Flex direction="column" height="100vh">
