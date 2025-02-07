@@ -1,18 +1,21 @@
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItems } from '@/services/ItemService'
 import { fetchCollections } from '@/services/collectionService'
 import { Item, Collection } from '@/types'
-import { Flex, Text, Kbd, Button } from '@radix-ui/themes'
+import { Flex, Text, Kbd, Button, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
 import { TermsAndConditionsContainer } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
+import { ArrowLeftIcon } from '@radix-ui/react-icons'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const MAX_TOTAL_ITEMS = 100
+
+  const navigate = useNavigate()
 
   const {
     data: items,
@@ -45,23 +48,31 @@ export const OrderDetailsPage: React.FC = () => {
   if (!item) return <Flex>No order item found.</Flex>
 
   return (
-    <Flex direction="column" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="2">
-        <Kbd className={styles.tag}>Provider Name</Kbd>
-        <Text size="3" weight="bold">
-          {item.collection}: {item.id}
-        </Text>
-        <Text size="2">Contract ID: text</Text>
+    <>
+      <Link className={styles.link} onClick={() => navigate(-1)}>
+        <Flex gap="2" className={styles.backButton}>
+          <ArrowLeftIcon />
+          <Text>Back</Text>
+        </Flex>
+      </Link>
+      <Flex direction="column" height="100vh" className={styles.mainContainer}>
+        <Flex direction="column" gap="2">
+          <Kbd className={styles.tag}>Provider Name</Kbd>
+          <Text size="3" weight="bold">
+            {item.collection}: {item.id}
+          </Text>
+          <Text size="2">Contract ID: text</Text>
+        </Flex>
+        <Flex direction="row" gap="6" className={styles.bodyContainer}>
+          <ItemInfo item={item} />
+          <OrderSelections isOptical={isOpticalData()} />
+        </Flex>
+        <TermsAndConditionsContainer />
+        <Flex className={styles.buttonsContainer} direction="row" gap="3">
+          <Button className={styles.cancelButton}>Cancel</Button>
+          <Button className={styles.purchaseButton}>Place Order</Button>
+        </Flex>
       </Flex>
-      <Flex direction="row" gap="4" className={styles.bodyContainer}>
-        <ItemInfo item={item} />
-        <OrderSelections isOptical={isOpticalData()} />
-      </Flex>
-      <TermsAndConditionsContainer />
-      <Flex className={styles.buttonsContainer} direction="row" gap="3">
-        <Button className={styles.cancelButton}>Cancel</Button>
-        <Button className={styles.purchaseButton}>Place Order</Button>
-      </Flex>
-    </Flex>
+    </>
   )
 }

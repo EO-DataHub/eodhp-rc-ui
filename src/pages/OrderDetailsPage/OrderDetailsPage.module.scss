@@ -5,9 +5,20 @@
   width: fit-content;
 }
 
+.link {
+  position: absolute;
+  top: 155px;
+  left: 50px;
+  cursor: pointer;
+
+  .backButton {
+    align-items: center;
+  }
+}
+
 .mainContainer {
   align-items: left;
-  margin: 3em 10em;
+  margin: 3em 18em;
   padding-bottom: 3em;
 }
 
