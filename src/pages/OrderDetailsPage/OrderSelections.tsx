@@ -12,7 +12,7 @@ interface FieldProps {
 const Field: React.FC<FieldProps> = ({ label, children }) => (
   <Flex direction="column" gap="1">
     <Flex className={styles.selection} direction="row" gap="3">
-      <Text>{label}</Text>
+      <Text weight="bold">{label}</Text>
       <InfoCircledIcon />
     </Flex>
     <Flex>{children}</Flex>

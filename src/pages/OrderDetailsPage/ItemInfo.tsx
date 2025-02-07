@@ -17,15 +17,19 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item }) => {
           className={styles.thumbnail}
         />
       </Flex>
-      <Flex direction="column" gap="0.5">
-        <Text>Item Name</Text>
-        <Text>Area</Text>
-        <Text>{new Date(item.properties.datetime).toLocaleString()}</Text>
-        <Text>Data Source</Text>
-        <Text>Item Type</Text>
-        <Text>Cloud Cover</Text>
-        <Text>Look Angle</Text>
-        <Text>Heading</Text>
+      <Flex direction="column" gap="0.5" className={styles.itemInfo}>
+        <Text weight="bold" style={{ marginBottom: '0.5em' }}>
+          Item Name
+        </Text>
+        <Text className={styles.itemText}>Area</Text>
+        <Text className={styles.itemText}>
+          {new Date(item.properties.datetime).toLocaleString()}
+        </Text>
+        <Text className={styles.itemText}>Data Source</Text>
+        <Text className={styles.itemText}>Item Type</Text>
+        <Text className={styles.itemText}>Cloud Cover</Text>
+        <Text className={styles.itemText}>Look Angle</Text>
+        <Text className={styles.itemText}>Heading</Text>
       </Flex>
     </Flex>
   )
