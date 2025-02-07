@@ -26,10 +26,11 @@ export const QuickFilterMenu: React.FC = () => {
           <Select.Content style={{ marginTop: '45px' }}>
             <Select.Group>
               <Select.Item value="res:under_1m">Less than 1m</Select.Item>
-              <Select.Item value="res:10m">1m &ndash; 10m</Select.Item>
-              <Select.Item value="res:100m">10m &ndash; 100m</Select.Item>
-              <Select.Item value="res:1km">100m &ndash; 1km</Select.Item>
-              <Select.Item value="res:100km">1km &ndash; 100km</Select.Item>
+              <Select.Item value="res:10m">1m &ndash; &lt;10m</Select.Item>
+              <Select.Item value="res:100m">10m &ndash;  &lt;100m</Select.Item>
+              <Select.Item value="res:1km">100m &ndash;  &lt;1km</Select.Item>
+              <Select.Item value="res:10km">1km &ndash;  &lt;10km</Select.Item>
+              <Select.Item value="res:100km">10km &ndash;  &lt;100km</Select.Item>
               <Select.Item value="res:over_100km">Greater than 100km</Select.Item>
             </Select.Group>
           </Select.Content>
