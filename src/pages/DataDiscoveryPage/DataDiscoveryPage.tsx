@@ -59,13 +59,13 @@ export const DataDiscoveryPage: React.FC = () => {
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
             <Select.Content style={{ marginTop: '45px' }}>
               <Select.Group>
-                <Select.Item value="airbus">Airbus</Select.Item>
-                <Select.Item value="centre_for_environmental_data">
-                  Centre for Environmental Data
-                </Select.Item>
-                <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-                <Select.Item value="met_office">Met Office</Select.Item>
-                <Select.Item value="planet">Planet</Select.Item>
+                <Select.Item value="data_category">Data Category</Select.Item>
+                <Select.Item value="resolution">Resolution</Select.Item>
+                <Select.Item value="provider">Provider</Select.Item>
+                <Select.Item value="location">Location</Select.Item>
+                <Select.Item value="keywords">Keywords</Select.Item>
+                <Select.Item value="time_period">Time Period</Select.Item>
+                <Select.Item value="license">License</Select.Item>
               </Select.Group>
             </Select.Content>
           </Select.Root>
