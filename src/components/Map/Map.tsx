@@ -1,11 +1,20 @@
 import { useRef, useState, useEffect } from 'react'
-import Maplibre, { IControl, MapRef, NavigationControl, useControl, Source, Layer } from 'react-map-gl/maplibre'
+import Maplibre, {
+  IControl,
+  MapRef,
+  NavigationControl,
+  useControl,
+  Source,
+  Layer,
+} from 'react-map-gl/maplibre'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { StacCatalogueBbox } from '@/services/ItemService'
 import { Item } from '@/types'
+
+const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 
 interface DrawConstants {
   classes: {
@@ -70,7 +79,7 @@ export const Map = ({ setMapBbox, currentItem }: MapProps) => {
   useEffect(() => {
     if (currentItem) {
       setTilerUrl(
-        `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${currentItem?.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`,
+        `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${currentItem?.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`,
       )
 
       mapRef.current?.fitBounds(
@@ -80,7 +89,6 @@ export const Map = ({ setMapBbox, currentItem }: MapProps) => {
         },
       )
     }
-
   }, [currentItem])
 
   return (
