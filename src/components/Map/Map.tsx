@@ -1,10 +1,11 @@
-import { useRef } from 'react'
-import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
+import { useRef, useState, useEffect } from 'react'
+import Maplibre, { IControl, MapRef, NavigationControl, useControl, Source, Layer } from 'react-map-gl/maplibre'
 import MapboxDraw from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import { StacCatalogueBbox } from '@/services/ItemService'
+import { Item } from '@/types'
 
 interface DrawConstants {
   classes: {
@@ -50,8 +51,14 @@ function DrawControl() {
   return null
 }
 
-export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | null) => void }) => {
+interface MapProps {
+  setMapBbox: (bounds: StacCatalogueBbox | null) => void
+  currentItem: Item | null
+}
+
+export const Map = ({ setMapBbox, currentItem }: MapProps) => {
   const mapRef = useRef<MapRef>(null)
+  const [tilerUrl, setTilerUrl] = useState<string | null>(null)
 
   const handleMapChange = () => {
     if (mapRef.current) {
@@ -59,6 +66,22 @@ export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | n
       setMapBbox([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()])
     }
   }
+
+  useEffect(() => {
+    if (currentItem) {
+      setTilerUrl(
+        `http://localhost:8000/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${currentItem?.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`,
+      )
+
+      mapRef.current?.fitBounds(
+        [currentItem.bbox[0], currentItem.bbox[1], currentItem.bbox[2], currentItem.bbox[3]],
+        {
+          padding: 100,
+        },
+      )
+    }
+
+  }, [currentItem])
 
   return (
     <Maplibre
@@ -70,6 +93,11 @@ export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | n
     >
       <NavigationControl />
       <DrawControl />
+      {tilerUrl && (
+        <Source type="raster" tileSize={256} tiles={[tilerUrl]}>
+          <Layer type="raster" />
+        </Source>
+      )}
     </Maplibre>
   )
 }

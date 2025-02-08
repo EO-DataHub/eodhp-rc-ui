@@ -13,6 +13,7 @@ export const PAGE_SIZE = 10
 
 export const DataFinderPage: React.FC = () => {
   const [mapBbox, setMapBbox] = React.useState<StacCatalogueBbox | null>(null)
+  const [mapItem, setMapItem] = React.useState<Item | null>(null)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', mapBbox?.toString()],
@@ -26,10 +27,10 @@ export const DataFinderPage: React.FC = () => {
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
-        <SidePanel items={items} isLoading={isLoading} error={!!error} />
+        <SidePanel items={items} isLoading={isLoading} error={!!error} setMapItem={setMapItem} />
       </Box>
       <Box height="100%">
-        <Map setMapBbox={setMapBbox} />
+        <Map setMapBbox={setMapBbox} currentItem={mapItem} />
       </Box>
     </Box>
   )
