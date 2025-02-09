@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, ReactNode } from 'react'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -8,6 +8,7 @@ import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
+import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
 
 interface SidePanelProps {
   items: Item[]
@@ -39,22 +40,12 @@ const ItemList = ({
   items,
   isLoading,
   error,
-  selectedItem,
-  selectedThumbnail,
-  checkedItems,
-  onSelectItem,
-  onThumbnailSelect,
-  onCheckboxItemChange,
+  renderItem,
 }: {
   items: Item[]
   isLoading: boolean
   error: boolean
-  selectedItem: Item | null
-  selectedThumbnail: Item | null
-  checkedItems: Item[]
-  onSelectItem: (item: Item) => void
-  onThumbnailSelect: (item: Item) => void
-  onCheckboxItemChange: (item: Item, isChecked: boolean) => void
+  renderItem: (item: Item) => ReactNode
 }) => {
   if (isLoading) {
     return <Text>Loading Items...</Text>
@@ -66,29 +57,18 @@ const ItemList = ({
 
   return (
     <div className={styles.listContainer}>
-      <ul>
-        {items.map((item) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            isSelected={selectedItem?.id === item.id}
-            isThumbnailSelected={selectedThumbnail?.id === item.id}
-            isChecked={checkedItems.some((checked) => checked.id === item.id)}
-            onSelect={onSelectItem}
-            onThumbnailSelect={onThumbnailSelect}
-            onCheckboxChange={onCheckboxItemChange}
-          />
-        ))}
-      </ul>
+      <ul>{items.map((item) => renderItem(item))}</ul>
     </div>
   )
 }
+
 export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error }) => {
   const [page, setPage] = useState(0)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
   const [checkedItems, setCheckedItems] = useState<Item[]>([])
+  const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
 
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
@@ -98,6 +78,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
 
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
+  }
+
+  const handleSelectItemInfo = (item: Item) => {
+    setSelectedItemInfo(item)
   }
 
   const handleThumbnailSelect = (item: Item) => {
@@ -147,12 +131,19 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
           )}
           isLoading={isLoading}
           error={error}
-          selectedItem={selectedItem}
-          selectedThumbnail={selectedThumbnail}
-          checkedItems={checkedItems}
-          onSelectItem={handleSelectItem}
-          onThumbnailSelect={handleThumbnailSelect}
-          onCheckboxItemChange={handleCheckboxItemChange}
+          renderItem={(item) => (
+            <ItemCard
+              key={item.id}
+              item={item}
+              isSelected={selectedItem?.id === item.id}
+              isThumbnailSelected={selectedThumbnail?.id === item.id}
+              isChecked={checkedItems.some((checked) => checked.id === item.id)}
+              onSelect={handleSelectItem}
+              onSelectItemInfo={handleSelectItemInfo}
+              onThumbnailSelect={handleThumbnailSelect}
+              onCheckboxChange={handleCheckboxItemChange}
+            />
+          )}
         />
         <PaginationContainer>
           <PageSelector
@@ -167,6 +158,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
         </PaginationContainer>
       </Flex>
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
+      <MoreInfoPanel isOpen={!!selectedItemInfo} />
     </Flex>
   )
 }

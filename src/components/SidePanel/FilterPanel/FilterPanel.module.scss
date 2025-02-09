@@ -1,15 +1,21 @@
 .filterPanel {
-  width: 0;
+  width: 290px;
   opacity: 0;
-  visibility: hidden;
-  background-color: #FFF;
-  border-left: 1px solid #CDCED6;
+  z-index: 0;
+  background-color: #fff;
+  border-left: 1px solid #cdced6;
   color: #444;
-  transition: width 0.3s ease-in-out, opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  transform: translateX(-100%);
+  position: absolute;
+  left: 338px;
+  top: 0px;
+  bottom: 0px;
 
   &--open {
-    width: 290px;
     opacity: 1;
     visibility: visible;
+    transform: translateX(0);
+    z-index: 10;
   }
 }

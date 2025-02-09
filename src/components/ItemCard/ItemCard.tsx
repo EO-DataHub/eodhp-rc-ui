@@ -13,6 +13,7 @@ interface ItemCardProps {
   isThumbnailSelected: boolean
   isChecked: boolean
   onSelect: (item: Item) => void
+  onSelectItemInfo: (item: Item) => void
   onThumbnailSelect: (item: Item) => void
   onCheckboxChange: (item: Item, isChecked: boolean) => void
 }
@@ -23,6 +24,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isThumbnailSelected,
   isChecked,
   onSelect,
+  onSelectItemInfo,
   onCheckboxChange,
   onThumbnailSelect,
 }) => {
@@ -74,7 +76,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             HH, VV
           </Text>
           <Flex justify="end" gap="2">
-            <IconButton radius="full" variant="solid" className={styles.button}>
+            <IconButton radius="full" variant="solid" className={styles.button} onClick={() => onSelectItemInfo(item)}>
               <InfoCircledIcon />
             </IconButton>
             <Link href="#" size="1" className={styles.text}>
