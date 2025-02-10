@@ -81,13 +81,6 @@ export const Map = ({ setMapBbox, currentItem }: MapProps) => {
       setTilerUrl(
         `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${currentItem?.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`,
       )
-
-      mapRef.current?.fitBounds(
-        [currentItem.bbox[0], currentItem.bbox[1], currentItem.bbox[2], currentItem.bbox[3]],
-        {
-          padding: 100,
-        },
-      )
     }
   }, [currentItem])
 
