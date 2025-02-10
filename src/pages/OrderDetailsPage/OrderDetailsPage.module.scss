@@ -1,0 +1,107 @@
+.tag {
+  border-radius: var(--Radius-full, 9999px);
+  background: var(--Colors-Neutral-Neutral-9, #8b8d98);
+  color: #fff;
+  width: fit-content;
+}
+
+.link {
+  position: absolute;
+  top: 155px;
+  left: 50px;
+  cursor: pointer;
+
+  .backButton {
+    align-items: center;
+  }
+}
+
+.mainContainer {
+  align-items: left;
+  margin: 3em 18em;
+  padding-bottom: 3em;
+}
+
+.buttonsContainer {
+  justify-content: right;
+  margin-top: 2em;
+
+  .cancelButton {
+    border-radius: var(--Radius-2-max, 4px);
+    border: 1px solid var(--Colors-Accent-Accent-Alpha-8, rgba(0, 67, 189, 0.46));
+    background: #fff;
+    color: var(--Colors-Accent-Accent-9, #4c72ba);
+    cursor: pointer;
+  }
+
+  .purchaseButton {
+    border-radius: var(--Radius-2-max, 4px);
+    background: var(--Colors-Accent-Accent-9, #4c72ba);
+    cursor: pointer;
+  }
+}
+
+.bodyContainer {
+  margin-top: 2em;
+  margin-bottom: 2em;
+  justify-content: space-between;
+
+  .selectionsContainer {
+    flex: 1;
+
+    .selection {
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .selectTrigger {
+      width: 100%;
+    }
+
+    .selectContent {
+      margin-top: 45px;
+      width: 100%;
+    }
+  }
+
+  .itemInfoContainer {
+    flex: 1;
+    height: fit-content;
+    border-radius: var(--Radius-2, 4px);
+    border: 1px solid var(--Colors-Neutral-Neutral-Alpha-6, rgba(0, 0, 47, 0.15));
+    background: var(--Panel-default, rgba(255, 255, 255, 0.8));
+
+    .itemInfo {
+      padding: 0.5em;
+    }
+
+    .itemText {
+      font-size: small;
+      color: var(--Colors-Neutral-Neutral-11, #60646c);
+    }
+
+    .thumbnail {
+      display: block;
+      height: 200px;
+      object-fit: cover;
+      background-color: var(--app-background-dark-2);
+    }
+  }
+}
+
+.conditionsContainer {
+  margin-top: 2em;
+}
+
+.checkGroup {
+  align-items: center;
+  font-size: small;
+
+  .checkbox {
+    cursor: pointer;
+  }
+
+  .linkText {
+    cursor: pointer;
+  }
+}

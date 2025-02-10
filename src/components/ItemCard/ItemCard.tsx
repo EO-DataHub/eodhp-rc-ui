@@ -1,12 +1,13 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Checkbox, Link } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Checkbox, Button } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { convertDateToUTCString } from '@/library/convertDateToUTCString'
+import { useNavigate } from 'react-router-dom'
 
 interface ItemCardProps {
   item: Item
@@ -17,6 +18,7 @@ interface ItemCardProps {
   onSelectItemInfo: (item: Item) => void
   onThumbnailSelect: (item: Item) => void
   onCheckboxChange: (item: Item, isChecked: boolean) => void
+  isLicenseProprietary: boolean
 }
 
 export const ItemCard: React.FC<ItemCardProps> = ({
@@ -28,7 +30,15 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onSelectItemInfo,
   onCheckboxChange,
   onThumbnailSelect,
+  isLicenseProprietary,
 }) => {
+  const navigate = useNavigate()
+
+  const handlePurchase = () => {
+    // Future function: check if user has purchase credits.
+    // If the check passes, navigate to the order details page.
+    navigate(`/order-details/${item.id}`)
+  }
   return (
     <Card
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
@@ -80,9 +90,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             <IconButton radius="full" variant="solid" className={styles.button} onClick={() => onSelectItemInfo(item)}>
               <InfoCircledIcon />
             </IconButton>
-            <Link href="#" size="1" className={styles.text}>
-              Purchase
-            </Link>
+            {isLicenseProprietary ? (
+              <Button
+                variant="ghost"
+                className={styles.button}
+                onClick={() => {
+                  handlePurchase()
+                }}
+              >
+                Purchase
+              </Button>
+            ) : null}
           </Flex>
         </Flex>
       </Flex>

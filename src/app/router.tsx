@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
+import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
 
 const routes = [
   {
@@ -11,6 +12,10 @@ const routes = [
   {
     path: '/finder',
     element: <DataFinderPage />,
+  },
+  {
+    path: '/order-details/:orderId',
+    element: <OrderDetailsPage />,
   },
 ]
 

@@ -35,7 +35,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
           <Flex>
             <Inset>
               <img
-                src={thumbnailUrl as string}
+                src={thumbnailUrl}
                 alt="Collection thumbnail"
                 className={styles.thumbnail}
               />

@@ -25,7 +25,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     <>
       <Card size="2" className={styles.card}>
         <Inset clip="padding-box" side="top" pb="current">
-          <img src={thumbnailUrl as string} className={styles.thumbnail} />
+          <img src={thumbnailUrl} className={styles.thumbnail} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
           <IconButton radius="full" variant="solid" className={styles.button}>

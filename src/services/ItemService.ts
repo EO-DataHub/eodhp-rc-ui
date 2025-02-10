@@ -39,5 +39,6 @@ export const fetchItems = async ({ limit, bbox }: FetchItemsParams): Promise<Ite
   }
 
   const data = await response.json()
+
   return data.features as Item[]
 }
