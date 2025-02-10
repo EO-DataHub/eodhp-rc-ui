@@ -76,6 +76,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
+  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen
+
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
   }
@@ -111,8 +113,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   }
 
   return (
-    <Flex height={'var(--content-height)'} position="relative">
-      <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2">
+    <Flex height={'var(--content-height)'} position="relative" width="100%">
+      <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2" style={{
+        boxShadow: sidePanelsOpen ? 'none' : undefined
+      }}>
         <Flex justify="end">
           <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
             <Flex gap="2" align="center">
@@ -158,7 +162,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
         </PaginationContainer>
       </Flex>
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
-      <MoreInfoPanel isOpen={!!selectedItemInfo} />
+      <MoreInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
     </Flex>
   )
 }

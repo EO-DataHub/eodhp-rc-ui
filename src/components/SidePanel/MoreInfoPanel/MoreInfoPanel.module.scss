@@ -1,21 +1,20 @@
 .moreInfoPanel {
-  width: 290px;
+  width: calc(100vw - 338px);
   opacity: 0;
-  z-index: 0;
   background-color: #fff;
   border-left: 1px solid #cdced6;
   color: #444;
   transition: all 0.2s ease-in-out;
   transform: translateX(-100%);
   position: absolute;
-  left: 338px;
+  left: 100%;
   top: 0px;
   bottom: 0px;
+  right: 0px;
 
   &--open {
     opacity: 1;
     visibility: visible;
     transform: translateX(0);
-    z-index: 10;
   }
 }
