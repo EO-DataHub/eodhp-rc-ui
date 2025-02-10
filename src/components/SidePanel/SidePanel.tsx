@@ -11,6 +11,7 @@ import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
+import { catalogs } from '@/constants'
 
 interface SidePanelProps {
   items: Item[]
@@ -99,8 +100,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
   }
-
-  const catalogs = ['airbus', 'ceda-stac-catalogue', 'planet']
 
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({

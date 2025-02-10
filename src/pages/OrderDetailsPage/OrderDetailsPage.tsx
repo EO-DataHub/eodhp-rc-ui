@@ -10,6 +10,7 @@ import { OrderSelections } from './OrderSelections'
 import { TermsAndConditionsContainer } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
+import { catalogs } from '@/constants'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -28,8 +29,6 @@ export const OrderDetailsPage: React.FC = () => {
   })
 
   const item = items?.find((itm: Item) => itm.id === orderId)
-
-  const catalogs = ['airbus', 'ceda-stac-catalogue', 'planet']
 
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
