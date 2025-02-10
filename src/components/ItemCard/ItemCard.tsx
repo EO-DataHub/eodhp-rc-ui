@@ -6,6 +6,7 @@ import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 
 interface ItemCardProps {
   item: Item
@@ -67,7 +68,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             />
           </Flex>
           <Text size="1" className={styles.text}>
-            {new Date(item.properties.datetime).toLocaleString()}
+            {convertDateToUTCString(new Date(item.properties.datetime))}
           </Text>
           <Text size="1" className={styles.text}>
             Min 31.75 Max 32.86
