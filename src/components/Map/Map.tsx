@@ -7,8 +7,6 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
-import { StacCatalogueBbox } from '@/services/ItemService'
-
 interface DrawConstants {
   classes: {
     CONTROL_BASE: string
@@ -55,15 +53,10 @@ function DrawControl() {
   return null
 }
 
-export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | null) => void }) => {
+export const Map = () => {
   const mapRef = useRef<MapRef>(null)
 
-  const handleMapChange = () => {
-    if (mapRef.current) {
-      const bounds = mapRef.current.getMap().getBounds()
-      setMapBbox([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()])
-    }
-  }
+  const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
 
   return (
     <Maplibre
@@ -91,9 +84,11 @@ export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | n
         mapInstance.on('draw.delete', () => {
           dataFinderStore.send({ type: 'drawDelete' })
         })
-        handleMapChange()
+
+        // Update bounds on load
+        handleMapBoundsChange()
       }}
-      onMoveEnd={handleMapChange}
+      onMoveEnd={handleMapBoundsChange}
     >
       <NavigationControl />
       <DrawControl />

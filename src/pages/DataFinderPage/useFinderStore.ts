@@ -7,6 +7,8 @@ const DrawModes = {
   SIMPLE_SELECT: 'simple_select',
 } as const
 
+export type MapBounds = [number, number, number, number]
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
@@ -14,6 +16,7 @@ const dataFinderStore = createStore({
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
     aoi: undefined as GeoJSON.Feature | undefined,
+    mapBounds: undefined as MapBounds | undefined,
   },
   // Transitions
   on: {
@@ -21,6 +24,26 @@ const dataFinderStore = createStore({
       return {
         ...context,
         mapInstance: event.mapInstance,
+      }
+    },
+    mapBoundsChange: (context) => {
+      const { mapInstance } = context
+
+      const bounds = mapInstance?.getBounds()
+
+      if (!bounds) return { ...context }
+
+      // Clip bounds to valid STAC filter range of [-180, -90, 180, 90]
+      const clippedBounds: MapBounds = [
+        Math.max(-180, bounds.getWest() ?? -180),
+        Math.max(-90, bounds.getSouth() ?? -90),
+        Math.min(180, bounds.getEast() ?? 180),
+        Math.min(90, bounds.getNorth() ?? 90),
+      ]
+
+      return {
+        ...context,
+        mapBounds: clippedBounds,
       }
     },
     drawControlLoad: (context, event: { drawInstance: MapboxDraw | undefined }) => {
