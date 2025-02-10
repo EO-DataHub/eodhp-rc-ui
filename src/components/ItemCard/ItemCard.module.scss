@@ -11,7 +11,7 @@
     border-color: var(--accent-8);
   }
 
-  .button {
+  .iconButton {
     background-color: var(--app-background-dark-2);
     color: var(--blue-contrast);
     width: 16px;
@@ -30,10 +30,10 @@
     border-radius: 8px 0 0 8px;
     margin: 0px;
     min-width: 100px;
-  
+
     &:hover .overlay {
       opacity: 1;
-      background: rgba(0, 0, 0, 0.80);
+      background: rgba(0, 0, 0, 0.8);
     }
 
     .thumbnail {
@@ -42,7 +42,7 @@
       object-fit: contain;
       transform: rotate(15deg);
     }
-  
+
     .overlay {
       position: absolute;
       top: 0;
@@ -59,8 +59,16 @@
 
     .overlayActive {
       opacity: 1;
-      background: rgba(0, 0, 0, 0.80);
+      background: rgba(0, 0, 0, 0.8);
     }
   }
-}
 
+  .buttonGroup {
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .button {
+    cursor: pointer;
+  }
+}

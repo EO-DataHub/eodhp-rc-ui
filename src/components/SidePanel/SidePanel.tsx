@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -6,6 +7,8 @@ import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
+import { fetchCollections } from '@/services/collectionService'
+import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 
@@ -39,6 +42,7 @@ const ItemList = ({
   items,
   isLoading,
   error,
+  isLicenseProprietary,
   selectedItem,
   selectedThumbnail,
   checkedItems,
@@ -49,6 +53,7 @@ const ItemList = ({
   items: Item[]
   isLoading: boolean
   error: boolean
+  isLicenseProprietary: boolean
   selectedItem: Item | null
   selectedThumbnail: Item | null
   checkedItems: Item[]
@@ -77,6 +82,7 @@ const ItemList = ({
             onSelect={onSelectItem}
             onThumbnailSelect={onThumbnailSelect}
             onCheckboxChange={onCheckboxItemChange}
+            isLicenseProprietary={isLicenseProprietary}
           />
         ))}
       </ul>
@@ -93,6 +99,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
   }
+
+  const { data: collectionsData } = useQuery({
+    queryKey: ['Collections'],
+    queryFn: fetchCollections,
+    refetchOnWindowFocus: false,
+    enabled: true,
+  })
+
+  const collections: Collection[] = collectionsData ?? []
+
+  // the target collection will be based on user selection input in the future
+  const targetCollectionId = 'sentinel2_ard'
+  const targetCollection = collections?.find((col) => col.id === targetCollectionId)
+  const isLicenseProprietary = targetCollection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
@@ -147,6 +167,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
           )}
           isLoading={isLoading}
           error={error}
+          isLicenseProprietary={isLicenseProprietary}
           selectedItem={selectedItem}
           selectedThumbnail={selectedThumbnail}
           checkedItems={checkedItems}
