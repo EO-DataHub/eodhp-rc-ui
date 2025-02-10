@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -100,18 +100,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
     setIsFilterOpen((prev) => !prev)
   }
 
-  const { data: collectionsData } = useQuery({
-    queryKey: ['Collections'],
-    queryFn: fetchCollections,
-    refetchOnWindowFocus: false,
-    enabled: true,
+  const catalogs = ['airbus', 'ceda-stac-catalogue', 'planet']
+
+  const queries = useQueries({
+    queries: catalogs.map((catalog, index) => ({
+      queryKey: ['Collections', index],
+      queryFn: () => fetchCollections(catalog),
+    })),
   })
 
-  const collections: Collection[] = collectionsData ?? []
+  const mergedCollections: Collection[] = queries.flatMap(
+    (query: { data?: Collection[] }) => query.data ?? [],
+  )
 
   // the target collection will be based on user selection input in the future
   const targetCollectionId = 'sentinel2_ard'
-  const targetCollection = collections?.find((col) => col.id === targetCollectionId)
+  const targetCollection = mergedCollections?.find((col) => col.id === targetCollectionId)
   const isLicenseProprietary = targetCollection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)

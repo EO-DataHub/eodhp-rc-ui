@@ -1,6 +1,6 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { fetchItems } from '@/services/ItemService'
 import { fetchCollections } from '@/services/collectionService'
 import { Item, Collection } from '@/types'
@@ -29,18 +29,22 @@ export const OrderDetailsPage: React.FC = () => {
 
   const item = items?.find((itm: Item) => itm.id === orderId)
 
-  const { data: collectionsData } = useQuery({
-    queryKey: ['Collections'],
-    queryFn: fetchCollections,
-    refetchOnWindowFocus: false,
-    enabled: true,
+  const catalogs = ['airbus', 'ceda-stac-catalogue', 'planet']
+
+  const queries = useQueries({
+    queries: catalogs.map((catalog, index) => ({
+      queryKey: ['Collections', index],
+      queryFn: () => fetchCollections(catalog),
+    })),
   })
 
-  const collections: Collection[] = collectionsData ?? []
+  const mergedCollections: Collection[] = queries.flatMap(
+    (query: { data?: Collection[] }) => query.data ?? [],
+  )
 
   // the target collection will be based on user selection input in the future
   const targetCollectionId = 'sentinel2_ard'
-  const targetCollection = collections?.find((col) => col.id === targetCollectionId)
+  const targetCollection = mergedCollections?.find((col) => col.id === targetCollectionId)
   const isOpticalData = (): boolean => !targetCollection?.stac_extensions?.[0]?.includes('/sar/')
 
   if (isLoading) return <Flex>Loading...</Flex>
