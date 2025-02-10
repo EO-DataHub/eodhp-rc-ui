@@ -8,7 +8,7 @@ import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import { Collection } from '@/types'
-import { catalogs } from '../../constants'
+import { catalogs } from '@/constants'
 
 export const DataDiscoveryPage: React.FC = () => {
   const queries = useQueries({
