@@ -1,9 +1,12 @@
 import { useRef } from 'react'
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+
 import { StacCatalogueBbox } from '@/services/ItemService'
 
 interface DrawConstants {
@@ -41,6 +44,8 @@ function DrawControl() {
       })
       drawInstance.current = draw
 
+      dataFinderStore.send({ type: 'drawControlLoad', drawInstance: draw })
+
       return draw as unknown as IControl
     },
     {
@@ -65,7 +70,29 @@ export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | n
       initialViewState={DEFAULT_MAP_VIEW}
       mapStyle={MAP_STYLE}
       ref={mapRef}
-      onLoad={handleMapChange}
+      onLoad={() => {
+        const mapInstance = mapRef.current?.getMap()
+        if (!mapInstance) {
+          return
+        }
+        // Send the map instance to the store
+        dataFinderStore.send({ type: 'mapLoad', mapInstance })
+
+        // Listen to draw mode changes
+        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) =>
+          dataFinderStore.send({ type: 'drawModeChange', mapEvent }),
+        )
+
+        // Listen to draw create events
+        mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
+          dataFinderStore.send({ type: 'drawCreate', mapEvent }),
+        )
+
+        mapInstance.on('draw.delete', () => {
+          dataFinderStore.send({ type: 'drawDelete' })
+        })
+        handleMapChange()
+      }}
       onMoveEnd={handleMapChange}
     >
       <NavigationControl />

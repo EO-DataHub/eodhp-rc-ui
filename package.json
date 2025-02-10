@@ -28,6 +28,7 @@
     "@tanstack/react-table": "^8.16.0",
     "@turf/turf": "^6.5.0",
     "@types/mapbox__mapbox-gl-draw": "1.4.8",
+    "@xstate/store": "^2.6.2",
     "axios": "^1.6.8",
     "csv2geojson": "^5.1.2",
     "dayjs": "^1.11.13",
