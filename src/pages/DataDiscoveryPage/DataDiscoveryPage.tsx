@@ -8,25 +8,19 @@ import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import { Collection } from '@/types'
+import { catalogs } from '@/constants'
 
 export const DataDiscoveryPage: React.FC = () => {
-  // The name of the catalog as declared in the catalog's ID field.
-  const catalogs = [
-    "airbus",
-    "ceda-stac-catalogue",
-    "planet"
-  ];
-
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
-      queryKey: ["Collections", index],
+      queryKey: ['Collections', index],
       queryFn: () => fetchCollections(catalog),
     })),
-  });
+  })
 
-  const isLoading = queries.some((query) => query.isLoading);
-  const error = queries.some((query) => query.isError);
-  const errorMessages = queries.map((query) => query.error?.message).filter(Boolean);
+  const isLoading = queries.some((query) => query.isLoading)
+  const error = queries.some((query) => query.isError)
+  const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
 
   if (isLoading) {
     return (
@@ -40,14 +34,18 @@ export const DataDiscoveryPage: React.FC = () => {
     return (
       <Flex justify="center" align="center">
         {errorMessages.map((errorMessage, index) => (
-          <Text key={index} color="red">Error loading Collection: {errorMessage}</Text>
+          <Text key={index} color="red">
+            Error loading Collection: {errorMessage}
+          </Text>
         ))}
       </Flex>
     )
   }
 
-  const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? []);
-  const collections = [...mergedCollections].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+  const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
+  const collections = [...mergedCollections].sort((a, b) =>
+    (a.title ?? '').localeCompare(b.title ?? ''),
+  )
 
   return (
     <Flex direction="column" height="100vh">
