@@ -5,6 +5,8 @@ import styles from './MoreInfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 import { MetadataSection } from './MetadataSection'
+import { useQuery } from '@tanstack/react-query'
+import { fetchItem } from '@/services/ItemService'
 
 interface MoreInfoPanelProps {
   item: Item | null
@@ -13,6 +15,14 @@ interface MoreInfoPanelProps {
 
 export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) => {
   const isOpen = item !== null
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['Items', item?.collection, item?.id],
+    queryFn: () =>
+      fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }), // Fetch one more than the max to see if there are more items
+    refetchOnWindowFocus: false,
+    enabled: true,
+  })
 
   return (
     <Flex
@@ -60,7 +70,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
 
             <Box pt="3">
               <Tabs.Content value="metadata">
-                <MetadataSection item={item} />
+                <MetadataSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="assets">

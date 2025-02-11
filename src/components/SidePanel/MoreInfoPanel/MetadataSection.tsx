@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react'
-import { Heading, Flex, Table } from '@radix-ui/themes'
+import { Heading, Flex, Table, Text } from '@radix-ui/themes'
 import type { Item } from '@/types'
 import StacFields from '@radiantearth/stac-fields'
 import styles from './MoreInfoPanel.module.scss'
 
 interface MetadataSectionProps {
-  item: Item | null
+  item: Item | null | undefined
+  isLoading: boolean
+  hasError: boolean
 }
 
 interface CubeData {
@@ -151,13 +153,21 @@ const renderTable = ({ label, extension, properties }: MetadataItem) => (
   </Flex>
 )
 
-export const MetadataSection: React.FC<MetadataSectionProps> = ({ item }) => {
+export const MetadataSection: React.FC<MetadataSectionProps> = ({ item, isLoading, hasError }) => {
   const metadata: MetadataItem[] = useMemo(() => {
     if (!item) {
       return []
     }
     return StacFields.formatItemProperties(item) as MetadataItem[]
   }, [item])
+
+  if (isLoading) {
+    return <Text>Loading Items...</Text>
+  }
+
+  if (hasError) {
+    return <Text color="red">Error loading items!</Text>
+  }
 
   return (
     <Flex direction="column" gap="5">
