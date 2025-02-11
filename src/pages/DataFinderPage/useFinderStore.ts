@@ -52,7 +52,7 @@ const dataFinderStore = createStore({
         drawInstance: event.drawInstance,
       }
     },
-    drawCreate: (context, event: { mapEvent: DrawCreateEvent }) => {
+    drawCreateOrUpdate: (context, event: { mapEvent: DrawCreateEvent }) => {
       // If draw instance is not loaded, do nothing
       if (!context.drawInstance) return context
 

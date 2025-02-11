@@ -82,9 +82,12 @@ export const Map = () => {
           dataFinderStore.send({ type: 'drawModeChange', mapEvent }),
         )
 
-        // Listen to draw create events
+        // Listen to draw events
         mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
-          dataFinderStore.send({ type: 'drawCreate', mapEvent }),
+          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+        )
+        mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
+          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
         )
 
         mapInstance.on('draw.delete', () => {

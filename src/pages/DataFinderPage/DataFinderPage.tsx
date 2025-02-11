@@ -18,7 +18,8 @@ export const DataFinderPage: React.FC = () => {
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  const queryKey = aoi ? aoi.id : mapBounds?.toString()
+  // Determine the query key based on AOI geometry or map bounds
+  const queryKey = aoi?.geometry ? JSON.stringify(aoi.geometry) : mapBounds?.toString()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', queryKey],
