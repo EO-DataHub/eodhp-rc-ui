@@ -1,10 +1,12 @@
 import { useRef } from 'react'
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
+import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
-import { StacCatalogueBbox } from '@/services/ItemService'
+
+import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 
 interface DrawConstants {
   classes: {
@@ -37,9 +39,10 @@ function DrawControl() {
           polygon: true,
           trash: true,
         },
-        defaultMode: 'draw_polygon',
       })
       drawInstance.current = draw
+
+      dataFinderStore.send({ type: 'drawControlLoad', drawInstance: draw })
 
       return draw as unknown as IControl
     },
@@ -50,23 +53,51 @@ function DrawControl() {
   return null
 }
 
-export const Map = ({ setMapBbox }: { setMapBbox: (bounds: StacCatalogueBbox | null) => void }) => {
+export const Map = () => {
   const mapRef = useRef<MapRef>(null)
 
-  const handleMapChange = () => {
-    if (mapRef.current) {
-      const bounds = mapRef.current.getMap().getBounds()
-      setMapBbox([bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()])
-    }
-  }
+  const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
+
+  const isDrawing = useSelector(
+    dataFinderStore,
+    (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
+  )
 
   return (
     <Maplibre
       initialViewState={DEFAULT_MAP_VIEW}
       mapStyle={MAP_STYLE}
       ref={mapRef}
-      onLoad={handleMapChange}
-      onMoveEnd={handleMapChange}
+      cursor={isDrawing ? 'crosshair' : 'grab'}
+      onLoad={() => {
+        const mapInstance = mapRef.current?.getMap()
+        if (!mapInstance) {
+          return
+        }
+        // Send the map instance to the store
+        dataFinderStore.send({ type: 'mapLoad', mapInstance })
+
+        // Listen to draw mode changes
+        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) =>
+          dataFinderStore.send({ type: 'drawModeChange', mapEvent }),
+        )
+
+        // Listen to draw events
+        mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
+          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+        )
+        mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
+          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+        )
+
+        mapInstance.on('draw.delete', () => {
+          dataFinderStore.send({ type: 'drawDelete' })
+        })
+
+        // Update bounds on load
+        handleMapBoundsChange()
+      }}
+      onMoveEnd={handleMapBoundsChange}
     >
       <NavigationControl />
       <DrawControl />

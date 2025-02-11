@@ -1,12 +1,20 @@
+import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Item } from '@/types'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
-export type StacCatalogueBbox = [number, number, number, number]
-
 interface FetchItemsParams {
   limit: number
-  bbox: StacCatalogueBbox | null
+  mapBounds?: MapBounds
+  aoi?: GeoJSON.Feature
+}
+
+interface StacQueryBodyParams {
+  catalog_paths: string[]
+  collections: string[]
+  limit: number
+  intersects?: GeoJSON.Geometry
+  bbox?: MapBounds
 }
 
 interface FetchItemParams {
@@ -17,14 +25,18 @@ interface FetchItemParams {
 
 //This fetch is just illustrative; we are retrieving specific items to validate the behavior.
 //The search functionality will change with future tickets.
-export const fetchItems = async ({ limit, bbox }: FetchItemsParams): Promise<Item[]> => {
-  // This is a simple way to clip the bbox to the valid range of [-180, -90, 180, 90]
-  const bboxClipped = [
-    Math.max(-180, bbox?.[0] ?? -180),
-    Math.max(-90, bbox?.[1] ?? -90),
-    Math.min(180, bbox?.[2] ?? 180),
-    Math.min(90, bbox?.[3] ?? 90),
-  ]
+export const fetchItems = async ({ limit, mapBounds, aoi }: FetchItemsParams): Promise<Item[]> => {
+  const body = {
+    catalog_paths: ['supported-datasets/ceda-stac-catalogue'],
+    collections: ['sentinel2_ard'],
+    limit,
+  } as StacQueryBodyParams
+
+  if (aoi) {
+    body.intersects = aoi.geometry
+  } else if (mapBounds) {
+    body.bbox = mapBounds
+  }
 
   const response = await fetch(`${API_URL}/api/catalogue/stac/search`, {
     method: 'POST',
@@ -32,12 +44,7 @@ export const fetchItems = async ({ limit, bbox }: FetchItemsParams): Promise<Ite
       Accept: 'application/geo+json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      catalog_paths: ['supported-datasets/ceda-stac-catalogue'],
-      collections: ['sentinel2_ard'],
-      limit,
-      bbox: bboxClipped,
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!response.ok) {
