@@ -19,7 +19,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
     queryFn: () =>
-      fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }), // Fetch one more than the max to see if there are more items
+      fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
     enabled: true,
   })
