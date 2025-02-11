@@ -3,9 +3,8 @@ import { Collection } from '@/types'
 import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
-import PlaceholderImage from '../../../public/placeholder-img.png'
 import { getFormattedDateRange } from '@/library/getFormattedDateRange'
-
+import DefaultThumbnail from '../../../public/default-thumbnail-square.jpg'
 interface CollectionDetailsCardProps {
   collection: Collection
   isOpen: boolean
@@ -21,7 +20,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 
   const thumbnailUrl = collection.assets?.thumbnail?.href
     ? collection.assets.thumbnail.href
-    : PlaceholderImage
+    : DefaultThumbnail
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -34,11 +33,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
         <Flex direction="row" gap="7" className={styles.flexContainer}>
           <Flex>
             <Inset>
-              <img
-                src={thumbnailUrl}
-                alt="Collection thumbnail"
-                className={styles.thumbnail}
-              />
+              <img src={thumbnailUrl} alt="Collection thumbnail" className={styles.thumbnail} />
             </Inset>
           </Flex>
           <Flex direction="column" className={styles.details}>

@@ -6,6 +6,7 @@ import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+
 import { useNavigate } from 'react-router-dom'
 
 interface ItemCardProps {
