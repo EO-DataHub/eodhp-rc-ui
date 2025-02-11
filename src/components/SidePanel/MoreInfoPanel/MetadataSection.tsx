@@ -48,8 +48,8 @@ const renderCubeTable = ({ label, extension, properties }: MetadataItem) => {
    *     lon: {type: 'spatial', axis: 'x', extent: Array(2), reference_system: 4326, unit: 'degrees_east'}
    *     time: {type: 'temporal', step: 'P1D', values: Array(1)}
    */
-  const dataTable = Object.keys(properties).map((key) => {
-    const tableProperties = properties[key]
+  const dataTable = Object.keys(properties).map((propertyKey) => {
+    const tableProperties = properties[propertyKey]
 
     const columnHeaders = tableProperties.itemOrder?.map((headerKey) => ({
       headerKey,
@@ -59,21 +59,21 @@ const renderCubeTable = ({ label, extension, properties }: MetadataItem) => {
     const rowKeys = Object.keys(tableProperties.value)
     const rowData = tableProperties.value
 
-    const rows = rowKeys.map((key) => {
+    const rows = rowKeys.map((rowKey) => {
       const row = tableProperties.itemOrder?.map((headerKey) => {
         let content = StacFields.format(null)
-        if (typeof rowData === 'object' && key in rowData && headerKey in rowData[key]) {
-          content = StacFields.format(rowData[key][headerKey])
+        if (typeof rowData === 'object' && rowKey in rowData && headerKey in rowData[rowKey]) {
+          content = StacFields.format(rowData[rowKey][headerKey])
         }
         return { headerKey, content }
       })
 
       // append the row header cell
-      return [{ headerKey: 'id', content: key }, ...(row ?? [])]
+      return [{ headerKey: 'id', content: rowKey }, ...(row ?? [])]
     })
 
     return {
-      key: key,
+      key: propertyKey,
       title: tableProperties.label ? tableProperties.label : 'General',
       // append the row header cell
       columnHeaders: [{ headerKey: 'id', label: 'ID' }, ...(columnHeaders ?? [])],
@@ -106,7 +106,7 @@ const renderCubeTable = ({ label, extension, properties }: MetadataItem) => {
             </Table.Header>
             <Table.Body>
               {rows.map((row) => (
-                <Table.Row key={row[0].headerKey}>
+                <Table.Row key={row[0].content}>
                   {row.map(({ headerKey, content }) =>
                     headerKey === 'id' ? (
                       <Table.RowHeaderCell key={headerKey}>{content}</Table.RowHeaderCell>

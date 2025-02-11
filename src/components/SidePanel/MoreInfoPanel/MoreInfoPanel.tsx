@@ -21,7 +21,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
     queryFn: () =>
       fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
-    enabled: true,
+    enabled: !!item,
   })
 
   return (
