@@ -2,7 +2,7 @@ import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@map
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 
-const DrawModes = {
+export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
   SIMPLE_SELECT: 'simple_select',
 } as const

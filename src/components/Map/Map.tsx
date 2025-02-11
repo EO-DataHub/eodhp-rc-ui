@@ -5,7 +5,8 @@ import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 
 interface DrawConstants {
   classes: {
@@ -38,7 +39,6 @@ function DrawControl() {
           polygon: true,
           trash: true,
         },
-        defaultMode: 'draw_polygon',
       })
       drawInstance.current = draw
 
@@ -58,11 +58,17 @@ export const Map = () => {
 
   const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
 
+  const isDrawing = useSelector(
+    dataFinderStore,
+    (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
+  )
+
   return (
     <Maplibre
       initialViewState={DEFAULT_MAP_VIEW}
       mapStyle={MAP_STYLE}
       ref={mapRef}
+      cursor={isDrawing ? 'crosshair' : 'grab'}
       onLoad={() => {
         const mapInstance = mapRef.current?.getMap()
         if (!mapInstance) {
