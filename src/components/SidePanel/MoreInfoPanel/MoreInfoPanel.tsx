@@ -23,7 +23,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
       position="absolute"
       className={`${styles.moreInfoPanel} ${isOpen ? styles['moreInfoPanel--open'] : ''}`}
     >
-      <IconButton radius="full" variant="ghost" className={styles.closeButton} onClick={onClose}>
+      <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
       </IconButton>
       {item && (
@@ -39,12 +39,12 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
             </Flex>
             <Flex direction="row" gap="5" align="center">
               <Tooltip content="Source Data">
-                <IconButton radius="full" variant="ghost">
+                <IconButton variant="ghost">
                   <Link1Icon width="20" height="20" />
                 </IconButton>
               </Tooltip>
               <Tooltip content="Share">
-                <IconButton radius="full" variant="ghost">
+                <IconButton variant="ghost">
                   <Share1Icon width="20" height="20" color="black" fill="black" />
                 </IconButton>
               </Tooltip>
