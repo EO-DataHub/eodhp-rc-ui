@@ -4,21 +4,28 @@ import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { useQuery } from '@tanstack/react-query'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
-import { fetchItems, StacCatalogueBbox } from '@/services/ItemService'
+import { fetchItems } from '@/services/ItemService'
 import { Item } from '@/types'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from './useFinderStore'
+
 import styles from './DataFinderPage.module.scss'
 
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
 export const DataFinderPage: React.FC = () => {
-  const [mapBbox, setMapBbox] = React.useState<StacCatalogueBbox | null>(null)
+  const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // Determine the query key based on AOI geometry or map bounds
+  const queryKey = aoi?.geometry ? JSON.stringify(aoi.geometry) : mapBounds?.toString()
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['Items', mapBbox?.toString()],
-    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, bbox: mapBbox }), // Fetch one more than the max to see if there are more items
+    queryKey: ['Items', queryKey],
+    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, mapBounds, aoi }), // Fetch one more than the max to see if there are more items
     refetchOnWindowFocus: false,
-    enabled: mapBbox !== null,
+    enabled: true,
   })
 
   const items: Item[] = isLoading || error ? [] : data ?? []
@@ -29,7 +36,7 @@ export const DataFinderPage: React.FC = () => {
         <SidePanel items={items} isLoading={isLoading} error={!!error} />
       </Box>
       <Box height="100%">
-        <Map setMapBbox={setMapBbox} />
+        <Map />
       </Box>
     </Box>
   )
