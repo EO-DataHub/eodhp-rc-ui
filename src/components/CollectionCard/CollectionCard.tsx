@@ -5,7 +5,7 @@ import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
-import PlaceholderImage from '../../../public/placeholder-img.png'
+import DefaultThumbnail from '../../../public/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/getFormattedDateRange'
 
 interface CollectionCardProps {
@@ -19,13 +19,18 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
 
   const thumbnailUrl = collection.assets?.thumbnail?.href
     ? collection.assets.thumbnail.href
-    : PlaceholderImage
+    : DefaultThumbnail
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultThumbnail
+  }
 
   return (
     <>
       <Card size="2" className={styles.card}>
         <Inset clip="padding-box" side="top" pb="current">
-          <img src={thumbnailUrl} className={styles.thumbnail} />
+          <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
           <IconButton radius="full" variant="solid" className={styles.button}>
