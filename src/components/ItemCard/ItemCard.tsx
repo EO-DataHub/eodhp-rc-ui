@@ -6,6 +6,7 @@ import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+
 import { useNavigate } from 'react-router-dom'
 
 interface ItemCardProps {
@@ -36,6 +37,11 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     // If the check passes, navigate to the order details page.
     navigate(`/order-details/${item.id}`)
   }
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultItemThumbnail
+  }
+
   return (
     <Card
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
@@ -57,6 +63,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
             className={styles.thumbnail}
+            onError={handleImageError}
           />
           <div className={`${styles.overlay} ${isThumbnailSelected ? styles.overlayActive : ''}`}>
             {isThumbnailSelected ? <CancelIcon /> : <MapsIcon />}
