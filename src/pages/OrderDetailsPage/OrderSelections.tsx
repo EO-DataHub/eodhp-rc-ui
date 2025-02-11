@@ -49,12 +49,12 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({ isOptical }) =
       ) : null}
 
       <Field label="End User Country">
-        <Select.Root size="3">
+        <Select.Root size="3" defaultValue="GB">
           <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
           <Select.Content className={styles.selectContent}>
             <Select.Group>
               {countries.map((country) => (
-                <Select.Item key={country.code} value={country.name} className={styles.item}>
+                <Select.Item key={country.code} value={country.code} className={styles.item}>
                   {country.name}
                 </Select.Item>
               ))}
