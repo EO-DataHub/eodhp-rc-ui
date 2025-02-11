@@ -1,9 +1,10 @@
 import React from 'react'
 import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton, Tabs, Box } from '@radix-ui/themes'
+import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './MoreInfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/convertDateToUTCString'
+import { MetadataSection } from './MetadataSection'
 
 interface MoreInfoPanelProps {
   item: Item | null
@@ -37,33 +38,37 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
               </Text>
             </Flex>
             <Flex direction="row" gap="5" align="center">
-              <IconButton radius="full" variant="ghost">
-                <Link1Icon width="20" height="20" />
-              </IconButton>
-              <IconButton radius="full" variant="ghost">
-                <Share1Icon width="20" height="20" color="black" fill="black" />
-              </IconButton>
+              <Tooltip content="Source Data">
+                <IconButton radius="full" variant="ghost">
+                  <Link1Icon width="20" height="20" />
+                </IconButton>
+              </Tooltip>
+              <Tooltip content="Share">
+                <IconButton radius="full" variant="ghost">
+                  <Share1Icon width="20" height="20" color="black" fill="black" />
+                </IconButton>
+              </Tooltip>
             </Flex>
           </Flex>
 
-          <Tabs.Root defaultValue="account">
-            <Tabs.List>
-              <Tabs.Trigger value="account">Metadata</Tabs.Trigger>
-              <Tabs.Trigger value="documents">Assets</Tabs.Trigger>
-              <Tabs.Trigger value="settings">Additional Resources</Tabs.Trigger>
+          <Tabs.Root defaultValue="metadata">
+            <Tabs.List style={{ justifySelf: 'flex-start' }}>
+              <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
+              <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+              <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="3">
-              <Tabs.Content value="account">
-                <Text size="2">Make changes to your account.</Text>
+              <Tabs.Content value="metadata">
+                <MetadataSection item={item} />
               </Tabs.Content>
 
-              <Tabs.Content value="documents">
-                <Text size="2">Access and update your documents.</Text>
+              <Tabs.Content value="assets">
+                <Text size="2">Asset TODO</Text>
               </Tabs.Content>
 
-              <Tabs.Content value="settings">
-                <Text size="2">Edit your profile or update contact information.</Text>
+              <Tabs.Content value="resources">
+                <Text size="2">Resource TODO</Text>
               </Tabs.Content>
             </Box>
           </Tabs.Root>

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Checkbox, Button } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
@@ -87,9 +87,16 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             HH, VV
           </Text>
           <Flex justify="end" gap="2">
-            <IconButton radius="full" variant="solid" className={styles.button} onClick={() => onSelectItemInfo(item)}>
-              <InfoCircledIcon />
-            </IconButton>
+            <Tooltip content="More Info">
+              <IconButton
+                radius="full"
+                variant="ghost"
+                className={styles.button}
+                onClick={() => onSelectItemInfo(item)}
+              >
+                <InfoCircledIcon />
+              </IconButton>
+            </Tooltip>
             {isLicenseProprietary ? (
               <Button
                 variant="ghost"
