@@ -21,11 +21,16 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     ? collection.assets.thumbnail.href
     : DefaultThumbnail
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultThumbnail
+  }
+
   return (
     <>
       <Card size="2" className={styles.card}>
         <Inset clip="padding-box" side="top" pb="current">
-          <img src={thumbnailUrl} className={styles.thumbnail} />
+          <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
           <IconButton radius="full" variant="solid" className={styles.button}>

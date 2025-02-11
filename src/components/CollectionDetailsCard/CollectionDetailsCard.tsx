@@ -22,6 +22,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     ? collection.assets.thumbnail.href
     : DefaultThumbnail
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultThumbnail
+  }
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Content maxWidth="750px" className={styles.dialogContent}>
@@ -33,7 +38,12 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
         <Flex direction="row" gap="7" className={styles.flexContainer}>
           <Flex>
             <Inset>
-              <img src={thumbnailUrl} alt="Collection thumbnail" className={styles.thumbnail} />
+              <img
+                src={thumbnailUrl}
+                alt="Collection thumbnail"
+                className={styles.thumbnail}
+                onError={handleImageError}
+              />
             </Inset>
           </Flex>
           <Flex direction="column" className={styles.details}>
