@@ -1,12 +1,5 @@
 import { useEffect, useRef } from 'react'
-import Maplibre, {
-  IControl,
-  Layer,
-  MapRef,
-  NavigationControl,
-  Source,
-  useControl,
-} from 'react-map-gl/maplibre'
+import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -14,15 +7,8 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
-
 import { Item } from '@/types'
-
-const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
-
-const LIST_ITEM_LINE_PAINT_STYLE = {
-  'line-color': '#3a5bc7',
-  'line-width': 2,
-}
+import ItemLayer from './ItemLayer'
 
 interface DrawConstants {
   classes: {
@@ -67,21 +53,6 @@ function DrawControl() {
     },
   )
   return null
-}
-
-const ItemLayer = ({ item }: { item: Item }) => {
-  const itemId = item.id
-  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${item.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
-  return (
-    <>
-      <Source type="raster" tileSize={256} tiles={[tilesUrl]}>
-        <Layer type="raster" />
-      </Source>
-      <Source id={`source-${itemId}-bounds`} type="geojson" data={item.geometry}>
-        <Layer type="line" paint={LIST_ITEM_LINE_PAINT_STYLE} />
-      </Source>
-    </>
-  )
 }
 
 export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
