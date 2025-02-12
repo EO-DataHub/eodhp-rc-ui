@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Flex, Link, Text } from '@radix-ui/themes'
 import { LoginButton } from './LoginButton'
 import MapsIcon from '../../../public/maps-icon.svg?react'
@@ -10,16 +10,16 @@ import styles from './NavBar.module.scss'
 
 export const NavBar: React.FC = () => {
   const location = useLocation()
-
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname === '/finder'
+  const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
 
   return (
     <Flex p="3" align="center" justify="between" className={styles.container}>
       <Link href="/">
         <EarthObservationDataHubLogo className={styles.logo} />
       </Link>
-      <Flex gap="6">
+      <Flex gap="6" className={styles.navLinks}>
         <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
           <Flex gap="2" className={styles.flex}>
             <AppsIcon className={styles.icon} />
@@ -34,7 +34,7 @@ export const NavBar: React.FC = () => {
           </Flex>
         </Link>
 
-        <LoginButton />
+        <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
       </Flex>
     </Flex>
   )
