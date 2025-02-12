@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import type { Item } from '@/types'
 import { Box, Flex, Text } from '@radix-ui/themes'
-import Maplibre, { Layer, MapRef, Source } from 'react-map-gl/maplibre'
+import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetItemTable } from './AssetItemTable'
+import ItemLayer from '@/components/Map/ItemLayer'
 
 interface AssetSectionProps {
   item: Item | null | undefined
@@ -15,42 +16,27 @@ const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 const DEFAULT_MAP_VIEW = {
   latitude: 0,
   longitude: 0,
-  zoom: 5,
+  zoom: 1,
 }
 
 export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, hasError }) => {
   const mapRef = useRef<MapRef>(null)
-  const thumbnailUrl = item?.assets.thumbnail.href
-
-  const bbox = useMemo(() => item?.bbox ?? [], [item?.bbox])
-
-  const coordinates = useMemo(() => {
-    if (!item) return null
-
-    const coordinates = [
-      [bbox[0], bbox[1]], // SW
-      [bbox[2], bbox[1]], // SE
-      [bbox[2], bbox[3]], // NE
-      [bbox[0], bbox[3]], // NW
-    ] as [[number, number], [number, number], [number, number], [number, number]]
-
-    return coordinates
-  }, [bbox, item])
 
   const showThumbnail = useCallback(() => {
     const mapInstance = mapRef.current?.getMap()
-    if (!mapInstance || !item) {
+    if (!mapInstance || !item?.bbox) {
       return
     }
 
+    const bbox = item.bbox
     mapInstance.fitBounds(
       [
         [bbox[0], bbox[1]],
         [bbox[2], bbox[3]],
       ],
-      { padding: 20, duration: 1000 },
+      { padding: 20, duration: 0 },
     )
-  }, [bbox, item])
+  }, [item])
 
   useEffect(() => {
     showThumbnail()
@@ -75,11 +61,7 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
             showThumbnail()
           }}
         >
-          {thumbnailUrl && coordinates && (
-            <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
-              <Layer type="raster"></Layer>
-            </Source>
-          )}
+          {item && <ItemLayer key={item.id} item={item} />}
         </Maplibre>
       </Box>
       <AssetItemTable assets={item?.assets} />
