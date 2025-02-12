@@ -8,7 +8,7 @@ import { Button, Flex } from '@radix-ui/themes'
 import DownloadIcon from '@/../public/download-filled.svg?react'
 
 interface AssetItemTableProps {
-  assets: Item['assets']
+  assets?: Item['assets']
 }
 
 const AccordionTrigger: React.FC<PropsWithChildren> = ({ children, ...props }) => (
@@ -27,6 +27,10 @@ const AccordionContent: React.FC<PropsWithChildren> = ({ children, ...props }) =
 )
 
 export const AssetItemTable: React.FC<AssetItemTableProps> = ({ assets }) => {
+  if (!assets) {
+    return null
+  }
+
   const handleDownload = (href: string) => {
     const a = document.createElement('a')
     a.href = href
