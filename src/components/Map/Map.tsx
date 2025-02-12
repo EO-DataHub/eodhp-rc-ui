@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import Maplibre, {
   IControl,
   Layer,
@@ -93,6 +93,24 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     dataFinderStore,
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
+
+  // This is a workaround to move the draw layers to the top as they are added
+  // on page load and should be on top of the other layers. Ideally we not need
+  // to do this but there is no way to control the order of the layers in the
+  // MapboxDraw control.
+  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  useEffect(() => {
+    if (!mapInstance) return
+
+    // Wait a bit for the layers to be added
+    setTimeout(() => {
+      mapInstance.getStyle().layers.forEach((layer) => {
+        if (layer.id.startsWith('gl-draw')) {
+          mapInstance.moveLayer(layer.id)
+        }
+      })
+    }, 100)
+  }, [mapInstance, visibleItems])
 
   return (
     <Maplibre
