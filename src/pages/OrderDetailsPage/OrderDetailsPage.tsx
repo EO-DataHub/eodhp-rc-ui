@@ -24,7 +24,7 @@ export const OrderDetailsPage: React.FC = () => {
     error,
   } = useQuery({
     queryKey: ['Items'],
-    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, bbox: null }),
+    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1 }),
     refetchOnWindowFocus: false,
   })
 

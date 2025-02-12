@@ -134,9 +134,16 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error })
 
   return (
     <Flex height={'var(--content-height)'} position="relative" width="100%">
-      <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2" style={{
-        boxShadow: sidePanelsOpen ? 'none' : undefined
-      }}>
+      <Flex
+        className={styles.sidePanel}
+        direction="column"
+        width="338px"
+        p="4"
+        gap="2"
+        style={{
+          boxShadow: sidePanelsOpen ? 'none' : undefined,
+        }}
+      >
         <Flex justify="end">
           <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
             <Flex gap="2" align="center">
