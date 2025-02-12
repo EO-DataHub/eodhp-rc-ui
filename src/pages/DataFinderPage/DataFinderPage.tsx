@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect } from 'react'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
@@ -15,8 +15,7 @@ export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
 export const DataFinderPage: React.FC = () => {
-  const [page, setPage] = useState(0)
-
+  const page = useSelector(dataFinderStore, (state) => state.context.page)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
@@ -26,6 +25,7 @@ export const DataFinderPage: React.FC = () => {
   const {
     data: itemList = [],
     isLoading,
+    isFetched,
     error,
   } = useQuery<Item[]>({
     queryKey: ['Items', queryKey],
@@ -34,6 +34,13 @@ export const DataFinderPage: React.FC = () => {
     enabled: !!aoi || !!mapBounds,
     placeholderData: (previousValue) => previousValue,
   })
+
+  // Reset page after refetch
+  useEffect(() => {
+    if (isFetched) {
+      dataFinderStore.send({ type: 'pageChange', page: 0 })
+    }
+  }, [isFetched])
 
   // Slice the visible items based on the current page
   const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -46,7 +53,7 @@ export const DataFinderPage: React.FC = () => {
           isLoading={isLoading}
           error={!!error}
           page={page}
-          setPage={setPage}
+          setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}
         />
       </Box>
       <Box height="100%">
