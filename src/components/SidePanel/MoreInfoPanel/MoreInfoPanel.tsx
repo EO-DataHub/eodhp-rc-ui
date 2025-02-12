@@ -7,6 +7,7 @@ import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
+import { AssetSection } from './AssetSection'
 
 interface MoreInfoPanelProps {
   item: Item | null
@@ -74,7 +75,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
               </Tabs.Content>
 
               <Tabs.Content value="assets">
-                <Text size="2">Asset TODO</Text>
+                <AssetSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="resources">

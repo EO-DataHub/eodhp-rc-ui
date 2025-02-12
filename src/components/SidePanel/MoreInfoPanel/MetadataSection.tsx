@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { Heading, Flex, Table, Text } from '@radix-ui/themes'
-import type { Item } from '@/types'
+import type { Item, MetadataItem } from '@/types'
 import StacFields from '@radiantearth/stac-fields'
 import styles from './MoreInfoPanel.module.scss'
 
@@ -8,28 +8,6 @@ interface MetadataSectionProps {
   item: Item | null | undefined
   isLoading: boolean
   hasError: boolean
-}
-
-interface CubeData {
-  [key: string]: { [key: string]: string | number | string[] | number[] }
-}
-
-interface MetadataProperties {
-  label: string
-  formatted: string
-  value: string | number | CubeData
-  spec: {
-    label?: string
-    explain?: string
-  }
-  itemOrder?: string[]
-  items?: { [key: string]: { label: string; order: number } }
-}
-
-interface MetadataItem {
-  extension: string
-  properties: { [key: string]: MetadataProperties }
-  label?: string
 }
 
 const renderCubeTable = ({ label, extension, properties }: MetadataItem) => {

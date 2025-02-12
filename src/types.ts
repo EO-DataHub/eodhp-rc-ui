@@ -118,3 +118,26 @@ export interface Item {
     };
   };
 }
+
+
+export interface CubeData {
+  [key: string]: { [key: string]: string | number | string[] | number[] }
+}
+
+export interface MetadataProperties {
+  label: string
+  formatted: string
+  value: string | number | CubeData
+  spec: {
+    label?: string
+    explain?: string
+  }
+  itemOrder?: string[]
+  items?: { [key: string]: { label: string; order: number } }
+}
+
+export interface MetadataItem {
+  extension: string
+  properties: { [key: string]: MetadataProperties }
+  label?: string
+}
