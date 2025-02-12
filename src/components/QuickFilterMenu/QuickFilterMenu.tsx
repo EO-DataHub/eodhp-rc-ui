@@ -13,7 +13,9 @@ export const QuickFilterMenu: React.FC = () => {
               <Select.Item value="cat:climate_data">Climate Data</Select.Item>
               <Select.Item value="cat:climate_projections">Climate Projections</Select.Item>
               <Select.Item value="cat:hyperspectral">Hyperspectral</Select.Item>
-              <Select.Item value="cat:optical_multispectral">Optical &amp; Multispectral</Select.Item>
+              <Select.Item value="cat:optical_multispectral">
+                Optical &amp; Multispectral
+              </Select.Item>
               <Select.Item value="cat:radar">Radar</Select.Item>
             </Select.Group>
           </Select.Content>
@@ -27,10 +29,10 @@ export const QuickFilterMenu: React.FC = () => {
             <Select.Group>
               <Select.Item value="res:under_1m">Less than 1m</Select.Item>
               <Select.Item value="res:10m">1m &ndash; &lt;10m</Select.Item>
-              <Select.Item value="res:100m">10m &ndash;  &lt;100m</Select.Item>
-              <Select.Item value="res:1km">100m &ndash;  &lt;1km</Select.Item>
-              <Select.Item value="res:10km">1km &ndash;  &lt;10km</Select.Item>
-              <Select.Item value="res:100km">10km &ndash;  &lt;100km</Select.Item>
+              <Select.Item value="res:100m">10m &ndash; &lt;100m</Select.Item>
+              <Select.Item value="res:1km">100m &ndash; &lt;1km</Select.Item>
+              <Select.Item value="res:10km">1km &ndash; &lt;10km</Select.Item>
+              <Select.Item value="res:100km">10km &ndash; &lt;100km</Select.Item>
               <Select.Item value="res:over_100km">Greater than 100km</Select.Item>
             </Select.Group>
           </Select.Content>
@@ -81,7 +83,9 @@ export const QuickFilterMenu: React.FC = () => {
               <Select.Item value="key:disaster">Disaster Management</Select.Item>
               <Select.Item value="key:emissions">Gas &amp; Emissions Monitoring</Select.Item>
               <Select.Item value="key:ecosystem">Habitat &amp; Ecosystem Mapping</Select.Item>
-              <Select.Item value="key:infrastructure">Infrastructure &amp; Urban Development</Select.Item>
+              <Select.Item value="key:infrastructure">
+                Infrastructure &amp; Urban Development
+              </Select.Item>
               <Select.Item value="key:management">Land &amp; Water Management</Select.Item>
               <Select.Item value="key:ocean">Marine &amp; Ocean Science</Select.Item>
             </Select.Group>
