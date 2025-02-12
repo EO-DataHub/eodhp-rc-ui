@@ -58,7 +58,7 @@ export const LoginButton = ({
   return (
     <div>
       {isAuthenticating ? (
-        <LoadingIndicator />
+        <LoadingIndicator light={true} />
       ) : isAuthenticated ? (
         <LogoutMenu />
       ) : (
