@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
@@ -15,6 +15,8 @@ export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
 export const DataFinderPage: React.FC = () => {
+  const [page, setPage] = useState(0)
+
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
@@ -33,13 +35,22 @@ export const DataFinderPage: React.FC = () => {
     placeholderData: (previousValue) => previousValue,
   })
 
+  // Slice the visible items based on the current page
+  const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
-        <SidePanel items={itemList} isLoading={isLoading} error={!!error} />
+        <SidePanel
+          items={itemList}
+          isLoading={isLoading}
+          error={!!error}
+          page={page}
+          setPage={setPage}
+        />
       </Box>
       <Box height="100%">
-        <Map itemList={itemList} />
+        <Map visibleItems={paginatedItems} />
       </Box>
     </Box>
   )

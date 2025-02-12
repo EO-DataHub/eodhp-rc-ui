@@ -17,6 +17,8 @@ interface SidePanelProps {
   items: Item[]
   isLoading: boolean
   error: boolean
+  page: number
+  setPage: (page: number) => void
 }
 
 const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
@@ -90,8 +92,7 @@ const ItemList = ({
     </div>
   )
 }
-export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error }) => {
-  const [page, setPage] = useState(0)
+export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, page, setPage }) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)

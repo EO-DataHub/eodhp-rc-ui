@@ -84,7 +84,7 @@ const ItemLayer = ({ item }: { item: Item }) => {
   )
 }
 
-export const Map = ({ itemList }: { itemList: Item[] }) => {
+export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
   const mapRef = useRef<MapRef>(null)
 
   const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
@@ -132,7 +132,7 @@ export const Map = ({ itemList }: { itemList: Item[] }) => {
     >
       <NavigationControl />
       <DrawControl />
-      {itemList.map((item) => (
+      {visibleItems.map((item) => (
         <ItemLayer key={item.id} item={item} />
       ))}
     </Maplibre>
