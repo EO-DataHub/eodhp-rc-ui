@@ -21,22 +21,25 @@ export const DataFinderPage: React.FC = () => {
   // Determine the query key based on AOI geometry or map bounds
   const queryKey = aoi?.geometry ? JSON.stringify(aoi.geometry) : mapBounds?.toString()
 
-  const { data, isLoading, error } = useQuery({
+  const {
+    data: itemList = [],
+    isLoading,
+    error,
+  } = useQuery<Item[]>({
     queryKey: ['Items', queryKey],
     queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, mapBounds, aoi }), // Fetch one more than the max to see if there are more items
     refetchOnWindowFocus: false,
-    enabled: true,
+    enabled: !!aoi || !!mapBounds,
+    placeholderData: (previousValue) => previousValue,
   })
-
-  const items: Item[] = isLoading || error ? [] : data ?? []
 
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
-        <SidePanel items={items} isLoading={isLoading} error={!!error} />
+        <SidePanel items={itemList} isLoading={isLoading} error={!!error} />
       </Box>
       <Box height="100%">
-        <Map />
+        <Map itemList={itemList} />
       </Box>
     </Box>
   )
