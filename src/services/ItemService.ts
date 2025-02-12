@@ -17,6 +17,12 @@ interface StacQueryBodyParams {
   bbox?: MapBounds
 }
 
+interface FetchItemParams {
+  catalog: string
+  collection?: string
+  item?: string
+}
+
 //This fetch is just illustrative; we are retrieving specific items to validate the behavior.
 //The search functionality will change with future tickets.
 export const fetchItems = async ({ limit, mapBounds, aoi }: FetchItemsParams): Promise<Item[]> => {
@@ -48,4 +54,27 @@ export const fetchItems = async ({ limit, mapBounds, aoi }: FetchItemsParams): P
   const data = await response.json()
 
   return data.features as Item[]
+}
+
+export const fetchItem = async ({ catalog, collection, item }: FetchItemParams): Promise<Item> => {
+  if (!item || !collection) {
+    throw new Error('Item is not valid')
+  }
+
+  const response = await fetch(
+    `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections/${collection}/items/${item}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Item')
+  }
+
+  const data = await response.json()
+  return data as Item
 }

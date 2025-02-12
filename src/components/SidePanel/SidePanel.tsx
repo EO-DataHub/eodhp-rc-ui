@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, ReactNode } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
@@ -11,6 +11,7 @@ import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
+import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
 import { catalogs } from '@/constants'
 
 interface SidePanelProps {
@@ -45,24 +46,12 @@ const ItemList = ({
   items,
   isLoading,
   error,
-  isLicenseProprietary,
-  selectedItem,
-  selectedThumbnail,
-  checkedItems,
-  onSelectItem,
-  onThumbnailSelect,
-  onCheckboxItemChange,
+  renderItem,
 }: {
   items: Item[]
   isLoading: boolean
   error: boolean
-  isLicenseProprietary: boolean
-  selectedItem: Item | null
-  selectedThumbnail: Item | null
-  checkedItems: Item[]
-  onSelectItem: (item: Item) => void
-  onThumbnailSelect: (item: Item) => void
-  onCheckboxItemChange: (item: Item, isChecked: boolean) => void
+  renderItem: (item: Item) => ReactNode
 }) => {
   if (isLoading) {
     return <Text>Loading Items...</Text>
@@ -74,21 +63,7 @@ const ItemList = ({
 
   return (
     <div className={styles.listContainer}>
-      <ul>
-        {items.map((item) => (
-          <ItemCard
-            key={item.id}
-            item={item}
-            isSelected={selectedItem?.id === item.id}
-            isThumbnailSelected={selectedThumbnail?.id === item.id}
-            isChecked={checkedItems.some((checked) => checked.id === item.id)}
-            onSelect={onSelectItem}
-            onThumbnailSelect={onThumbnailSelect}
-            onCheckboxChange={onCheckboxItemChange}
-            isLicenseProprietary={isLicenseProprietary}
-          />
-        ))}
-      </ul>
+      <ul>{items.map((item) => renderItem(item))}</ul>
     </div>
   )
 }
@@ -97,6 +72,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
   const [checkedItems, setCheckedItems] = useState<Item[]>([])
+  const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
 
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
@@ -120,8 +96,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
+  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen
+
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
+  }
+
+  const handleSelectItemInfo = (item: Item) => {
+    setSelectedItemInfo(item)
   }
 
   const handleThumbnailSelect = (item: Item) => {
@@ -151,8 +133,17 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
   }
 
   return (
-    <Flex height={'var(--content-height)'} position="relative">
-      <Flex className={styles.sidePanel} direction="column" width="338px" p="4" gap="2">
+    <Flex height={'var(--content-height)'} position="relative" width="100%">
+      <Flex
+        className={styles.sidePanel}
+        direction="column"
+        width="338px"
+        p="4"
+        gap="2"
+        style={{
+          boxShadow: sidePanelsOpen ? 'none' : undefined,
+        }}
+      >
         <Flex justify="end">
           <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
             <Flex gap="2" align="center">
@@ -171,13 +162,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
           )}
           isLoading={isLoading}
           error={error}
-          isLicenseProprietary={isLicenseProprietary}
-          selectedItem={selectedItem}
-          selectedThumbnail={selectedThumbnail}
-          checkedItems={checkedItems}
-          onSelectItem={handleSelectItem}
-          onThumbnailSelect={handleThumbnailSelect}
-          onCheckboxItemChange={handleCheckboxItemChange}
+          renderItem={(item) => (
+            <ItemCard
+              key={item.id}
+              item={item}
+              isSelected={selectedItem?.id === item.id}
+              isThumbnailSelected={selectedThumbnail?.id === item.id}
+              isChecked={checkedItems.some((checked) => checked.id === item.id)}
+              onSelect={handleSelectItem}
+              onSelectItemInfo={handleSelectItemInfo}
+              onThumbnailSelect={handleThumbnailSelect}
+              onCheckboxChange={handleCheckboxItemChange}
+              isLicenseProprietary={isLicenseProprietary}
+            />
+          )}
         />
         <PaginationContainer>
           <PageSelector
@@ -192,6 +190,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
         </PaginationContainer>
       </Flex>
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
+      <MoreInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
     </Flex>
   )
 }

@@ -1,11 +1,12 @@
 import React from 'react'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Checkbox, Button } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 
 import { useNavigate } from 'react-router-dom'
 
@@ -15,6 +16,7 @@ interface ItemCardProps {
   isThumbnailSelected: boolean
   isChecked: boolean
   onSelect: (item: Item) => void
+  onSelectItemInfo: (item: Item) => void
   onThumbnailSelect: (item: Item) => void
   onCheckboxChange: (item: Item, isChecked: boolean) => void
   isLicenseProprietary: boolean
@@ -26,6 +28,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isThumbnailSelected,
   isChecked,
   onSelect,
+  onSelectItemInfo,
   onCheckboxChange,
   onThumbnailSelect,
   isLicenseProprietary,
@@ -82,7 +85,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             />
           </Flex>
           <Text size="1" className={styles.text}>
-            {new Date(item.properties.datetime).toLocaleString()}
+            {convertDateToUTCString(new Date(item.properties.datetime))}
           </Text>
           <Text size="1" className={styles.text}>
             Min 31.75 Max 32.86
@@ -90,10 +93,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <Text size="1" className={styles.text}>
             HH, VV
           </Text>
-          <Flex gap="3" className={styles.buttonGroup}>
-            <IconButton radius="full" variant="solid" className={styles.iconButton}>
-              <InfoCircledIcon />
-            </IconButton>
+          <Flex justify="end" gap="2">
+            <Tooltip content="More Info">
+              <IconButton
+                radius="full"
+                variant="ghost"
+                className={styles.button}
+                onClick={() => onSelectItemInfo(item)}
+              >
+                <InfoCircledIcon />
+              </IconButton>
+            </Tooltip>
             {isLicenseProprietary ? (
               <Button
                 variant="ghost"
