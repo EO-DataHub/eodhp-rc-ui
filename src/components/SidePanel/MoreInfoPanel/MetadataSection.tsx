@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { Flex, Text } from '@radix-ui/themes'
+import { Flex, Spinner, Text } from '@radix-ui/themes'
 import type { Item, MetadataItem } from '@/types'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
@@ -20,7 +20,12 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ item, isLoadin
   }, [item])
 
   if (isLoading) {
-    return <Text>Loading Items...</Text>
+    return (
+      <Flex gap="3" align="center">
+        <Spinner size="3" />
+        <Text>Loading data...</Text>
+      </Flex>
+    )
   }
 
   if (hasError) {

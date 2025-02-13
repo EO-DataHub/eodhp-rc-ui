@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import type { Item } from '@/types'
-import { Box, Flex, Text } from '@radix-ui/themes'
+import { Box, Flex, Spinner, Text } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetItemTable } from './AssetItemTable'
 import ItemLayer from '@/components/Map/ItemLayer'
@@ -43,7 +43,12 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
   }, [showThumbnail])
 
   if (isLoading) {
-    return <Text>Loading Items...</Text>
+    return (
+      <Flex gap="3" align="center">
+        <Spinner size="3" />
+        <Text>Loading data...</Text>
+      </Flex>
+    )
   }
 
   if (hasError) {
