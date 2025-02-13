@@ -90,7 +90,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       })
       .catch((error) => {
         setIsAuthenticationServiceError(true)
-        throw new Error(`Authentication service error: ${error.message || 'Unknown error'}`)
+        // eslint-disable-next-line no-console
+        console.error('Authentication error:', error)
       })
       .finally(() => {
         setIsAuthenticating(false)
