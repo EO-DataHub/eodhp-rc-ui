@@ -88,8 +88,10 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       .then((userInfo) => {
         setUserInfo(userInfo as KeycloakUserInfo)
       })
-      .catch(() => {
+      .catch((error) => {
         setIsAuthenticationServiceError(true)
+        // eslint-disable-next-line no-console
+        console.error('Authentication error:', error)
       })
       .finally(() => {
         setIsAuthenticating(false)
