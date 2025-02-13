@@ -88,8 +88,9 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       .then((userInfo) => {
         setUserInfo(userInfo as KeycloakUserInfo)
       })
-      .catch(() => {
+      .catch((error) => {
         setIsAuthenticationServiceError(true)
+        throw new Error(`Authentication service error: ${error.message || 'Unknown error'}`)
       })
       .finally(() => {
         setIsAuthenticating(false)
