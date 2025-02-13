@@ -17,12 +17,7 @@ const ItemLayer = ({ item }: { item: Item }) => {
       <Source type="raster" tileSize={256} tiles={[tilesUrl]}>
         <Layer type="raster" />
       </Source>
-      <Source
-        key={`source-${itemId}-bounds`}
-        id={`source-${itemId}-bounds`}
-        type="geojson"
-        data={item.geometry}
-      >
+      <Source id={`source-${itemId}-bounds`} type="geojson" data={item.geometry}>
         <Layer type="line" paint={LIST_ITEM_LINE_PAINT_STYLE} />
       </Source>
     </>

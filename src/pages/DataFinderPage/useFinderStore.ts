@@ -17,9 +17,16 @@ const dataFinderStore = createStore({
     drawMode: undefined as DrawMode | undefined,
     aoi: undefined as GeoJSON.Feature | undefined,
     mapBounds: undefined as MapBounds | undefined,
+    page: 0,
   },
   // Transitions
   on: {
+    pageChange: (context, event: { page: number }) => {
+      return {
+        ...context,
+        page: event.page,
+      }
+    },
     mapLoad: (context, event: { mapInstance: MapInstance | undefined }) => {
       return {
         ...context,
