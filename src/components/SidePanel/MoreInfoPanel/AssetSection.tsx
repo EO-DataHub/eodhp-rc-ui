@@ -51,7 +51,7 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
   }
 
   return (
-    <Flex direction="column" gap="5">
+    <Flex direction="column" gap="6">
       <Box height="300px">
         <Maplibre
           initialViewState={DEFAULT_MAP_VIEW}

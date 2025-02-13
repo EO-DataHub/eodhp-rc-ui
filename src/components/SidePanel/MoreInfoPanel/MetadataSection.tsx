@@ -28,7 +28,7 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ item, isLoadin
   }
 
   return (
-    <Flex direction="column" gap="5">
+    <Flex direction="column" gap="6">
       {metadata.map((metadataItem) =>
         metadataItem.extension === 'cube' ? (
           <CubeMetadataTable metadataItem={metadataItem} key={metadataItem.extension} />

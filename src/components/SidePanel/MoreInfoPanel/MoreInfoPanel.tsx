@@ -39,7 +39,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
       </IconButton>
       {item && (
         <>
-          <Flex direction="row" align="center" justify="between" gap="8">
+          <Flex direction="row" align="center" justify="between" gap="9">
             <Flex direction="column" gap="1" overflow="hidden">
               <Text weight="medium" size="5" className={styles.title} title={item.id}>
                 {item.id}
@@ -63,13 +63,13 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
           </Flex>
 
           <Tabs.Root defaultValue="metadata">
-            <Tabs.List style={{ justifySelf: 'flex-start' }}>
+            <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
             </Tabs.List>
 
-            <Box pt="3">
+            <Box pt="6">
               <Tabs.Content value="metadata">
                 <MetadataSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>

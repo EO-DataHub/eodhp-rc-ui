@@ -70,7 +70,7 @@ export const CubeMetadataTable: React.FC<CubeMetadataTableProps> = ({ metadataIt
           <Heading as="h4" size="2" weight="medium">
             {title}
           </Heading>
-          <Table.Root size="2" variant="ghost" layout="auto">
+          <Table.Root size="3" variant="ghost" layout="auto">
             <Table.Header>
               <Table.Row>
                 {columnHeaders.map(({ headerKey, label }) => (
