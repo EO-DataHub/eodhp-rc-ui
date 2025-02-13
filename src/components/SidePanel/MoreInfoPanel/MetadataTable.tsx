@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { CSSProperties } from 'react'
 
 import { Heading, Flex, Table } from '@radix-ui/themes'
 
@@ -7,17 +7,23 @@ import type { MetadataItem } from '@/types'
 
 interface MetadataTableProps {
   metadataItem: MetadataItem
+  variant?: 'surface' | 'ghost'
+  style?: CSSProperties
 }
 
-export const MetadataTable: React.FC<MetadataTableProps> = ({ metadataItem }) => {
+export const MetadataTable: React.FC<MetadataTableProps> = ({
+  metadataItem,
+  variant = 'ghost',
+  ...props
+}) => {
   const { label, extension, properties } = metadataItem
 
   return (
-    <Flex direction="column" gap="1" key={extension} className={styles.tableContainer}>
+    <Flex direction="column" gap="1" key={extension} className={styles.tableContainer} {...props}>
       <Heading as="h3" size="3" weight="bold">
         {label ? label : 'General'}
       </Heading>
-      <Table.Root size="2" variant="ghost" layout="auto">
+      <Table.Root size="2" variant={variant} layout="auto">
         <Table.Body>
           {Object.keys(properties).map((key) => (
             <Table.Row key={key}>

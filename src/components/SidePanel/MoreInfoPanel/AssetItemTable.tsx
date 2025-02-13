@@ -3,9 +3,11 @@ import React, { PropsWithChildren } from 'react'
 import { Accordion } from 'radix-ui'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
 import styles from './AssetItemTable.module.scss'
-import type { Item } from '@/types'
+import type { Item, MetadataItem } from '@/types'
 import { Button, Flex } from '@radix-ui/themes'
 import DownloadIcon from '@/../public/download-filled.svg?react'
+import StacFields from '@radiantearth/stac-fields'
+import { MetadataTable } from './MetadataTable'
 
 interface AssetItemTableProps {
   assets?: Item['assets']
@@ -39,20 +41,34 @@ export const AssetItemTable: React.FC<AssetItemTableProps> = ({ assets }) => {
     document.body.removeChild(a)
   }
 
+  const assetsWithMetadata = Object.keys(assets).map((key) => {
+    const asset = assets[key]
+    const metadata = StacFields.formatAsset(asset) as MetadataItem[]
+    return { asset, metadata, key }
+  })
+
   return (
     <Accordion.Root className={styles.AccordionRoot} type="multiple">
-      {Object.keys(assets).map((key) => (
+      {assetsWithMetadata.map(({ asset, metadata, key }) => (
         <Accordion.Item className={styles.AccordionItem} value={key} key={key}>
           <AccordionTrigger>{key}</AccordionTrigger>
           <AccordionContent>
-            <Flex direction="column" justify="start" gap="2" pb="4">
+            <Flex direction="column" justify="start" gap="4">
               <Button
                 style={{ alignSelf: 'flex-start' }}
                 variant="outline"
-                onClick={() => handleDownload(assets[key].href)}
+                onClick={() => handleDownload(asset.href)}
               >
                 <DownloadIcon /> Download
               </Button>
+              {metadata.map((metadataItem) => (
+                <MetadataTable
+                  metadataItem={metadataItem}
+                  key={metadataItem.extension}
+                  variant="surface"
+                  style={{ maxWidth: 500 }}
+                />
+              ))}
             </Flex>
           </AccordionContent>
         </Accordion.Item>
