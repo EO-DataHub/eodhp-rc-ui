@@ -19,7 +19,7 @@ const dataFinderStore = createStore({
     aoi: undefined as GeoJSON.Feature | undefined,
     mapBounds: undefined as MapBounds | undefined,
     page: 0,
-    checkedItems: [] as Item[],
+    pinnedItems: [] as Item[],
   },
   // Transitions
   on: {
@@ -98,15 +98,15 @@ const dataFinderStore = createStore({
         drawMode: nextDrawMode,
       }
     },
-    checkBoxItemChange: (context, event: { item: Item; isChecked: boolean }) => {
+    pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
       const { item, isChecked } = event
-      const { checkedItems } = context
+      const { pinnedItems } = context
 
       return {
         ...context,
-        checkedItems: isChecked
-          ? [...checkedItems, item]
-          : checkedItems.filter((checked) => checked.id !== item.id),
+        pinnedItems: isChecked
+          ? [...pinnedItems, item]
+          : pinnedItems.filter((checked) => checked.id !== item.id),
       }
     },
   },

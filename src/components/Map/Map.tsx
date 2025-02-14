@@ -65,7 +65,7 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
 
-  const checkedItems = useSelector(dataFinderStore, (state) => state.context.checkedItems)
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   // This is a workaround to move the draw layers to the top as they are added
   // on page load and should be on top of the other layers. Ideally we not need
@@ -127,7 +127,7 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
         <ItemLayer
           key={item.id}
           item={item}
-          showRasterTiles={checkedItems.some((checkedItem) => checkedItem.id === item.id)}
+          showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
         />
       ))}
     </Maplibre>
