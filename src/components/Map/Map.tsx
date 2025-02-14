@@ -121,8 +121,8 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     >
       <NavigationControl />
       <DrawControl />
-      {visibleItems.map((item) => (
-        <ItemLayer key={item.id} item={item} />
+      {visibleItems.map((item, index) => (
+        <ItemLayer key={`${item.id}-${index}`} item={item} />
       ))}
     </Maplibre>
   )

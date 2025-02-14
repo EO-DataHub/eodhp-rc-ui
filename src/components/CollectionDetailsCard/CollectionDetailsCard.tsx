@@ -27,6 +27,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     e.currentTarget.src = DefaultThumbnail
   }
 
+  const handleOpenCollection = () => {
+    // persist selected collection even after a page reload or browser restart
+    localStorage.setItem('selectedCollection', JSON.stringify(collection))
+  }
+
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Content maxWidth="750px" className={styles.dialogContent}>
@@ -62,7 +67,12 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
               ))}
             </Flex>
             <Flex className={styles.linkWrapper}>
-              <Link size="1" href="#" aria-label={`Open ${collection.title} collection`}>
+              <Link
+                size="1"
+                href="/finder"
+                onClick={handleOpenCollection}
+                aria-label={`Open ${collection.title} collection`}
+              >
                 Open Collection
               </Link>
             </Flex>
