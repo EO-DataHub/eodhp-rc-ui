@@ -73,7 +73,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
-  const [pinnedItems, setCheckedItems] = useState<Item[]>([])
+  const [checkedItems, setCheckedItems] = useState<Item[]>([])
   const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
 
   const toggleFilterPanel = () => {
@@ -171,7 +171,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
               item={item}
               isSelected={selectedItem?.id === item.id}
               isThumbnailSelected={selectedThumbnail?.id === item.id}
-              isChecked={pinnedItems.some((pinnedItem) => pinnedItem.id === item.id)}
+              isChecked={checkedItems.some((checked) => checked.id === item.id)}
               onSelect={handleSelectItem}
               onSelectItemInfo={handleSelectItemInfo}
               onThumbnailSelect={handleThumbnailSelect}
