@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react'
-import { Flex, Spinner, Text } from '@radix-ui/themes'
+import { Flex, Text } from '@radix-ui/themes'
 import type { Item, MetadataItem } from '@/types'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { CubeMetadataTable } from './CubeMetadataTable'
+import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 interface MetadataSectionProps {
   item: Item | null | undefined
@@ -22,7 +23,7 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({ item, isLoadin
   if (isLoading) {
     return (
       <Flex gap="3" align="center">
-        <Spinner size="3" />
+        <LoadingIndicator size="3" />
         <Text>Loading data...</Text>
       </Flex>
     )

@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import type { Item } from '@/types'
-import { Box, Flex, Spinner, Text } from '@radix-ui/themes'
+import { Box, Flex, Text } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetItemTable } from './AssetItemTable'
 import ItemLayer from '@/components/Map/ItemLayer'
+import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 interface AssetSectionProps {
   item: Item | null | undefined
@@ -45,7 +46,7 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
   if (isLoading) {
     return (
       <Flex gap="3" align="center">
-        <Spinner size="3" />
+        <LoadingIndicator size="3" />
         <Text>Loading data...</Text>
       </Flex>
     )
