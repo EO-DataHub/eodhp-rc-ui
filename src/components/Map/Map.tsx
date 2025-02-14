@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
@@ -7,6 +7,8 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
+import { Item } from '@/types'
+import ItemLayer from './ItemLayer'
 
 interface DrawConstants {
   classes: {
@@ -53,7 +55,7 @@ function DrawControl() {
   return null
 }
 
-export const Map = () => {
+export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
   const mapRef = useRef<MapRef>(null)
 
   const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
@@ -62,6 +64,26 @@ export const Map = () => {
     dataFinderStore,
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
+
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
+
+  // This is a workaround to move the draw layers to the top as they are added
+  // on page load and should be on top of the other layers. Ideally we not need
+  // to do this but there is no way to control the order of the layers in the
+  // MapboxDraw control.
+  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  useEffect(() => {
+    if (!mapInstance) return
+
+    // Wait a bit for the layers to be added
+    setTimeout(() => {
+      mapInstance.getStyle().layers.forEach((layer) => {
+        if (layer.id.startsWith('gl-draw')) {
+          mapInstance.moveLayer(layer.id)
+        }
+      })
+    }, 100)
+  }, [mapInstance, visibleItems])
 
   return (
     <Maplibre
@@ -101,6 +123,13 @@ export const Map = () => {
     >
       <NavigationControl />
       <DrawControl />
+      {visibleItems.map((item) => (
+        <ItemLayer
+          key={item.id}
+          item={item}
+          showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
+        />
+      ))}
     </Maplibre>
   )
 }

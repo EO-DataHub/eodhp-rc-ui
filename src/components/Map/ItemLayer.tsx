@@ -1,0 +1,29 @@
+import { Layer, Source } from 'react-map-gl/maplibre'
+
+import { Item } from '@/types'
+
+const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
+
+const LIST_ITEM_LINE_PAINT_STYLE = {
+  'line-color': '#3a5bc7',
+  'line-width': 2,
+}
+
+const ItemLayer = ({ item, showRasterTiles }: { item: Item; showRasterTiles: boolean }) => {
+  const itemId = item.id
+  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${item.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
+  return (
+    <>
+      {showRasterTiles && (
+        <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
+          <Layer type="raster" />
+        </Source>
+      )}
+      <Source id={`source-${itemId}-bounds`} type="geojson" data={item.geometry}>
+        <Layer type="line" paint={LIST_ITEM_LINE_PAINT_STYLE} />
+      </Source>
+    </>
+  )
+}
+
+export default ItemLayer
