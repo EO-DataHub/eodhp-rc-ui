@@ -67,7 +67,7 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
             showThumbnail()
           }}
         >
-          {item && <ItemLayer key={item.id} item={item} />}
+          {item && <ItemLayer key={item.id} item={item} showRasterTiles={true} />}
         </Maplibre>
       </Box>
       <AssetItemTable assets={item?.assets} />
