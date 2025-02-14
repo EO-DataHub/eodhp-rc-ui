@@ -14,6 +14,8 @@ import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPag
 import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
 import { catalogs } from '@/constants'
 
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+
 interface SidePanelProps {
   items: Item[]
   isLoading: boolean
@@ -127,6 +129,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
   }
 
   const handleCheckboxItemChange = (item: Item, isChecked: boolean) => {
+    dataFinderStore.send({ type: 'checkBoxItemChange', item, isChecked })
     setCheckedItems((prevChecked) =>
       isChecked ? [...prevChecked, item] : prevChecked.filter((checked) => checked.id !== item.id),
     )
