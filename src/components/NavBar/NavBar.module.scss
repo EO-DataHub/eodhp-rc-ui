@@ -2,10 +2,16 @@
   background-color: var(--blue-9);
   width: 100%;
   height: var(--nav-bar-height);
+  display: flex;
 
   .logo {
     width: 180px;
     height: auto;
+  }
+
+  .navLinks {
+    display: flex;
+    align-items: center;
   }
 }
 

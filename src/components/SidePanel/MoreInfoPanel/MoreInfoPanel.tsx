@@ -7,6 +7,8 @@ import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
+import { AdditionalResourcesSection } from './AdditionalResourcesSection'
+import { AssetSection } from './AssetSection'
 
 interface MoreInfoPanelProps {
   item: Item | null
@@ -38,7 +40,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
       </IconButton>
       {item && (
         <>
-          <Flex direction="row" align="center" justify="between" gap="8">
+          <Flex direction="row" align="center" justify="between" gap="9">
             <Flex direction="column" gap="1" overflow="hidden">
               <Text weight="medium" size="5" className={styles.title} title={item.id}>
                 {item.id}
@@ -62,23 +64,23 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
           </Flex>
 
           <Tabs.Root defaultValue="metadata">
-            <Tabs.List style={{ justifySelf: 'flex-start' }}>
+            <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
             </Tabs.List>
 
-            <Box pt="3">
+            <Box pt="6">
               <Tabs.Content value="metadata">
                 <MetadataSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="assets">
-                <Text size="2">Asset TODO</Text>
+                <AssetSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="resources">
-                <Text size="2">Resource TODO</Text>
+                <AdditionalResourcesSection item={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
             </Box>
           </Tabs.Root>

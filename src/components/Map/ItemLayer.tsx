@@ -9,14 +9,13 @@ const LIST_ITEM_LINE_PAINT_STYLE = {
   'line-width': 2,
 }
 
-const ItemLayer = ({ item }: { item: Item }) => {
+const ItemLayer = ({ item, showRasterTiles }: { item: Item; showRasterTiles: boolean }) => {
   const itemId = item.id
-  const cogUrl = item.assets?.cog?.href ?? null
-  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${cogUrl}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
+  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${item.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
   return (
     <>
-      {cogUrl && (
-        <Source type="raster" tileSize={256} tiles={[tilesUrl]}>
+      {showRasterTiles && (
+        <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
           <Layer type="raster" />
         </Source>
       )}

@@ -1,6 +1,7 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
+import { Item } from '@/types'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -19,6 +20,7 @@ const dataFinderStore = createStore({
     mapBounds: undefined as MapBounds | undefined,
     queryFilter: undefined as object | undefined,
     page: 0,
+    pinnedItems: [] as Item[],
   },
   // Transitions
   on: {
@@ -101,6 +103,17 @@ const dataFinderStore = createStore({
       return {
         ...context,
         drawMode: nextDrawMode,
+      }
+    },
+    pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
+      const { item, isChecked } = event
+      const { pinnedItems } = context
+
+      return {
+        ...context,
+        pinnedItems: isChecked
+          ? [...pinnedItems, item]
+          : pinnedItems.filter((checked) => checked.id !== item.id),
       }
     },
   },
