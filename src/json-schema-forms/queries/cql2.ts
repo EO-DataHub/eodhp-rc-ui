@@ -129,7 +129,7 @@ function buildFilter(schema: JSONSchema, obj: Record<string, unknown>): QueryCon
   })
 
   for (const namespace in dispatchTable) {
-    Object.assign(args, buildQueryParams(dispatchTable[namespace], schema, obj))
+    args.push(...buildQueryParams(dispatchTable[namespace], schema, obj))
   }
 
   return {
