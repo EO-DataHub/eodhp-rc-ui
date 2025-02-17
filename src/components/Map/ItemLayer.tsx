@@ -11,10 +11,11 @@ const LIST_ITEM_LINE_PAINT_STYLE = {
 
 const ItemLayer = ({ item, showRasterTiles }: { item: Item; showRasterTiles: boolean }) => {
   const itemId = item.id
-  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${item.assets.cog.href}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
+  const cogUrl = item.assets?.cog?.href ?? null
+  const tilesUrl = `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url=${cogUrl}&bidx=1&bidx=2&bidx=3&rescale=0,1000`
   return (
     <>
-      {showRasterTiles && (
+      {cogUrl && showRasterTiles && (
         <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
           <Layer type="raster" />
         </Source>

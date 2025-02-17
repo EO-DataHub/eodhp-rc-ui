@@ -4,7 +4,7 @@ import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { useQuery } from '@tanstack/react-query'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
-import { fetchItems, fetchItemsByQueryFilter } from '@/services/ItemService'
+import { fetchItems } from '@/services/ItemService'
 import { Item } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
@@ -22,15 +22,15 @@ export const DataFinderPage: React.FC = () => {
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
 
-  const queryKey = queryFilter
-    ? JSON.stringify(queryFilter)
-    : aoi?.geometry
-      ? JSON.stringify(aoi.geometry)
-      : mapBounds?.toString()
-
-  const fetchFunction = queryFilter
-    ? () => fetchItemsByQueryFilter(queryFilter)
-    : () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, mapBounds, aoi, selectedCollection }) // Fetch one more than the max to see if there are more items
+  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
+  const fetchFunction = () =>
+    fetchItems({
+      limit: MAX_TOTAL_ITEMS + 1, // Fetch one more than the max to see if there are more items
+      mapBounds,
+      aoi,
+      queryFilter,
+      selectedCollection,
+    })
 
   const {
     data: itemList = [],
@@ -42,7 +42,7 @@ export const DataFinderPage: React.FC = () => {
     queryKey: ['Items', queryKey],
     queryFn: fetchFunction,
     refetchOnWindowFocus: false,
-    enabled: !!aoi || !!mapBounds,
+    enabled: !!queryFilter || !!aoi || !!mapBounds,
     placeholderData: (previousValue) => previousValue,
   })
 
