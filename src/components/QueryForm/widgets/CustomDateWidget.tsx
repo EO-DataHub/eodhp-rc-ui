@@ -1,6 +1,8 @@
 import { Flex, Text } from '@radix-ui/themes'
 import { WidgetProps } from '@rjsf/utils'
 import { CalendarIcon } from '@radix-ui/react-icons'
+import { format, parse } from 'date-fns'
+import { enGB } from 'date-fns/locale'
 
 //MUI imports
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -10,7 +12,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 export const CustomDateWidget = ({ schema, value, onChange }: WidgetProps) => {
   const handleDateChange = (date: Date | null) => {
     if (date) {
-      onChange(date.toISOString().split('T')[0])
+      onChange(format(date, 'yyyy-MM-dd'))
     }
   }
 
@@ -19,10 +21,11 @@ export const CustomDateWidget = ({ schema, value, onChange }: WidgetProps) => {
       <Text weight="bold" size="2">
         {schema.title ?? 'Select a date'}
       </Text>
-      <LocalizationProvider dateAdapter={AdapterDateFns}>
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={enGB}>
         <DatePicker
-          value={value ? new Date(value) : null}
+          value={value ? parse(value, 'yyyy-MM-dd', new Date()) : null}
           onChange={handleDateChange}
+          format="dd/MM/yyyy"
           slots={{
             openPickerIcon: () => <CalendarIcon />,
           }}

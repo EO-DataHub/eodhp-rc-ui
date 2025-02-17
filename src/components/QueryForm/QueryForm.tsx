@@ -56,6 +56,7 @@ async function buildSchema(schema: JSONSchema): Promise<JSONSchema> {
 
 export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
   const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
+  const [formData, setFormData] = useState<Record<string, unknown>>({})
 
   const widgets = {
     SelectWidget: CustomSelectWidget,
@@ -73,9 +74,11 @@ export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
     <Form
       className={styles.reactJsonSchemaForm}
       schema={dereferencedSchema}
+      formData={formData}
       uiSchema={uiSchema}
       widgets={widgets}
       validator={validator}
+      onChange={(e: IChangeEvent) => setFormData(e.formData)}
       onSubmit={(d: IChangeEvent) => {
         onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
       }}

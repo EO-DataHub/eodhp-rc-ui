@@ -1,3 +1,12 @@
+export const convertDateToUTCString = (date: Date) => {
+  const formattedDate =
+    `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}, ` +
+    `${date.getUTCHours() % 12 || 12}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')} ` +
+    `${date.getUTCHours() < 12 ? 'AM' : 'PM'} UTC`
+
+  return formattedDate
+}
+
 export const getFormattedDateRange = (interval: (string | null)[]): string => {
   if (!Array.isArray(interval) || interval.length !== 2) return 'Invalid Date Range'
 
