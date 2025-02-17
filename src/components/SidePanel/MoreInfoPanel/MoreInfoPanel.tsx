@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './MoreInfoPanel.module.scss'
@@ -18,10 +18,19 @@ interface MoreInfoPanelProps {
 export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) => {
   const isOpen = item !== null
 
+  const rootCatalog = useMemo(() => {
+    const url = item?.links.find((link) => link.rel === 'root')?.href
+    const components = url?.split('/')
+
+    if (!components) return undefined
+
+    return components[components.length - 1]
+  }, [item?.links])
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
     queryFn: () =>
-      fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }),
+      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item,
   })
