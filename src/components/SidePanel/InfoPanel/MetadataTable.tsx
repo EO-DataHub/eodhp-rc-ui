@@ -2,7 +2,7 @@ import React, { CSSProperties } from 'react'
 
 import { Heading, Flex, Table } from '@radix-ui/themes'
 
-import styles from './MoreInfoPanel.module.scss'
+import styles from './MetadataTable.module.scss'
 import type { MetadataItem } from '@/types'
 
 interface MetadataTableProps {
@@ -23,7 +23,7 @@ export const MetadataTable: React.FC<MetadataTableProps> = ({
       <Heading as="h3" size="4" weight="bold">
         {label ? label : 'General'}
       </Heading>
-      <Table.Root size="3" variant={variant} layout="auto">
+      <Table.Root size="3" variant={variant} layout="fixed">
         <Table.Body>
           {Object.keys(properties).map((key) => (
             <Table.Row key={key}>

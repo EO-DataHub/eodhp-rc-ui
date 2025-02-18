@@ -21,7 +21,7 @@ interface StacQueryBodyParams {
 }
 
 interface FetchItemParams {
-  catalog: string
+  catalog?: string
   collection?: string
   item?: string
 }
@@ -67,7 +67,7 @@ export const fetchItems = async ({
 }
 
 export const fetchItem = async ({ catalog, collection, item }: FetchItemParams): Promise<Item> => {
-  if (!item || !collection) {
+  if (!item || !collection || !catalog) {
     throw new Error('Item is not valid')
   }
 

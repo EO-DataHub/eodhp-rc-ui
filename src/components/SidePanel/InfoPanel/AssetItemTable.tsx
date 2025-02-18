@@ -3,14 +3,14 @@ import React, { PropsWithChildren } from 'react'
 import { Accordion } from 'radix-ui'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
 import styles from './AssetItemTable.module.scss'
-import type { Item, MetadataItem } from '@/types'
-import { Button, Flex } from '@radix-ui/themes'
+import type { Collection, Item, MetadataItem } from '@/types'
+import { Button, Flex, Text } from '@radix-ui/themes'
 import DownloadIcon from '@/../public/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 
 interface AssetItemTableProps {
-  assets?: Item['assets']
+  assets?: Item['assets'] | Collection['assets']
 }
 
 const AccordionTrigger: React.FC<PropsWithChildren> = ({ children, ...props }) => (
@@ -46,6 +46,10 @@ export const AssetItemTable: React.FC<AssetItemTableProps> = ({ assets }) => {
     const metadata = StacFields.formatAsset(asset) as MetadataItem[]
     return { asset, metadata, key }
   })
+
+  if (assetsWithMetadata.length === 0) {
+    return <Text>No assets available.</Text>
+  }
 
   return (
     <Accordion.Root className={styles.AccordionRoot} type="multiple">

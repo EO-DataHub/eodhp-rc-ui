@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
-import styles from './MoreInfoPanel.module.scss'
+import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import { MetadataSection } from './MetadataSection'
@@ -10,31 +10,31 @@ import { fetchItem } from '@/services/ItemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
-interface MoreInfoPanelProps {
+interface ItemInfoPanelProps {
   item: Item | null
   onClose: () => void
 }
 
-export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) => {
-  const isOpen = item !== null
+export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
+  const rootCatalog = useMemo(() => {
+    const url = item?.links.find((link) => link.rel === 'root')?.href
+    const components = url?.split('/')
+
+    if (!components) return undefined
+
+    return components[components.length - 1]
+  }, [item?.links])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
     queryFn: () =>
-      fetchItem({ catalog: 'ceda-stac-catalogue', collection: item?.collection, item: item?.id }),
+      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item,
   })
 
   return (
-    <Flex
-      direction="column"
-      gap="5"
-      p="5"
-      pr="8"
-      position="absolute"
-      className={`${styles.moreInfoPanel} ${isOpen ? styles['moreInfoPanel--open'] : ''}`}
-    >
+    <>
       <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
       </IconButton>
@@ -72,7 +72,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
 
             <Box pt="6">
               <Tabs.Content value="metadata">
-                <MetadataSection item={data} isLoading={isLoading} hasError={!!error} />
+                <MetadataSection stacElement={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="assets">
@@ -80,12 +80,16 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
               </Tabs.Content>
 
               <Tabs.Content value="resources">
-                <AdditionalResourcesSection item={data} isLoading={isLoading} hasError={!!error} />
+                <AdditionalResourcesSection
+                  links={data?.links}
+                  isLoading={isLoading}
+                  hasError={!!error}
+                />
               </Tabs.Content>
             </Box>
           </Tabs.Root>
         </>
       )}
-    </Flex>
+    </>
   )
 }

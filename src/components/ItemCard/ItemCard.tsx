@@ -99,7 +99,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
           <Text size="1" className={styles.text}>
             HH, VV
           </Text>
-          <Flex justify="end" gap="2">
+          <Flex justify="end" gap="2" align="center">
             <Tooltip content="More Info">
               <IconButton
                 radius="full"

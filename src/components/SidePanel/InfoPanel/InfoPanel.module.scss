@@ -1,4 +1,4 @@
-.moreInfoPanel {
+.InfoPanel {
   width: calc(100vw - 338px);
   opacity: 0;
   background-color: #fff;
@@ -42,42 +42,9 @@
     right: 12px;
     top: 12px;
   }
-
-  .tableContainer {
-    pre {
-      margin: 0;
-    }
-
-    ul {
-      padding-inline-start: 16px;
-      margin: 0;
-      list-style-type: disc;
-    }
-
-    dl:first-child {
-      margin-block-start: 0rem;
-      margin-block-end: 0rem;
-    }
-
-    dt {
-      font-weight: 600;
-    }
-
-    p {
-      margin: 0;
-    }
-
-    th {
-      font-weight: 700;
-    }
-
-    td {
-      word-break: break-all;
-    }
-  }
 }
 
-.link {
+.linkContainer {
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;

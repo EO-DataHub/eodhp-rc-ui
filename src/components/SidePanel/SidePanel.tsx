@@ -10,9 +10,11 @@ import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
-import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
+import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
+import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 
 interface SidePanelProps {
   items: Item[]
@@ -85,6 +87,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
   const [checkedItems, setCheckedItems] = useState<Item[]>([])
   const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
+  const [isCollectionInfoPanelOpen, setIsCollectionInfoPanelOpen] = useState(false)
 
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
@@ -94,13 +97,21 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
-  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen
+  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
   }
 
+  const handleSelectCollectionInfo = () => {
+    // Reset item info panel
+    setSelectedItemInfo(null)
+    setIsCollectionInfoPanelOpen(true)
+  }
+
   const handleSelectItemInfo = (item: Item) => {
+    // Reset collection info panel
+    setIsCollectionInfoPanelOpen(false)
     setSelectedItemInfo(item)
   }
 
@@ -151,7 +162,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             </Flex>
           </IconButton>
         </Flex>
-        <SmallCollectionCard />
+        <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
         <Flex justify="end">
           <PageIndicator page={page} totalItemsCount={items.length} />
         </Flex>
@@ -188,8 +199,18 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         </PaginationContainer>
       </Flex>
+
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
-      <MoreInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
+
+      {/* Show either item or collection info panel, and close the other one if needed */}
+      <InfoPanelWrapper isOpen={!!selectedItemInfo || isCollectionInfoPanelOpen}>
+        {selectedItemInfo && (
+          <ItemInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
+        )}
+        {isCollectionInfoPanelOpen && (
+          <CollectionInfoPanel onClose={() => setIsCollectionInfoPanelOpen(false)} />
+        )}
+      </InfoPanelWrapper>
     </Flex>
   )
 }
