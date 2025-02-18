@@ -11,10 +11,210 @@ import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
-import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
+import { ItemInfoPanel } from './MoreInfoPanel/ItemInfoPanel'
 import { catalogs } from '@/constants'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { CollectionInfoPanel } from './MoreInfoPanel/CollectionInfoPanel'
+
+const mockCollection: Collection = {
+  type: 'Collection',
+  stac_version: '1.0.0',
+  stac_extensions: ['https://stac-extensions.github.io/render/v1.0.0/schema.json'],
+  id: 'sentinel2_ard',
+  title: 'Sentinel 2 ARD',
+  description:
+    'These data have been created by the Department for Environment, Food and Rural Affairs (Defra) and Joint Nature Conservation Committee (JNCC) in order to cost-effectively provide high quality, Analysis Ready Data (ARD) for a wide range of applications. The dataset contains modified Copernicus Sentinel-2 (Level 1C data processed into a surface reflectance product using ARCSI software (Level 2)).',
+  links: [
+    {
+      rel: 'self',
+      type: 'application/json',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/ceda-stac-catalogue/collections/sentinel2_ard',
+    },
+    {
+      rel: 'parent',
+      type: 'application/json',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/ceda-stac-catalogue',
+    },
+    {
+      rel: 'items',
+      type: 'application/geo+json',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/ceda-stac-catalogue/collections/sentinel2_ard/items',
+    },
+    {
+      rel: 'root',
+      type: 'application/json',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/ceda-stac-catalogue',
+    },
+    {
+      rel: 'ceda_catalogue',
+      href: 'https://test.eodatahub.org.uk/uuid/bf9568b558204b81803eeebcc7f529ef',
+      type: 'text/html',
+    },
+    {
+      rel: 'license',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/licences/spdx/text/OGL-UK-3.0.txt',
+      type: 'text/plain',
+    },
+    {
+      rel: 'license',
+      href: 'https://test.eodatahub.org.uk/api/catalogue/licences/spdx/html/OGL-UK-3.0.html',
+      type: 'text/html',
+    },
+  ],
+  keywords: [
+    'Analysis Ready Data',
+    'Sentinel',
+    'Surface Reflectance',
+    'ARD',
+    'Level2',
+    'ARCSI',
+    'JNCC',
+    'Defra',
+    'ESA',
+  ],
+  license: 'OGL-UK-3.0',
+  providers: [
+    {
+      roles: ['producer'],
+      name: 'Department for Environment, Food and Rural Affairs (Defra)',
+      url: 'https://www.gov.uk/government/organisations/department-for-environment-food-rural-affairs',
+    },
+    {
+      roles: ['producer'],
+      name: 'Joint Nature Conservation Committee (JNCC)',
+      url: 'https://jncc.gov.uk',
+    },
+    {
+      roles: ['host'],
+      name: 'Centre for Environmental Data Analysis (CEDA)',
+      url: 'https://ceda.ac.uk',
+    },
+  ],
+  extent: {
+    spatial: {
+      bbox: [[-9.00034454651177, 49.48562028352171, 3.1494256015866995, 61.33444247301668]],
+    },
+    temporal: { interval: [['2023-01-01T11:14:51.000Z', '2023-11-01T11:43:49.000Z']] },
+  },
+  summaries: {
+    'Instrument Family Name Abbreviation': ['MSI'],
+    'NSSDC Identifier': ['2015-000A'],
+    'Start Orbit Number': [
+      '030408',
+      '030422',
+      '030436',
+      '030465',
+      '030479',
+      '030508',
+      '030522',
+      '030551',
+      '030565',
+      '030579',
+      '030608',
+      '030622',
+      '030651',
+      '030665',
+      '030694',
+      '030708',
+      '030722',
+      '030751',
+      '030765',
+      '030794',
+      '030808',
+      '030837',
+      '030851',
+      '030865',
+      '030908',
+      '030937',
+      '030951',
+      '030994',
+      '031008',
+      '031037',
+      '031051',
+      '031080',
+      '031094',
+      '031123',
+      '031137',
+      '031151',
+      '031180',
+      '031194',
+      '031223',
+      '031237',
+      '031266',
+      '031280',
+      '031294',
+      '031323',
+      '031337',
+      '031366',
+      '031380',
+      '031409',
+      '031423',
+      '031437',
+      '031466',
+      '031480',
+      '031509',
+      '031523',
+      '031552',
+      '031566',
+      '031580',
+      '031609',
+      '031623',
+      '031666',
+      '031709',
+      '031723',
+      '031766',
+      '031795',
+      '031809',
+      '031838',
+      '031852',
+      '031866',
+      '031895',
+      '031938',
+      '031952',
+      '031981',
+      '031995',
+      '032009',
+      '032038',
+      '032052',
+      '032081',
+      '032095',
+      '032124',
+      '032138',
+      '032152',
+      '032181',
+      '032195',
+      '032224',
+      '032238',
+      '032281',
+      '032295',
+      '032324',
+      '032338',
+      '032367',
+      '032381',
+      '032410',
+      '032424',
+      '032438',
+      '032467',
+      '032481',
+      '032510',
+      '032524',
+      '032553',
+      '032567',
+    ],
+    'Instrument Family Name': ['Multi-Spectral Instrument'],
+    'Platform Number': ['2A', '2B'],
+    'Start Relative Orbit Number': ['023', '037', '066', '080', '094', '123', '137'],
+    'Ground Tracking Direction': ['ascending', 'descending'],
+  },
+  assets: {
+    thumbnail: {
+      roles: ['thumbnail'],
+      href: 'https://dap.ceda.ac.uk/neodc/sentinel_ard/data/sentinel_2/2023/06/10/S2A_20230610_latn527lone0008_T30UYD_ORB137_20230610144925_utm30n_osgb_vmsk_sharp_rad_srefdem_stdsref_thumbnail.jpg',
+      type: 'image/jpg',
+    },
+  },
+}
 
 interface SidePanelProps {
   items: Item[]
@@ -193,7 +393,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
         </PaginationContainer>
       </Flex>
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
-      <MoreInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
+      <ItemInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
+      <CollectionInfoPanel
+        collection={mockCollection}
+        onClose={() => {
+          return
+        }}
+      />
     </Flex>
   )
 }

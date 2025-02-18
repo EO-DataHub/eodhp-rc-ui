@@ -2,7 +2,7 @@ import React, { CSSProperties } from 'react'
 
 import { Heading, Flex, Table } from '@radix-ui/themes'
 
-import styles from './MoreInfoPanel.module.scss'
+import styles from './MetadataTable.module.scss'
 import type { MetadataItem } from '@/types'
 
 interface MetadataTableProps {

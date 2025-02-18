@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
-import styles from './MoreInfoPanel.module.scss'
+import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/convertDateToUTCString'
 import { MetadataSection } from './MetadataSection'
@@ -10,12 +10,12 @@ import { fetchItem } from '@/services/ItemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
-interface MoreInfoPanelProps {
+interface ItemInfoPanelProps {
   item: Item | null
   onClose: () => void
 }
 
-export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) => {
+export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
   const isOpen = item !== null
 
   const rootCatalog = useMemo(() => {
@@ -42,7 +42,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
       p="5"
       pr="8"
       position="absolute"
-      className={`${styles.moreInfoPanel} ${isOpen ? styles['moreInfoPanel--open'] : ''}`}
+      className={`${styles.InfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}
     >
       <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
@@ -81,7 +81,7 @@ export const MoreInfoPanel: React.FC<MoreInfoPanelProps> = ({ item, onClose }) =
 
             <Box pt="6">
               <Tabs.Content value="metadata">
-                <MetadataSection item={data} isLoading={isLoading} hasError={!!error} />
+                <MetadataSection stacElement={data} isLoading={isLoading} hasError={!!error} />
               </Tabs.Content>
 
               <Tabs.Content value="assets">

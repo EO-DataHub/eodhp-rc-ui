@@ -44,7 +44,7 @@ export interface Collection {
       interval: (string | null)[][]
     }
   }
-  summaries?: { [key: string]: [] }
+  summaries?: { [key: string]: string[] }
   assets?: {
     [key: string]: {
       href: string

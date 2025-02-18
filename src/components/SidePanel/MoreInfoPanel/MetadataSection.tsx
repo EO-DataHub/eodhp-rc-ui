@@ -1,24 +1,33 @@
 import React, { useMemo } from 'react'
 import { Flex, Text } from '@radix-ui/themes'
-import type { Item, MetadataItem } from '@/types'
+import type { Item, Collection, MetadataItem } from '@/types'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { CubeMetadataTable } from './CubeMetadataTable'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 interface MetadataSectionProps {
-  item: Item | null | undefined
+  stacElement: Item | Collection | null | undefined
   isLoading: boolean
   hasError: boolean
 }
 
-export const MetadataSection: React.FC<MetadataSectionProps> = ({ item, isLoading, hasError }) => {
+export const MetadataSection: React.FC<MetadataSectionProps> = ({
+  stacElement,
+  isLoading,
+  hasError,
+}) => {
   const metadata: MetadataItem[] = useMemo(() => {
-    if (!item) {
+    if (!stacElement) {
       return []
     }
-    return StacFields.formatItemProperties(item) as MetadataItem[]
-  }, [item])
+
+    if (stacElement.type === 'Collection') {
+      return StacFields.formatCollection(stacElement) as MetadataItem[]
+    }
+
+    return StacFields.formatItemProperties(stacElement) as MetadataItem[]
+  }, [stacElement])
 
   if (isLoading) {
     return (

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Flex, Text, Spinner, Link } from '@radix-ui/themes'
 import type { Item } from '@/types'
-import styles from './MoreInfoPanel.module.scss'
+import styles from './InfoPanel.module.scss'
 
 interface AdditionalResourcesSectionProps {
   item: Item | null | undefined

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Heading, Flex, Table } from '@radix-ui/themes'
 
-import styles from './MoreInfoPanel.module.scss'
+import styles from './MetadataTable.module.scss'
 import StacFields from '@radiantearth/stac-fields'
 import type { MetadataItem } from '@/types'
 
