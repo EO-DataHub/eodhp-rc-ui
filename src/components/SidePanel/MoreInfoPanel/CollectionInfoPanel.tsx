@@ -25,7 +25,7 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
       p="5"
       pr="8"
       position="absolute"
-      className={`${styles.CollectionInfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}
+      className={`${styles.InfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}
     >
       <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
