@@ -24,7 +24,7 @@ export const OrderDetailsPage: React.FC = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['Item', orderId],
+    queryKey: ['Items', catalog, selectedCollection?.id, orderId],
     queryFn: () =>
       fetchItem({
         catalog: catalog,
