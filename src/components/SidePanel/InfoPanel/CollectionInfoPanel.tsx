@@ -4,8 +4,8 @@ import { Badge, Box, Flex, IconButton, Tabs, Text, Tooltip } from '@radix-ui/the
 import React from 'react'
 import styles from './InfoPanel.module.scss'
 import { TruncatedText } from './TruncatedText'
-import { getFormattedDateRange } from '@/library/getFormattedDateRange'
 import { MetadataSection } from './MetadataSection'
+import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface CollectionInfoPanelProps {
   collection: Collection | null

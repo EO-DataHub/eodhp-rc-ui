@@ -1,5 +1,5 @@
 import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
-import { Item } from '@/types'
+import { Collection, Item } from '@/types'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -7,6 +7,8 @@ interface FetchItemsParams {
   limit: number
   mapBounds?: MapBounds
   aoi?: GeoJSON.Feature
+  queryFilter?: object
+  selectedCollection?: Collection
 }
 
 interface StacQueryBodyParams {
@@ -23,22 +25,41 @@ interface FetchItemParams {
   item?: string
 }
 
-//This fetch is just illustrative; we are retrieving specific items to validate the behavior.
-//The search functionality will change with future tickets.
-export const fetchItems = async ({ limit, mapBounds, aoi }: FetchItemsParams): Promise<Item[]> => {
-  const body = {
-    catalog_paths: ['supported-datasets/ceda-stac-catalogue'],
-    collections: ['sentinel2_ard'],
-    limit,
-  } as StacQueryBodyParams
+export const fetchItems = async ({
+  limit,
+  mapBounds,
+  aoi,
+  selectedCollection,
+  queryFilter,
+}: FetchItemsParams): Promise<Item[]> => {
+  const fetchUrl = `${API_URL}/api/catalogue/stac/search`
+  let catalogPaths = ['supported-datasets/ceda-stac-catalogue'] // Default fallback for sentinel2_ard
 
-  if (aoi) {
-    body.intersects = aoi.geometry
-  } else if (mapBounds) {
-    body.bbox = mapBounds
+  // extract catalog_paths from selected collection needed for stac search
+  if (selectedCollection) {
+    const parentLink = selectedCollection.links?.find((link) => link.rel === 'parent')
+    if (parentLink?.href) {
+      const urlParts = new URL(parentLink.href).pathname.split('/catalogs/')
+      if (urlParts.length > 1) {
+        catalogPaths = [urlParts[1]]
+      }
+    }
   }
 
-  const response = await fetch(`${API_URL}/api/catalogue/stac/search`, {
+  const baseBody: StacQueryBodyParams = {
+    catalog_paths: catalogPaths,
+    collections: selectedCollection ? [selectedCollection.id] : ['sentinel2_ard'],
+    limit,
+  }
+
+  if (aoi) {
+    baseBody.intersects = aoi.geometry
+  } else if (mapBounds) {
+    baseBody.bbox = mapBounds
+  }
+
+  const body = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+  const response = await fetch(fetchUrl, {
     method: 'POST',
     headers: {
       Accept: 'application/geo+json',
@@ -52,7 +73,6 @@ export const fetchItems = async ({ limit, mapBounds, aoi }: FetchItemsParams): P
   }
 
   const data = await response.json()
-
   return data.features as Item[]
 }
 

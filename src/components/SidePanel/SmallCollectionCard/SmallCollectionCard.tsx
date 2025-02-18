@@ -1,6 +1,7 @@
 import React from 'react'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Link } from '@radix-ui/themes'
+import { getFormattedDateRange } from '@/library/dateUtils'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../../public/pound-sterling-symbol.svg?react'
 
@@ -11,12 +12,16 @@ interface SmallCollectionCardProps {
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
 }) => {
+  const storedCollection = localStorage.getItem('selectedCollection')
+  const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
+  const dateInterval = selectedCollection?.extent?.temporal?.interval[0] ?? []
+
   return (
     <Card className={styles.card} size="2">
       <Flex direction="column">
         <Flex justify="between" align="center">
           <Text size="3" className={styles.text}>
-            Airbus SAR Data
+            {selectedCollection?.title || 'No Collection Selected'}
           </Text>
           <Flex justify="end" gap="2">
             <IconButton radius="full" variant="solid" className={styles.button}>
@@ -28,7 +33,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
           </Flex>
         </Flex>
         <Text size="3" className={styles.text}>
-          11/19/2007 - 12/5/2024
+          {getFormattedDateRange(dateInterval)}
         </Text>
         <Link href="/" size="1" mt="2" mb="4" className={styles.text}>
           Change Collection

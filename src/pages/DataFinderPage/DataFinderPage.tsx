@@ -17,21 +17,32 @@ export const PAGE_SIZE = 10
 export const DataFinderPage: React.FC = () => {
   const page = useSelector(dataFinderStore, (state) => state.context.page)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
+  const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const storedCollection = localStorage.getItem('selectedCollection')
+  const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
 
-  // Determine the query key based on AOI geometry or map bounds
-  const queryKey = aoi?.geometry ? JSON.stringify(aoi.geometry) : mapBounds?.toString()
+  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
+  const fetchFunction = () =>
+    fetchItems({
+      limit: MAX_TOTAL_ITEMS + 1, // Fetch one more than the max to see if there are more items
+      mapBounds,
+      aoi,
+      queryFilter,
+      selectedCollection,
+    })
 
   const {
     data: itemList = [],
     isLoading,
+    isFetching,
     isFetched,
     error,
   } = useQuery<Item[]>({
     queryKey: ['Items', queryKey],
-    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1, mapBounds, aoi }), // Fetch one more than the max to see if there are more items
+    queryFn: fetchFunction,
     refetchOnWindowFocus: false,
-    enabled: !!aoi || !!mapBounds,
+    enabled: !!queryFilter || !!aoi || !!mapBounds,
     placeholderData: (previousValue) => previousValue,
   })
 
@@ -50,7 +61,7 @@ export const DataFinderPage: React.FC = () => {
       <Box className={styles.floatingContainer}>
         <SidePanel
           items={itemList}
-          isLoading={isLoading}
+          isLoading={isLoading || isFetching}
           error={!!error}
           page={page}
           setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}

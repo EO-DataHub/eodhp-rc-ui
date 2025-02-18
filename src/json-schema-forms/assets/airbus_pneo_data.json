@@ -1,0 +1,38 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/airbus_pneo_data.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Airbus Pléiades Neo",
+  "type": "object",
+  "required": [
+    "collection_id"
+  ],
+  "properties": {
+    "collection_id": {
+      "const": "airbus_pneo_data"
+    },
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "eo:cloud_cover": {
+      "default": 90.0,
+      "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:cloud_cover",
+      "title": "Maximum cloud cover"
+    },
+    "eo:snow_cover": {
+      "default": 100.0,
+      "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:snow_cover",
+      "title": "Maximum snow cover"
+    },
+    "view:incidence_angle": {
+      "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:incidence_angle",
+      "title": "Maximum incidence angle"
+    },
+    "view:sun_elevation": {
+      "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:sun_elevation",
+      "title": "Maximum sun elevation angle"
+    }
+  }
+}
