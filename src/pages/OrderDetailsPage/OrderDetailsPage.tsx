@@ -8,6 +8,7 @@ import { OrderSelections } from './OrderSelections'
 import { TermsAndConditionsContainer } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
+import { getCatalog } from '@/library/catalogUtils'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -16,7 +17,7 @@ export const OrderDetailsPage: React.FC = () => {
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
   const isOpticalData = (): boolean => !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
-  const catalog = selectedCollection?.keywords[0]
+  const catalog = getCatalog(selectedCollection)
 
   const {
     data: item,
