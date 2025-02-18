@@ -1,4 +1,3 @@
-import { Collection } from '@/types'
 import { Cross1Icon, Link1Icon, Share1Icon } from '@radix-ui/react-icons'
 import { Badge, Box, Flex, IconButton, Tabs, Text, Tooltip } from '@radix-ui/themes'
 import React from 'react'
@@ -6,31 +5,39 @@ import styles from './InfoPanel.module.scss'
 import { TruncatedText } from './TruncatedText'
 import { MetadataSection } from './MetadataSection'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { Collection } from '@/types'
+import { AssetItemTable } from './AssetItemTable'
+import { AdditionalResourcesSection } from './AdditionalResourcesSection'
+import { ProvidersSection } from './ProvidersSection'
 
 interface CollectionInfoPanelProps {
-  collection: Collection | null
   onClose: () => void
 }
 
-export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
-  collection,
-  onClose,
-}) => {
+export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({ onClose }) => {
+  const storedCollection = localStorage.getItem('selectedCollection')
+  const selectedCollection: Collection = storedCollection ? JSON.parse(storedCollection) : null
+
   return (
     <>
       <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
       </IconButton>
-      {collection && (
+      {selectedCollection && (
         <>
           <Flex direction="column" gap="1">
             <Flex direction="row" align="center" justify="between" gap="9">
               <Flex direction="column" gap="1" overflow="hidden">
-                <Text weight="medium" size="5" className={styles.title} title={collection.id}>
-                  {collection.id}
+                <Text
+                  weight="medium"
+                  size="5"
+                  className={styles.title}
+                  title={selectedCollection.id}
+                >
+                  {selectedCollection.title ?? selectedCollection.id}
                 </Text>
                 <Text size="3" className={styles.subtitle}>
-                  {getFormattedDateRange(collection.extent.temporal.interval[0] ?? [])}
+                  {getFormattedDateRange(selectedCollection.extent.temporal.interval[0] ?? [])}
                 </Text>
               </Flex>
               <Flex direction="row" gap="5" align="center">
@@ -46,11 +53,11 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
                 </Tooltip>
               </Flex>
             </Flex>
-            <TruncatedText text={collection.description} />
+            <TruncatedText text={selectedCollection.description} />
           </Flex>
 
-          <Flex direction="row" gap="2">
-            {collection.keywords?.map((keyword) => (
+          <Flex direction="row" wrap="wrap" gap="2">
+            {selectedCollection.keywords?.map((keyword) => (
               <Badge color="gray" key={keyword} radius="full">
                 {keyword}
               </Badge>
@@ -60,16 +67,38 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
           <Tabs.Root defaultValue="metadata">
             <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
+              <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
+              <Tabs.Trigger value="providers">Providers</Tabs.Trigger>
+              <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
               <Tabs.Trigger value="data_quality">Data Quality</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="6">
               <Tabs.Content value="metadata">
-                <MetadataSection stacElement={collection} isLoading={false} hasError={false} />
+                <MetadataSection
+                  stacElement={selectedCollection}
+                  isLoading={false}
+                  hasError={false}
+                  ignoredFields={['assets', 'providers', 'links']}
+                />
+              </Tabs.Content>
+
+              <Tabs.Content value="assets">
+                <Flex direction="column" gap="6">
+                  <AssetItemTable assets={selectedCollection.assets} />
+                </Flex>
+              </Tabs.Content>
+
+              <Tabs.Content value="providers">
+                <ProvidersSection providers={selectedCollection.providers} />
+              </Tabs.Content>
+
+              <Tabs.Content value="resources">
+                <AdditionalResourcesSection links={selectedCollection.links} />
               </Tabs.Content>
 
               <Tabs.Content value="data_quality">
-                <Text>TODO</Text>
+                <Text>No additional data quality metrics available.</Text>
               </Tabs.Content>
             </Box>
           </Tabs.Root>

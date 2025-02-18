@@ -80,7 +80,11 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
               </Tabs.Content>
 
               <Tabs.Content value="resources">
-                <AdditionalResourcesSection item={data} isLoading={isLoading} hasError={!!error} />
+                <AdditionalResourcesSection
+                  links={data?.links}
+                  isLoading={isLoading}
+                  hasError={!!error}
+                />
               </Tabs.Content>
             </Box>
           </Tabs.Root>

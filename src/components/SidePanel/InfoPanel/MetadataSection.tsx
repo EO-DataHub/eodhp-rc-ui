@@ -10,24 +10,28 @@ interface MetadataSectionProps {
   stacElement: Item | Collection | null | undefined
   isLoading: boolean
   hasError: boolean
+  ignoredFields?: string[]
 }
 
 export const MetadataSection: React.FC<MetadataSectionProps> = ({
   stacElement,
   isLoading,
   hasError,
+  ignoredFields = [],
 }) => {
   const metadata: MetadataItem[] = useMemo(() => {
     if (!stacElement) {
       return []
     }
 
+    const metadataFieldsFilterFunc = (key: string) => !ignoredFields.includes(key)
+
     if (stacElement.type === 'Collection') {
-      return StacFields.formatCollection(stacElement) as MetadataItem[]
+      return StacFields.formatCollection(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
     }
 
-    return StacFields.formatItemProperties(stacElement) as MetadataItem[]
-  }, [stacElement])
+    return StacFields.formatItemProperties(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
+  }, [ignoredFields, stacElement])
 
   if (isLoading) {
     return (

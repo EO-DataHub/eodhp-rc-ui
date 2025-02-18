@@ -1,21 +1,19 @@
 import React from 'react'
 import { Flex, Text, Spinner, Link } from '@radix-ui/themes'
-import type { Item } from '@/types'
+import type { Collection, Item } from '@/types'
 import styles from './InfoPanel.module.scss'
 
 interface AdditionalResourcesSectionProps {
-  item: Item | null | undefined
-  isLoading: boolean
-  hasError: boolean
+  links: Item['links'] | Collection['links'] | null | undefined
+  isLoading?: boolean
+  hasError?: boolean
 }
 
 export const AdditionalResourcesSection: React.FC<AdditionalResourcesSectionProps> = ({
-  item,
-  isLoading,
-  hasError,
+  links,
+  isLoading = false,
+  hasError = false,
 }) => {
-  const links = item?.links
-
   if (isLoading) {
     return (
       <Flex gap="3" align="center">
@@ -45,7 +43,7 @@ export const AdditionalResourcesSection: React.FC<AdditionalResourcesSectionProp
             key={index}
             className={styles.link}
           >
-            {link.rel}
+            {link.rel} ({link.type})
           </Link>
         ))}
       </Flex>
