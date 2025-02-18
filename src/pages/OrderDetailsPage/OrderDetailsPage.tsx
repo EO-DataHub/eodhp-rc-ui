@@ -1,50 +1,38 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQueries, useQuery } from '@tanstack/react-query'
-import { fetchItems } from '@/services/ItemService'
-import { fetchCollections } from '@/services/collectionService'
-import { Item, Collection } from '@/types'
+import { useQuery } from '@tanstack/react-query'
+import { fetchItem } from '@/services/ItemService'
 import { Flex, Text, Kbd, Button, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
 import { TermsAndConditionsContainer } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
-import { catalogs } from '@/constants'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
-  const MAX_TOTAL_ITEMS = 100
 
   const navigate = useNavigate()
+  const storedCollection = localStorage.getItem('selectedCollection')
+  const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
+  const isOpticalData = (): boolean => !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
+  const catalog = selectedCollection?.keywords[0]
 
   const {
-    data: items,
+    data: item,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['Items'],
-    queryFn: () => fetchItems({ limit: MAX_TOTAL_ITEMS + 1 }),
+    queryKey: ['Item', orderId],
+    queryFn: () =>
+      fetchItem({
+        catalog: catalog,
+        collection: selectedCollection?.id,
+        item: orderId,
+      }),
     refetchOnWindowFocus: false,
+    enabled: !!orderId,
   })
-
-  const item = items?.find((itm: Item) => itm.id === orderId)
-
-  const queries = useQueries({
-    queries: catalogs.map((catalog, index) => ({
-      queryKey: ['Collections', index],
-      queryFn: () => fetchCollections(catalog),
-    })),
-  })
-
-  const mergedCollections: Collection[] = queries.flatMap(
-    (query: { data?: Collection[] }) => query.data ?? [],
-  )
-
-  // the target collection will be based on user selection input in the future
-  const targetCollectionId = 'sentinel2_ard'
-  const targetCollection = mergedCollections?.find((col) => col.id === targetCollectionId)
-  const isOpticalData = (): boolean => !targetCollection?.stac_extensions?.[0]?.includes('/sar/')
 
   if (isLoading) return <Flex>Loading...</Flex>
   if (error) return <Flex>Error loading items.</Flex>
