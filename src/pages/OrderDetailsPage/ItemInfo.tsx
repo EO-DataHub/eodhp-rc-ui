@@ -9,12 +9,23 @@ interface ItemInfoProps {
 }
 
 export const ItemInfo: React.FC<ItemInfoProps> = ({ item }) => {
+  const thumbnailUrl = item.assets?.thumbnail?.href
+    ? item.assets?.thumbnail?.href
+    : DefaultItemThumbnail
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultItemThumbnail
+  }
+
   return (
     <Flex gap="2" className={styles.itemInfoContainer}>
       <Flex>
         <img
-          src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+          src={thumbnailUrl}
+          alt="Item thumbnail"
           className={styles.thumbnail}
+          onError={handleImageError}
         />
       </Flex>
       <Flex direction="column" gap="0.5" className={styles.itemInfo}>
