@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-ui/themes'
@@ -34,12 +35,17 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   isLicenseProprietary,
 }) => {
   const navigate = useNavigate()
+  const { isAuthenticated, login } = useContext(AuthenticationContext)
 
-  const handlePurchase = () => {
-    // Future function: check if user has purchase credits.
-    // If the check passes, navigate to the order details page.
-    navigate(`/order-details/${item.id}`)
+  const handlePurchase = async () => {
+    // in the future we will also check if the user has purchase credits available
+    if (isAuthenticated) {
+      navigate(`/order-details/${item.id}`)
+    } else {
+      await login()
+    }
   }
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.onerror = null
     e.currentTarget.src = DefaultItemThumbnail
@@ -108,8 +114,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               <Button
                 variant="ghost"
                 className={styles.button}
-                onClick={() => {
-                  handlePurchase()
+                onClick={async () => {
+                  await handlePurchase()
                 }}
               >
                 Purchase

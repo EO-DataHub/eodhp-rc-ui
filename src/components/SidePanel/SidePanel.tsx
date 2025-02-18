@@ -1,5 +1,4 @@
 import React, { useState, ReactNode } from 'react'
-import { useQueries } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -8,17 +7,16 @@ import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
-import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 import { MoreInfoPanel } from './MoreInfoPanel/MoreInfoPanel'
-import { catalogs } from '@/constants'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SidePanelProps {
   items: Item[]
+  collection: Collection
   isLoading: boolean
   error: boolean
   page: number
@@ -74,7 +72,14 @@ const ItemList = ({
     </div>
   )
 }
-export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, page, setPage }) => {
+export const SidePanel: React.FC<SidePanelProps> = ({
+  items,
+  collection,
+  isLoading,
+  error,
+  page,
+  setPage,
+}) => {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
@@ -85,21 +90,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
     setIsFilterOpen((prev) => !prev)
   }
 
-  const queries = useQueries({
-    queries: catalogs.map((catalog, index) => ({
-      queryKey: ['Collections', index],
-      queryFn: () => fetchCollections(catalog),
-    })),
-  })
-
-  const mergedCollections: Collection[] = queries.flatMap(
-    (query: { data?: Collection[] }) => query.data ?? [],
-  )
-
-  // the target collection will be based on user selection input in the future
-  const targetCollectionId = 'sentinel2_ard'
-  const targetCollection = mergedCollections?.find((col) => col.id === targetCollectionId)
-  const isLicenseProprietary = targetCollection?.license === 'proprietary'
+  const isLicenseProprietary = collection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
