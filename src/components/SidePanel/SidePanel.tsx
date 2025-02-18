@@ -3,6 +3,7 @@ import { useQueries } from '@tanstack/react-query'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
+import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
@@ -53,10 +54,14 @@ const ItemList = ({
   items: Item[]
   isLoading: boolean
   error: boolean
-  renderItem: (item: Item) => ReactNode
+  renderItem: (item: Item, index: number) => ReactNode
 }) => {
   if (isLoading) {
-    return <Text>Loading Items...</Text>
+    return (
+      <Flex justify="center">
+        <LoadingIndicator />
+      </Flex>
+    )
   }
 
   if (error) {
@@ -65,7 +70,7 @@ const ItemList = ({
 
   return (
     <div className={styles.listContainer}>
-      <ul>{items.map((item) => renderItem(item))}</ul>
+      <ul>{items.map((item, index) => renderItem(item, index))}</ul>
     </div>
   )
 }
@@ -165,9 +170,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
           )}
           isLoading={isLoading}
           error={error}
-          renderItem={(item) => (
+          renderItem={(item, index) => (
             <ItemCard
-              key={item.id}
+              key={`${item.id}-${index}`}
               item={item}
               isSelected={selectedItem?.id === item.id}
               isThumbnailSelected={selectedThumbnail?.id === item.id}

@@ -123,9 +123,9 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     >
       <NavigationControl />
       <DrawControl />
-      {visibleItems.map((item) => (
+      {visibleItems.map((item, index) => (
         <ItemLayer
-          key={item.id}
+          key={`${item.id}-${index}`}
           item={item}
           showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
         />

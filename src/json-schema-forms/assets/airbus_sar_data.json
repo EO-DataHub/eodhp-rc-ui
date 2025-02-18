@@ -1,0 +1,155 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/airbus_sar_data.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Airbus SAR",
+  "type": "object",
+  "required": ["collection_id"],
+  "properties": {
+    "collection_id": {
+      "const": "airbus_sar_data"
+    },
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "incidence_angle": {
+      "$ref": "#/$defs/incidence_angle",
+      "title": "Minimum incidence angle"
+    },
+    "sat:platform_international_designator": {
+      "$ref": "#/$defs/sat:platform_international_designator",
+      "title": "Datasource"
+    },
+    "sat:orbit_state": {
+      "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:orbit_state",
+      "title": "Path"
+    },
+    "sar:product_type": {
+      "$ref": "#/$defs/sar:product_type",
+      "title": "Product"
+    },
+    "sar:polarizations": {
+      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:polarizations",
+      "title": "Polarization"
+    },
+    "sar:instrument_mode": {
+      "$ref": "#/$defs/sar:instrument_mode",
+      "title": "Mode"
+    },
+    "sar:observation_direction": {
+      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:observation_direction",
+      "title": "Look"
+    }
+  },
+  "$defs": {
+    "sar:product_type": {
+      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:product_type",
+      "anyOf": [
+        {
+          "title": "Single Look Slant Range Complex",
+          "enum": [
+            "SSC"
+          ]
+        },
+        {
+          "title": "Multilook Ground Range Detected",
+          "enum": [
+            "MGD"
+          ]
+        },
+        {
+          "title": "Geocoded Ellipsoid Corrected",
+          "enum": [
+            "GEC"
+          ]
+        },
+        {
+          "title": "Enhanced Ellipsoid Corrected",
+          "enum": [
+            "EEC"
+          ]
+        }
+      ]
+    },
+    "sat:platform_international_designator": {
+      "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:platform_international_designator",
+      "anyOf": [
+        {
+          "type": "string",
+          "title": "All",
+          "enum": [
+            "%"
+          ]
+        },
+        {
+          "title": "TerraSAR-X",
+          "enum": [
+            "TSX-1"
+          ]
+        },
+        {
+          "title": "TanDEM-X",
+          "enum": [
+            "TDX-1"
+          ]
+        }
+      ]
+    },
+    "sar:instrument_mode": {
+      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:instrument_mode",
+      "anyOf": [
+        {
+          "title": "Staring SpotLight up to 0.25m",
+          "enum": [
+            "SAR_ST%"
+          ]
+        },
+        {
+          "title": "High Resolution SpotLight 300Mhz up to 1m",
+          "enum": [
+            "SAR_HS_%_300"
+          ]
+        },
+        {
+          "title": "High Resolution SpotLight 150Mhz up to 1.4m",
+          "enum": [
+            "SAR_HS_%_150"
+          ]
+        },
+        {
+          "title": "SpotLight up to 2m",
+          "enum": [
+            "SAR_SL%"
+          ]
+        },
+        {
+          "title": "StripMap up to 3m",
+          "enum": [
+            "SAR_SM%"
+          ]
+        },
+        {
+          "title": "ScanSAR up to 18m",
+          "enum": [
+            "SAR_SC%"
+          ]
+        },
+        {
+          "title": "Wide ScanSAR up to 40m",
+          "enum": [
+            "SAR_WS%"
+          ]
+        }
+      ]
+    },
+    "incidence_angle": {
+      "type": "number",
+      "minimum": 10,
+      "maximum": 70,
+      "default": 30,
+      "operator": ">="
+    }
+  }
+}

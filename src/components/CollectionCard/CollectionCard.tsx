@@ -6,7 +6,7 @@ import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
 import DefaultThumbnail from '../../../public/default-thumbnail-wide.jpg'
-import { getFormattedDateRange } from '@/library/getFormattedDateRange'
+import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface CollectionCardProps {
   collection: Collection

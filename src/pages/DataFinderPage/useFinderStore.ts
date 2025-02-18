@@ -18,6 +18,7 @@ const dataFinderStore = createStore({
     drawMode: undefined as DrawMode | undefined,
     aoi: undefined as GeoJSON.Feature | undefined,
     mapBounds: undefined as MapBounds | undefined,
+    queryFilter: undefined as object | undefined,
     page: 0,
     pinnedItems: [] as Item[],
   },
@@ -27,6 +28,12 @@ const dataFinderStore = createStore({
       return {
         ...context,
         page: event.page,
+      }
+    },
+    queryFilterChange: (context, event: { queryFilter: object | undefined }) => {
+      return {
+        ...context,
+        queryFilter: event.queryFilter,
       }
     },
     mapLoad: (context, event: { mapInstance: MapInstance | undefined }) => {
