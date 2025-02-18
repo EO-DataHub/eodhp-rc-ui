@@ -61,6 +61,7 @@ export const DataFinderPage: React.FC = () => {
       <Box className={styles.floatingContainer}>
         <SidePanel
           items={itemList}
+          collection={selectedCollection}
           isLoading={isLoading || isFetching}
           error={!!error}
           page={page}

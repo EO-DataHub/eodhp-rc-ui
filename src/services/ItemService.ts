@@ -1,5 +1,6 @@
 import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
+import { extractCatalogPaths } from '@/library/catalogUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -33,18 +34,7 @@ export const fetchItems = async ({
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
   const fetchUrl = `${API_URL}/api/catalogue/stac/search`
-  let catalogPaths = ['supported-datasets/ceda-stac-catalogue'] // Default fallback for sentinel2_ard
-
-  // extract catalog_paths from selected collection needed for stac search
-  if (selectedCollection) {
-    const parentLink = selectedCollection.links?.find((link) => link.rel === 'parent')
-    if (parentLink?.href) {
-      const urlParts = new URL(parentLink.href).pathname.split('/catalogs/')
-      if (urlParts.length > 1) {
-        catalogPaths = [urlParts[1]]
-      }
-    }
-  }
+  const catalogPaths = extractCatalogPaths(selectedCollection)
 
   const baseBody: StacQueryBodyParams = {
     catalog_paths: catalogPaths,
