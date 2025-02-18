@@ -11,11 +11,12 @@ import { fetchCollections } from '@/services/collectionService'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
-import { ItemInfoPanel } from './MoreInfoPanel/ItemInfoPanel'
+import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import { catalogs } from '@/constants'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { CollectionInfoPanel } from './MoreInfoPanel/CollectionInfoPanel'
+import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
+import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 
 const mockCollection: Collection = {
   type: 'Collection',
@@ -275,6 +276,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
   const [checkedItems, setCheckedItems] = useState<Item[]>([])
   const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
+  const [isCollectionInfoPanelOpen, setIsCollectionInfoPanelOpen] = useState(false)
 
   const toggleFilterPanel = () => {
     setIsFilterOpen((prev) => !prev)
@@ -298,13 +300,21 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
-  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen
+  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
   const handleSelectItem = (item: Item) => {
     setSelectedItem(item)
   }
 
+  const handleSelectCollectionInfo = () => {
+    // Reset item info panel
+    setSelectedItemInfo(null)
+    setIsCollectionInfoPanelOpen(true)
+  }
+
   const handleSelectItemInfo = (item: Item) => {
+    // Reset collection info panel
+    setIsCollectionInfoPanelOpen(false)
     setSelectedItemInfo(item)
   }
 
@@ -355,7 +365,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
             </Flex>
           </IconButton>
         </Flex>
-        <SmallCollectionCard />
+        <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
         <Flex justify="end">
           <PageIndicator page={page} totalItemsCount={items.length} />
         </Flex>
@@ -392,14 +402,21 @@ export const SidePanel: React.FC<SidePanelProps> = ({ items, isLoading, error, p
           />
         </PaginationContainer>
       </Flex>
+
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
-      <ItemInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
-      <CollectionInfoPanel
-        collection={mockCollection}
-        onClose={() => {
-          return
-        }}
-      />
+
+      {/* Show either item or collection info panel, and close the other one if needed */}
+      <InfoPanelWrapper isOpen={!!selectedItemInfo || isCollectionInfoPanelOpen}>
+        {selectedItemInfo && (
+          <ItemInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
+        )}
+        {isCollectionInfoPanelOpen && (
+          <CollectionInfoPanel
+            collection={mockCollection}
+            onClose={() => setIsCollectionInfoPanelOpen(false)}
+          />
+        )}
+      </InfoPanelWrapper>
     </Flex>
   )
 }

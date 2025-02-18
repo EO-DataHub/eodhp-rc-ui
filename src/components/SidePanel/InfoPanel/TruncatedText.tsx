@@ -7,7 +7,7 @@ interface TruncatedTextProps {
   maxLength?: number
 }
 
-const MAX_LENGTH = 100
+const MAX_LENGTH = 500
 
 const truncateText = (text: string, maxLength: number) => {
   if (text.length <= maxLength) return text

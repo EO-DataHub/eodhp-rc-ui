@@ -16,8 +16,6 @@ interface ItemInfoPanelProps {
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
-  const isOpen = item !== null
-
   const rootCatalog = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'root')?.href
     const components = url?.split('/')
@@ -36,14 +34,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
   })
 
   return (
-    <Flex
-      direction="column"
-      gap="5"
-      p="5"
-      pr="8"
-      position="absolute"
-      className={`${styles.InfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}
-    >
+    <>
       <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
         <Cross1Icon width="20" height="20" />
       </IconButton>
@@ -95,6 +86,6 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
           </Tabs.Root>
         </>
       )}
-    </Flex>
+    </>
   )
 }

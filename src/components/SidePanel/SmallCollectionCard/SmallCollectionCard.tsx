@@ -4,7 +4,13 @@ import { Flex, Text, Card, IconButton, Link } from '@radix-ui/themes'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '../../../../public/pound-sterling-symbol.svg?react'
 
-export const SmallCollectionCard: React.FC = () => {
+interface SmallCollectionCardProps {
+  onSelectCollectionInfo: () => void
+}
+
+export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
+  onSelectCollectionInfo,
+}) => {
   return (
     <Card className={styles.card} size="2">
       <Flex direction="column">
@@ -17,7 +23,7 @@ export const SmallCollectionCard: React.FC = () => {
               <PoundSterlingSymbolIcon />
             </IconButton>
             <IconButton radius="full" variant="solid" className={styles.button}>
-              <InfoCircledIcon />
+              <InfoCircledIcon onClick={onSelectCollectionInfo} />
             </IconButton>
           </Flex>
         </Flex>
