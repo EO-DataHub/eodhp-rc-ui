@@ -56,7 +56,7 @@ export const OrderDetailsPage: React.FC = () => {
           <Text size="2">Contract ID: text</Text>
         </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
-          <ItemInfo item={item} />
+          <ItemInfo item={item} isOptical={isOpticalData()} />
           <OrderSelections isOptical={isOpticalData()} />
         </Flex>
         <TermsAndConditionsContainer />

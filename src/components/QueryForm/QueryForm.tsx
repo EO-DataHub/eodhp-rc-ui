@@ -67,7 +67,6 @@ export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
   useEffect(() => {
     buildSchema(schema)
       .then((result) => {
-        console.log('Dereferenced schema:', result) // eslint-disable-line no-console
         setDereferencedSchema(result)
       })
       .catch((err) => {
