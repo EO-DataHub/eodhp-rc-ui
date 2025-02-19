@@ -1,4 +1,5 @@
-import React from 'react'
+/* eslint-disable no-console */
+import React, { useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
@@ -9,11 +10,13 @@ import { TermsAndConditionsContainer } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getCatalog } from '@/library/catalogUtils'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { purchaseProduct } from '@/services/PurchaseProductService'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
-
   const navigate = useNavigate()
+  const { workspaceUserName } = useContext(AuthenticationContext)
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
   const isOpticalData = (): boolean => !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
@@ -34,6 +37,32 @@ export const OrderDetailsPage: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: !!orderId,
   })
+
+  const placeOrder = async () => {
+    if (!item) {
+      console.error('No order item found.')
+      return
+    }
+
+    const testUrl =
+      'https://staging.eodatahub.org.uk/api/catalogue/stac/v1/catalogs/supported-datasets/catalogs/airbus/collections/airbus_sar_data/items/DS_SAR_20220101_123456'
+
+    try {
+      const response = await purchaseProduct({
+        workspace: workspaceUserName,
+        datasetUrl: testUrl,
+        provider: catalog,
+        productBundle: isOpticalData() ? 'general_use' : undefined,
+        parameters: isOpticalData() ? undefined : { polarization: 'HH', resolution: '5m' },
+      })
+
+      console.log('Order placed successfully:', response)
+      alert('Order placed successfully!')
+    } catch (error) {
+      console.error('Order placement failed:', error)
+      alert('Failed to place order.')
+    }
+  }
 
   if (isLoading) return <Flex>Loading...</Flex>
   if (error) return <Flex>Error loading items.</Flex>
@@ -62,7 +91,9 @@ export const OrderDetailsPage: React.FC = () => {
         <TermsAndConditionsContainer />
         <Flex className={styles.buttonsContainer} direction="row" gap="3">
           <Button className={styles.cancelButton}>Cancel</Button>
-          <Button className={styles.purchaseButton}>Place Order</Button>
+          <Button className={styles.purchaseButton} onClick={placeOrder}>
+            Place Order
+          </Button>
         </Flex>
       </Flex>
     </>
