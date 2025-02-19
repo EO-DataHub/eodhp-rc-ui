@@ -5,7 +5,7 @@ import styles from './OrderDetailsPage.module.scss'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
 import { getStacMetadata } from '@/library/getStacMetadata'
-import { opticalItemMapping, sarItemMapping } from '@/data/metadataMapping'
+import { opticalItemMapping, sarItemMapping } from '@/library/metadataMappingUtils'
 import parse from 'html-react-parser'
 
 interface ItemInfoProps {
