@@ -4,11 +4,18 @@ import styles from './QuickFilterMenu.module.scss'
 
 export const QuickFilterMenu: React.FC = () => {
   return (
-    <Flex p="5" gap="2" align="center" justify="between" className={styles.container}>
-      <Box flexGrow="1">
+    <Flex
+      p="5"
+      gap="2"
+      align="center"
+      justify="between"
+      className={styles.container}
+      overflow="auto"
+    >
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Data Category" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content>
             <Select.Group>
               <Select.Item value="cat:climate_data">Climate Data</Select.Item>
               <Select.Item value="cat:climate_projections">Climate Projections</Select.Item>
@@ -22,10 +29,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Resolution" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="res:under_1m">Less than 1m</Select.Item>
               <Select.Item value="res:10m">1m &ndash; &lt;10m</Select.Item>
@@ -39,10 +46,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Provider" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="pro:airbus">Airbus</Select.Item>
               <Select.Item value="pro:ceda">Centre for Environmental Data</Select.Item>
@@ -60,10 +67,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Location" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="loc:global">Global</Select.Item>
               <Select.Item value="loc:continental">Continental</Select.Item>
@@ -73,10 +80,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Keywords" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="key:agriculture">Agriculture &amp; Forestry</Select.Item>
               <Select.Item value="key:climate">Climate &amp; Environment</Select.Item>
@@ -93,10 +100,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="Time Period" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="per:historic">Historic</Select.Item>
               <Select.Item value="per:current">Current</Select.Item>
@@ -106,10 +113,10 @@ export const QuickFilterMenu: React.FC = () => {
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
+      <Box flexGrow="1" width="160px" flexShrink="0">
         <Select.Root size="3">
           <Select.Trigger style={{ width: '100%' }} placeholder="License" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
               <Select.Item value="lic:commercial">Commercial Data</Select.Item>
               <Select.Item value="lic:open">Open Data</Select.Item>
