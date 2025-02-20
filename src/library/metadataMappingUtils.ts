@@ -64,7 +64,7 @@ function isIncidenceAngle(value: unknown): value is IncidenceAngle {
   )
 }
 
-export const opticalItemMapping = (metadata: MetadataItem[]): OpticalMetadataMapping => {
+export const getOpticalOrderItemDetails = (metadata: MetadataItem[]): OpticalMetadataMapping => {
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {
@@ -83,7 +83,7 @@ export const opticalItemMapping = (metadata: MetadataItem[]): OpticalMetadataMap
   }
 }
 
-export const sarItemMapping = (metadata: MetadataItem[]): SARMetadataMapping => {
+export const getSAROrderItemDetails = (metadata: MetadataItem[]): SARMetadataMapping => {
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {

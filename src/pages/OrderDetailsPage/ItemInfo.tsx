@@ -5,7 +5,7 @@ import styles from './OrderDetailsPage.module.scss'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
 import { getStacMetadata } from '@/library/getStacMetadata'
-import { opticalItemMapping, sarItemMapping } from '@/library/metadataMappingUtils'
+import { getOpticalOrderItemDetails, getSAROrderItemDetails } from '@/library/metadataMappingUtils'
 import parse from 'html-react-parser'
 
 interface ItemInfoProps {
@@ -28,13 +28,13 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
     return item ? getStacMetadata(item, ignoredFields) : []
   }, [item])
 
-  const mappedMetadata = useMemo(() => {
+  const orderItemDetails = useMemo(() => {
     if (!metadata.length) return {}
 
-    return isOptical ? opticalItemMapping(metadata) : sarItemMapping(metadata)
+    return isOptical ? getOpticalOrderItemDetails(metadata) : getSAROrderItemDetails(metadata)
   }, [metadata, isOptical])
 
-  if (!mappedMetadata) {
+  if (!orderItemDetails) {
     return (
       <Flex gap="3" align="center">
         <Text>No metadata available.</Text>
@@ -58,7 +58,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
           {item.id}
         </Text>
 
-        {Object.entries(mappedMetadata).map(([parentKey, parentValue]) => (
+        {Object.entries(orderItemDetails).map(([parentKey, parentValue]) => (
           <Flex key={parentKey} direction="row" justify="between">
             <Text className={styles.itemText} weight="bold">
               {parentKey}:
