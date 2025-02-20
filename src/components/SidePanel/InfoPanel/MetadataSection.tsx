@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
 import { Flex, Text } from '@radix-ui/themes'
 import type { Item, Collection, MetadataItem } from '@/types'
-import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { CubeMetadataTable } from './CubeMetadataTable'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { extractStacMetadata } from '@/library/extractStacMetadata'
 
 interface MetadataSectionProps {
   stacElement: Item | Collection | null | undefined
@@ -20,18 +20,8 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({
   ignoredFields = [],
 }) => {
   const metadata: MetadataItem[] = useMemo(() => {
-    if (!stacElement) {
-      return []
-    }
-
-    const metadataFieldsFilterFunc = (key: string) => !ignoredFields.includes(key)
-
-    if (stacElement.type === 'Collection') {
-      return StacFields.formatCollection(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
-    }
-
-    return StacFields.formatItemProperties(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
-  }, [ignoredFields, stacElement])
+    return stacElement ? extractStacMetadata(stacElement, ignoredFields) : []
+  }, [stacElement, ignoredFields])
 
   if (isLoading) {
     return (
