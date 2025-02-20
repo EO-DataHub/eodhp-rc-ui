@@ -6,7 +6,7 @@ import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-
 import styles from './ItemCard.module.scss'
 import MapsIcon from '../../../public/maps-icon.svg?react'
 import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
-import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import DefaultItemThumbnail from '../../../public/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
 
 import { useNavigate } from 'react-router-dom'
