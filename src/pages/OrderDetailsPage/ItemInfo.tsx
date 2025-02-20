@@ -8,7 +8,7 @@ import { extractStacMetadata } from '@/library/extractStacMetadata'
 import {
   extractOpticalOrderItemDetails,
   extractSAROrderItemDetails,
-} from '@/pages/OrderDetailsPage/parseOrderItemDetails'
+} from '@/pages/OrderDetailsPage/extractOrderItemDetails'
 import parse from 'html-react-parser'
 
 interface ItemInfoProps {
