@@ -5,7 +5,7 @@ interface DateRange {
   End: string
 }
 
-interface LookAngle {
+interface ViewGeometry {
   Azimuth: string
   'Sun Azimuth': string
   'Sun Elevation': string
@@ -24,7 +24,7 @@ interface OpticalOrderItem {
   'Data Source': string
   'Item Type': string
   'Cloud Cover': string
-  'Look Angle': LookAngle
+  'View Geometry': ViewGeometry
   'Stereo/Mono/Tri-Stereo': string
 }
 
@@ -73,7 +73,7 @@ export const extractOpticalOrderItemDetails = (metadata: MetadataItem[]): Optica
     'Data Source': meta['']?.organisation_name?.formatted ?? 'N/A',
     'Item Type': meta['']?.product_type?.formatted ?? 'N/A',
     'Cloud Cover': meta.eo?.['eo:cloud_cover']?.formatted ?? 'N/A',
-    'Look Angle': {
+    'View Geometry': {
       Azimuth: meta.view?.['view:azimuth']?.formatted ?? 'N/A',
       'Sun Azimuth': meta.view?.['view:sun_azimuth']?.formatted ?? 'N/A',
       'Sun Elevation': meta.view?.['view:sun_elevation']?.formatted ?? 'N/A',
