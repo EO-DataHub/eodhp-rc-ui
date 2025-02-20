@@ -5,7 +5,10 @@ import styles from './OrderDetailsPage.module.scss'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
 import { getStacMetadata } from '@/library/getStacMetadata'
-import { getOpticalOrderItemDetails, getSAROrderItemDetails } from '@/library/metadataMappingUtils'
+import {
+  extractOpticalOrderItemDetails,
+  extractSAROrderItemDetails,
+} from '@/pages/OrderDetailsPage/parseOrderItemDetails'
 import parse from 'html-react-parser'
 
 interface ItemInfoProps {
@@ -31,7 +34,9 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
   const orderItemDetails = useMemo(() => {
     if (!metadata.length) return {}
 
-    return isOptical ? getOpticalOrderItemDetails(metadata) : getSAROrderItemDetails(metadata)
+    return isOptical
+      ? extractOpticalOrderItemDetails(metadata)
+      : extractSAROrderItemDetails(metadata)
   }, [metadata, isOptical])
 
   if (!orderItemDetails) {

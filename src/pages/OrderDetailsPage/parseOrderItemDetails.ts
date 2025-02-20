@@ -18,7 +18,7 @@ interface OrbitData {
   'Absolute Orbit': string
 }
 
-interface OpticalMetadataMapping {
+interface OpticalOrderItem {
   'Area Calculation': string | null
   'Date Range': string
   'Data Source': string
@@ -28,7 +28,7 @@ interface OpticalMetadataMapping {
   'Stereo/Mono/Tri-Stereo': string
 }
 
-interface SARMetadataMapping {
+interface SAROrderItem {
   'Area Calculation': string | null
   'Date Range': DateRange
   'Data Source': string
@@ -52,7 +52,7 @@ interface IncidenceAngle {
   maximum: number
 }
 
-// this stops ts from complaining about the min/max value type
+// this stops ts from complaining about missing min/max value type
 function isIncidenceAngle(value: unknown): value is IncidenceAngle {
   return (
     !!value &&
@@ -64,7 +64,7 @@ function isIncidenceAngle(value: unknown): value is IncidenceAngle {
   )
 }
 
-export const getOpticalOrderItemDetails = (metadata: MetadataItem[]): OpticalMetadataMapping => {
+export const extractOpticalOrderItemDetails = (metadata: MetadataItem[]): OpticalOrderItem => {
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {
@@ -83,7 +83,7 @@ export const getOpticalOrderItemDetails = (metadata: MetadataItem[]): OpticalMet
   }
 }
 
-export const getSAROrderItemDetails = (metadata: MetadataItem[]): SARMetadataMapping => {
+export const extractSAROrderItemDetails = (metadata: MetadataItem[]): SAROrderItem => {
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {
