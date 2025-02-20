@@ -4,7 +4,7 @@ import type { Item, Collection, MetadataItem } from '@/types'
 import { MetadataTable } from './MetadataTable'
 import { CubeMetadataTable } from './CubeMetadataTable'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import { getStacMetadata } from '@/library/getStacMetadata'
+import { extractStacMetadata } from '@/library/extractStacMetadata'
 
 interface MetadataSectionProps {
   stacElement: Item | Collection | null | undefined
@@ -20,7 +20,7 @@ export const MetadataSection: React.FC<MetadataSectionProps> = ({
   ignoredFields = [],
 }) => {
   const metadata: MetadataItem[] = useMemo(() => {
-    return stacElement ? getStacMetadata(stacElement, ignoredFields) : []
+    return stacElement ? extractStacMetadata(stacElement, ignoredFields) : []
   }, [stacElement, ignoredFields])
 
   if (isLoading) {

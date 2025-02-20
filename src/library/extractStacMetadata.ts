@@ -1,7 +1,7 @@
 import { MetadataItem, Item, Collection } from '../types'
 import StacFields from '@radiantearth/stac-fields'
 
-export const getStacMetadata = (
+export const extractStacMetadata = (
   stacElement: Item | Collection,
   ignoredFields: string[],
 ): MetadataItem[] => {

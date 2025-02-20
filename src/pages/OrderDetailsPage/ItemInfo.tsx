@@ -4,7 +4,7 @@ import { Item } from '@/types'
 import styles from './OrderDetailsPage.module.scss'
 import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
-import { getStacMetadata } from '@/library/getStacMetadata'
+import { extractStacMetadata } from '@/library/extractStacMetadata'
 import {
   extractOpticalOrderItemDetails,
   extractSAROrderItemDetails,
@@ -28,7 +28,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
 
   const metadata: MetadataItem[] = useMemo(() => {
     const ignoredFields = ['assets', 'providers', 'links']
-    return item ? getStacMetadata(item, ignoredFields) : []
+    return item ? extractStacMetadata(item, ignoredFields) : []
   }, [item])
 
   const orderItemDetails = useMemo(() => {
