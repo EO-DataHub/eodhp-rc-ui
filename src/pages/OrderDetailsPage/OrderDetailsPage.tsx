@@ -53,7 +53,7 @@ export const OrderDetailsPage: React.FC = () => {
           <Text size="3" weight="bold">
             {item.collection}: {item.id}
           </Text>
-          <Text size="2">Contract ID: text</Text>
+          <Text size="2">Contract ID: </Text>
         </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
           <ItemInfo item={item} isOptical={isOpticalData()} />

@@ -68,7 +68,7 @@ export const extractOpticalOrderItemDetails = (metadata: MetadataItem[]): Optica
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {
-    'Area Calculation': null, // 🚨 Not available
+    'Area Calculation': '', // 🚨 Not available
     'Date Range': meta['']?.datetime?.formatted ?? 'N/A',
     'Data Source': meta['']?.organisation_name?.formatted ?? 'N/A',
     'Item Type': meta['']?.product_type?.formatted ?? 'N/A',
