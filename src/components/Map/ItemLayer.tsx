@@ -7,6 +7,9 @@ const LIST_ITEM_LINE_PAINT_STYLE = {
   'line-width': 2,
 }
 
+const getAssetUrl = (item: Item, assetKey: string): string | null =>
+  item.assets?.[assetKey]?.href ?? null
+
 const ItemLayer = ({ item, showRasterTiles }: { item: Item; showRasterTiles: boolean }) => {
   const itemId = item.id
   const collection = item.collection
@@ -14,7 +17,7 @@ const ItemLayer = ({ item, showRasterTiles }: { item: Item; showRasterTiles: boo
   const collectionConfig = collectionRenderingConfig[collection]
   if (!collectionConfig) return null
 
-  const assetUrl = item.assets?.[collectionConfig.assetKey]?.href ?? null
+  const assetUrl = getAssetUrl(item, collectionConfig.assetKey)
   if (!assetUrl) return null
 
   const tilesUrl = collectionConfig.tilesUrlTemplate.replace(

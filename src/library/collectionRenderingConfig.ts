@@ -14,31 +14,56 @@
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
+export const DATASETS = {
+  SENTINEL_2: 'sentinel2_ard',
+  AIRBUS_SAR: 'airbus_sar_data',
+  LAND_COVER: 'land_cover',
+  EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
+  EOCIS_SST: 'eocis-sst-cdrv3',
+  EOCIS_LST_A_DAY: 'eocis-lst-s3a-day',
+  EOCIS_LST_A_NIGHT: 'eocis-lst-s3a-night',
+  EOCIS_LST_B_DAY: 'eocis-lst-s3b-day',
+  EOCIS_LST_B_NIGHT: 'eocis-lst-s3b-night',
+} as const
+
 export const collectionRenderingConfig: Record<
   string,
-  {
-    assetKey: string
-    tilesUrlTemplate: string
-  }
+  { assetKey: string; tilesUrlTemplate: string }
 > = {
-  sentinel2_ard: {
+  [DATASETS.SENTINEL_2]: {
     assetKey: 'cog',
     tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,
   },
-  airbus_sar_data: {
+  [DATASETS.AIRBUS_SAR]: {
     assetKey: 'thumbnail',
     tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
   },
-  land_cover: {
+  [DATASETS.LAND_COVER]: {
     assetKey: 'GeoTIFF',
     tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&colormap_name=tab20c`,
   },
-  eocis_sst_cdrv3_climatology: {
+  [DATASETS.EOCIS_SST_CLIM]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=blues&variable=sea_ice_fraction&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-  eocis_sst_cdrv3: {
+  [DATASETS.EOCIS_SST]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,310.15&colormap_name=jet&variable=analysed_sst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_LST_A_DAY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_LST_A_NIGHT]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_LST_B_DAY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_LST_B_NIGHT]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
 }
