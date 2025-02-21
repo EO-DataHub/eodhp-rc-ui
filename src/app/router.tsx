@@ -1,4 +1,4 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
@@ -10,7 +10,11 @@ const routes = [
     element: <DataDiscoveryPage />,
   },
   {
-    path: '/finder',
+    path: '/finder/*',
+    element: <Navigate to="/" replace />,
+  },
+  {
+    path: '/finder/:collectionId',
     element: <DataFinderPage />,
   },
   {

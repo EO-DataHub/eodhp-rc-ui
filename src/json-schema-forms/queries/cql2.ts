@@ -65,7 +65,10 @@ function flattenForm(form: Record<string, unknown>): Record<string, unknown> {
         if (form[key] == null) continue
 
         if (typeof form[key] === 'object' && !Array.isArray(form[key])) {
-          Object.assign(flattened, _flatten(form[key] as Record<string, unknown>, propName))
+          const nestedFlattened = _flatten(form[key] as Record<string, unknown>, propName)
+          Object.entries(nestedFlattened).forEach(([nestedKey, value]) => {
+            flattened[nestedKey] = value
+          })
         } else {
           flattened[propName] = form[key]
         }

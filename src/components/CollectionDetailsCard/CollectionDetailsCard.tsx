@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Collection } from '@/types'
 import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
@@ -27,9 +28,12 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     e.currentTarget.src = DefaultThumbnail
   }
 
+  const navigate = useNavigate()
+
   const handleOpenCollection = () => {
     // persist selected collection even after a page reload or browser restart
     localStorage.setItem('selectedCollection', JSON.stringify(collection))
+    navigate(`/finder/${collection.id}`)
   }
 
   return (
@@ -69,7 +73,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             <Flex className={styles.linkWrapper}>
               <Link
                 size="1"
-                href="/finder"
+                href=""
                 onClick={handleOpenCollection}
                 aria-label={`Open ${collection.title} collection`}
               >
