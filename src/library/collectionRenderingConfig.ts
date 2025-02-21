@@ -14,7 +14,6 @@
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
-// Mapping of collections to their respective rendering rules
 export const collectionRenderingConfig: Record<
   string,
   {
