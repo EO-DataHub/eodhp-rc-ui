@@ -37,7 +37,7 @@ export const DataFinderPage: React.FC = () => {
         setSelectedCollection(parsedCollection)
       }
     }
-  }, [collectionId, navigate])
+  }, [collectionId])
 
   const shouldFetchCollections =
     selectedCollection === null || selectedCollection.id !== collectionId
