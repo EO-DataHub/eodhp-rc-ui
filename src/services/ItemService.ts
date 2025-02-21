@@ -34,11 +34,11 @@ export const fetchItems = async ({
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
   const fetchUrl = `${API_URL}/api/catalogue/stac/search`
-  const catalogPaths = extractCatalogPaths(selectedCollection)
+  const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
 
   const baseBody: StacQueryBodyParams = {
     catalog_paths: catalogPaths,
-    collections: selectedCollection ? [selectedCollection.id] : ['sentinel2_ard'],
+    collections: selectedCollection ? [selectedCollection.id] : [],
     limit,
   }
 

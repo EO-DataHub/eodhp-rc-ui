@@ -32,6 +32,7 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, './src'),
         path: 'path-browserify',
+        buffer: 'buffer/',
       },
     },
     optimizeDeps: {
