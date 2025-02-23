@@ -1,0 +1,342 @@
+enum DataCategory {
+  Climate_Data = 'cat:climate_data',
+  Climate_Projections = 'cat:climate_projections',
+  Hyperspectral = 'cat:hyperspectral',
+  Optical_Multispectral = 'cat:optical_multispectral',
+  Radar = 'cat:radar',
+  Land_Cover = 'cat:land_cover',
+}
+
+enum Resolution {
+  Less_Than_1m = 'res:under_1m',
+  From_1m_To_10m = 'res:10m',
+  From_10m_To_100m = 'res:100m',
+  From_100m_To_1km = 'res:1km',
+  From_1km_To_10km = 'res:10km',
+  From_10km_To_100km = 'res:100km',
+  Greater_Than_100km = 'res:over_100km',
+}
+
+enum Provider {
+  Airbus = 'pro:airbus',
+  CEDA = 'pro:ceda',
+  DEFRA = 'pro:defra',
+  ESA = 'pro:esa',
+  EOCS = 'pro:eocis',
+  JNCC = 'pro:jncc',
+  Multiple_Contributors = 'pro:multiple_contributors',
+  Planet = 'pro:planet',
+  UK_Met_Office = 'pro:met_office',
+  UOL_LST = 'pro:uol_lst',
+  Other = 'pro:other',
+}
+
+enum Location {
+  Global = 'loc:global',
+  Continental = 'loc:continental',
+  United_Kingdom = 'loc:uk',
+}
+
+enum Keyword {
+  Agriculture_Forestry = 'key:agriculture',
+  Climate_Environment = 'key:climate',
+  Disaster_Management = 'key:disaster',
+  Gas_Emissions_Monitoring = 'key:emissions',
+  Habitat_Ecosystem_Mapping = 'key:ecosystem',
+  Infrastructure_Urban_Development = 'key:infrastructure',
+  Land_Water_Management = 'key:management',
+  Marine_Ocean_Science = 'key:ocean',
+}
+
+enum TimePeriod {
+  Historic = 'per:historic',
+  Current = 'per:current',
+  Forecast = 'per:forecast',
+}
+
+enum License {
+  Commercial_Data = 'lic:commercial',
+  Open_Data = 'lic:open',
+}
+
+const dataCategories = [
+  { label: 'Climate Data', value: DataCategory.Climate_Data },
+  { label: 'Climate Projections', value: DataCategory.Climate_Projections },
+  { label: 'Hyperspectral', value: DataCategory.Hyperspectral },
+  { label: 'Optical & Multispectral', value: DataCategory.Optical_Multispectral },
+  { label: 'Radar', value: DataCategory.Radar },
+  { label: 'Land Cover', value: DataCategory.Land_Cover },
+]
+
+const resolutions = [
+  { label: 'Less than 1m', value: Resolution.Less_Than_1m },
+  { label: '1m - <10m', value: Resolution.From_1m_To_10m },
+  { label: '10m - <100m', value: Resolution.From_10m_To_100m },
+  { label: '100m - <1km', value: Resolution.From_100m_To_1km },
+  { label: '1km - <10km', value: Resolution.From_1km_To_10km },
+  { label: '10km - <100km', value: Resolution.From_10km_To_100km },
+  { label: 'Greater than 100km', value: Resolution.Greater_Than_100km },
+]
+
+const providers = [
+  { label: 'Airbus', value: Provider.Airbus },
+  { label: 'Centre for Environmental Data Analysis', value: Provider.CEDA },
+  { label: 'Department for Environment, Food & Rural Affairs', value: Provider.DEFRA },
+  { label: 'Earth Observation Climate Information Service', value: Provider.EOCS },
+  { label: 'European Space Agency', value: Provider.ESA },
+  { label: 'Joint Nature Conservation Committee', value: Provider.JNCC },
+  { label: 'Multiple Contributors', value: Provider.Multiple_Contributors },
+  { label: 'Planet', value: Provider.Planet },
+  { label: 'UK Met Office', value: Provider.UK_Met_Office },
+  { label: 'University of Leicester (LST)', value: Provider.UOL_LST },
+  { label: 'Other', value: Provider.Other },
+]
+
+const locations = [
+  { label: 'Global', value: Location.Global },
+  { label: 'Continental', value: Location.Continental },
+  { label: 'United Kingdom', value: Location.United_Kingdom },
+]
+
+const keywords = [
+  { label: 'Agriculture & Forestry', value: Keyword.Agriculture_Forestry },
+  { label: 'Climate & Environment', value: Keyword.Climate_Environment },
+  { label: 'Disaster Management', value: Keyword.Disaster_Management },
+  { label: 'Gas & Emissions Monitoring', value: Keyword.Gas_Emissions_Monitoring },
+  { label: 'Habitat & Ecosystem Mapping', value: Keyword.Habitat_Ecosystem_Mapping },
+  { label: 'Infrastructure & Urban Development', value: Keyword.Infrastructure_Urban_Development },
+  { label: 'Land & Water Management', value: Keyword.Land_Water_Management },
+  { label: 'Marine & Ocean Science', value: Keyword.Marine_Ocean_Science },
+]
+
+const timePeriods = [
+  { label: 'Historic', value: TimePeriod.Historic },
+  { label: 'Current', value: TimePeriod.Current },
+  { label: 'Forecast', value: TimePeriod.Forecast },
+]
+
+const licenses = [
+  { label: 'Commercial Data', value: License.Commercial_Data },
+  { label: 'Open Data', value: License.Open_Data },
+]
+
+const collectionCategorization = {
+  airbus_spot_data: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  airbus_sar_data: {
+    dataCategory: [DataCategory.Radar],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  airbus_pneo_data: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.Less_Than_1m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  airbus_phr_data: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.Less_Than_1m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  airbus_data_example: {
+    dataCategory: [],
+    resolution: [],
+    provider: [],
+    location: [],
+    keyword: [],
+    timePeriod: [],
+    license: [],
+  },
+  ukcp: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10km_To_100km],
+    provider: [Provider.UK_Met_Office, Provider.CEDA],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Forecast],
+    license: [License.Open_Data],
+  },
+  sentinel2_ard: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.DEFRA, Provider.CEDA, Provider.JNCC, Provider.ESA],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+  },
+  sentinel1: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.ESA, Provider.CEDA],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  land_cover: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  eocis: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  'eocis-sst-cdrv3': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  'eocis-lst-s3b-night': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  'eocis-lst-s3b-day': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  'eocis-lst-s3a-night': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  'eocis-lst-s3a-day': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  TanagerScene: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  TanagerMethane: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  SkySatVideo: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  SkySatScene: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  SkySatCollect: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  REScene: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  REOrthoTile: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+  PSScene: {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.Airbus],
+    location: [Location.Global],
+    keyword: [],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Commercial_Data],
+  },
+}
+
+export {
+  dataCategories,
+  resolutions,
+  providers,
+  locations,
+  keywords,
+  timePeriods,
+  licenses,
+  collectionCategorization,
+}

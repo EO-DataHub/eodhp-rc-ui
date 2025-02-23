@@ -137,3 +137,13 @@ export interface MetadataItem {
   properties: { [key: string]: MetadataProperties }
   label?: string
 }
+
+export interface QuickFilter {
+  dataCategory?: string
+  resolution?: string
+  provider?: string
+  location?: string
+  keyword?: string
+  timePeriod?: string
+  license?: string
+}

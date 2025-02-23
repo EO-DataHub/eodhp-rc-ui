@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { Flex, Box, Text, Grid, Select } from '@radix-ui/themes'
 import { Footer } from '@/components/Footer/Footer'
@@ -7,10 +7,13 @@ import { fetchCollections } from '@/services/collectionService'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
-import { Collection } from '@/types'
+import type { Collection, QuickFilter } from '@/types'
 import { catalogs } from '@/constants'
+import { collectionCategorization } from '@/components/QuickFilterMenu/filterConstants'
 
 export const DataDiscoveryPage: React.FC = () => {
+  const [filters, setFilters] = useState<QuickFilter>({})
+
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
       queryKey: ['Collections', index],
@@ -21,6 +24,40 @@ export const DataDiscoveryPage: React.FC = () => {
   const isLoading = queries.some((query) => query.isLoading)
   const error = queries.some((query) => query.isError)
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
+
+  const sortedCollections = useMemo(() => {
+    const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
+    return [...mergedCollections].sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+  }, [queries])
+
+  const filteredCollections = useMemo(() => {
+    // no filter applied
+    if (Object.keys(filters).length === 0) {
+      return sortedCollections
+    }
+
+    return sortedCollections.filter((collection) => {
+      if (!(collection.id in collectionCategorization)) {
+        return false
+      }
+
+      const collectionId = collection.id as keyof typeof collectionCategorization
+      const categorizationData = collectionCategorization[collectionId]
+      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
+
+      // one collection must satisfy all selected filter options to be included
+      for (const [filterKey, filterValue] of entries) {
+        if (
+          filterKey in categorizationData &&
+          !(categorizationData[filterKey] as string[]).includes(filterValue)
+        ) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [filters, sortedCollections])
 
   if (isLoading) {
     return (
@@ -42,15 +79,10 @@ export const DataDiscoveryPage: React.FC = () => {
     )
   }
 
-  const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
-  const collections = [...mergedCollections].sort((a, b) =>
-    (a.title ?? '').localeCompare(b.title ?? ''),
-  )
-
   return (
     <Flex direction="column" height="100vh">
       <Box flexGrow="1">
-        <QuickFilterMenu />
+        <QuickFilterMenu filters={filters} setFilters={setFilters} />
         <ActionsBar />
         <Box p="5" flexGrow="1">
           <Select.Root size="3">
@@ -69,7 +101,7 @@ export const DataDiscoveryPage: React.FC = () => {
           </Select.Root>
         </Box>
         <Grid p="5" gap="3" columns="4" rows="4" width="auto">
-          {collections.map((collection) => (
+          {filteredCollections.map((collection) => (
             <CollectionCard key={collection.id} collection={collection} />
           ))}
         </Grid>
