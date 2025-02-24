@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Collection } from '@/types'
-import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
+import { Dialog, Button, Flex, Text, Inset, Badge, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
@@ -63,19 +63,26 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             <Dialog.Description size="2" mb="4">
               {collection.description}
             </Dialog.Description>
-            <Flex direction="row" gap="3" style={{ flexWrap: 'wrap' }}>
+            <Flex direction="row" gap="3" className={styles.keywords} wrap="wrap">
               {collection.keywords?.map((keyword) => (
-                <Kbd key={keyword} size="2" className={styles.keyword}>
+                <Badge
+                  key={keyword}
+                  size="2"
+                  color="gray"
+                  className={styles.keyword}
+                  variant="soft"
+                >
                   {keyword}
-                </Kbd>
+                </Badge>
               ))}
             </Flex>
-            <Flex className={styles.linkWrapper}>
+            <Flex justify="end" mt="4">
               <Link
-                size="1"
+                size="2"
                 href=""
                 onClick={handleOpenCollection}
                 aria-label={`Open ${collection.title} collection`}
+                className={styles.link}
               >
                 Open Collection
               </Link>

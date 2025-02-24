@@ -26,6 +26,8 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     e.currentTarget.src = DefaultThumbnail
   }
 
+  const isLicenseProprietary = collection?.license === 'proprietary'
+
   return (
     <>
       <Card size="2" className={styles.card}>
@@ -33,9 +35,11 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
           <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
-          <IconButton radius="full" variant="solid" className={styles.button}>
-            <PoundSterlingSymbolIcon width="16" height="16" />
-          </IconButton>
+          {isLicenseProprietary ? (
+            <IconButton radius="full" variant="solid" className={styles.button}>
+              <PoundSterlingSymbolIcon width="16" height="16" />
+            </IconButton>
+          ) : null}
           <IconButton
             radius="full"
             variant="solid"
