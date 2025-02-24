@@ -1,8 +1,7 @@
-import React, { useState, ReactNode } from 'react'
+import React, { useState } from 'react'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
-import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
 import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
@@ -15,6 +14,7 @@ import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
+import ItemList from './ItemList'
 
 interface SidePanelProps {
   items: Item[]
@@ -45,35 +45,6 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
   )
 }
 
-const ItemList = ({
-  items,
-  isLoading,
-  error,
-  renderItem,
-}: {
-  items: Item[]
-  isLoading: boolean
-  error: boolean
-  renderItem: (item: Item, index: number) => ReactNode
-}) => {
-  if (isLoading) {
-    return (
-      <Flex justify="center">
-        <LoadingIndicator />
-      </Flex>
-    )
-  }
-
-  if (error) {
-    return <Text color="red">Error loading items!</Text>
-  }
-
-  return (
-    <div className={styles.listContainer}>
-      <ul>{items.map((item, index) => renderItem(item, index))}</ul>
-    </div>
-  )
-}
 export const SidePanel: React.FC<SidePanelProps> = ({
   items,
   collection,
