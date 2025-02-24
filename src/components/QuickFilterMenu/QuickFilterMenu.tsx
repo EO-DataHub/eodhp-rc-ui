@@ -9,7 +9,7 @@ import {
   providers,
   resolutions,
   timePeriods,
-} from '../../collectionCategorizations'
+} from '@/constants/collectionCategorizations'
 import type { QuickFilter } from '@/types'
 
 interface QuickFilterMenuProps {

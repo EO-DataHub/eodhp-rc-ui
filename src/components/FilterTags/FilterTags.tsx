@@ -7,7 +7,7 @@ import {
   providers,
   resolutions,
   timePeriods,
-} from '@/collectionCategorizations'
+} from '@/constants/collectionCategorizations'
 import { Button, Flex } from '@radix-ui/themes'
 import { QuickFilter } from '@/types'
 import { CrossCircledIcon } from '@radix-ui/react-icons'
@@ -17,30 +17,27 @@ interface FilterTagsProps {
   onRemoveFilter: (key: keyof QuickFilter) => void
 }
 
-export const FilterTags: React.FC<FilterTagsProps> = ({ filters, onRemoveFilter }) => {
-  const filterTags = useMemo(() => {
-    return Object.entries(filters).map(([filterKey, filterValue]) => {
-      const predicate = (item: { label: string; value: string }) => item.value === filterValue
+const filterMapping: Record<string, { label: string; value: string }[]> = {
+  dataCategory: dataCategories,
+  resolution: resolutions,
+  provider: providers,
+  location: locations,
+  timePeriod: timePeriods,
+  license: licenses,
+}
 
-      let filterItem
-      if (filterKey === 'dataCategory') {
-        filterItem = dataCategories.find(predicate)
-      } else if (filterKey === 'resolution') {
-        filterItem = resolutions.find(predicate)
-      } else if (filterKey === 'provider') {
-        filterItem = providers.find(predicate)
-      } else if (filterKey === 'location') {
-        filterItem = locations.find(predicate)
-      } else if (filterKey === 'timePeriod') {
-        filterItem = timePeriods.find(predicate)
-      } else if (filterKey === 'license') {
-        filterItem = licenses.find(predicate)
-      } else {
-        filterItem = keywords.find(predicate)
-      }
-      return { key: filterKey, ...filterItem }
-    })
-  }, [filters])
+export const FilterTags: React.FC<FilterTagsProps> = ({ filters, onRemoveFilter }) => {
+  const filterTags = useMemo(
+    () =>
+      Object.entries(filters)
+        .map(([filterKey, filterValue]) => {
+          const items = filterMapping[filterKey] || keywords
+          const filterItem = items.find((item) => item.value === filterValue)
+          return filterItem ? { key: filterKey, ...filterItem } : null
+        })
+        .filter(Boolean),
+    [filters],
+  )
 
   return (
     filterTags.length > 0 && (

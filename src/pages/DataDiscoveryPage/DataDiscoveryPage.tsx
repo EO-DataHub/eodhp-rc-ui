@@ -8,8 +8,8 @@ import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import type { Collection, QuickFilter } from '@/types'
-import { catalogs } from '@/constants'
-import { collectionCategorization } from '@/collectionCategorizations'
+import { catalogs } from '@/constants/catalogs'
+import { collectionCategorization } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
 
 export const DataDiscoveryPage: React.FC = () => {
@@ -102,7 +102,7 @@ export const DataDiscoveryPage: React.FC = () => {
         <Box px="5" flexGrow="1">
           <Select.Root size="3">
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
-            <Select.Content style={{ marginTop: '45px' }}>
+            <Select.Content position="popper">
               <Select.Group>
                 <Select.Item value="data_category">Data Category</Select.Item>
                 <Select.Item value="resolution">Resolution</Select.Item>
