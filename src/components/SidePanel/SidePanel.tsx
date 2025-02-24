@@ -15,6 +15,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import ItemList from './ItemList'
+import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 
 interface SidePanelProps {
   items: Item[]
@@ -67,8 +68,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isLicenseProprietary = collection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
-
-  const hasPages = !(isLoading || error || pageCount === 0)
 
   const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
@@ -136,14 +135,23 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           </IconButton>
         </Flex>
         <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
-        <Flex justify="end">
-          {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
+        <Flex>
+          <Flex align="center" gap="2">
+            {isLoading && (
+              <>
+                <LoadingIndicator />
+                <Text size="2">Loading...</Text>
+              </>
+            )}
+          </Flex>
+          <Flex width="100%" justify="end" gap="2">
+            {pageCount > 0 && <PageIndicator page={page} totalItemsCount={items.length} />}
+          </Flex>
         </Flex>
         <ItemList
           items={items.filter(
             (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
           )}
-          isLoading={isLoading}
           error={error}
           renderItem={(item, index) => (
             <ItemCard
@@ -160,7 +168,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             />
           )}
         />
-        {hasPages && (
+        {pageCount > 0 && (
           <PaginationContainer>
             <PageSelector
               currentPageIndex={page}
