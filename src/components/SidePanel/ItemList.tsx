@@ -5,17 +5,14 @@ import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 import { Callout } from '../Callout/Callout'
 import styles from './ItemList.module.scss'
 
-const ItemListContent = ({
-  items,
-  isLoading,
-  error,
-  renderItem,
-}: {
+interface ItemListProps {
   items: Item[]
   isLoading: boolean
   error: boolean
   renderItem: (item: Item, index: number) => ReactNode
-}) => {
+}
+
+const ItemListContent = ({ items, isLoading, error, renderItem }: ItemListProps) => {
   if (isLoading) {
     return (
       <Flex justify="center">
@@ -42,17 +39,7 @@ const ItemListContent = ({
   return <ul>{items.map((item, index) => renderItem(item, index))}</ul>
 }
 
-const ItemList = ({
-  items,
-  isLoading,
-  error,
-  renderItem,
-}: {
-  items: Item[]
-  isLoading: boolean
-  error: boolean
-  renderItem: (item: Item, index: number) => ReactNode
-}) => {
+const ItemList = ({ items, isLoading, error, renderItem }: ItemListProps) => {
   return (
     <div className={styles.listContainer}>
       <ItemListContent items={items} isLoading={isLoading} error={error} renderItem={renderItem} />
