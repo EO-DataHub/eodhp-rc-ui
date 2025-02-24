@@ -5,7 +5,7 @@ import { Dialog, Button, Flex, Text, Inset, Kbd, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
-import DefaultThumbnail from '../../../public/default-thumbnail-square.jpg'
+import DefaultThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 interface CollectionDetailsCardProps {
   collection: Collection
   isOpen: boolean

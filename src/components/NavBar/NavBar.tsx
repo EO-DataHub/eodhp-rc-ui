@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { Flex, Link, Text } from '@radix-ui/themes'
 import { LoginButton } from './LoginButton'
-import MapsIcon from '../../../public/maps-icon.svg?react'
-import AppsIcon from '../../../public/apps-icon.svg?react'
+import MapsIcon from '@/assets/icons/maps-icon.svg?react'
+import AppsIcon from '@/assets/icons/apps-icon.svg?react'
 import { useLocation } from 'react-router-dom'
 
-import EarthObservationDataHubLogo from '../../../public/eo-data-hub-logo.svg?react'
+import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
 
 export const NavBar: React.FC = () => {
