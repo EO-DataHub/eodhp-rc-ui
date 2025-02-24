@@ -1,6 +1,6 @@
 .dialogContent {
   max-width: 750px;
-  border-radius: 0px;
+  border-radius: 12px;
 }
 
 .closeButton {
@@ -29,6 +29,10 @@
   margin-top: -1.1em;
 }
 
+.keywords {
+  margin-bottom: 1;
+}
+
 .keyword {
   border-radius: 12px;
 }
@@ -37,4 +41,11 @@
   margin-top: 1em;
   justify-content: flex-end;
   display: flex;
+  position: absolute;
+  bottom: 1em;
+  right: 1em;
+
+  .link {
+    text-decoration: underline;
+  }
 }
