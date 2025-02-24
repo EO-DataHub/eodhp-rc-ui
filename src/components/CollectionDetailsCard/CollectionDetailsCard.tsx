@@ -63,7 +63,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             <Dialog.Description size="2" mb="4">
               {collection.description}
             </Dialog.Description>
-            <Flex direction="row" gap="3" style={{ flexWrap: 'wrap' }} className={styles.keywords}>
+            <Flex direction="row" gap="3" className={styles.keywords} wrap="wrap">
               {collection.keywords?.map((keyword) => (
                 <Badge
                   key={keyword}
