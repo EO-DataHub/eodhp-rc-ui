@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { Flex, Box, Text, Grid, Select, Button } from '@radix-ui/themes'
+import { Flex, Box, Text, Grid, Select } from '@radix-ui/themes'
 import { Footer } from '@/components/Footer/Footer'
 import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
@@ -9,17 +9,8 @@ import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import type { Collection, QuickFilter } from '@/types'
 import { catalogs } from '@/constants'
-import {
-  collectionCategorization,
-  dataCategories,
-  keywords,
-  licenses,
-  locations,
-  providers,
-  resolutions,
-  timePeriods,
-} from '@/collectionCategorizations'
-import { CrossCircledIcon } from '@radix-ui/react-icons'
+import { collectionCategorization } from '@/collectionCategorizations'
+import { FilterTags } from '@/components/FilterTags/FilterTags'
 
 export const DataDiscoveryPage: React.FC = () => {
   const [filters, setFilters] = useState<QuickFilter>({})
@@ -73,29 +64,7 @@ export const DataDiscoveryPage: React.FC = () => {
     setFilters((prev) => ({ ...prev, [forKey]: value }))
   }
 
-  const filterTags = useMemo(() => {
-    return Object.entries(filters).map(([filterKey, filterValue]) => {
-      let filterItem
-      if (filterKey === 'dataCategory') {
-        filterItem = dataCategories.find((item) => item.value === filterValue)
-      } else if (filterKey === 'resolution') {
-        filterItem = resolutions.find((item) => item.value === filterValue)
-      } else if (filterKey === 'provider') {
-        filterItem = providers.find((item) => item.value === filterValue)
-      } else if (filterKey === 'location') {
-        filterItem = locations.find((item) => item.value === filterValue)
-      } else if (filterKey === 'timePeriod') {
-        filterItem = timePeriods.find((item) => item.value === filterValue)
-      } else if (filterKey === 'license') {
-        filterItem = licenses.find((item) => item.value === filterValue)
-      } else {
-        filterItem = keywords.find((item) => item.value === filterValue)
-      }
-      return { key: filterKey, ...filterItem }
-    })
-  }, [filters])
-
-  const removeFilter = (key: keyof QuickFilter) => {
+  const handleRemoveFilter = (key: keyof QuickFilter) => {
     setFilters((prev) => {
       const newFilters = { ...prev }
       delete newFilters[key]
@@ -128,27 +97,8 @@ export const DataDiscoveryPage: React.FC = () => {
       <Box flexGrow="1">
         <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
         <ActionsBar />
-        {filterTags.length > 0 && (
-          <Flex p="5" pt="0" gap="2" align="center" overflow="auto">
-            {filterTags.map(
-              (tag, index) =>
-                tag &&
-                'label' in tag && (
-                  <Button
-                    radius="full"
-                    variant="soft"
-                    color="gray"
-                    size="1"
-                    key={index}
-                    onClick={() => removeFilter(tag.key as keyof QuickFilter)}
-                  >
-                    <CrossCircledIcon />
-                    {tag.label}
-                  </Button>
-                ),
-            )}
-          </Flex>
-        )}
+        <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
+
         <Box px="5" flexGrow="1">
           <Select.Root size="3">
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
