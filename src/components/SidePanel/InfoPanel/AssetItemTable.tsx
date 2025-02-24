@@ -5,7 +5,7 @@ import { ChevronDownIcon } from '@radix-ui/react-icons'
 import styles from './AssetItemTable.module.scss'
 import type { Collection, Item, MetadataItem } from '@/types'
 import { Button, Flex, Text } from '@radix-ui/themes'
-import DownloadIcon from '@/../public/download-filled.svg?react'
+import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 

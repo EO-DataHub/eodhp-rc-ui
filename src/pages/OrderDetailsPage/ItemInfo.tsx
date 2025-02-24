@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { Flex, Text } from '@radix-ui/themes'
 import { Item } from '@/types'
 import styles from './OrderDetailsPage.module.scss'
-import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import DefaultItemThumbnail from '@/assets/icons/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
 import { extractStacMetadata } from '@/library/extractStacMetadata'
 import {
