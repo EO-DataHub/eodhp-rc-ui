@@ -35,12 +35,12 @@ const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
 
 const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCount: number }) => {
   const totalCountLabel =
-    totalItemsCount > MAX_TOTAL_ITEMS ? `${MAX_TOTAL_ITEMS}+` : totalItemsCount
+    totalItemsCount >= MAX_TOTAL_ITEMS ? `${MAX_TOTAL_ITEMS}+` : totalItemsCount
   const startItem = page * PAGE_SIZE + 1
   const endItem = Math.min((page + 1) * PAGE_SIZE, totalItemsCount)
   return (
     <Text size="2" weight="bold">
-      {`${startItem}-${endItem} of ${totalCountLabel}`}
+      {`${startItem}-${endItem} of ${totalCountLabel} items`}
     </Text>
   )
 }

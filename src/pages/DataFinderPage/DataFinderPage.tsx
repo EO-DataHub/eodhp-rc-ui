@@ -70,7 +70,7 @@ export const DataFinderPage: React.FC = () => {
   const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
   const fetchFunction = () =>
     fetchItems({
-      limit: MAX_TOTAL_ITEMS + 1, // Fetch one more than the max to see if there are more items
+      limit: MAX_TOTAL_ITEMS,
       mapBounds: mapBounds,
       aoi: aoi,
       selectedCollection: selectedCollection ?? undefined,
