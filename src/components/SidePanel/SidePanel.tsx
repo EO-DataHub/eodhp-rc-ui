@@ -18,7 +18,7 @@ import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 
 interface SidePanelProps {
   items: Item[]
-  collection: Collection
+  collection?: Collection
   isLoading: boolean
   error: boolean
   page: number

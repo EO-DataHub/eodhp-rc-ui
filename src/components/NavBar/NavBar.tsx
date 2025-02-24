@@ -27,7 +27,10 @@ export const NavBar: React.FC = () => {
           </Flex>
         </Link>
 
-        <Link href="/finder" className={`${styles.link} ${isMapsActive ? styles.active : ''}`}>
+        <Link
+          href="/finder/sentinel2_ard"
+          className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
+        >
           <Flex gap="2" className={styles.flex}>
             <MapsIcon className={styles.icon} />
             <Text className={styles.text}>Maps</Text>
