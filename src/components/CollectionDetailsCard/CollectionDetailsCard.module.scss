@@ -31,16 +31,13 @@
 
 .keywords {
   margin-bottom: 1;
-}
 
-.keyword {
-  border-radius: 12px;
+  .keyword {
+    border-radius: 12px;
+  }
 }
 
 .linkWrapper {
-  margin-top: 1em;
-  justify-content: flex-end;
-  display: flex;
   position: absolute;
   bottom: 1em;
   right: 1em;
