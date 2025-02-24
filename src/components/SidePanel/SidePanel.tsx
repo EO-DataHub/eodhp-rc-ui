@@ -158,17 +158,19 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             />
           )}
         />
-        <PaginationContainer>
-          <PageSelector
-            currentPageIndex={page}
-            nextDisabled={page === pageCount - 1}
-            onGoToPage={setPage}
-            onNextClick={() => setPage(page + 1)}
-            onPreviousClick={() => setPage(page - 1)}
-            pageCount={pageCount}
-            previousDisabled={page === 0}
-          />
-        </PaginationContainer>
+        {isLoading || error || pageCount === 0 ? null : (
+          <PaginationContainer>
+            <PageSelector
+              currentPageIndex={page}
+              nextDisabled={page === pageCount - 1}
+              onGoToPage={setPage}
+              onNextClick={() => setPage(page + 1)}
+              onPreviousClick={() => setPage(page - 1)}
+              pageCount={pageCount}
+              previousDisabled={page === 0}
+            />
+          </PaginationContainer>
+        )}
       </Flex>
 
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
