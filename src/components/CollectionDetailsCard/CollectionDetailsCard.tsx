@@ -76,7 +76,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
                 </Badge>
               ))}
             </Flex>
-            <Flex className={styles.linkWrapper}>
+            <Flex justify="end" mt="4">
               <Link
                 size="2"
                 href=""

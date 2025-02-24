@@ -9,40 +9,26 @@
   right: 20px;
 }
 
-.flexContainer {
-  padding: 1em;
-}
-
 .thumbnail {
   display: block;
   object-fit: cover;
   width: 210px;
-  height: 210px;
-  background-color: var(--gray-5);
+  padding-top: 1.5em;
+  padding-left: 1.5em;
 }
 
 .details {
   width: 100%;
 }
 
-.dialogTitle {
-  margin-top: -1.1em;
-}
-
 .keywords {
-  margin-bottom: 1;
+  margin-bottom: 1em;
 
   .keyword {
     border-radius: 12px;
   }
 }
 
-.linkWrapper {
-  position: absolute;
-  bottom: 1em;
-  right: 1em;
-
-  .link {
-    text-decoration: underline;
-  }
+.link {
+  text-decoration: underline;
 }
