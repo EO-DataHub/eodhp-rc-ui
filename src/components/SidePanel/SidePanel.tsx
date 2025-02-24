@@ -68,6 +68,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
 
+  const hasPages = !(isLoading || error || pageCount === 0)
+
   const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
   const handleSelectItem = (item: Item) => {
@@ -135,7 +137,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </Flex>
         <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
         <Flex justify="end">
-          <PageIndicator page={page} totalItemsCount={items.length} />
+          {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
         </Flex>
         <ItemList
           items={items.filter(
@@ -158,7 +160,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             />
           )}
         />
-        {isLoading || error || pageCount === 0 ? null : (
+        {hasPages && (
           <PaginationContainer>
             <PageSelector
               currentPageIndex={page}
