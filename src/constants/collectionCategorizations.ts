@@ -7,6 +7,15 @@ enum DataCategory {
   Land_Cover = 'cat:land_cover',
 }
 
+enum DataCategoryLabel {
+  Climate_Data = 'Climate Data',
+  Climate_Projections = 'Climate Projections',
+  Hyperspectral = 'Hyperspectral',
+  Optical_Multispectral = 'Optical & Multispectral',
+  Radar = 'Radar',
+  Land_Cover = 'Land Cover',
+}
+
 enum Resolution {
   Less_Than_1m = 'res:under_1m',
   From_1m_To_10m = 'res:10m',
@@ -15,6 +24,16 @@ enum Resolution {
   From_1km_To_10km = 'res:10km',
   From_10km_To_100km = 'res:100km',
   Greater_Than_100km = 'res:over_100km',
+}
+
+enum ResolutionLabel {
+  Less_Than_1m = 'Less than 1m',
+  From_1m_To_10m = '1m - <10m',
+  From_10m_To_100m = '10m - <100m',
+  From_100m_To_1km = '100m - <1km',
+  From_1km_To_10km = '1km - <10km',
+  From_10km_To_100km = '10km - <100km',
+  Greater_Than_100km = 'Greater than 100km',
 }
 
 enum Provider {
@@ -31,10 +50,30 @@ enum Provider {
   Other = 'pro:other',
 }
 
+enum ProviderLabel {
+  Airbus = 'Airbus',
+  CEDA = 'Centre for Environmental Data Analysis',
+  DEFRA = 'Department for Environment',
+  ESA = 'Earth Observation Climate Information Service',
+  EOCS = 'European Space Agency',
+  JNCC = 'Joint Nature Conservation Committee',
+  Multiple_Contributors = 'Multiple Contributors',
+  Planet = 'Planet',
+  UK_Met_Office = 'UK Met Office',
+  UOL_LST = 'University of Leicester (LST)',
+  Other = 'Other',
+}
+
 enum Location {
   Global = 'loc:global',
   Continental = 'loc:continental',
   United_Kingdom = 'loc:uk',
+}
+
+enum LocationLabel {
+  Global = 'Global',
+  Continental = 'Continental',
+  United_Kingdom = 'United Kingdom',
 }
 
 enum Keyword {
@@ -48,10 +87,27 @@ enum Keyword {
   Marine_Ocean_Science = 'key:ocean',
 }
 
+enum KeywordLabel {
+  Agriculture_Forestry = 'Agriculture & Forestry',
+  Climate_Environment = 'Climate & Environment',
+  Disaster_Management = 'Disaster Management',
+  Gas_Emissions_Monitoring = 'Gas & Emissions Monitoring',
+  Habitat_Ecosystem_Mapping = 'Habitat & Ecosystem Mapping',
+  Infrastructure_Urban_Development = 'Infrastructure & Urban Development',
+  Land_Water_Management = 'Land & Water Management',
+  Marine_Ocean_Science = 'Marine & Ocean Science',
+}
+
 enum TimePeriod {
   Historic = 'per:historic',
   Current = 'per:current',
   Forecast = 'per:forecast',
+}
+
+enum TimePeriodLabel {
+  Historic = 'Historic',
+  Current = 'Current',
+  Forecast = 'Forecast',
 }
 
 enum License {
@@ -59,66 +115,23 @@ enum License {
   Open_Data = 'lic:open',
 }
 
-const dataCategories = [
-  { label: 'Climate Data', value: DataCategory.Climate_Data },
-  { label: 'Climate Projections', value: DataCategory.Climate_Projections },
-  { label: 'Hyperspectral', value: DataCategory.Hyperspectral },
-  { label: 'Optical & Multispectral', value: DataCategory.Optical_Multispectral },
-  { label: 'Radar', value: DataCategory.Radar },
-  { label: 'Land Cover', value: DataCategory.Land_Cover },
-]
+enum LicenseLabel {
+  Commercial_Data = 'Commercial Data',
+  Open_Data = 'Open Data',
+}
 
-const resolutions = [
-  { label: 'Less than 1m', value: Resolution.Less_Than_1m },
-  { label: '1m - <10m', value: Resolution.From_1m_To_10m },
-  { label: '10m - <100m', value: Resolution.From_10m_To_100m },
-  { label: '100m - <1km', value: Resolution.From_100m_To_1km },
-  { label: '1km - <10km', value: Resolution.From_1km_To_10km },
-  { label: '10km - <100km', value: Resolution.From_10km_To_100km },
-  { label: 'Greater than 100km', value: Resolution.Greater_Than_100km },
-]
+const createOptions = <T extends Record<string, string>>(
+  enumObj: T,
+  labels: Record<keyof T, string>,
+) => Object.entries(enumObj).map(([key, value]) => ({ label: labels[key], value }))
 
-const providers = [
-  { label: 'Airbus', value: Provider.Airbus },
-  { label: 'Centre for Environmental Data Analysis', value: Provider.CEDA },
-  { label: 'Department for Environment, Food & Rural Affairs', value: Provider.DEFRA },
-  { label: 'Earth Observation Climate Information Service', value: Provider.EOCS },
-  { label: 'European Space Agency', value: Provider.ESA },
-  { label: 'Joint Nature Conservation Committee', value: Provider.JNCC },
-  { label: 'Multiple Contributors', value: Provider.Multiple_Contributors },
-  { label: 'Planet', value: Provider.Planet },
-  { label: 'UK Met Office', value: Provider.UK_Met_Office },
-  { label: 'University of Leicester (LST)', value: Provider.UOL_LST },
-  { label: 'Other', value: Provider.Other },
-]
-
-const locations = [
-  { label: 'Global', value: Location.Global },
-  { label: 'Continental', value: Location.Continental },
-  { label: 'United Kingdom', value: Location.United_Kingdom },
-]
-
-const keywords = [
-  { label: 'Agriculture & Forestry', value: Keyword.Agriculture_Forestry },
-  { label: 'Climate & Environment', value: Keyword.Climate_Environment },
-  { label: 'Disaster Management', value: Keyword.Disaster_Management },
-  { label: 'Gas & Emissions Monitoring', value: Keyword.Gas_Emissions_Monitoring },
-  { label: 'Habitat & Ecosystem Mapping', value: Keyword.Habitat_Ecosystem_Mapping },
-  { label: 'Infrastructure & Urban Development', value: Keyword.Infrastructure_Urban_Development },
-  { label: 'Land & Water Management', value: Keyword.Land_Water_Management },
-  { label: 'Marine & Ocean Science', value: Keyword.Marine_Ocean_Science },
-]
-
-const timePeriods = [
-  { label: 'Historic', value: TimePeriod.Historic },
-  { label: 'Current', value: TimePeriod.Current },
-  { label: 'Forecast', value: TimePeriod.Forecast },
-]
-
-const licenses = [
-  { label: 'Commercial Data', value: License.Commercial_Data },
-  { label: 'Open Data', value: License.Open_Data },
-]
+const dataCategories = createOptions(DataCategory, DataCategoryLabel)
+const resolutions = createOptions(Resolution, ResolutionLabel)
+const providers = createOptions(Provider, ProviderLabel)
+const locations = createOptions(Location, LocationLabel)
+const keywords = createOptions(Keyword, KeywordLabel)
+const timePeriods = createOptions(TimePeriod, TimePeriodLabel)
+const licenses = createOptions(License, LicenseLabel)
 
 const collectionCategorization = {
   airbus_spot_data: {
