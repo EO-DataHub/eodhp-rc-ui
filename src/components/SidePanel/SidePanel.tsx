@@ -21,6 +21,7 @@ interface SidePanelProps {
   items: Item[]
   collection?: Collection
   isLoading: boolean
+  isFetching: boolean
   error: boolean
   page: number
   setPage: (page: number) => void
@@ -50,6 +51,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   items,
   collection,
   isLoading,
+  isFetching,
   error,
   page,
   setPage,
@@ -137,7 +139,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
         <Flex>
           <Flex align="center" gap="2">
-            {isLoading && (
+            {isFetching && (
               <>
                 <LoadingIndicator />
                 <Text size="2">Loading...</Text>
@@ -148,26 +150,29 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             {pageCount > 0 && <PageIndicator page={page} totalItemsCount={items.length} />}
           </Flex>
         </Flex>
-        <ItemList
-          items={items.filter(
-            (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
-          )}
-          error={error}
-          renderItem={(item, index) => (
-            <ItemCard
-              key={`${item.id}-${index}`}
-              item={item}
-              isSelected={selectedItem?.id === item.id}
-              isThumbnailSelected={selectedThumbnail?.id === item.id}
-              isChecked={checkedItems.some((checked) => checked.id === item.id)}
-              onSelect={handleSelectItem}
-              onSelectItemInfo={handleSelectItemInfo}
-              onThumbnailSelect={handleThumbnailSelect}
-              onCheckboxChange={handleCheckboxItemChange}
-              isLicenseProprietary={isLicenseProprietary}
-            />
-          )}
-        />
+        {!isLoading && (
+          <ItemList
+            items={items.filter(
+              (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
+            )}
+            error={error}
+            renderItem={(item, index) => (
+              <ItemCard
+                key={`${item.id}-${index}`}
+                item={item}
+                isSelected={selectedItem?.id === item.id}
+                isThumbnailSelected={selectedThumbnail?.id === item.id}
+                isChecked={checkedItems.some((checked) => checked.id === item.id)}
+                onSelect={handleSelectItem}
+                onSelectItemInfo={handleSelectItemInfo}
+                onThumbnailSelect={handleThumbnailSelect}
+                onCheckboxChange={handleCheckboxItemChange}
+                isLicenseProprietary={isLicenseProprietary}
+              />
+            )}
+          />
+        )}
+
         {pageCount > 0 && (
           <PaginationContainer>
             <PageSelector

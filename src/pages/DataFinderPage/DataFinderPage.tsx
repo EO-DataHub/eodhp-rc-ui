@@ -26,6 +26,12 @@ export const DataFinderPage: React.FC = () => {
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // This is a replacement for the isLoading flag from useQuery. Due to the usage of placeholder data
+  // in the useQuery hook, we need to keep track of the loading outside of it, because isLoading will
+  // be false after the first render.
+  const isLoading = useSelector(dataFinderStore, (state) => state.context.isLoading)
+
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
   // we verify that the collection in the url parameters is the same as the one in storage to use it
@@ -79,7 +85,6 @@ export const DataFinderPage: React.FC = () => {
 
   const {
     data: itemList = [],
-    isLoading,
     isFetching,
     isFetched,
     error,
@@ -94,7 +99,7 @@ export const DataFinderPage: React.FC = () => {
   // Reset page after refetch
   useEffect(() => {
     if (isFetched) {
-      dataFinderStore.send({ type: 'pageChange', page: 0 })
+      dataFinderStore.send({ type: 'onFetched' })
     }
   }, [isFetched])
 
@@ -107,7 +112,8 @@ export const DataFinderPage: React.FC = () => {
         <SidePanel
           items={itemList}
           collection={selectedCollection ?? undefined}
-          isLoading={isLoading || isFetching}
+          isLoading={isLoading}
+          isFetching={isFetching}
           error={!!error}
           page={page}
           setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}
