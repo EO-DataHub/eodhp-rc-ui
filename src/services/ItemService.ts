@@ -3,6 +3,7 @@ import { Collection, Item } from '@/types'
 import { extractCatalogPaths } from '@/library/catalogUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
+const HUB_ENV = import.meta.env.VITE_HUB_ENV
 
 interface FetchItemsParams {
   limit: number
@@ -71,15 +72,17 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
     throw new Error('Item is not valid')
   }
 
-  const response = await fetch(
-    `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections/${collection}/items/${item}`,
-    {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
+  const url =
+    HUB_ENV === 'staging'
+      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/collections/${collection}/items/${item}`
+      : `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections/${collection}/items/${item}`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
     },
-  )
+  })
 
   if (!response.ok) {
     throw new Error('Failed to fetch Item')
