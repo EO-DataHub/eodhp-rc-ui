@@ -70,6 +70,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isLicenseProprietary = collection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
+  const hasPages = !error && pageCount > 1
 
   const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
@@ -147,7 +148,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             )}
           </Flex>
           <Flex width="100%" justify="end" gap="2">
-            {pageCount > 0 && <PageIndicator page={page} totalItemsCount={items.length} />}
+            {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
           </Flex>
         </Flex>
         {!isLoading && (
@@ -173,7 +174,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           />
         )}
 
-        {pageCount > 0 && (
+        {hasPages && (
           <PaginationContainer>
             <PageSelector
               currentPageIndex={page}
