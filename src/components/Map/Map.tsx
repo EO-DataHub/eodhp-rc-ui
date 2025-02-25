@@ -65,6 +65,8 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
 
+  const hoveredItemId = useSelector(dataFinderStore, (state) => state.context.hoveredItem?.id)
+
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   // This is a workaround to move the draw layers to the top as they are added
@@ -127,6 +129,7 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
         <ItemLayer
           key={`${item.id}-${index}`}
           item={item}
+          isHovered={hoveredItemId === item.id}
           showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
         />
       ))}
