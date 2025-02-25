@@ -108,12 +108,11 @@ export const DataDiscoveryPage: React.FC = () => {
     }
 
     return sortedCollections.filter((collection) => {
-      if (!(collection.id in collectionCategorization)) {
+      if (!isValidCollectionId(collection.id)) {
         return false
       }
 
-      const collectionId = collection.id as keyof typeof collectionCategorization
-      const categorizationData = collectionCategorization[collectionId]
+      const categorizationData = collectionCategorization[collection.id]
       const entries = Object.entries(filters) as [keyof QuickFilter, string][]
 
       // one collection must satisfy all selected filter options to be included
@@ -145,8 +144,7 @@ export const DataDiscoveryPage: React.FC = () => {
             return false
           }
 
-          const collectionId = collection.id
-          const categorizationData = collectionCategorization[collectionId]
+          const categorizationData = collectionCategorization[collection.id]
           return (categorizationData[groupBy][0] as string) === category.value
         }),
       }
@@ -206,6 +204,7 @@ export const DataDiscoveryPage: React.FC = () => {
                 <Select.Item value="dataCategory">Data Category</Select.Item>
                 <Select.Item value="resolution">Resolution</Select.Item>
                 <Select.Item value="provider">Provider</Select.Item>
+                <Select.Item value="location">Location</Select.Item>
                 <Select.Item value="keyword">Keywords</Select.Item>
                 <Select.Item value="license">License</Select.Item>
               </Select.Group>
