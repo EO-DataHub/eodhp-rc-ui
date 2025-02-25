@@ -20,6 +20,8 @@ interface ItemCardProps {
   onSelectItemInfo: (item: Item) => void
   onThumbnailSelect: (item: Item) => void
   onCheckboxChange: (item: Item, isChecked: boolean) => void
+  onMouseEnter?: (item: Item) => void
+  onMouseLeave?: (item: Item) => void
   isLicenseProprietary: boolean
 }
 
@@ -31,6 +33,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onSelect,
   onSelectItemInfo,
   onCheckboxChange,
+  onMouseEnter,
+  onMouseLeave,
   onThumbnailSelect,
   isLicenseProprietary,
 }) => {
@@ -55,6 +59,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     <Card
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
       onClick={() => onSelect(item)}
+      onMouseEnter={() => onMouseEnter?.(item)}
+      onMouseLeave={() => onMouseLeave?.(item)}
     >
       <Flex gap="1">
         <Flex

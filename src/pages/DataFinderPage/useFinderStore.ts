@@ -22,6 +22,7 @@ const dataFinderStore = createStore({
     queryFilter: undefined as object | undefined,
     page: 0,
     pinnedItems: [] as Item[],
+    hoveredItem: undefined as Item | undefined,
   },
   // Transitions
   on: {
@@ -122,6 +123,12 @@ const dataFinderStore = createStore({
         pinnedItems: isChecked
           ? [...pinnedItems, item]
           : pinnedItems.filter((checked) => checked.id !== item.id),
+      }
+    },
+    hoveredItemChange: (context, event: { item: Item | undefined }) => {
+      return {
+        ...context,
+        hoveredItem: event.item,
       }
     },
   },

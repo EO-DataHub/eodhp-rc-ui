@@ -168,6 +168,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 onSelectItemInfo={handleSelectItemInfo}
                 onThumbnailSelect={handleThumbnailSelect}
                 onCheckboxChange={handleCheckboxItemChange}
+                onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
+                onMouseLeave={() =>
+                  dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })
+                }
                 isLicenseProprietary={isLicenseProprietary}
               />
             )}
