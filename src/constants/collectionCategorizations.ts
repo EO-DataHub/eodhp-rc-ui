@@ -1,3 +1,5 @@
+import { QuickFilter } from '@/types'
+
 enum DataCategory {
   Climate_Data = 'cat:climate_data',
   Climate_Projections = 'cat:climate_projections',
@@ -397,6 +399,16 @@ const collectionCategorization = {
   },
 }
 
+const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[]> = {
+  dataCategory: dataCategories,
+  resolution: resolutions,
+  provider: providers,
+  location: locations,
+  timePeriod: timePeriods,
+  license: licenses,
+  keyword: keywords,
+}
+
 export {
   dataCategories,
   resolutions,
@@ -406,4 +418,5 @@ export {
   timePeriods,
   licenses,
   collectionCategorization,
+  filterMapping,
 }

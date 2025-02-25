@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { Flex, Box, Text, Grid, Select } from '@radix-ui/themes'
+import { Flex, Box, Text, Grid, Select, Badge } from '@radix-ui/themes'
 import { Footer } from '@/components/Footer/Footer'
 import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
@@ -9,11 +9,81 @@ import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import type { Collection, QuickFilter } from '@/types'
 import { catalogs } from '@/constants/catalogs'
-import { collectionCategorization } from '@/constants/collectionCategorizations'
+import { collectionCategorization, filterMapping } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
+import styles from './DataDiscoveryPage.module.scss'
+
+interface GroupByCollection {
+  category: { label: string; value: string }
+  collections: Collection[]
+}
+
+const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
+  return id in collectionCategorization
+}
+
+const renderCollections = (collections: Collection[]) => {
+  if (!collections) {
+    return null
+  }
+
+  return (
+    <Grid p="5" gap="5" columns="4" width="auto">
+      {collections.map((collection) => (
+        <CollectionCard key={collection.id} collection={collection} />
+      ))}
+    </Grid>
+  )
+}
+
+const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) => {
+  if (!groupedByCollections) {
+    return null
+  }
+
+  return (
+    <Flex direction="column" gap="5" p="5">
+      {groupedByCollections.map((group) => (
+        <Flex gap="2" direction="column" key={group.category.value}>
+          <Flex gap="2" align="center">
+            <Text size="5" weight="bold">
+              {group.category.label}
+            </Text>
+            <Badge
+              radius="full"
+              highContrast
+              variant="solid"
+              className={styles.collectionCount}
+              style={{
+                width: 24,
+                height: 24,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              {group.collections.length}
+            </Badge>
+          </Flex>
+
+          {group.collections.length > 0 ? (
+            <Grid gap="5" columns="4" width="auto">
+              {group.collections.map((collection) => (
+                <CollectionCard key={collection.id} collection={collection} />
+              ))}
+            </Grid>
+          ) : (
+            <Text>No collections available.</Text>
+          )}
+        </Flex>
+      ))}
+    </Flex>
+  )
+}
 
 export const DataDiscoveryPage: React.FC = () => {
   const [filters, setFilters] = useState<QuickFilter>({})
+  const [groupBy, setGroupBy] = useState<keyof QuickFilter | 'none'>('none')
 
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
@@ -60,6 +130,29 @@ export const DataDiscoveryPage: React.FC = () => {
     })
   }, [filters, sortedCollections])
 
+  const groupedByCollections = useMemo(() => {
+    if (groupBy === 'none') {
+      return []
+    }
+
+    const categories = filterMapping[groupBy]
+
+    return categories.map((category) => {
+      return {
+        category,
+        collections: filteredCollections.filter((collection) => {
+          if (!isValidCollectionId(collection.id)) {
+            return false
+          }
+
+          const collectionId = collection.id
+          const categorizationData = collectionCategorization[collectionId]
+          return (categorizationData[groupBy][0] as string) === category.value
+        }),
+      }
+    })
+  }, [filteredCollections, groupBy])
+
   const handleFilterChange = (value: string, forKey: keyof QuickFilter) => {
     setFilters((prev) => ({ ...prev, [forKey]: value }))
   }
@@ -100,30 +193,34 @@ export const DataDiscoveryPage: React.FC = () => {
         <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
 
         <Box px="5" flexGrow="1">
-          <Select.Root size="3">
+          <Select.Root
+            size="3"
+            defaultValue="none"
+            value={groupBy}
+            onValueChange={(value: keyof QuickFilter | 'none') => setGroupBy(value)}
+          >
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
             <Select.Content position="popper">
               <Select.Group>
-                <Select.Item value="data_category">Data Category</Select.Item>
+                <Select.Item value="none">None</Select.Item>
+                <Select.Item value="dataCategory">Data Category</Select.Item>
                 <Select.Item value="resolution">Resolution</Select.Item>
                 <Select.Item value="provider">Provider</Select.Item>
-                <Select.Item value="location">Location</Select.Item>
-                <Select.Item value="keywords">Keywords</Select.Item>
-                <Select.Item value="time_period">Time Period</Select.Item>
+                <Select.Item value="keyword">Keywords</Select.Item>
                 <Select.Item value="license">License</Select.Item>
               </Select.Group>
             </Select.Content>
           </Select.Root>
         </Box>
-        <Grid p="5" gap="3" columns="4" width="auto">
-          {filteredCollections.length === 0 ? (
+        {filteredCollections.length === 0 ? (
+          <Box p="5">
             <Text>No collections available.</Text>
-          ) : (
-            filteredCollections.map((collection) => (
-              <CollectionCard key={collection.id} collection={collection} />
-            ))
-          )}
-        </Grid>
+          </Box>
+        ) : groupBy === 'none' ? (
+          renderCollections(filteredCollections)
+        ) : (
+          renderGroupedByCollections(groupedByCollections)
+        )}
       </Box>
       <Footer />
     </Flex>
