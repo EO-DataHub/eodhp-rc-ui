@@ -2,9 +2,11 @@
 
 body {
   margin: 0;
-  width: 100%;
+  /* width: 100%; */
   height: 100%;
 }
+
+
 
 :root {
   /* not all Radix tokens are available in this scope, such as --accent-x */

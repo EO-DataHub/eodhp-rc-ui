@@ -9,7 +9,7 @@ import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
 import { fetchItems } from '@/services/ItemService'
 import { Collection, Item } from '@/types'
-import { catalogs } from '@/constants'
+import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
 
