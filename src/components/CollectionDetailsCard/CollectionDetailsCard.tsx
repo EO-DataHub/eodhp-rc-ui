@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Collection } from '@/types'
-import { Dialog, Button, Flex, Text, Inset, Badge, Link } from '@radix-ui/themes'
+import { Dialog, Button, Flex, Text, Badge, Link } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
@@ -45,16 +45,12 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
           </Button>
         </Dialog.Close>
         <Flex direction="row" gap="7" className={styles.flexContainer}>
-          <Flex>
-            <Inset>
-              <img
-                src={thumbnailUrl}
-                alt="Collection thumbnail"
-                className={styles.thumbnail}
-                onError={handleImageError}
-              />
-            </Inset>
-          </Flex>
+          <img
+            src={thumbnailUrl}
+            alt="Collection thumbnail"
+            className={styles.thumbnail}
+            onError={handleImageError}
+          />
           <Flex direction="column" className={styles.details}>
             <Dialog.Title className={styles.dialogTitle}>{collection.title}</Dialog.Title>
             <Text size="2" color="gray" mb="2">
