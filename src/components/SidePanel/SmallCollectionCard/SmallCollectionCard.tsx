@@ -3,7 +3,7 @@ import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Link } from '@radix-ui/themes'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import styles from './SmallCollectionCard.module.scss'
-import PoundSterlingSymbolIcon from '../../../../public/pound-sterling-symbol.svg?react'
+import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void

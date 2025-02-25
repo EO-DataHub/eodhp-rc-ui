@@ -3,9 +3,9 @@ import { Collection } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
-import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
+import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
-import DefaultThumbnail from '../../../public/default-thumbnail-wide.jpg'
+import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface CollectionCardProps {

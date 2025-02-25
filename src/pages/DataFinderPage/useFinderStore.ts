@@ -13,6 +13,7 @@ export type MapBounds = [number, number, number, number]
 const dataFinderStore = createStore({
   // Initial context
   context: {
+    isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -24,6 +25,13 @@ const dataFinderStore = createStore({
   },
   // Transitions
   on: {
+    onFetched: (context) => {
+      return {
+        ...context,
+        isLoading: false,
+        page: 0,
+      }
+    },
     pageChange: (context, event: { page: number }) => {
       return {
         ...context,

@@ -1,11 +1,10 @@
-import React, { useState, ReactNode } from 'react'
+import React, { useState } from 'react'
 import { Flex, IconButton, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
-import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
-import FilterAltFilled from '../../../public/filter-alt-filled.svg?react'
+import FilterAltFilled from '@/assets/icons/filter-alt-filled.svg?react'
 import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
@@ -15,11 +14,14 @@ import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
+import ItemList from './ItemList'
+import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 
 interface SidePanelProps {
   items: Item[]
   collection?: Collection
   isLoading: boolean
+  isFetching: boolean
   error: boolean
   page: number
   setPage: (page: number) => void
@@ -35,49 +37,21 @@ const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
 
 const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCount: number }) => {
   const totalCountLabel =
-    totalItemsCount > MAX_TOTAL_ITEMS ? `${MAX_TOTAL_ITEMS}+` : totalItemsCount
+    totalItemsCount >= MAX_TOTAL_ITEMS ? `${MAX_TOTAL_ITEMS}+` : totalItemsCount
   const startItem = page * PAGE_SIZE + 1
   const endItem = Math.min((page + 1) * PAGE_SIZE, totalItemsCount)
   return (
     <Text size="2" weight="bold">
-      {`${startItem}-${endItem} of ${totalCountLabel}`}
+      {`${startItem}-${endItem} of ${totalCountLabel} items`}
     </Text>
   )
 }
 
-const ItemList = ({
-  items,
-  isLoading,
-  error,
-  renderItem,
-}: {
-  items: Item[]
-  isLoading: boolean
-  error: boolean
-  renderItem: (item: Item, index: number) => ReactNode
-}) => {
-  if (isLoading) {
-    return (
-      <Flex justify="center">
-        <LoadingIndicator />
-      </Flex>
-    )
-  }
-
-  if (error) {
-    return <Text color="red">Error loading items!</Text>
-  }
-
-  return (
-    <div className={styles.listContainer}>
-      <ul>{items.map((item, index) => renderItem(item, index))}</ul>
-    </div>
-  )
-}
 export const SidePanel: React.FC<SidePanelProps> = ({
   items,
   collection,
   isLoading,
+  isFetching,
   error,
   page,
   setPage,
@@ -96,6 +70,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isLicenseProprietary = collection?.license === 'proprietary'
 
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
+  const hasPages = !error && pageCount > 1
 
   const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
 
@@ -163,41 +138,55 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           </IconButton>
         </Flex>
         <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
-        <Flex justify="end">
-          <PageIndicator page={page} totalItemsCount={items.length} />
+        <Flex>
+          <Flex align="center" gap="2">
+            {isFetching && (
+              <>
+                <LoadingIndicator />
+                <Text size="2">Loading...</Text>
+              </>
+            )}
+          </Flex>
+          <Flex width="100%" justify="end" gap="2">
+            {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
+          </Flex>
         </Flex>
-        <ItemList
-          items={items.filter(
-            (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
-          )}
-          isLoading={isLoading}
-          error={error}
-          renderItem={(item, index) => (
-            <ItemCard
-              key={`${item.id}-${index}`}
-              item={item}
-              isSelected={selectedItem?.id === item.id}
-              isThumbnailSelected={selectedThumbnail?.id === item.id}
-              isChecked={checkedItems.some((checked) => checked.id === item.id)}
-              onSelect={handleSelectItem}
-              onSelectItemInfo={handleSelectItemInfo}
-              onThumbnailSelect={handleThumbnailSelect}
-              onCheckboxChange={handleCheckboxItemChange}
-              isLicenseProprietary={isLicenseProprietary}
-            />
-          )}
-        />
-        <PaginationContainer>
-          <PageSelector
-            currentPageIndex={page}
-            nextDisabled={page === pageCount - 1}
-            onGoToPage={setPage}
-            onNextClick={() => setPage(page + 1)}
-            onPreviousClick={() => setPage(page - 1)}
-            pageCount={pageCount}
-            previousDisabled={page === 0}
+        {!isLoading && (
+          <ItemList
+            items={items.filter(
+              (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
+            )}
+            error={error}
+            renderItem={(item, index) => (
+              <ItemCard
+                key={`${item.id}-${index}`}
+                item={item}
+                isSelected={selectedItem?.id === item.id}
+                isThumbnailSelected={selectedThumbnail?.id === item.id}
+                isChecked={checkedItems.some((checked) => checked.id === item.id)}
+                onSelect={handleSelectItem}
+                onSelectItemInfo={handleSelectItemInfo}
+                onThumbnailSelect={handleThumbnailSelect}
+                onCheckboxChange={handleCheckboxItemChange}
+                isLicenseProprietary={isLicenseProprietary}
+              />
+            )}
           />
-        </PaginationContainer>
+        )}
+
+        {hasPages && (
+          <PaginationContainer>
+            <PageSelector
+              currentPageIndex={page}
+              nextDisabled={page === pageCount - 1}
+              onGoToPage={setPage}
+              onNextClick={() => setPage(page + 1)}
+              onPreviousClick={() => setPage(page - 1)}
+              pageCount={pageCount}
+              previousDisabled={page === 0}
+            />
+          </PaginationContainer>
+        )}
       </Flex>
 
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
