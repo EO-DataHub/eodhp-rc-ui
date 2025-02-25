@@ -14,8 +14,9 @@ const LIST_ITEM_LINE_PAINT_STYLE = {
 }
 
 const HOVERED_ITEM_LINE_PAINT_STYLE = {
-  'line-color': LIST_ITEM_LINE_PAINT_STYLE['line-color'],
-  'line-width': 4,
+  'line-color': '#ff0000',
+  'line-width': 6,
+  'line-blur': 2,
 }
 
 const getAssetUrl = (item: Item, assetKey: string): string | null =>
