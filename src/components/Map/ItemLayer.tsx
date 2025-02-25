@@ -19,27 +19,27 @@ const HOVERED_ITEM_LINE_PAINT_STYLE = {
   'line-blur': 2,
 }
 
-const getAssetUrl = (item: Item, assetKey: string): string | null =>
-  item.assets?.[assetKey]?.href ?? null
+const resolveTilesUrl = (item: Item): string | null => {
+  const collection = item.collection
+  const collectionConfig = collectionRenderingConfig[collection]
+
+  if (!collectionConfig) return null
+
+  const assetKey = collectionConfig.assetKey
+  const assetUrl = item.assets?.[assetKey]?.href ?? null
+
+  if (!assetUrl) return null
+
+  return collectionConfig.tilesUrlTemplate.replace('{assetUrl}', encodeURIComponent(assetUrl))
+}
 
 const ItemLayer = ({ item, showRasterTiles, isHovered }: ItemLayerProps) => {
   const itemId = item.id
-  const collection = item.collection
-
-  const collectionConfig = collectionRenderingConfig[collection]
-  if (!collectionConfig) return null
-
-  const assetUrl = getAssetUrl(item, collectionConfig.assetKey)
-  if (!assetUrl) return null
-
-  const tilesUrl = collectionConfig.tilesUrlTemplate.replace(
-    '{assetUrl}',
-    encodeURIComponent(assetUrl),
-  )
+  const tilesUrl = resolveTilesUrl(item)
 
   return (
     <>
-      {showRasterTiles && (
+      {showRasterTiles && tilesUrl && (
         <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
           <Layer type="raster" />
         </Source>
