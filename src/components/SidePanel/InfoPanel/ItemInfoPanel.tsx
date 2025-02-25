@@ -4,6 +4,7 @@ import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
+import { getCatalogByURL } from '@/library/catalogUtils'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
@@ -17,12 +18,8 @@ interface ItemInfoPanelProps {
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
   const rootCatalog = useMemo(() => {
-    const url = item?.links.find((link) => link.rel === 'root')?.href
-    const components = url?.split('/')
-
-    if (!components) return undefined
-
-    return components[components.length - 1]
+    const url = item?.links.find((link) => link.rel === 'parent')?.href
+    return url ? getCatalogByURL(url) : undefined
   }, [item?.links])
 
   const { data, isLoading, error } = useQuery({
