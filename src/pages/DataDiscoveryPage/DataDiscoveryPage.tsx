@@ -27,7 +27,7 @@ const renderCollections = (collections: Collection[]) => {
   }
 
   return (
-    <Grid p="5" gap="5" columns="4" width="auto">
+    <Grid p="5" gap="5" columns="4" width="auto" className={styles.collectionGrid}>
       {collections.map((collection) => (
         <CollectionCard key={collection.id} collection={collection} />
       ))}
