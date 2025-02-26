@@ -15,27 +15,28 @@ export const NavBar: React.FC = () => {
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
 
   return (
-    <Flex p="3" align="center" justify="between" className={styles.container}>
-      <Link href="/">
-        <EarthObservationDataHubLogo className={styles.logo} />
+    <Flex px="5" py="3" align="center" justify="between" className={styles.container}>
+      <Link href="/" className={styles.logo}>
+        <EarthObservationDataHubLogo />
       </Link>
-      <Flex gap="2" className={styles.navLinks}>
-        <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
-          <Flex gap="2" className={styles.flex}>
-            <AppsIcon className={styles.icon} />
-            <Text className={styles.text}>Catalogue</Text>
-          </Flex>
-        </Link>
-
-        <Link
-          href="/finder/sentinel2_ard"
-          className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
-        >
-          <Flex gap="2" className={styles.flex}>
-            <MapsIcon className={styles.icon} />
-            <Text className={styles.text}>Maps</Text>
-          </Flex>
-        </Link>
+      <Flex gap="5" className={styles.navLinks}>
+        <Flex gap="1" align="center">
+          <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
+            <Flex gap="3" align="center" px="4" py="2">
+              <AppsIcon className={styles.icon} />
+              <Text className={styles.text}>Catalogue</Text>
+            </Flex>
+          </Link>
+          <Link
+            href="/finder/sentinel2_ard"
+            className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
+          >
+            <Flex gap="3" align="center" px="4" py="2">
+              <MapsIcon className={styles.icon} />
+              <Text className={styles.text}>Maps</Text>
+            </Flex>
+          </Link>
+        </Flex>
 
         <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
       </Flex>

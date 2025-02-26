@@ -10,7 +10,7 @@ body {
 
 :root {
   /* not all Radix tokens are available in this scope, such as --accent-x */
-  --nav-bar-height: 100px;
+  --nav-bar-height: 80px;
   --content-height: calc(100vh - var(--nav-bar-height));
   --error-color: var(--red-11);
   --unclustered-marker-color: #3e63dd;
