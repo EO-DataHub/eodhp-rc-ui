@@ -11,7 +11,7 @@ import styles from './NavBar.module.scss'
 export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
-  const isMapsActive = location.pathname === '/finder'
+  const isMapsActive = location.pathname.startsWith('/finder')
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
 
   return (
@@ -19,7 +19,7 @@ export const NavBar: React.FC = () => {
       <Link href="/">
         <EarthObservationDataHubLogo className={styles.logo} />
       </Link>
-      <Flex gap="6" className={styles.navLinks}>
+      <Flex gap="2" className={styles.navLinks}>
         <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
           <Flex gap="2" className={styles.flex}>
             <AppsIcon className={styles.icon} />
