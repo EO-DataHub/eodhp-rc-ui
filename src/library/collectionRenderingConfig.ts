@@ -20,10 +20,14 @@ export const DATASETS = {
   LAND_COVER: 'land_cover',
   EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
   EOCIS_SST: 'eocis-sst-cdrv3',
-  EOCIS_LST_A_DAY: 'eocis-lst-s3a-day',
-  EOCIS_LST_A_NIGHT: 'eocis-lst-s3a-night',
-  EOCIS_LST_B_DAY: 'eocis-lst-s3b-day',
-  EOCIS_LST_B_NIGHT: 'eocis-lst-s3b-night',
+  EOCIS_LST_S3A_DAY: 'eocis-lst-s3a-day',
+  EOCIS_LST_S3A_NIGHT: 'eocis-lst-s3a-night',
+  EOCIS_LST_S3B_DAY: 'eocis-lst-s3b-day',
+  EOCIS_LST_S3B_NIGHT: 'eocis-lst-s3b-night',
+  EOCIS_AEROSOL_S3A_DAILY: 'eocis-aerosol-slstr-daily-s3a',
+  EOCIS_AEROSOL_S3B_DAILY: 'eocis-aerosol-slstr-daily-s3b',
+  EOCIS_AEROSOL_S3A_MONTHLY: 'eocis-aerosol-slstr-monthly-s3a',
+  EOCIS_AEROSOL_S3B_MONTHLY: 'eocis-aerosol-slstr-monthly-s3b',
 } as const
 
 export const collectionRenderingConfig: Record<
@@ -32,7 +36,9 @@ export const collectionRenderingConfig: Record<
 > = {
   [DATASETS.SENTINEL_2]: {
     assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,
+    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,    
+    // Example alternative render below.  Please leave in config - can be used in demo's by uncommenting this line in local deployment until we have UI for render changes
+    // tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=7&bidx=3&bidx=1&rescale=0,300`,
   },
   [DATASETS.AIRBUS_SAR]: {
     assetKey: 'thumbnail',
@@ -50,20 +56,36 @@ export const collectionRenderingConfig: Record<
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,310.15&colormap_name=jet&variable=analysed_sst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-  [DATASETS.EOCIS_LST_A_DAY]: {
+  [DATASETS.EOCIS_LST_S3A_DAY]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-  [DATASETS.EOCIS_LST_A_NIGHT]: {
+  [DATASETS.EOCIS_LST_S3A_NIGHT]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-  [DATASETS.EOCIS_LST_B_DAY]: {
+  [DATASETS.EOCIS_LST_S3B_DAY]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-  [DATASETS.EOCIS_LST_B_NIGHT]: {
+  [DATASETS.EOCIS_LST_S3B_NIGHT]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+  [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+    [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  },
+    [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
+    assetKey: 'reference_file',
+    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
 }
