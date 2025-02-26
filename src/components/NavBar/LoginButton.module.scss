@@ -9,6 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .logoutButton {
@@ -31,6 +32,7 @@
   -webkit-line-clamp: 2;
   line-clamp: 2;
   align-self: center;
+  max-width: 450px;
 }
 
 .userMenuButton {

@@ -20,9 +20,9 @@ export const LoginButton = ({
       'Account services including logging in are not available right now. To try again later, click the browser refresh button.'
 
     return (
-      <Text className={`${styles.loginButton} ${styles.errorText}`} title={errorText}>
-        {errorText}
-      </Text>
+      <div className={`${styles.loginButton}`} title={errorText}>
+        <div className={styles.errorText}>{errorText}</div>
+      </div>
     )
   }
 
