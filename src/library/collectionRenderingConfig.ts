@@ -36,7 +36,7 @@ export const collectionRenderingConfig: Record<
 > = {
   [DATASETS.SENTINEL_2]: {
     assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,    
+    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,
     // Example alternative render below.  Please leave in config - can be used in demo's by uncommenting this line in local deployment until we have UI for render changes
     // tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=7&bidx=3&bidx=1&rescale=0,300`,
   },
@@ -80,11 +80,11 @@ export const collectionRenderingConfig: Record<
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-    [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
+  [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
-    [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
+  [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
     assetKey: 'reference_file',
     tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
   },
