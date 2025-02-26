@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
 import { Flex, Box, Text, Grid, Select, Badge } from '@radix-ui/themes'
-import { Footer } from '@/components/Footer/Footer'
 import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
@@ -28,7 +27,7 @@ const renderCollections = (collections: Collection[]) => {
   }
 
   return (
-    <Grid p="5" gap="5" columns="4" width="auto">
+    <Grid p="5" gap="5" columns="4" width="auto" className={styles.collectionGrid}>
       {collections.map((collection) => (
         <CollectionCard key={collection.id} collection={collection} />
       ))}
@@ -221,7 +220,6 @@ export const DataDiscoveryPage: React.FC = () => {
           renderGroupedByCollections(groupedByCollections)
         )}
       </Box>
-      <Footer />
     </Flex>
   )
 }

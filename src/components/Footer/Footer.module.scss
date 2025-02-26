@@ -1,10 +1,23 @@
 .container {
   background-color: var(--blue-9);
   width: 100%;
+  position: fixed;
+  bottom: 0;
+  padding: 1.2em;
 
   .button {
     background-color: var(--blue-9);
     color: var(--blue-contrast);
+    cursor: pointer;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
   .text {
