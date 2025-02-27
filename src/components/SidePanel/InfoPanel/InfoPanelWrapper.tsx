@@ -11,15 +11,10 @@ export const InfoPanelWrapper: React.FC<PropsWithChildren<InfoPanelWrapperProps>
   isOpen,
 }) => {
   return (
-    <Flex
-      direction="column"
-      gap="5"
-      p="5"
-      pr="8"
-      position="absolute"
-      className={`${styles.InfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}
-    >
-      {children}
-    </Flex>
+    <div className={`${styles.InfoPanel} ${isOpen ? styles['InfoPanel--open'] : ''}`}>
+      <Flex direction="column" gap="5" p="5" pr="8" maxWidth="800px" width="100%">
+        {children}
+      </Flex>
+    </div>
   )
 }

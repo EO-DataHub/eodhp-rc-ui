@@ -3,9 +3,9 @@ import { Collection } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
-import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
+import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
-import DefaultThumbnail from '../../../public/default-thumbnail-wide.jpg'
+import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface CollectionCardProps {
@@ -26,6 +26,8 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     e.currentTarget.src = DefaultThumbnail
   }
 
+  const isLicenseProprietary = collection?.license === 'proprietary'
+
   return (
     <>
       <Card size="2" className={styles.card}>
@@ -33,9 +35,11 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
           <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
-          <IconButton radius="full" variant="solid" className={styles.button}>
-            <PoundSterlingSymbolIcon width="16" height="16" />
-          </IconButton>
+          {isLicenseProprietary ? (
+            <IconButton radius="full" variant="solid" className={styles.button}>
+              <PoundSterlingSymbolIcon width="16" height="16" />
+            </IconButton>
+          ) : null}
           <IconButton
             radius="full"
             variant="solid"

@@ -13,6 +13,7 @@ export type MapBounds = [number, number, number, number]
 const dataFinderStore = createStore({
   // Initial context
   context: {
+    isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -21,9 +22,17 @@ const dataFinderStore = createStore({
     queryFilter: undefined as object | undefined,
     page: 0,
     pinnedItems: [] as Item[],
+    hoveredItem: undefined as Item | undefined,
   },
   // Transitions
   on: {
+    onFetched: (context) => {
+      return {
+        ...context,
+        isLoading: false,
+        page: 0,
+      }
+    },
     pageChange: (context, event: { page: number }) => {
       return {
         ...context,
@@ -114,6 +123,12 @@ const dataFinderStore = createStore({
         pinnedItems: isChecked
           ? [...pinnedItems, item]
           : pinnedItems.filter((checked) => checked.id !== item.id),
+      }
+    },
+    hoveredItemChange: (context, event: { item: Item | undefined }) => {
+      return {
+        ...context,
+        hoveredItem: event.item,
       }
     },
   },

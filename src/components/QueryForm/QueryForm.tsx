@@ -1,3 +1,4 @@
+import * as buffer from 'buffer'
 import { useEffect, useState } from 'react'
 import Form, { IChangeEvent } from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
@@ -58,6 +59,11 @@ export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
   const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
   const [formData, setFormData] = useState<Record<string, unknown>>({})
 
+  // Ensure that Buffer is available in the browser
+  if (!window.Buffer) {
+    window.Buffer = buffer.Buffer
+  }
+
   const widgets = {
     SelectWidget: CustomSelectWidget,
     RangeWidget: CustomRangeWidget,
@@ -67,11 +73,9 @@ export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
   useEffect(() => {
     buildSchema(schema)
       .then((result) => {
-        console.log('Dereferenced schema:', result) // eslint-disable-line no-console
         setDereferencedSchema(result)
       })
-      .catch((err) => {
-        console.error('Error dereferencing schema:', err) // eslint-disable-line no-console
+      .catch(() => {
         setDereferencedSchema({})
       })
   }, [schema])

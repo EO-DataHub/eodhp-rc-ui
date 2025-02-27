@@ -4,9 +4,9 @@ import { Item } from '@/types'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
-import MapsIcon from '../../../public/maps-icon.svg?react'
-import CancelIcon from '../../../public/cancel-filled-icon.svg?react'
-import DefaultItemThumbnail from '../../../public/default-item-thumbnail.jpg'
+import MapsIcon from '@/assets/icons/maps-icon.svg?react'
+import CancelIcon from '@/assets/icons/cancel-filled-icon.svg?react'
+import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
 
 import { useNavigate } from 'react-router-dom'
@@ -20,6 +20,8 @@ interface ItemCardProps {
   onSelectItemInfo: (item: Item) => void
   onThumbnailSelect: (item: Item) => void
   onCheckboxChange: (item: Item, isChecked: boolean) => void
+  onMouseEnter?: (item: Item) => void
+  onMouseLeave?: (item: Item) => void
   isLicenseProprietary: boolean
 }
 
@@ -31,6 +33,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onSelect,
   onSelectItemInfo,
   onCheckboxChange,
+  onMouseEnter,
+  onMouseLeave,
   onThumbnailSelect,
   isLicenseProprietary,
 }) => {
@@ -55,6 +59,8 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     <Card
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
       onClick={() => onSelect(item)}
+      onMouseEnter={() => onMouseEnter?.(item)}
+      onMouseLeave={() => onMouseLeave?.(item)}
     >
       <Flex gap="1">
         <Flex
