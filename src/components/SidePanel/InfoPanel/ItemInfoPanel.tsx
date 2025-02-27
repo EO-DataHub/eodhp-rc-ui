@@ -49,12 +49,12 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
             <Flex direction="row" gap="5" align="center">
               <Tooltip content="Source Data">
                 <IconButton variant="ghost">
-                  <Link1Icon width="20" height="20" />
+                  <Link1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
               </Tooltip>
               <Tooltip content="Share">
                 <IconButton variant="ghost">
-                  <Share1Icon width="20" height="20" color="black" fill="black" />
+                  <Share1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
               </Tooltip>
             </Flex>

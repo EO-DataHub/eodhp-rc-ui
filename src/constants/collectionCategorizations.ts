@@ -55,7 +55,7 @@ enum Provider {
 enum ProviderLabel {
   Airbus = 'Airbus',
   CEDA = 'Centre for Environmental Data Analysis',
-  DEFRA = 'Department for Environment',
+  DEFRA = 'Department for Environment, Food & Rural Affairs',
   ESA = 'Earth Observation Climate Information Service',
   EOCS = 'European Space Agency',
   JNCC = 'Joint Nature Conservation Committee',

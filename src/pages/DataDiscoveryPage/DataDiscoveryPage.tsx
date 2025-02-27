@@ -41,7 +41,7 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
   }
 
   return (
-    <Flex direction="column" gap="5" p="5">
+    <Flex direction="column" gap="5" p="5" className={styles.collectionGrid}>
       {groupedByCollections.map((group) => (
         <Flex gap="2" direction="column" key={group.category.value}>
           <Flex gap="2" align="center">

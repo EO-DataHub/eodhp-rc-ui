@@ -5,8 +5,7 @@
   display: flex;
 
   .logo {
-    width: 180px;
-    height: auto;
+    height: 56px;
   }
 
   .navLinks {
@@ -32,11 +31,6 @@
     border-radius: var(--Radius-3-max, 6px);
     background: rgba(255, 255, 255, 0.08);
   }
-}
-
-.flex {
-  padding: 0.5em;
-  align-items: center;
 }
 
 .icon {
