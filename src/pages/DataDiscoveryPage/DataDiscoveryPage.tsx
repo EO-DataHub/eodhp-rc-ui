@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 
 import { Flex, Box, Text, Grid, Select, Badge } from '@radix-ui/themes'
 import { useQueries } from '@tanstack/react-query'
@@ -11,6 +11,7 @@ import { catalogs } from '@/constants/catalogs'
 import { collectionCategorization, filterMapping } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
 import styles from './DataDiscoveryPage.module.scss'
+import { useSearchParams } from 'react-router-dom'
 
 interface GroupByCollection {
   category: { label: string; value: string }
@@ -20,6 +21,8 @@ interface GroupByCollection {
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
   return id in collectionCategorization
 }
+
+const GROUP_BY_KEY = 'groupBy'
 
 const renderCollections = (collections: Collection[]) => {
   if (!collections) {
@@ -81,8 +84,10 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 }
 
 export const DataDiscoveryPage: React.FC = () => {
-  const [filters, setFilters] = useState<QuickFilter>({})
-  const [groupBy, setGroupBy] = useState<keyof QuickFilter | 'none'>('none')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const filters = Object.fromEntries(searchParams.entries())
+  const groupBy = (searchParams.get(GROUP_BY_KEY) ?? 'none') as keyof QuickFilter | 'none'
 
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
@@ -150,16 +155,26 @@ export const DataDiscoveryPage: React.FC = () => {
     })
   }, [filteredCollections, groupBy])
 
-  const handleFilterChange = (value: string, forKey: keyof QuickFilter) => {
-    setFilters((prev) => ({ ...prev, [forKey]: value }))
+  const handleFilterChange = (value: string, key: keyof QuickFilter) => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.set(key, value)
+    setSearchParams(newParams)
   }
 
   const handleRemoveFilter = (key: keyof QuickFilter) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev }
-      delete newFilters[key]
-      return newFilters
-    })
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete(key)
+    setSearchParams(newParams)
+  }
+
+  const handleGroupBy = (value: keyof QuickFilter | 'none') => {
+    const newParams = new URLSearchParams(searchParams)
+    if (value === 'none') {
+      newParams.delete(GROUP_BY_KEY)
+    } else {
+      newParams.set(GROUP_BY_KEY, value)
+    }
+    setSearchParams(newParams)
   }
 
   if (isLoading) {
@@ -190,12 +205,7 @@ export const DataDiscoveryPage: React.FC = () => {
         <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
 
         <Box px="5" flexGrow="1">
-          <Select.Root
-            size="3"
-            defaultValue="none"
-            value={groupBy}
-            onValueChange={(value: keyof QuickFilter | 'none') => setGroupBy(value)}
-          >
+          <Select.Root size="3" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
             <Select.Content position="popper">
               <Select.Group>
