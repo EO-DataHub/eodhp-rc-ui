@@ -45,40 +45,39 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 
   return (
     <Flex direction="column" gap="5" p="5" className={styles.collectionGrid}>
-      {groupedByCollections.map((group) => (
-        <Flex gap="2" direction="column" key={group.category.value}>
-          <Flex gap="2" align="center">
-            <Text size="5" weight="bold">
-              {group.category.label}
-            </Text>
-            <Badge
-              radius="full"
-              highContrast
-              variant="solid"
-              className={styles.collectionCount}
-              style={{
-                width: 24,
-                height: 24,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              {group.collections.length}
-            </Badge>
-          </Flex>
+      {groupedByCollections.map(
+        (group) =>
+          group.collections.length > 0 && (
+            <Flex gap="2" direction="column" key={group.category.value}>
+              <Flex gap="2" align="center">
+                <Text size="5" weight="bold">
+                  {group.category.label}
+                </Text>
+                <Badge
+                  radius="full"
+                  highContrast
+                  variant="solid"
+                  className={styles.collectionCount}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {group.collections.length}
+                </Badge>
+              </Flex>
 
-          {group.collections.length > 0 ? (
-            <Grid gap="5" columns="4" width="auto">
-              {group.collections.map((collection) => (
-                <CollectionCard key={collection.id} collection={collection} />
-              ))}
-            </Grid>
-          ) : (
-            <Text>No collections available.</Text>
-          )}
-        </Flex>
-      ))}
+              <Grid gap="5" columns="4" width="auto">
+                {group.collections.map((collection) => (
+                  <CollectionCard key={collection.id} collection={collection} />
+                ))}
+              </Grid>
+            </Flex>
+          ),
+      )}
     </Flex>
   )
 }
@@ -157,7 +156,11 @@ export const DataDiscoveryPage: React.FC = () => {
 
   const handleFilterChange = (value: string, key: keyof QuickFilter) => {
     const newParams = new URLSearchParams(searchParams)
-    newParams.set(key, value)
+    if (newParams.get(key) === value) {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
+    }
     setSearchParams(newParams)
   }
 
@@ -204,7 +207,10 @@ export const DataDiscoveryPage: React.FC = () => {
         <ActionsBar />
         <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
 
-        <Box px="5" flexGrow="1">
+        <Flex px="5" flexGrow="1" direction="column" gap="1">
+          <Text weight="bold" size="2">
+            Group By
+          </Text>
           <Select.Root size="3" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
             <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
             <Select.Content position="popper">
@@ -219,10 +225,10 @@ export const DataDiscoveryPage: React.FC = () => {
               </Select.Group>
             </Select.Content>
           </Select.Root>
-        </Box>
+        </Flex>
         {filteredCollections.length === 0 ? (
           <Box p="5">
-            <Text>No collections available.</Text>
+            <Text>No matching collections, please refine your search.</Text>
           </Box>
         ) : groupBy === 'none' ? (
           renderCollections(filteredCollections)
