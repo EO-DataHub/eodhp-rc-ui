@@ -35,7 +35,15 @@ const isCollectionMatchingSearch = (collection: Collection, searchText: string) 
 
       if (
         Array.isArray(value) &&
-        value.some((item) => typeof item === 'string' && flexibleSearch(item, searchText) !== -1)
+        value.some((item) => {
+          if (typeof item === 'string') {
+            return flexibleSearch(item, searchText) !== -1
+          }
+          if (typeof item === 'object' && 'name' in item) {
+            return flexibleSearch(item.name, searchText) !== -1
+          }
+          return false
+        })
       ) {
         return true
       }
