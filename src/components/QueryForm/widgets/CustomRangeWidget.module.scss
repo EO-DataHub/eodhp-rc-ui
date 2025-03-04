@@ -1,0 +1,24 @@
+.tooltip {
+  position: absolute;
+  transform: translateX(-50%);
+  background-color: var(--app-background-dark-1);
+  color: var(--blue-contrast);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-family: var(--default-font-family);
+  font-size: var(--Typography-Font-size-1, 12px);
+  text-align: center;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid var(--app-background-dark-1);
+  }
+}

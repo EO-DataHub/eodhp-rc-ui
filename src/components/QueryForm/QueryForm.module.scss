@@ -1,10 +1,39 @@
+.reactJsonSchemaForm {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
+}
+
 .reactJsonSchemaForm fieldset[id="root"] {
   border: none;
   padding: 0;
   margin: 0;
+  
+  flex: 1;
+  min-height: 150px;
+  max-height: calc(var(--content-height) - 150px);
+  overflow-y: auto;
+
+  /* hide scrollbar for Chrome or extensions */
+  &::-webkit-scrollbar {
+    width: 0px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* hide scrollbar for Internet Explorer/Edge */
+  -ms-overflow-styl ul {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
 }
 
 .reactJsonSchemaFormButton {
-  margin-top: 45px;
+  margin-top: auto;
   width: 100%;
 }

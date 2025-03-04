@@ -35,11 +35,11 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
           <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
         <Flex justify="end" mt="-6" gap="2">
-          {isLicenseProprietary ? (
+          {isLicenseProprietary && (
             <IconButton radius="full" variant="solid" className={styles.button}>
               <PoundSterlingSymbolIcon width="16" height="16" />
             </IconButton>
-          ) : null}
+          )}
           <IconButton
             radius="full"
             variant="solid"

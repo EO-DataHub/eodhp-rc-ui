@@ -5,12 +5,12 @@
   "properties": {
     "start_datetime": {
       "type": "string",
-      "title": "From",
+      "title": "Start Date",
       "format": "date"
     },
     "end_datetime": {
       "type": "string",
-      "title": "To",
+      "title": "End Date",
       "format": "date"
     }
   }

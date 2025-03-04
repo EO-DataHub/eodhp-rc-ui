@@ -4,7 +4,7 @@ import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
-import FilterAltFilled from '@/assets/icons/filter-alt-filled.svg?react'
+import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
 import { PageSelector } from '../Pagination/PageSelector/PageSelector'
@@ -12,6 +12,7 @@ import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPag
 import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import ItemList from './ItemList'
@@ -42,7 +43,7 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
   const endItem = Math.min((page + 1) * PAGE_SIZE, totalItemsCount)
   return (
     <Text size="2" weight="bold">
-      {`${startItem}-${endItem} of ${totalCountLabel} items`}
+      {`${startItem}-${endItem} of ${totalCountLabel}`}
     </Text>
   )
 }
@@ -68,7 +69,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   }
 
   const isLicenseProprietary = collection?.license === 'proprietary'
-
+  const filterCount = useSelector(dataFinderStore, (state) => state.context.filterCount)
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
   const hasPages = !error && pageCount > 1
 
@@ -129,16 +130,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           boxShadow: sidePanelsOpen ? 'none' : undefined,
         }}
       >
-        <Flex justify="end">
-          <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
-            <Flex gap="2" align="center">
-              <Text>Filters</Text>
-              <FilterAltFilled />
-            </Flex>
-          </IconButton>
-        </Flex>
-        <SmallCollectionCard onSelectCollectionInfo={handleSelectCollectionInfo} />
-        <Flex>
+        <SmallCollectionCard
+          onSelectCollectionInfo={handleSelectCollectionInfo}
+          isLicenseProprietary={isLicenseProprietary}
+        />
+        <Flex justify="between" mt="2">
           <Flex align="center" gap="2">
             {isFetching && (
               <>
@@ -147,9 +143,15 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               </>
             )}
           </Flex>
-          <Flex width="100%" justify="end" gap="2">
+          <Flex width="100%" gap="2" align="center">
             {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
           </Flex>
+          <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
+            <Flex gap="2" align="center">
+              <Text>Filters {filterCount > 0 ? `(${filterCount})` : ''}</Text>
+              <FilterAltOutlined />
+            </Flex>
+          </IconButton>
         </Flex>
         {!isLoading && (
           <ItemList

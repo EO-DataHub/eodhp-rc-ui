@@ -6,6 +6,7 @@ import { buildQuery } from '@/json-schema-forms/queries/cql2.ts'
 import $RefParser from '@apidevtools/json-schema-ref-parser'
 import { Button } from '@radix-ui/themes'
 import styles from './QueryForm.module.scss'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 // Schema imports
 import uiSchema from '@/json-schema-forms/assets/form-ui.json'
@@ -22,6 +23,7 @@ import { CustomDateWidget } from './widgets/CustomDateWidget'
 interface QueryFormProps {
   schema: Record<string, unknown>
   onSubmit: (query: object) => void
+  onReset?: boolean
   boundingBox: [number, number, number, number]
 }
 
@@ -55,7 +57,7 @@ async function buildSchema(schema: JSONSchema): Promise<JSONSchema> {
   return schema
 }
 
-export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
+export function QueryForm({ schema, onSubmit, onReset, boundingBox }: QueryFormProps) {
   const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
   const [formData, setFormData] = useState<Record<string, unknown>>({})
 
@@ -79,6 +81,24 @@ export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
         setDereferencedSchema({})
       })
   }, [schema])
+
+  useEffect(() => {
+    if (onReset) {
+      setFormData({})
+    }
+  }, [onReset])
+
+  useEffect(() => {
+    // store the number of effective filters by isolating those that have default values
+    const properties = (schema?.properties as Record<string, { default?: unknown }>) ?? {}
+    const activeFilters = Object.entries(formData).filter(([key, value]) => {
+      if (key === 'collection_id') return false // ignore collection_id as filter during the count
+      const defaultValue = properties[key]?.default
+      return value !== undefined && value !== '' && value !== null && value !== defaultValue
+    }).length
+
+    dataFinderStore.send({ type: 'filterCountChange', filterCount: activeFilters })
+  }, [formData, schema])
 
   return (
     <Form

@@ -6,7 +6,7 @@
     "view:incidence_angle": {
       "type": "number",
       "title": "Incidence angle",
-      "default": 90.0,
+      "default": 0.0,
       "minimum": 0.0,
       "maximum": 90.0,
       "operator": "<="

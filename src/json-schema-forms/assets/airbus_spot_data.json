@@ -17,12 +17,12 @@
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
     "eo:cloud_cover": {
-      "default": 90.0,
+      "default": 0.0,
       "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:cloud_cover",
       "title": "Maximum cloud cover"
     },
     "eo:snow_cover": {
-      "default": 100.0,
+      "default": 0.0,
       "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:snow_cover",
       "title": "Maximum snow cover"
     },
