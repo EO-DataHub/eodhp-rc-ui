@@ -11,6 +11,7 @@ import { catalogs } from '@/constants/catalogs'
 import { collectionCategorization, filterMapping } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
 import styles from './DataDiscoveryPage.module.scss'
+import { flexibleSearch } from '@/library/stringUtils'
 
 interface GroupByCollection {
   category: { label: string; value: string }
@@ -19,6 +20,37 @@ interface GroupByCollection {
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
   return id in collectionCategorization
+}
+
+const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
+  const searchFields: (keyof Collection)[] = ['id', 'title', 'description', 'keywords', 'providers']
+
+  for (const field of searchFields) {
+    if (field in collection) {
+      const value = collection[field]
+
+      if (typeof value === 'string' && flexibleSearch(value, searchText) !== -1) {
+        return true
+      }
+
+      if (
+        Array.isArray(value) &&
+        value.some((item) => {
+          if (typeof item === 'string') {
+            return flexibleSearch(item, searchText) !== -1
+          }
+          if (typeof item === 'object' && 'name' in item) {
+            return flexibleSearch(item.name, searchText) !== -1
+          }
+          return false
+        })
+      ) {
+        return true
+      }
+    }
+  }
+
+  return false // No match found
 }
 
 const renderCollections = (collections: Collection[]) => {
@@ -83,6 +115,7 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 export const DataDiscoveryPage: React.FC = () => {
   const [filters, setFilters] = useState<QuickFilter>({})
   const [groupBy, setGroupBy] = useState<keyof QuickFilter | 'none'>('none')
+  const [searchText, setSearchText] = useState('')
 
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
@@ -97,8 +130,14 @@ export const DataDiscoveryPage: React.FC = () => {
 
   const sortedCollections = useMemo(() => {
     const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
-    return [...mergedCollections].sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
-  }, [queries])
+
+    // sort and filter base on search text
+    return [...mergedCollections]
+      .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+      .filter((collection) => {
+        return isCollectionMatchingSearch(collection, searchText)
+      })
+  }, [queries, searchText])
 
   const filteredCollections = useMemo(() => {
     // no filter applied
@@ -186,7 +225,7 @@ export const DataDiscoveryPage: React.FC = () => {
     <Flex direction="column" height="100vh">
       <Box flexGrow="1">
         <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
-        <ActionsBar />
+        <ActionsBar searchText={searchText} onSearch={setSearchText} />
         <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
 
         <Box px="5" flexGrow="1">
