@@ -100,11 +100,20 @@ export const ItemCard: React.FC<ItemCardProps> = ({
             {convertDateToUTCString(new Date(item.properties.datetime))}
           </Text>
           <Text size="1" className={styles.text}>
-            Min 31.75 Max 32.86
+            Distance: {item.properties.scores[0].toFixed(4)}
           </Text>
           <Text size="1" className={styles.text}>
-            HH, VV
+            Area: {item.properties.scores[1].toFixed(4)}
           </Text>
+          <Text size="1" className={styles.text}>
+            Aspect: {item.properties.scores[2].toFixed(4)}
+          </Text>
+          <Text size="1" className={styles.text}>
+            Time: {item.properties.scores[3].toFixed(4)}
+          </Text>
+          {/*<Text size="1" className={styles.text}>*/}
+          {/*  HH, VV*/}
+          {/*</Text>*/}
           <Flex justify="end" gap="2" align="center">
             <Tooltip content="More Info">
               <IconButton

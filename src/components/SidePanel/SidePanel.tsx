@@ -19,6 +19,7 @@ import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 
 interface SidePanelProps {
   items: Item[]
+  totalItemCount: number
   collection?: Collection
   isLoading: boolean
   isFetching: boolean
@@ -49,6 +50,7 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
 
 export const SidePanel: React.FC<SidePanelProps> = ({
   items,
+  totalItemCount,
   collection,
   isLoading,
   isFetching,
@@ -69,7 +71,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
-  const pageCount = Math.ceil(items.length / PAGE_SIZE)
+  const pageCount = Math.ceil(totalItemCount / PAGE_SIZE)
   const hasPages = !error && pageCount > 1
 
   const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
@@ -148,14 +150,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             )}
           </Flex>
           <Flex width="100%" justify="end" gap="2">
-            {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
+            {hasPages && <PageIndicator page={page} totalItemsCount={totalItemCount} />}
           </Flex>
         </Flex>
         {!isLoading && (
           <ItemList
-            items={items.filter(
-              (_, index) => index >= page * PAGE_SIZE && index < (page + 1) * PAGE_SIZE,
-            )}
+            items={items}
             error={error}
             renderItem={(item, index) => (
               <ItemCard

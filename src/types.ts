@@ -64,6 +64,8 @@ export interface Item {
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
   properties: {
+    score: number | undefined
+    scores: number[]
     datetime: string
     updated: string
     start_datetime: string

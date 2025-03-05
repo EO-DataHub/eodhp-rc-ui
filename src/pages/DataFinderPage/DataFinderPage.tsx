@@ -14,6 +14,7 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
+import { sortFeatures } from '@/library/geometryUtils.ts'
 
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
@@ -33,6 +34,8 @@ export const DataFinderPage: React.FC = () => {
   const isLoading = useSelector(dataFinderStore, (state) => state.context.isLoading)
 
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
+  const [sortedItems, setSortedItems] = useState<Item[]>([])
+  const [paginatedItems, setPaginatedItems] = useState<Item[]>([])
 
   // we verify that the collection in the url parameters is the same as the one in storage to use it
   useEffect(() => {
@@ -103,14 +106,29 @@ export const DataFinderPage: React.FC = () => {
     }
   }, [isFetched])
 
-  // Slice the visible items based on the current page
-  const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  // Sort the items based on a fitness score.
+  useEffect(() => {
+    setSortedItems(
+      sortFeatures(mapBounds, aoi, itemList, {
+        distanceBias: 1.0,
+        areaBias: 0.1,
+        aspectBias: 1.0,
+        temporalBias: 100.0,
+      }),
+    )
+  }, [mapBounds, aoi, itemList])
+
+  // Slice the visible items based on the current page.
+  useEffect(() => {
+    setPaginatedItems(sortedItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE))
+  }, [page, sortedItems])
 
   return (
-    <Box height="var(--content-height)" position="relative">
+    <Box height="var(--content-height)" position="relative" className={styles.dataFinder}>
       <Box className={styles.floatingContainer}>
         <SidePanel
-          items={itemList}
+          items={paginatedItems}
+          totalItemCount={sortedItems.length}
           collection={selectedCollection ?? undefined}
           isLoading={isLoading}
           isFetching={isFetching}
@@ -119,7 +137,7 @@ export const DataFinderPage: React.FC = () => {
           setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}
         />
       </Box>
-      <Box height="100%">
+      <Box height="100%" className={styles.map}>
         <Map visibleItems={paginatedItems} />
       </Box>
     </Box>
