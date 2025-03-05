@@ -23,7 +23,12 @@ export const TruncatedText: React.FC<TruncatedTextProps> = ({ text, maxLength = 
   )
 
   return (
-    <Flex direction="column" gap="2">
+    <Flex
+      direction="column"
+      gap="2"
+      maxWidth={{ md: '800px', lg: '1024px', xl: '1300px' }}
+      width="100%"
+    >
       <Text size="3">{truncatedText}</Text>
       {text && text.length > maxLength && (
         <Link

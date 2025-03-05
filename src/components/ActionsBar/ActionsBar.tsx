@@ -14,10 +14,10 @@ export const ActionsBar: React.FC<ActionBarProps> = ({ searchText, onSearch }) =
 
   return (
     <Flex p="5" align="center" justify="between" width="100%">
-      <Text size="6" weight="bold">
+      <Text size="7" weight="medium">
         Data Collections
       </Text>
-      <TextField.Root placeholder="Search" value={searchText} onChange={handleChange}>
+      <TextField.Root placeholder="Search" value={searchText} onChange={handleChange} size="3">
         <TextField.Slot>
           <MagnifyingGlassIcon />
         </TextField.Slot>

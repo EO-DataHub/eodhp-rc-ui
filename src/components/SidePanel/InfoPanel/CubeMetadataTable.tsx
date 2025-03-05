@@ -62,12 +62,17 @@ export const CubeMetadataTable: React.FC<CubeMetadataTableProps> = ({ metadataIt
 
   return (
     <Flex direction="column" gap="4" key={extension} className={styles.tableContainer}>
-      <Heading as="h3" size="3" weight="bold">
-        {label ? label : 'General'}
-      </Heading>
+      <Heading
+        as="h3"
+        size="4"
+        weight="bold"
+        dangerouslySetInnerHTML={{
+          __html: label ? label : 'General',
+        }}
+      ></Heading>
       {dataTable.map(({ key, title, columnHeaders, rows }) => (
         <Flex key={key} direction="column" gap="1">
-          <Heading as="h4" size="2" weight="medium">
+          <Heading as="h4" size="3" weight="medium">
             {title}
           </Heading>
           <Table.Root size="3" variant="ghost" layout="auto">
