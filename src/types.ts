@@ -15,6 +15,21 @@ export interface Catalog {
   conformsTo: string[]
 }
 
+export interface CollectionRender {
+  id: string
+  assets: string[]
+  title?: string
+  rescale?: [number, number][]
+  nodata?: number | string
+  colormap_name?: string
+  colormap?: Record<string, string>
+  color_formula?: string
+  resampling?: string
+  expression?: string
+  minmax_zoom?: [number, number]
+  bidx?: number[]
+}
+
 export interface Collection {
   type: string
   stac_version: string
@@ -52,6 +67,9 @@ export interface Collection {
       type?: string
       roles?: string[]
     }
+  }
+  renders?: {
+    [key: string]: CollectionRender
   }
 }
 

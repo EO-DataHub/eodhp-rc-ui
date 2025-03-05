@@ -1,7 +1,7 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Item } from '@/types'
+import { Collection, CollectionRender, Item } from '@/types'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -10,10 +10,13 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
+export type SecondaryPanel = 'renderOptions' | undefined
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
+    secondaryPanel: undefined as SecondaryPanel,
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -23,6 +26,11 @@ const dataFinderStore = createStore({
     page: 0,
     pinnedItems: [] as Item[],
     hoveredItem: undefined as Item | undefined,
+    isFilterPanelOpen: false,
+    isVisualizationPanelOpen: false,
+    collection: undefined as Collection | undefined,
+    collectionRenderOptions: [] as CollectionRender[],
+    selectedCollectionRender: undefined as CollectionRender | undefined,
   },
   // Transitions
   on: {
@@ -31,6 +39,12 @@ const dataFinderStore = createStore({
         ...context,
         isLoading: false,
         page: 0,
+      }
+    },
+    setSecondaryPanel: (context, event: { panel: SecondaryPanel }) => {
+      return {
+        ...context,
+        secondaryPanel: event.panel,
       }
     },
     pageChange: (context, event: { page: number }) => {
@@ -129,6 +143,29 @@ const dataFinderStore = createStore({
       return {
         ...context,
         hoveredItem: event.item,
+      }
+    },
+    setCollection: (context, event: { collection: Collection }) => {
+      const collection = event.collection
+
+      const renders = collection.renders ?? {}
+
+      const collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
+        ...render,
+        id,
+      }))
+
+      return {
+        ...context,
+        collection: event.collection,
+        collectionRenderOptions,
+        selectedCollectionRender: collectionRenderOptions[0] ?? undefined,
+      }
+    },
+    onCollectionRenderIdChange: (context, event: { collectionRenderId: string }) => {
+      return {
+        ...context,
+        collectionRenderId: event.collectionRenderId,
       }
     },
   },

@@ -1,0 +1,37 @@
+.visualizationPanel {
+  width: 290px;
+  opacity: 0;
+  background-color: #fff;
+  border-left: 1px solid #cdced6;
+  color: #444;
+  transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+  transform: translateX(-100%);
+  position: absolute;
+  left: 338px;
+  top: 0px;
+  bottom: 0px;
+  overflow-y: auto;
+
+  /* hide scrollbar for Chrome or extensions */
+  &::-webkit-scrollbar {
+    width: 0px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* hide scrollbar for Internet Explorer/Edge */
+  -ms-overflow-styl ul {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
+
+  &--open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+}

@@ -67,6 +67,7 @@ export const DataFinderPage: React.FC = () => {
       if (foundCollection) {
         localStorage.setItem('selectedCollection', JSON.stringify(foundCollection))
         setSelectedCollection(foundCollection)
+        dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
       } else {
         navigate('/')
       }
