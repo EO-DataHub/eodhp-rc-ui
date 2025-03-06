@@ -32,32 +32,32 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
 
   return (
     <>
-      <IconButton variant="ghost" className={styles.closeButton} onClick={onClose}>
-        <Cross1Icon width="20" height="20" />
-      </IconButton>
       {item && (
         <>
-          <Flex direction="row" align="center" justify="between" gap="9">
-            <Flex direction="column" gap="1" overflow="hidden">
+          <Flex direction="column" gap="1">
+            <Flex justify="between" align="center">
               <Text weight="medium" size="5" className={styles.title} title={item.id}>
                 {item.id}
               </Text>
-              <Text size="3" className={styles.subtitle}>
-                {convertDateToUTCString(new Date(item.properties.datetime))}
-              </Text>
-            </Flex>
-            <Flex direction="row" gap="5" align="center">
-              <Tooltip content="Source Data">
-                <IconButton variant="ghost">
-                  <Link1Icon width="20" height="20" color="#60646C" />
+              <Flex direction="row" gap="5" justify="start">
+                <Tooltip content="Source Data">
+                  <IconButton variant="ghost">
+                    <Link1Icon width="20" height="20" color="#60646C" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip content="Share">
+                  <IconButton variant="ghost">
+                    <Share1Icon width="20" height="20" color="#60646C" />
+                  </IconButton>
+                </Tooltip>
+                <IconButton variant="ghost" onClick={onClose}>
+                  <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
-              </Tooltip>
-              <Tooltip content="Share">
-                <IconButton variant="ghost">
-                  <Share1Icon width="20" height="20" color="#60646C" />
-                </IconButton>
-              </Tooltip>
+              </Flex>
             </Flex>
+            <Text size="3" className={styles.subtitle}>
+              {convertDateToUTCString(new Date(item.properties.datetime))}
+            </Text>
           </Flex>
 
           <Tabs.Root defaultValue="metadata">
