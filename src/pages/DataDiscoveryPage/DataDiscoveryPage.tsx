@@ -62,7 +62,13 @@ const renderCollections = (collections: Collection[]) => {
   }
 
   return (
-    <Grid p="5" gap="5" columns="4" width="auto" className={styles.collectionGrid}>
+    <Grid
+      p="5"
+      gap="5"
+      columns={{ lg: '4', md: '3', sm: '2' }}
+      width="auto"
+      className={styles.collectionGrid}
+    >
       {collections.map((collection) => (
         <CollectionCard key={collection.id} collection={collection} />
       ))}
@@ -102,7 +108,7 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
                 </Badge>
               </Flex>
 
-              <Grid gap="5" columns="4" width="auto">
+              <Grid gap="5" columns={{ lg: '4', md: '3' }}>
                 {group.collections.map((collection) => (
                   <CollectionCard key={collection.id} collection={collection} />
                 ))}
@@ -240,7 +246,7 @@ export const DataDiscoveryPage: React.FC = () => {
   }
 
   return (
-    <Flex direction="column" height="100vh">
+    <Flex direction="column" height="100vh" maxWidth="1640px" width="100%" mx="auto">
       <Box flexGrow="1">
         <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
         <ActionsBar searchText={searchText} onSearch={setSearchText} />
