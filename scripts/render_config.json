@@ -1,0 +1,78 @@
+{
+    "stac.ceda.ac.uk": {
+        "sentinel2_ard": {
+            "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
+            "eodhrc:type": "raster-multiband",
+            "renders": {
+                "True Color": {
+                    "title": "RGB",
+                    "bidx": [3, 2, 1],
+                    "rescale": [[0, 200], [0, 200], [0, 200]]
+                },
+                "False Color": {
+                    "title": "False Color",
+                    "bidx": [8, 4, 3],
+                    "rescale": [[0, 200], [0, 200], [0, 200]]
+                },
+                "SWIR": {
+                    "title": "SWIR",
+                    "bidx": [12, 8, 4],
+                    "rescale": [[0, 200], [0, 200], [0, 200]]
+                }
+            }
+        },
+        "eocis-lst-s3a-day": {
+            "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
+            "eodhrc:type": "multidim-multivar",
+            "renders": {
+                "lst": {
+                    "assets": ["reference_file"],
+                    "title": "Land Surface Temperature (°C)",
+                    "colormap_name": "coolwarm",
+                    "rescale": [-5, 20]
+                },
+                "ndvi": {
+                    "assets": ["reference_file"],
+                    "title": "Vegetation Index (°C)",
+                    "colormap_name": "Greens",
+                    "rescale": [0, 1]
+                }
+            }
+        },
+        "ukcp": {
+            "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
+            "eodhrc:type": "multidim-singlevar",
+            "eodhrc:renders_filters": {
+                "pr": {
+                    "item_filter_cql2": "id LIKE '%.pr.%'"
+                },
+                "prsn": {
+                    "item_filter_cql2":"id LIKE '%.prsn.%'"
+                },
+                "tas": {
+                    "item_filter_cql2": "id LIKE '%.tas.%'"
+                }
+            },
+            "renders": {
+                "pr": {
+                    "title": "Precipitation (mm/day)",
+                    "assets": ["reference_file"],
+                    "colormap_name": "viridis",
+                    "rescale": [0, 10]
+                },
+                "prsn": {
+                    "title": "Snowfall Flux (mm/day)",
+                    "assets": ["reference_file"],
+                    "colormap_name": "coolwarm",
+                    "rescale": [0, 10]
+                },
+                "tas": {
+                    "title": "Mean Air Temperature (°C)",
+                    "assets": ["reference_file"],
+                    "colormap_name": "coolwarm",
+                    "rescale": [-5, 20]
+                }
+            }
+        }
+    }
+}
