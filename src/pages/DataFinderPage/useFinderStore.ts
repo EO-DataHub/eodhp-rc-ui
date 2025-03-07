@@ -2,6 +2,7 @@ import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@map
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, CollectionRender, Item } from '@/types'
+import { resolveTilesUrl } from '@/library/collectionRenderingConfig'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -132,11 +133,19 @@ const dataFinderStore = createStore({
       const { item, isChecked } = event
       const { pinnedItems } = context
 
-      return {
-        ...context,
-        pinnedItems: isChecked
-          ? [...pinnedItems, item]
-          : pinnedItems.filter((checked) => checked.id !== item.id),
+      if (isChecked) {
+        // Apply tiles Url to the item
+        item.tilesUrl = resolveTilesUrl(item)
+
+        return {
+          ...context,
+          pinnedItems: [...pinnedItems, item],
+        }
+      } else {
+        return {
+          ...context,
+          pinnedItems: pinnedItems.filter((checked) => checked.id !== item.id),
+        }
       }
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {

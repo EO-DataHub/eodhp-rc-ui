@@ -11,6 +11,8 @@
  * and applying standardized rendering rules.
  */
 
+import { Collection, Item } from '@/types'
+
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
@@ -30,15 +32,29 @@ export const DATASETS = {
   EOCIS_AEROSOL_S3B_MONTHLY: 'eocis-aerosol-slstr-monthly-s3b',
 } as const
 
+export function getItemUrl(item: Item): string | undefined {
+  return item.links.find((link) => link.rel === 'self')?.href
+}
+
+export const resolveTilesUrl = (item: Item, collection?: Collection): string | undefined => {
+  const collectionId = collection?.id ?? item.collection
+  const collectionConfig = collectionRenderingConfig[collectionId]
+
+  if (!collectionConfig) return undefined
+
+  const itemUrl = getItemUrl(item)
+  if (!itemUrl) return undefined
+
+  return collectionConfig.tilesUrlTemplate.replace('{assetUrl}', encodeURIComponent(itemUrl))
+}
+
 export const collectionRenderingConfig: Record<
   string,
   { assetKey: string; tilesUrlTemplate: string }
 > = {
   [DATASETS.SENTINEL_2]: {
     assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,
-    // Example alternative render below.  Please leave in config - can be used in demo's by uncommenting this line in local deployment until we have UI for render changes
-    // tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=7&bidx=3&bidx=1&rescale=0,300`,
+    tilesUrlTemplate: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&assets=cloud`,
   },
   [DATASETS.AIRBUS_SAR]: {
     assetKey: 'thumbnail',

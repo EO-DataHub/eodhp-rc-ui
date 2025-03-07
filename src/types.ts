@@ -132,6 +132,7 @@ export interface Item {
       }[]
     }
   }
+  tilesUrl: string | undefined
 }
 
 export interface CubeData {
