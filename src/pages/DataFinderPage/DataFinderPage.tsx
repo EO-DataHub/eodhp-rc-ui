@@ -34,22 +34,15 @@ export const DataFinderPage: React.FC = () => {
 
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
-  const shouldFetchCollections =
-    selectedCollection === null || selectedCollection.id !== collectionId
-
   const queries = useQueries({
-    queries: shouldFetchCollections
-      ? catalogs.map((catalog, index) => ({
-          queryKey: ['Collections', index],
-          queryFn: () => fetchCollections(catalog),
-        }))
-      : [],
+    queries: catalogs.map((catalog, index) => ({
+      queryKey: ['Collections', index],
+      queryFn: () => fetchCollections(catalog),
+    })),
   })
 
-  // If collectionId is not part of any valid collection, we return to the DataDiscoveryPage.
-  // Otherwise, we store the collection and use it.
   useEffect(() => {
-    if (shouldFetchCollections && queries.length > 0 && queries.every((q) => q.isFetched)) {
+    if (queries.length > 0 && queries.every((q) => q.isFetched)) {
       const allCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
       const foundCollection = allCollections.find((col) => col.id === collectionId)
 
@@ -60,7 +53,7 @@ export const DataFinderPage: React.FC = () => {
         navigate('/')
       }
     }
-  }, [collectionId, navigate, selectedCollection, queries, shouldFetchCollections])
+  }, [collectionId, navigate, selectedCollection, queries])
 
   const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
   const fetchFunction = () =>
