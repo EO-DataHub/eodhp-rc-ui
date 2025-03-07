@@ -1,6 +1,6 @@
 import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
-import { extractCatalogPaths } from '@/library/catalogUtils'
+import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const HUB_ENV = import.meta.env.VITE_HUB_ENV
@@ -34,7 +34,12 @@ export const fetchItems = async ({
   selectedCollection,
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
-  const fetchUrl = `${API_URL}/api/catalogue/stac/search`
+  const catalog = selectedCollection ? getCatalog(selectedCollection) : null
+  const fetchUrl =
+    HUB_ENV === 'staging' && catalog
+      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/search`
+      : `${API_URL}/api/catalogue/stac/search`
+
   const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
 
   const baseBody: StacQueryBodyParams = {
