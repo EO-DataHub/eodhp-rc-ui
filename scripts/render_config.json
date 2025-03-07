@@ -39,6 +39,10 @@
                 }
             }
         },
+        "eocis-sst-cdrv3": {
+            "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
+            "eodhrc:type": "multidim-multivar"
+        },
         "ukcp": {
             "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
             "eodhrc:type": "multidim-singlevar",
