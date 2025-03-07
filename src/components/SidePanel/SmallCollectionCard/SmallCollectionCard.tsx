@@ -7,35 +7,39 @@ import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?re
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
+  isLicenseProprietary: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
+  isLicenseProprietary,
 }) => {
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
   const dateInterval = selectedCollection?.extent?.temporal?.interval[0] ?? []
 
   return (
-    <Card className={styles.card} size="2">
+    <Card className={styles.card}>
       <Flex direction="column">
         <Flex justify="between" align="center">
-          <Text size="3" className={styles.text}>
+          <Text weight="medium" size="4" className={styles.text}>
             {selectedCollection?.title || 'No Collection Selected'}
           </Text>
           <Flex justify="end" gap="2">
-            <IconButton radius="full" variant="solid" className={styles.button}>
-              <PoundSterlingSymbolIcon />
-            </IconButton>
-            <IconButton radius="full" variant="solid" className={styles.button}>
-              <InfoCircledIcon onClick={onSelectCollectionInfo} />
+            {isLicenseProprietary && (
+              <IconButton radius="full" variant="solid" className={styles.costButton}>
+                <PoundSterlingSymbolIcon width="6" height="9" />
+              </IconButton>
+            )}
+            <IconButton radius="full" variant="solid" className={styles.infoButton}>
+              <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
             </IconButton>
           </Flex>
         </Flex>
-        <Text size="3" className={styles.text}>
+        <Text size="2" className={styles.text}>
           {getFormattedDateRange(dateInterval)}
         </Text>
-        <Link href="/" size="1" mt="2" mb="4" className={styles.text}>
+        <Link href="/" size="2" mt="2" className={styles.link}>
           Change Collection
         </Link>
       </Flex>
