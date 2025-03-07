@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React, { useRef } from 'react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { ReloadIcon, Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
 import styles from './FilterPanel.module.scss'
 
-import { QueryForm } from '@/components/QueryForm/QueryForm'
+import { QueryForm, QueryFormRef } from '@/components/QueryForm/QueryForm'
 import rjsfCollections from '@/json-schema-forms/rjsfCollections.ts'
 
 interface FilterPanelProps {
@@ -15,14 +15,16 @@ interface FilterPanelProps {
 export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => {
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
-  const [resetTrigger, setResetTrigger] = useState(false)
+  const queryFormRef = useRef<QueryFormRef>(null)
 
   function storeQuery(query: object) {
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: query })
   }
 
   function handleResetForm() {
-    setResetTrigger((prev) => !prev)
+    if (queryFormRef.current) {
+      queryFormRef.current.resetForm()
+    }
   }
 
   return (
@@ -44,9 +46,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
           </IconButton>
         </Flex>
         <QueryForm
+          ref={queryFormRef}
           schema={rjsfCollections[selectedCollection?.id]}
           onSubmit={storeQuery}
-          onReset={resetTrigger}
           //Filters are currently focused on the globe, may change to selected areas in the future
           boundingBox={[-180.0, -90.0, 179.9, 90.0]}
         />

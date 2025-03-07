@@ -11,8 +11,7 @@
   margin: 0;
   
   flex: 1;
-  min-height: 150px;
-  max-height: calc(var(--content-height) - 150px);
+  height: calc(var(--content-height) - 150px);
   overflow-y: auto;
 
   /* hide scrollbar for Chrome or extensions */

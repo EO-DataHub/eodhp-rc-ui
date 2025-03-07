@@ -20,7 +20,6 @@ const dataFinderStore = createStore({
     aoi: undefined as GeoJSON.Feature | undefined,
     mapBounds: undefined as MapBounds | undefined,
     queryFilter: undefined as object | undefined,
-    filterCount: 0,
     page: 0,
     pinnedItems: [] as Item[],
     hoveredItem: undefined as Item | undefined,
@@ -44,12 +43,6 @@ const dataFinderStore = createStore({
       return {
         ...context,
         queryFilter: event.queryFilter,
-      }
-    },
-    filterCountChange: (context, event: { filterCount: number }) => {
-      return {
-        ...context,
-        filterCount: event.filterCount,
       }
     },
     mapLoad: (context, event: { mapInstance: MapInstance | undefined }) => {

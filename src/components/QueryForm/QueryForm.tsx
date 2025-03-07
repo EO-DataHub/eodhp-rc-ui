@@ -1,12 +1,11 @@
 import * as buffer from 'buffer'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import Form, { IChangeEvent } from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
 import { buildQuery } from '@/json-schema-forms/queries/cql2.ts'
 import $RefParser from '@apidevtools/json-schema-ref-parser'
 import { Button } from '@radix-ui/themes'
 import styles from './QueryForm.module.scss'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 // Schema imports
 import uiSchema from '@/json-schema-forms/assets/form-ui.json'
@@ -57,65 +56,59 @@ async function buildSchema(schema: JSONSchema): Promise<JSONSchema> {
   return schema
 }
 
-export function QueryForm({ schema, onSubmit, onReset, boundingBox }: QueryFormProps) {
-  const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
-  const [formData, setFormData] = useState<Record<string, unknown>>({})
-
-  // Ensure that Buffer is available in the browser
-  if (!window.Buffer) {
-    window.Buffer = buffer.Buffer
-  }
-
-  const widgets = {
-    SelectWidget: CustomSelectWidget,
-    RangeWidget: CustomRangeWidget,
-    DateWidget: CustomDateWidget,
-  }
-
-  useEffect(() => {
-    buildSchema(schema)
-      .then((result) => {
-        setDereferencedSchema(result)
-      })
-      .catch(() => {
-        setDereferencedSchema({})
-      })
-  }, [schema])
-
-  useEffect(() => {
-    if (onReset) {
-      setFormData({})
-    }
-  }, [onReset])
-
-  useEffect(() => {
-    // store the number of effective filters by isolating those that have default values
-    const properties = (schema?.properties as Record<string, { default?: unknown }>) ?? {}
-    const activeFilters = Object.entries(formData).filter(([key, value]) => {
-      if (key === 'collection_id') return false // ignore collection_id as filter during the count
-      const defaultValue = properties[key]?.default
-      return value !== undefined && value !== '' && value !== null && value !== defaultValue
-    }).length
-
-    dataFinderStore.send({ type: 'filterCountChange', filterCount: activeFilters })
-  }, [formData, schema])
-
-  return (
-    <Form
-      className={styles.reactJsonSchemaForm}
-      schema={dereferencedSchema}
-      formData={formData}
-      uiSchema={uiSchema}
-      widgets={widgets}
-      validator={validator}
-      onChange={(e: IChangeEvent) => setFormData(e.formData)}
-      onSubmit={(d: IChangeEvent) => {
-        onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
-      }}
-    >
-      <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
-        Apply
-      </Button>
-    </Form>
-  )
+export interface QueryFormRef {
+  resetForm: () => void
 }
+
+export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(
+  ({ schema, onSubmit, boundingBox }, ref) => {
+    const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
+    const [formData, setFormData] = useState<Record<string, unknown>>({})
+
+    // Ensure that Buffer is available in the browser
+    if (!window.Buffer) {
+      window.Buffer = buffer.Buffer
+    }
+
+    const widgets = {
+      SelectWidget: CustomSelectWidget,
+      RangeWidget: CustomRangeWidget,
+      DateWidget: CustomDateWidget,
+    }
+
+    useEffect(() => {
+      buildSchema(schema)
+        .then((result) => {
+          setDereferencedSchema(result)
+        })
+        .catch(() => {
+          setDereferencedSchema({})
+        })
+    }, [schema])
+
+    useImperativeHandle(ref, () => ({
+      resetForm: () => setFormData({}),
+    }))
+
+    return (
+      <Form
+        className={styles.reactJsonSchemaForm}
+        schema={dereferencedSchema}
+        formData={formData}
+        uiSchema={uiSchema}
+        widgets={widgets}
+        validator={validator}
+        onChange={(e: IChangeEvent) => setFormData(e.formData)}
+        onSubmit={(d: IChangeEvent) => {
+          onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
+        }}
+      >
+        <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
+          Apply
+        </Button>
+      </Form>
+    )
+  },
+)
+
+QueryForm.displayName = 'QueryForm'

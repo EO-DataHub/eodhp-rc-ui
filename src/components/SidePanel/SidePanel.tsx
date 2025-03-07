@@ -4,6 +4,7 @@ import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
+import MixerHorizontal from '@/assets/icons/mixer-horizontal.svg?react'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
@@ -12,7 +13,6 @@ import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPag
 import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { useSelector } from '@xstate/store/react'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import ItemList from './ItemList'
@@ -69,7 +69,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   }
 
   const isLicenseProprietary = collection?.license === 'proprietary'
-  const filterCount = useSelector(dataFinderStore, (state) => state.context.filterCount)
   const pageCount = Math.ceil(items.length / PAGE_SIZE)
   const hasPages = !error && pageCount > 1
 
@@ -146,12 +145,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           <Flex width="100%" gap="2" align="center">
             {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
           </Flex>
-          <IconButton size="2" variant="ghost" onClick={toggleFilterPanel}>
-            <Flex gap="2" align="center">
-              <Text>Filters {filterCount > 0 ? `(${filterCount})` : ''}</Text>
+          <Flex gap="2" align="center">
+            <IconButton size="2" color="gray" variant="outline">
+              <MixerHorizontal />
+            </IconButton>
+            <IconButton size="2" color="gray" variant="outline" onClick={toggleFilterPanel}>
               <FilterAltOutlined />
-            </Flex>
-          </IconButton>
+            </IconButton>
+          </Flex>
         </Flex>
         {!isLoading && (
           <ItemList

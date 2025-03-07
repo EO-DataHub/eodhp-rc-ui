@@ -5,9 +5,9 @@ import { WidgetProps } from '@rjsf/utils'
 import styles from './CustomRangeWidget.module.scss'
 
 export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
-  const [sliderValue, setSliderValue] = useState<number>(Number(value) || 0)
   const [tooltipPos, setTooltipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
   const [showTooltip, setShowTooltip] = useState<boolean>(false)
+  const sliderValue = value ?? schema.default ?? schema.minimum ?? 0
   const sliderRef = useRef<HTMLDivElement>(null)
 
   // since Radix doesn’t offer a dynamic tooltip for elements like the slider,
@@ -40,7 +40,7 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
       </Flex>
 
       <div
-        style={{ position: 'relative', width: '100%' }}
+        className={styles.slider}
         ref={sliderRef}
         onPointerEnter={() => {
           updateTooltipPosition(sliderValue)
@@ -65,7 +65,6 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
           max={schema.maximum ?? 100}
           step={1}
           onValueChange={(val) => {
-            setSliderValue(val[0])
             updateTooltipPosition(val[0])
             onChange(val[0])
             setShowTooltip(true)

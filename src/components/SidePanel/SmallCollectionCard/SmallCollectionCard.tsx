@@ -36,10 +36,10 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
             </IconButton>
           </Flex>
         </Flex>
-        <Text weight="regular" size="2" className={styles.text}>
+        <Text size="2" className={styles.text}>
           {getFormattedDateRange(dateInterval)}
         </Text>
-        <Link href="/" weight="regular" size="2" mt="2" className={styles.link}>
+        <Link href="/" size="2" mt="2" className={styles.link}>
           Change Collection
         </Link>
       </Flex>
