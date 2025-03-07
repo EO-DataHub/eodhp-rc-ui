@@ -26,14 +26,18 @@
             "eodhrc:type": "multidim-multivar",
             "renders": {
                 "lst": {
-                    "assets": ["reference_file"],
                     "title": "Land Surface Temperature (°C)",
+                    "assets": ["reference_file"],
+                    "variable": "lst",
+                    "reference": true,
                     "colormap_name": "coolwarm",
                     "rescale": [-5, 20]
                 },
                 "ndvi": {
-                    "assets": ["reference_file"],
                     "title": "Vegetation Index (°C)",
+                    "assets": ["reference_file"],
+                    "variable": "ndvi",
+                    "reference": true,
                     "colormap_name": "Greens",
                     "rescale": [0, 1]
                 }
@@ -61,18 +65,24 @@
                 "pr": {
                     "title": "Precipitation (mm/day)",
                     "assets": ["reference_file"],
+                    "variable": "pr",
+                    "reference": true,
                     "colormap_name": "viridis",
                     "rescale": [0, 10]
                 },
                 "prsn": {
                     "title": "Snowfall Flux (mm/day)",
                     "assets": ["reference_file"],
-                    "colormap_name": "coolwarm",
+                    "variable": "prsn",
+                    "reference": true,
+                    "colormap_name": "viridis",
                     "rescale": [0, 10]
                 },
                 "tas": {
                     "title": "Mean Air Temperature (°C)",
                     "assets": ["reference_file"],
+                    "variable": "tas",
+                    "reference": true,
                     "colormap_name": "coolwarm",
                     "rescale": [-5, 20]
                 }
