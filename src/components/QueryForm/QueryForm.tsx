@@ -1,5 +1,5 @@
 import * as buffer from 'buffer'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import Form, { IChangeEvent } from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
 import { buildQuery } from '@/json-schema-forms/queries/cql2.ts'
@@ -22,6 +22,7 @@ import { CustomDateWidget } from './widgets/CustomDateWidget'
 interface QueryFormProps {
   schema: Record<string, unknown>
   onSubmit: (query: object) => void
+  onReset?: boolean
   boundingBox: [number, number, number, number]
 }
 
@@ -55,47 +56,59 @@ async function buildSchema(schema: JSONSchema): Promise<JSONSchema> {
   return schema
 }
 
-export function QueryForm({ schema, onSubmit, boundingBox }: QueryFormProps) {
-  const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
-  const [formData, setFormData] = useState<Record<string, unknown>>({})
-
-  // Ensure that Buffer is available in the browser
-  if (!window.Buffer) {
-    window.Buffer = buffer.Buffer
-  }
-
-  const widgets = {
-    SelectWidget: CustomSelectWidget,
-    RangeWidget: CustomRangeWidget,
-    DateWidget: CustomDateWidget,
-  }
-
-  useEffect(() => {
-    buildSchema(schema)
-      .then((result) => {
-        setDereferencedSchema(result)
-      })
-      .catch(() => {
-        setDereferencedSchema({})
-      })
-  }, [schema])
-
-  return (
-    <Form
-      className={styles.reactJsonSchemaForm}
-      schema={dereferencedSchema}
-      formData={formData}
-      uiSchema={uiSchema}
-      widgets={widgets}
-      validator={validator}
-      onChange={(e: IChangeEvent) => setFormData(e.formData)}
-      onSubmit={(d: IChangeEvent) => {
-        onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
-      }}
-    >
-      <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
-        Apply
-      </Button>
-    </Form>
-  )
+export interface QueryFormRef {
+  resetForm: () => void
 }
+
+export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(
+  ({ schema, onSubmit, boundingBox }, ref) => {
+    const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
+    const [formData, setFormData] = useState<Record<string, unknown>>({})
+
+    // Ensure that Buffer is available in the browser
+    if (!window.Buffer) {
+      window.Buffer = buffer.Buffer
+    }
+
+    const widgets = {
+      SelectWidget: CustomSelectWidget,
+      RangeWidget: CustomRangeWidget,
+      DateWidget: CustomDateWidget,
+    }
+
+    useEffect(() => {
+      buildSchema(schema)
+        .then((result) => {
+          setDereferencedSchema(result)
+        })
+        .catch(() => {
+          setDereferencedSchema({})
+        })
+    }, [schema])
+
+    useImperativeHandle(ref, () => ({
+      resetForm: () => setFormData({}),
+    }))
+
+    return (
+      <Form
+        className={styles.reactJsonSchemaForm}
+        schema={dereferencedSchema}
+        formData={formData}
+        uiSchema={uiSchema}
+        widgets={widgets}
+        validator={validator}
+        onChange={(e: IChangeEvent) => setFormData(e.formData)}
+        onSubmit={(d: IChangeEvent) => {
+          onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
+        }}
+      >
+        <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
+          Apply
+        </Button>
+      </Form>
+    )
+  },
+)
+
+QueryForm.displayName = 'QueryForm'

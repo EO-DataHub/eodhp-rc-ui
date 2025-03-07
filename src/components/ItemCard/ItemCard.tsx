@@ -116,7 +116,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
                 <InfoCircledIcon />
               </IconButton>
             </Tooltip>
-            {isLicenseProprietary ? (
+            {isLicenseProprietary && (
               <Button
                 variant="ghost"
                 className={styles.button}
@@ -126,7 +126,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
               >
                 Purchase
               </Button>
-            ) : null}
+            )}
           </Flex>
         </Flex>
       </Flex>
