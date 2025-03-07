@@ -27,6 +27,15 @@ export interface BaseStacRender {
   expression?: string
   minmax_zoom?: [number, number]
   bidx?: number[]
+  // the following fields are not part of the STAC Render Extension
+  variable?: string
+  tileMatrixSetId?: string
+  scale?: number
+  multiscale?: boolean
+  reference?: boolean
+  decode_times?: boolean
+  consolidated?: boolean
+  return_mask?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
