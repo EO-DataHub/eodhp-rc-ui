@@ -11,7 +11,7 @@
  * and applying standardized rendering rules.
  */
 
-import { Collection, Item } from '@/types'
+import { Collection, Item, BaseStacRender } from '@/types'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
@@ -50,11 +50,29 @@ export const resolveTilesUrl = (item: Item, collection?: Collection): string | u
 
 export const collectionRenderingConfig: Record<
   string,
-  { assetKey: string; tilesUrlTemplate: string }
+  {
+    assetKey: string
+    tilesUrlTemplate: string
+    renders?: Record<string, BaseStacRender>
+  }
 > = {
   [DATASETS.SENTINEL_2]: {
     assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&assets=cloud`,
+    tilesUrlTemplate: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
+    renders: {
+      'natural-color': {
+        title: 'Natural Color',
+        assets: ['B04', 'B03', 'B02'],
+        color_formula: 'Gamma RGB 3.2 Saturation 0.8 Sigmoidal RGB 25 0.35',
+        nodata: '0',
+      },
+      'color-infrared': {
+        title: 'Color Infrared',
+        assets: ['B08', 'B04', 'B03'],
+        color_formula: 'Gamma RGB 3.7 Saturation 1.5 Sigmoidal RGB 15 0.35',
+        nodata: '0',
+      },
+    },
   },
   [DATASETS.AIRBUS_SAR]: {
     assetKey: 'thumbnail',

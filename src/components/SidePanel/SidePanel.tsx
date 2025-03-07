@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Button, Flex, IconButton, Text } from '@radix-ui/themes'
+import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
@@ -16,9 +16,7 @@ import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import ItemList from './ItemList'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
-import { VisualizationPanel } from './VisualizationPanel/VisualizationPanel'
 import { useSelector } from '@xstate/store/react'
-import { ChevronRightIcon } from '@radix-ui/react-icons'
 
 interface SidePanelProps {
   items: Item[]
@@ -52,31 +50,37 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
 
 const RenderSelectionButton = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
-  const selectedCollectionRender = useSelector(
+  const collectionRenderOptions = useSelector(
     dataFinderStore,
-    ({ context }) => context.selectedCollectionRender,
+    ({ context }) => context.collectionRenderOptions,
   )
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
 
-  if (isLoading) {
+  if (isLoading || !collectionRenderOptions.length || !collectionRender) {
     return null
   }
 
   return (
-    <Button
-      variant="soft"
-      color="gray"
-      onClick={() =>
+    <Select.Root
+      defaultValue={collectionRender.id}
+      onValueChange={(renderId) =>
         dataFinderStore.send({
-          type: 'setSecondaryPanel',
-          panel: 'renderOptions',
+          type: 'setCollectionRender',
+          collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
         })
       }
-      size="2"
-      className="flex items-center justify-between w-full"
     >
-      <span>{selectedCollectionRender?.title ?? selectedCollectionRender?.id}</span>
-      <ChevronRightIcon className="ml-2" />
-    </Button>
+      <Select.Trigger />
+      <Select.Content>
+        <Select.Group>
+          {collectionRenderOptions.map((option) => (
+            <Select.Item key={option.id} value={option.id}>
+              {option.title ?? option.id}
+            </Select.Item>
+          ))}
+        </Select.Group>
+      </Select.Content>
+    </Select.Root>
   )
 }
 
@@ -89,8 +93,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   page,
   setPage,
 }) => {
-  const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
-
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
@@ -230,7 +232,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({
       </Flex>
 
       <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
-      <VisualizationPanel isOpen={secondaryPanel === 'renderOptions'} />
 
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={!!selectedItemInfo || isCollectionInfoPanelOpen}>

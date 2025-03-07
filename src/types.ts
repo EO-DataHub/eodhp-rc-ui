@@ -15,8 +15,7 @@ export interface Catalog {
   conformsTo: string[]
 }
 
-export interface CollectionRender {
-  id: string
+export interface BaseStacRender {
   assets: string[]
   title?: string
   rescale?: [number, number][]
@@ -28,6 +27,12 @@ export interface CollectionRender {
   expression?: string
   minmax_zoom?: [number, number]
   bidx?: number[]
+}
+
+// The STAC Render Extension does not define an id field, so we add it to make
+// it easier to use render options in forms and other elements.
+export interface StacRender extends BaseStacRender {
+  id: string
 }
 
 export interface Collection {
@@ -69,7 +74,7 @@ export interface Collection {
     }
   }
   renders?: {
-    [key: string]: CollectionRender
+    [key: string]: BaseStacRender
   }
 }
 

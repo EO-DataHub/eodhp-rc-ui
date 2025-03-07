@@ -1,8 +1,8 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Collection, CollectionRender, Item } from '@/types'
-import { resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import { Collection, StacRender, Item } from '@/types'
+import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -30,8 +30,8 @@ const dataFinderStore = createStore({
     isFilterPanelOpen: false,
     isVisualizationPanelOpen: false,
     collection: undefined as Collection | undefined,
-    collectionRenderOptions: [] as CollectionRender[],
-    selectedCollectionRender: undefined as CollectionRender | undefined,
+    collectionRenderOptions: [] as StacRender[],
+    collectionRender: undefined as StacRender | undefined,
   },
   // Transitions
   on: {
@@ -157,7 +157,12 @@ const dataFinderStore = createStore({
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection
 
-      const renders = collection.renders ?? {}
+      const baseRenders = collectionRenderingConfig[collection.id].renders ?? {}
+
+      const renders = {
+        ...baseRenders,
+        ...collection.renders,
+      }
 
       const collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
         ...render,
@@ -168,15 +173,12 @@ const dataFinderStore = createStore({
         ...context,
         collection: event.collection,
         collectionRenderOptions,
-        selectedCollectionRender: collectionRenderOptions[0] ?? undefined,
+        collectionRender: collectionRenderOptions[0] ?? undefined,
       }
     },
-    onCollectionRenderIdChange: (context, event: { collectionRenderId: string }) => {
-      return {
-        ...context,
-        collectionRenderId: event.collectionRenderId,
-      }
-    },
+    setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
+      collectionRender: event.collectionRender,
+    }),
   },
 })
 

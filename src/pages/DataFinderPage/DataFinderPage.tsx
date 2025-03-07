@@ -34,17 +34,6 @@ export const DataFinderPage: React.FC = () => {
 
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
-  // we verify that the collection in the url parameters is the same as the one in storage to use it
-  useEffect(() => {
-    const storedCollection = localStorage.getItem('selectedCollection')
-    if (storedCollection) {
-      const parsedCollection: Collection = JSON.parse(storedCollection)
-      if (parsedCollection.id === collectionId) {
-        setSelectedCollection(parsedCollection)
-      }
-    }
-  }, [collectionId])
-
   const shouldFetchCollections =
     selectedCollection === null || selectedCollection.id !== collectionId
 
@@ -65,7 +54,6 @@ export const DataFinderPage: React.FC = () => {
       const foundCollection = allCollections.find((col) => col.id === collectionId)
 
       if (foundCollection) {
-        localStorage.setItem('selectedCollection', JSON.stringify(foundCollection))
         setSelectedCollection(foundCollection)
         dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
       } else {
