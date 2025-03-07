@@ -6,8 +6,9 @@ const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
 export interface PurchaseRequest {
   workspace: string | undefined
   datasetUrl: string
-  provider: string
-  productBundle?: string
+  provider: 'airbus_optical' | 'airbus_sar' | 'planet'
+  productBundle: string
+  coordinates?: number[][][]
   parameters?: Record<string, any>
 }
 
@@ -16,20 +17,24 @@ export const purchaseProduct = async ({
   datasetUrl,
   provider,
   productBundle,
+  coordinates,
   parameters,
 }: PurchaseRequest): Promise<any> => {
   const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
 
-  const requestBody: Record<string, any> = { url: datasetUrl }
+  const requestBody: Record<string, unknown> = {
+    url: datasetUrl,
+    product_bundle: productBundle,
+  }
 
-  if (provider === 'airbus') {
-    if (productBundle) {
-      requestBody.product_bundle = productBundle // For Optical Data
-    } else {
-      requestBody.parameters = parameters // For SAR Data
-    }
-  } else if (provider === 'planet') {
-    requestBody.product_bundle = productBundle // Planet always requires a bundle
+  //  Airbus Optical supports coordinates
+  if (provider === 'airbus_optical' && coordinates) {
+    requestBody.coordinates = coordinates
+  }
+
+  // Airbus SAR requires `parameters`
+  if (provider === 'airbus_sar' && parameters) {
+    requestBody.parameters = parameters
   }
 
   const response = await fetch(purchaseApiUrl, {
@@ -43,9 +48,9 @@ export const purchaseProduct = async ({
   })
 
   if (!response.ok) {
-    throw new Error(`${response.statusText}`)
+    throw new Error(`Order request failed: ${response.status} ${response.statusText}`)
   }
-  const responseData = await response.json()
 
+  const responseData = await response.json()
   return { success: true, data: responseData }
 }

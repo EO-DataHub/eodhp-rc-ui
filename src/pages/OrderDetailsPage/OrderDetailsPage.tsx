@@ -12,6 +12,7 @@ import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getCatalog } from '@/library/catalogUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
+// import { getProductBundleForPlanet } from '@/library/planetMappingUtils'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -38,6 +39,24 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!orderId,
   })
 
+  console.log({ item })
+
+  const getProviderType = () => {
+    if (catalog === 'planet') {
+      return 'planet'
+    }
+    return isOpticalData() ? 'airbus_optical' : 'airbus_sar'
+  }
+
+  console.log({ getProviderType: getProviderType() })
+
+  // want to test this with planet but that catalog is broken
+  // const getProductBundle = () => {
+  //   if (getProviderType() === 'planet') {
+  //     return item?.assets ? getProductBundleForPlanet(item.assets) : 'default_bundle'
+  //   }
+  //   return 'general_use'
+  // }
   const placeOrder = async () => {
     if (!item) {
       console.error('No order item found.')
@@ -45,15 +64,26 @@ export const OrderDetailsPage: React.FC = () => {
     }
 
     const testUrl =
-      'https://staging.eodatahub.org.uk/api/catalogue/stac/v1/catalogs/supported-datasets/catalogs/airbus/collections/airbus_sar_data/items/DS_SAR_20220101_123456'
+      'https://staging.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/catalogs/planet/collections/PSScene/items/20250217_101155_07_24c7'
 
+    // how will coordinates and parameters be passed in ? we are navigating to a new page
     try {
       const response = await purchaseProduct({
         workspace: workspaceUserName,
         datasetUrl: testUrl,
-        provider: catalog,
-        productBundle: isOpticalData() ? 'general_use' : undefined,
-        parameters: isOpticalData() ? undefined : { polarization: 'HH', resolution: '5m' },
+        provider: getProviderType(),
+        productBundle: 'analytic_udm2',
+        coordinates: [
+          [
+            [9.6, 57.1],
+            [9.6, 57.0],
+            [9.8, 56.9],
+            [9.8, 57.0],
+            [9.6, 57.1],
+          ],
+        ],
+        parameters:
+          getProviderType() === 'airbus_sar' ? { polarization: 'HH', resolution: '5m' } : undefined,
       })
 
       console.log('Order placed successfully:', response)
