@@ -1,9 +1,12 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
 import { resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 const RasterItemLayer = ({ item }: { item: Item }) => {
-  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item)
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, collectionRender)
 
   if (!tilesUrl) return null
 
