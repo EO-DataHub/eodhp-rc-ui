@@ -16,7 +16,7 @@ export interface Catalog {
 }
 
 export interface BaseStacRender {
-  assets: string[]
+  assets: string | string[]
   title?: string
   rescale?: [number, number][]
   nodata?: number | string
@@ -138,6 +138,7 @@ export interface Item {
     }
   }
   tilesUrl: string | undefined
+  render?: StacRender
 }
 
 export interface CubeData {

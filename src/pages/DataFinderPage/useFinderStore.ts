@@ -131,11 +131,10 @@ const dataFinderStore = createStore({
     },
     pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
       const { item, isChecked } = event
-      const { pinnedItems } = context
+      const { pinnedItems, collectionRender } = context
 
       if (isChecked) {
-        // Apply tiles Url to the item
-        item.tilesUrl = resolveTilesUrl(item)
+        item.tilesUrl = resolveTilesUrl(item, collectionRender)
 
         return {
           ...context,

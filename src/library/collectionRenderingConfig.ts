@@ -11,10 +11,11 @@
  * and applying standardized rendering rules.
  */
 
-import { Collection, Item, BaseStacRender } from '@/types'
+import qs from 'qs'
+import { Item, BaseStacRender, StacRender } from '@/types'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
-const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
+// const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
 export const DATASETS = {
   SENTINEL_2: 'sentinel2_ard',
@@ -36,90 +37,104 @@ export function getItemUrl(item: Item): string | undefined {
   return item.links.find((link) => link.rel === 'self')?.href
 }
 
-export const resolveTilesUrl = (item: Item, collection?: Collection): string | undefined => {
-  const collectionId = collection?.id ?? item.collection
-  const collectionConfig = collectionRenderingConfig[collectionId]
-
-  if (!collectionConfig) return undefined
-
+export const resolveTilesUrl = (item: Item, render?: StacRender): string | undefined => {
   const itemUrl = getItemUrl(item)
-  if (!itemUrl) return undefined
+  const tilerUrl = collectionRenderingConfig[item.collection]?.tilerUrl
 
-  return collectionConfig.tilesUrlTemplate.replace('{assetUrl}', encodeURIComponent(itemUrl))
+  if (!itemUrl || !tilerUrl) return undefined
+
+  let queryParams = {
+    url: itemUrl,
+  } as { url: string; rescale?: string[] }
+
+  if (render) {
+    queryParams = {
+      ...queryParams,
+      ...render,
+      rescale: render.rescale ? render.rescale.map((r) => r.join(',')) : undefined,
+    }
+  }
+
+  const queryString = qs.stringify(queryParams, {
+    indices: false,
+  })
+
+  return `${tilerUrl}?${queryString}`
 }
 
 export const collectionRenderingConfig: Record<
   string,
   {
-    assetKey: string
-    tilesUrlTemplate: string
+    tilerUrl: string
     renders?: Record<string, BaseStacRender>
   }
 > = {
   [DATASETS.SENTINEL_2]: {
-    assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
+    tilerUrl: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
     renders: {
       'natural-color': {
         title: 'Natural Color',
-        assets: ['B04', 'B03', 'B02'],
-        color_formula: 'Gamma RGB 3.2 Saturation 0.8 Sigmoidal RGB 25 0.35',
-        nodata: '0',
+        assets: ['cog'],
+        bidx: [3, 2, 1],
+        rescale: [
+          [0, 200],
+          [0, 200],
+        ],
       },
-      'color-infrared': {
-        title: 'Color Infrared',
-        assets: ['B08', 'B04', 'B03'],
-        color_formula: 'Gamma RGB 3.7 Saturation 1.5 Sigmoidal RGB 15 0.35',
-        nodata: '0',
+      'natural-color-alt': {
+        title: 'Natural Color (alternative)',
+        assets: 'cog',
+        bidx: [3, 2, 1],
+        rescale: [[0, 100]],
       },
     },
   },
-  [DATASETS.AIRBUS_SAR]: {
-    assetKey: 'thumbnail',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
-  },
-  [DATASETS.LAND_COVER]: {
-    assetKey: 'GeoTIFF',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&colormap_name=tab20c`,
-  },
-  [DATASETS.EOCIS_SST_CLIM]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=blues&variable=sea_ice_fraction&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_SST]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,310.15&colormap_name=jet&variable=analysed_sst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3A_DAY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3A_NIGHT]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3B_DAY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3B_NIGHT]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
+  // [DATASETS.AIRBUS_SAR]: {
+  //   assetKey: 'thumbnail',
+  //   tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
+  // },
+  // [DATASETS.LAND_COVER]: {
+  //   assetKey: 'GeoTIFF',
+  //   tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&colormap_name=tab20c`,
+  // },
+  // [DATASETS.EOCIS_SST_CLIM]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=blues&variable=sea_ice_fraction&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_SST]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,310.15&colormap_name=jet&variable=analysed_sst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_LST_S3A_DAY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_LST_S3A_NIGHT]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_LST_S3B_DAY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_LST_S3B_NIGHT]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
+  // [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
+  //   assetKey: 'reference_file',
+  //   tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
+  // },
 }
