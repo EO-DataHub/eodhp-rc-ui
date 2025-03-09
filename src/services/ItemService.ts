@@ -1,6 +1,7 @@
 import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
+import { bboxToPolygon } from '@/library/geoUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const HUB_ENV = import.meta.env.VITE_HUB_ENV
@@ -51,7 +52,12 @@ export const fetchItems = async ({
   if (aoi) {
     baseBody.intersects = aoi.geometry
   } else if (mapBounds) {
-    baseBody.bbox = mapBounds
+    // Planet proxy doesn’t support search by bbox, so we are using intersects instead.
+    if (catalog === 'planet') {
+      baseBody.intersects = bboxToPolygon(mapBounds)
+    } else {
+      baseBody.bbox = mapBounds
+    }
   }
 
   const body = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
