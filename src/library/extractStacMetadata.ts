@@ -19,11 +19,9 @@ export const extractStacMetadata = (
 export const getMetadataItemProperty = (rawFieldName: string, metadataItems: MetadataItem[]) => {
   const parts = rawFieldName.split(':')
   let extension = ''
-  let fieldName = rawFieldName
   if (parts.length === 2) {
     extension = parts[0]
-    fieldName = parts[1]
   }
   const metadataItem = metadataItems.find((item) => item.extension === extension)
-  return metadataItem?.properties[fieldName]
+  return metadataItem?.properties[rawFieldName]
 }

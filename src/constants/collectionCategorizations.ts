@@ -444,9 +444,15 @@ const isValidCollectionId = (id: string): id is keyof typeof collectionCategoriz
 
 const itemCardFieldsToDisplay = {
   [DataCategory.Climate_Data]: [],
-  [DataCategory.Climate_Projections]: ['variable_long_name', 'frequency', 'scenario', 'interval'],
+  [DataCategory.Climate_Projections]: [
+    'variable_long_name',
+    'frequency',
+    'scenario',
+    'start_datetime',
+    'end_datetime',
+  ],
   [DataCategory.Hyperspectral]: [],
-  [DataCategory.Optical_Multispectral]: [],
+  [DataCategory.Optical_Multispectral]: ['eo:cloud_cover'],
   [DataCategory.Radar]: [],
   [DataCategory.Land_Cover]: [],
 }

@@ -44,20 +44,21 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
 
   const categorizationData = collectionCategorization[collectionId]
   const fields = [
-    ...categorizationData.additionalFieldsToDisplay,
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
+    ...categorizationData.additionalFieldsToDisplay,
   ]
 
   return fields.map((field) => {
     const fieldProperty = getMetadataItemProperty(field, metadataItems)
 
-    if (!fieldProperty || typeof fieldProperty.value !== 'string') {
+    if (!fieldProperty) {
       return null
     }
 
     return (
       <Text key={field} size="1" className={styles.text}>
-        <Text weight="medium">{fieldProperty.label}</Text>: {fieldProperty.value}
+        <Text weight="medium">{fieldProperty.label}</Text>:{' '}
+        <Text dangerouslySetInnerHTML={{ __html: fieldProperty.formatted }}></Text>
       </Text>
     )
   })
@@ -138,22 +139,24 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         </div>
       </Flex>
       <Flex direction="column" p="2" justify="between" flexGrow="1">
-        <Flex justify="between">
-          <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-            {item.id}
+        <Flex direction="column">
+          <Flex justify="between">
+            <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+              {item.id}
+            </Text>
+            <Checkbox
+              mt="1"
+              variant="surface"
+              checked={isChecked}
+              onCheckedChange={(checked) => onCheckboxChange(item, Boolean(checked))}
+              style={{ flexShrink: 0, flexGrow: 0 }}
+            />
+          </Flex>
+          <Text size="1" className={styles.text}>
+            {convertDateToUTCString(new Date(item.properties.datetime))}
           </Text>
-          <Checkbox
-            mt="1"
-            variant="surface"
-            checked={isChecked}
-            onCheckedChange={(checked) => onCheckboxChange(item, Boolean(checked))}
-            style={{ flexShrink: 0, flexGrow: 0 }}
-          />
+          {data && renderAdditionalFields(data, collectionId)}
         </Flex>
-        <Text size="1" className={styles.text}>
-          {convertDateToUTCString(new Date(item.properties.datetime))}
-        </Text>
-        {data && renderAdditionalFields(data, collectionId)}
         <Flex justify="end" gap="2" align="center">
           <Tooltip content="More Info">
             <IconButton
