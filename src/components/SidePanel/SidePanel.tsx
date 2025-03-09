@@ -122,7 +122,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
       <Flex
         className={styles.sidePanel}
         direction="column"
-        width="338px"
+        width="420px"
         p="4"
         gap="2"
         style={{
@@ -163,6 +163,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             renderItem={(item, index) => (
               <ItemCard
                 key={`${item.id}-${index}`}
+                collectionId={collection?.id ?? null}
                 item={item}
                 isSelected={selectedItem?.id === item.id}
                 isThumbnailSelected={selectedThumbnail?.id === item.id}
