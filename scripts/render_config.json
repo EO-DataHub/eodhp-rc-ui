@@ -52,7 +52,7 @@
         },
         "ukcp": {
             "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-            "eodhrc:type": "multidim-singlevar",
+            "eodhrc:type": "multidim-singlevar-items",
             "eodhrc:renders_filters": {
                 "pr": {
                     "item_filter_cql2": "id LIKE '%.pr.%'"
