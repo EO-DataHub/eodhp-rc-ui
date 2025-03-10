@@ -148,7 +148,7 @@
       "type": "number",
       "minimum": 10,
       "maximum": 70,
-      "default": 30,
+      "default": 10,
       "operator": ">="
     }
   }

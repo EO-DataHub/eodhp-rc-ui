@@ -1,14 +1,17 @@
 import { useEffect, useRef } from 'react'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import { Item } from '@/types'
+
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
-import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
-import { useSelector } from '@xstate/store/react'
-import { Item } from '@/types'
-import ItemLayer from './ItemLayer'
+import PinnedItemsLayer from './layers/PinnedItems'
+import QueryItemsLayer from './layers/QueryItems'
+import HoveredItemLayer from './layers/HoveredItem'
 
 interface DrawConstants {
   classes: {
@@ -64,10 +67,6 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     dataFinderStore,
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
-
-  const hoveredItemId = useSelector(dataFinderStore, (state) => state.context.hoveredItem?.id)
-
-  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   // This is a workaround to move the draw layers to the top as they are added
   // on page load and should be on top of the other layers. Ideally we not need
@@ -125,14 +124,9 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
     >
       <NavigationControl />
       <DrawControl />
-      {visibleItems.map((item, index) => (
-        <ItemLayer
-          key={`${item.id}-${index}`}
-          item={item}
-          isHovered={hoveredItemId === item.id}
-          showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
-        />
-      ))}
+      <PinnedItemsLayer />
+      <QueryItemsLayer queryItems={visibleItems} />
+      <HoveredItemLayer />
     </Maplibre>
   )
 }
