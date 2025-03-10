@@ -6,16 +6,19 @@
             "renders": {
                 "True Color": {
                     "title": "RGB",
+                    "assets": ["cog"],
                     "bidx": [3, 2, 1],
                     "rescale": [[0, 200], [0, 200], [0, 200]]
                 },
                 "False Color": {
                     "title": "False Color",
+                    "assets": ["cog"],
                     "bidx": [8, 4, 3],
                     "rescale": [[0, 200], [0, 200], [0, 200]]
                 },
                 "SWIR": {
                     "title": "SWIR",
+                    "assets": ["cog"],
                     "bidx": [12, 8, 4],
                     "rescale": [[0, 200], [0, 200], [0, 200]]
                 }
