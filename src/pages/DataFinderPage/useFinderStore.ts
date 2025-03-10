@@ -156,7 +156,7 @@ const dataFinderStore = createStore({
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection
 
-      const baseRenders = collectionRenderingConfig[collection.id].renders ?? {}
+      const baseRenders = collectionRenderingConfig[collection.id]?.renders ?? {}
 
       const renders = {
         ...baseRenders,
