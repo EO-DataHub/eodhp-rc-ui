@@ -164,7 +164,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'blues',
@@ -184,7 +184,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[263.15, 310.15]],
         colormap_name: 'jet',
@@ -204,7 +204,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -224,7 +224,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -244,7 +244,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -264,7 +264,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -284,7 +284,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -304,7 +304,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -324,7 +324,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -344,7 +344,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     assetKey: 'reference_file',
     renders: {
       default: {
-        title: 'Default Render',
+        title: 'Default Visualization',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
