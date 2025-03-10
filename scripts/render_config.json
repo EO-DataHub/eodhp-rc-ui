@@ -7,7 +7,7 @@
                 "True Color": {
                     "title": "RGB",
                     "assets": ["cog"],
-                    "bidx": [3, 2, 1],
+                    "bidx": [4, 3, 2],
                     "rescale": [[0, 200], [0, 200], [0, 200]]
                 },
                 "False Color": {
