@@ -1,11 +1,11 @@
 .card {
-  background-color: #1c2024;
+  background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
   border-radius: 4px;
   overflow: hidden;
 
   .button {
     background-color: var(--app-background-dark-2);
-    border: 1px solid white;
+    border: 2px solid white;
 
     :hover {
       cursor: pointer;
@@ -24,6 +24,7 @@
 }
 .card:hover {
   cursor: pointer;
+  outline: 2px solid var(--app-background-dark-2);
 }
 
 .thumbnail {
