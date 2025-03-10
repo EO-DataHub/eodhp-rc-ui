@@ -34,44 +34,26 @@ export const DataFinderPage: React.FC = () => {
 
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
-  // we verify that the collection in the url parameters is the same as the one in storage to use it
-  useEffect(() => {
-    const storedCollection = localStorage.getItem('selectedCollection')
-    if (storedCollection) {
-      const parsedCollection: Collection = JSON.parse(storedCollection)
-      if (parsedCollection.id === collectionId) {
-        setSelectedCollection(parsedCollection)
-      }
-    }
-  }, [collectionId])
-
-  const shouldFetchCollections =
-    selectedCollection === null || selectedCollection.id !== collectionId
-
   const queries = useQueries({
-    queries: shouldFetchCollections
-      ? catalogs.map((catalog, index) => ({
-          queryKey: ['Collections', index],
-          queryFn: () => fetchCollections(catalog),
-        }))
-      : [],
+    queries: catalogs.map((catalog, index) => ({
+      queryKey: ['Collections', index],
+      queryFn: () => fetchCollections(catalog),
+    })),
   })
 
-  // If collectionId is not part of any valid collection, we return to the DataDiscoveryPage.
-  // Otherwise, we store the collection and use it.
   useEffect(() => {
-    if (shouldFetchCollections && queries.length > 0 && queries.every((q) => q.isFetched)) {
+    if (queries.length > 0 && queries.every((q) => q.isFetched)) {
       const allCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
       const foundCollection = allCollections.find((col) => col.id === collectionId)
 
       if (foundCollection) {
-        localStorage.setItem('selectedCollection', JSON.stringify(foundCollection))
         setSelectedCollection(foundCollection)
+        dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
       } else {
         navigate('/')
       }
     }
-  }, [collectionId, navigate, selectedCollection, queries, shouldFetchCollections])
+  }, [collectionId, navigate, selectedCollection, queries])
 
   const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
   const fetchFunction = () =>

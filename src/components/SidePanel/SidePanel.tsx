@@ -1,10 +1,9 @@
 import React, { useState } from 'react'
-import { Flex, IconButton, Text } from '@radix-ui/themes'
+import { Flex, IconButton, Select, Text } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import { ItemCard } from '@/components/ItemCard/ItemCard'
 import { Item } from '@/types'
-import MixerHorizontal from '@/assets/icons/mixer-horizontal.svg?react'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
@@ -17,6 +16,7 @@ import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import ItemList from './ItemList'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
+import { useSelector } from '@xstate/store/react'
 
 interface SidePanelProps {
   items: Item[]
@@ -45,6 +45,42 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
     <Text size="2" weight="bold">
       {`${startItem}-${endItem} of ${totalCountLabel}`}
     </Text>
+  )
+}
+
+const RenderSelectionButton = () => {
+  const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
+  const collectionRenderOptions = useSelector(
+    dataFinderStore,
+    ({ context }) => context.collectionRenderOptions,
+  )
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+
+  if (isLoading || !collectionRenderOptions.length || !collectionRender) {
+    return null
+  }
+
+  return (
+    <Select.Root
+      defaultValue={collectionRender.id}
+      onValueChange={(renderId) =>
+        dataFinderStore.send({
+          type: 'setCollectionRender',
+          collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
+        })
+      }
+    >
+      <Select.Trigger />
+      <Select.Content>
+        <Select.Group>
+          {collectionRenderOptions.map((option) => (
+            <Select.Item key={option.id} value={option.id}>
+              {option.title ?? option.id}
+            </Select.Item>
+          ))}
+        </Select.Group>
+      </Select.Content>
+    </Select.Root>
   )
 }
 
@@ -133,6 +169,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
           onSelectCollectionInfo={handleSelectCollectionInfo}
           isLicenseProprietary={isLicenseProprietary}
         />
+        <RenderSelectionButton />
         <Flex justify="between" mt="2">
           <Flex align="center" gap="2">
             {isFetching && (
@@ -146,9 +183,6 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
           </Flex>
           <Flex gap="2" align="center">
-            <IconButton size="2" color="gray" variant="outline">
-              <MixerHorizontal />
-            </IconButton>
             <IconButton size="2" color="gray" variant="outline" onClick={toggleFilterPanel}>
               <FilterAltOutlined />
             </IconButton>
