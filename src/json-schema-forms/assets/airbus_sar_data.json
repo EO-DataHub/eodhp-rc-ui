@@ -16,7 +16,7 @@
     },
     "incidence_angle": {
       "$ref": "#/$defs/incidence_angle",
-      "title": "Minimum incidence angle"
+      "title": "Incidence angle"
     },
     "sat:platform_international_designator": {
       "$ref": "#/$defs/sat:platform_international_designator",
@@ -25,10 +25,6 @@
     "sat:orbit_state": {
       "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:orbit_state",
       "title": "Path"
-    },
-    "sar:product_type": {
-      "$ref": "#/$defs/sar:product_type",
-      "title": "Product"
     },
     "sar:polarizations": {
       "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:polarizations",
@@ -44,35 +40,6 @@
     }
   },
   "$defs": {
-    "sar:product_type": {
-      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:product_type",
-      "anyOf": [
-        {
-          "title": "Single Look Slant Range Complex",
-          "enum": [
-            "SSC"
-          ]
-        },
-        {
-          "title": "Multilook Ground Range Detected",
-          "enum": [
-            "MGD"
-          ]
-        },
-        {
-          "title": "Geocoded Ellipsoid Corrected",
-          "enum": [
-            "GEC"
-          ]
-        },
-        {
-          "title": "Enhanced Ellipsoid Corrected",
-          "enum": [
-            "EEC"
-          ]
-        }
-      ]
-    },
     "sat:platform_international_designator": {
       "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:platform_international_designator",
       "anyOf": [
@@ -146,10 +113,11 @@
     },
     "incidence_angle": {
       "type": "number",
-      "minimum": 10,
-      "maximum": 70,
+      "minimum": 0,
+      "maximum": 90,
       "default": 10,
-      "operator": ">="
+      "operator": ">=",
+      "units": "°"
     }
   }
 }

@@ -7,8 +7,14 @@ import styles from './CustomRangeWidget.module.scss'
 export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
   const [tooltipPos, setTooltipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 })
   const [showTooltip, setShowTooltip] = useState<boolean>(false)
-  const sliderValue = value ?? schema.default ?? schema.minimum ?? 0
+  const [sliderValue, setSliderValue] = useState<number>(
+    value ?? schema.default ?? schema.minimum ?? 0,
+  )
   const sliderRef = useRef<HTMLDivElement>(null)
+  const isInverted = schema.operator.includes('>')
+  const [actualSliderValue, setActualSliderValue] = useState<number>(
+    isInverted ? (schema.maximum ?? 100) + (schema.minimum ?? 0) - value : value,
+  )
 
   // since Radix doesn’t offer a dynamic tooltip for elements like the slider,
   // we need to create one ourselves based on the slider's position
@@ -20,8 +26,8 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
     const min = schema.minimum ?? 0
     const max = schema.maximum ?? 100
 
-    const percent = ((val - min) / (max - min)) * 100
-    let newLeft = sliderRect.left + (percent / 100) * sliderRect.width
+    const percent = (val - min) / (max - min)
+    let newLeft = sliderRect.left + percent * sliderRect.width
     const newTop = sliderRect.top - 40
 
     const tooltipWidth = 15
@@ -35,15 +41,15 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
         {schema.title ?? 'Select a range value'}
       </Text>
       <Flex justify="between">
-        <Text size="2">{`${schema.minimum ?? 0}%`}</Text>
-        <Text size="2">{`${schema.maximum ?? 100}%`}</Text>
+        <Text size="2">{`${schema.minimum ?? 0}${schema.units ?? '%'}`}</Text>
+        <Text size="2">{`${schema.maximum ?? 100}${schema.units ?? '%'}`}</Text>
       </Flex>
 
       <div
         className={styles.slider}
         ref={sliderRef}
         onPointerEnter={() => {
-          updateTooltipPosition(sliderValue)
+          updateTooltipPosition(actualSliderValue)
           setShowTooltip(true)
         }}
         onPointerLeave={() => setShowTooltip(false)}
@@ -54,7 +60,8 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
               className={styles.tooltip}
               style={{ left: `${tooltipPos.left}px`, top: `${tooltipPos.top}px` }}
             >
-              {sliderValue}%
+              {actualSliderValue}
+              {schema.units ?? '%'}
             </div>,
             document.body,
           )}
@@ -63,10 +70,23 @@ export const CustomRangeWidget = ({ schema, value, onChange }: WidgetProps) => {
           value={[sliderValue]}
           min={schema.minimum ?? 0}
           max={schema.maximum ?? 100}
+          inverted={isInverted}
           step={1}
           onValueChange={(val) => {
-            updateTooltipPosition(val[0])
-            onChange(val[0])
+            if (isInverted) {
+              const min = schema.minimum ?? 0
+              const max = schema.maximum ?? 100
+              const value = max + min - val[0]
+              setActualSliderValue(value)
+              updateTooltipPosition(value)
+              onChange(value)
+              setSliderValue(val[0])
+            } else {
+              updateTooltipPosition(val[0])
+              setActualSliderValue(val[0])
+              onChange(val[0])
+              setSliderValue(val[0])
+            }
             setShowTooltip(true)
           }}
           onPointerDown={() => setShowTooltip(true)}
