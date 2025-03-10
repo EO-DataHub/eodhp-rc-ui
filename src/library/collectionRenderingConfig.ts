@@ -17,6 +17,29 @@ import { Item, BaseStacRender, StacRender } from '@/types'
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
+type TilerType = 'titiler' | 'titiler-xarray'
+
+const tilerUrls: Record<TilerType, string> = {
+  titiler: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+  'titiler-xarray': `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+}
+
+interface BaseCollectionConfig {
+  tilerType: TilerType
+  renders?: Record<string, BaseStacRender>
+}
+
+interface TitilerCollectionConfig extends BaseCollectionConfig {
+  tilerType: 'titiler'
+}
+
+interface TitilerXarrayCollectionConfig extends BaseCollectionConfig {
+  tilerType: 'titiler-xarray'
+  assetKey: string
+}
+
+type CollectionConfig = TitilerCollectionConfig | TitilerXarrayCollectionConfig
+
 export const DATASETS = {
   SENTINEL_2: 'sentinel2_ard',
   AIRBUS_SAR: 'airbus_sar_data',
@@ -37,14 +60,33 @@ export function getItemUrl(item: Item): string | undefined {
   return item.links.find((link) => link.rel === 'self')?.href
 }
 
-export const resolveTilesUrl = (item: Item, render?: StacRender): string | undefined => {
-  const itemUrl = getItemUrl(item)
-  const tilerUrl = collectionRenderingConfig[item.collection]?.tilerUrl
+function getAssetUrl(item: Item, asset: string): string | undefined {
+  return item.assets?.[asset]?.href
+}
 
-  if (!itemUrl || !tilerUrl) return undefined
+export const resolveTilesUrl = (item: Item, render?: StacRender): string | undefined => {
+  const collectionConfig = collectionRenderingConfig[item.collection]
+  if (!collectionConfig) return undefined
+
+  const { tilerType } = collectionConfig
+
+  if (!tilerType) return undefined
+
+  let urlParam = undefined
+  let tilerUrl = undefined
+
+  if (tilerType === 'titiler') {
+    tilerUrl = tilerUrls.titiler
+    urlParam = getItemUrl(item)
+  } else if (tilerType === 'titiler-xarray') {
+    tilerUrl = tilerUrls['titiler-xarray']
+    urlParam = getAssetUrl(item, collectionConfig.assetKey)
+  } else {
+    return undefined
+  }
 
   let queryParams = {
-    url: itemUrl,
+    url: urlParam,
   } as { url: string; rescale?: string[] }
 
   if (render) {
@@ -62,15 +104,9 @@ export const resolveTilesUrl = (item: Item, render?: StacRender): string | undef
   return `${tilerUrl}?${queryString}`
 }
 
-export const collectionRenderingConfig: Record<
-  string,
-  {
-    tilerUrl: string
-    renders?: Record<string, BaseStacRender>
-  }
-> = {
+export const collectionRenderingConfig: Record<string, CollectionConfig> = {
   [DATASETS.SENTINEL_2]: {
-    tilerUrl: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler',
     renders: {
       'True Color': {
         assets: 'cog',
@@ -105,7 +141,7 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.AIRBUS_SAR]: {
-    tilerUrl: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler',
     renders: {
       default: {
         assets: 'thumbnail',
@@ -114,7 +150,7 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.LAND_COVER]: {
-    tilerUrl: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler',
     renders: {
       default: {
         title: 'GeoTIFF',
@@ -124,9 +160,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_SST_CLIM]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'blues',
@@ -142,9 +180,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_SST]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[263.15, 310.15]],
         colormap_name: 'jet',
@@ -160,9 +200,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_LST_S3A_DAY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -178,9 +220,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_LST_S3A_NIGHT]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -196,9 +240,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_LST_S3B_DAY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -214,9 +260,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_LST_S3B_NIGHT]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[263.15, 318.15]],
         colormap_name: 'jet',
@@ -232,9 +280,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -250,9 +300,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -268,9 +320,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',
@@ -286,9 +340,11 @@ export const collectionRenderingConfig: Record<
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
-    tilerUrl: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x`,
+    tilerType: 'titiler-xarray',
+    assetKey: 'reference_file',
     renders: {
       default: {
+        title: 'Default Render',
         assets: 'reference_file',
         rescale: [[0, 1]],
         colormap_name: 'plasma',

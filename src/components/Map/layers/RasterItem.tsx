@@ -6,6 +6,8 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 const RasterItemLayer = ({ item }: { item: Item }) => {
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+
+  // When on assets tab, resolve the tiles url when rendering
   const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, collectionRender)
 
   if (!tilesUrl) return null
