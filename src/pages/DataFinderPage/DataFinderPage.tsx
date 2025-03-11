@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
@@ -8,7 +8,7 @@ import { SidePanel } from '@/components/SidePanel/SidePanel'
 import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
 import { fetchItems } from '@/services/ItemService'
-import { Collection, Item } from '@/types'
+import { Item } from '@/types'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
@@ -22,6 +22,7 @@ export const DataFinderPage: React.FC = () => {
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const page = useSelector(dataFinderStore, (state) => state.context.page)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
@@ -31,8 +32,6 @@ export const DataFinderPage: React.FC = () => {
   // in the useQuery hook, we need to keep track of the loading outside of it, because isLoading will
   // be false after the first render.
   const isLoading = useSelector(dataFinderStore, (state) => state.context.isLoading)
-
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
   const queries = useQueries({
     queries: catalogs.map((catalog) => ({
@@ -46,18 +45,17 @@ export const DataFinderPage: React.FC = () => {
   })
 
   useEffect(() => {
-    if (queries.isFetched && queries.data.length > 0) {
+    if (queries.isFetched) {
       const allCollections = queries.data
       const foundCollection = allCollections.find((col) => col.id === collectionId)
 
       if (foundCollection) {
-        setSelectedCollection(foundCollection)
         dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
       } else {
         navigate('/')
       }
     }
-  }, [collectionId, navigate, selectedCollection, queries])
+  }, [collectionId, navigate, collection, queries])
 
   const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
   const fetchFunction = () =>
@@ -65,7 +63,7 @@ export const DataFinderPage: React.FC = () => {
       limit: MAX_TOTAL_ITEMS,
       mapBounds: mapBounds,
       aoi: aoi,
-      selectedCollection: selectedCollection ?? undefined,
+      selectedCollection: collection ?? undefined,
       queryFilter: queryFilter,
     })
 
@@ -97,7 +95,7 @@ export const DataFinderPage: React.FC = () => {
       <Box className={styles.floatingContainer}>
         <SidePanel
           items={itemList}
-          collection={selectedCollection ?? undefined}
+          collection={collection ?? undefined}
           isLoading={isLoading}
           isFetching={isFetching}
           error={!!error}
