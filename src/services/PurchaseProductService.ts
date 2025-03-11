@@ -41,7 +41,7 @@ export const purchaseProduct = async ({
     requestBody.country = country
   }
 
-  // Always include `parameters` if provided (Airbus SAR & Optical)
+  // Always include parameters if provided (Airbus SAR & Optical)
   if (parameters && Object.keys(parameters).length > 0) {
     requestBody.parameters = parameters
   }
@@ -64,8 +64,6 @@ export const purchaseProduct = async ({
     const responseData = await response.json()
     return { success: true, data: responseData }
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('Error placing order:', error)
     throw new Error('Failed to complete the order request.')
   }
 }

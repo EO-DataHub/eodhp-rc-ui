@@ -23,6 +23,7 @@ export const OrderDetailsPage: React.FC = () => {
   const catalog = getCatalog(selectedCollection)
 
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
+  const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
 
   const getProviderType = (): 'airbus_optical' | 'airbus_sar' | 'planet' => {
     if (catalog === 'planet') {
@@ -36,8 +37,7 @@ export const OrderDetailsPage: React.FC = () => {
   }
 
   const placeOrder = async () => {
-    if (!item || !orderSelections.productBundle) {
-      console.error('Missing order details.')
+    if (!item) {
       return
     }
 
@@ -49,7 +49,7 @@ export const OrderDetailsPage: React.FC = () => {
         datasetUrl: item.links[0].href,
         provider: providerType,
         productBundle: orderSelections.productBundle,
-        // figure out how to pass this in
+        // Todo: pass in coordinates from maps page
         coordinates:
           providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
         parameters:
@@ -67,11 +67,11 @@ export const OrderDetailsPage: React.FC = () => {
 
       const response = await purchaseProduct(requestBody)
 
-      console.log('Order placed successfully:', response)
-      alert('Order placed successfully!')
+      setOrderStatus('success')
+      console.log('Order placed:', response)
     } catch (error) {
-      console.error('Order placement failed:', error)
-      alert('Failed to place order.')
+      setOrderStatus('error')
+      console.error('Error placing order:', error)
     }
   }
 
@@ -95,9 +95,12 @@ export const OrderDetailsPage: React.FC = () => {
 
   if (!orderId) return <Flex>Error: No order ID provided.</Flex>
 
-  if (isLoading) return <Flex>Loading...</Flex>
-  if (error) return <Flex>Error loading items.</Flex>
-  if (!item) return <Flex>No order item found.</Flex>
+  if (isLoading) return <Flex className={styles.status}>Loading...</Flex>
+  if (error) return <Flex className={styles.status}>Error loading items.</Flex>
+  if (!item) return <Flex className={styles.status}>No order item found.</Flex>
+  if (orderStatus === 'success')
+    return <Flex className={styles.status}>Order placed successfully!</Flex>
+  if (orderStatus === 'error') return <Flex className={styles.status}>Error placing order.</Flex>
 
   return (
     <>
