@@ -1,5 +1,5 @@
 import React from 'react'
-import { Flex, Text, TextField, Select } from '@radix-ui/themes'
+import { Flex, Text, Select } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import countries from '../../data/countries.json'
@@ -28,10 +28,6 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({ isOptical }) =
     <Flex direction="column" gap="4" className={styles.selectionsContainer}>
       {isOptical ? (
         <>
-          <Field label="Product ID">
-            <TextField.Root className={styles.selectTrigger} placeholder="Enter ID" />
-          </Field>
-
           <Field label="Product Bundle">
             <Select.Root size="3">
               <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
