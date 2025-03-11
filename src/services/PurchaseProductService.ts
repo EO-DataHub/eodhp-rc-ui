@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// const API_URL = import.meta.env.VITE_HUB_BASE_URL
-const API_URL = 'https://staging.eodatahub.org.uk'
+const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
 
 export interface PurchaseRequest {
@@ -9,7 +7,8 @@ export interface PurchaseRequest {
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
   coordinates?: number[][][]
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
+  country?: string
 }
 
 export const purchaseProduct = async ({
@@ -19,7 +18,12 @@ export const purchaseProduct = async ({
   productBundle,
   coordinates,
   parameters,
-}: PurchaseRequest): Promise<any> => {
+  country,
+}: PurchaseRequest): Promise<unknown> => {
+  if (!workspace) {
+    throw new Error('Workspace is required for placing an order.')
+  }
+
   const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
 
   const requestBody: Record<string, unknown> = {
@@ -27,30 +31,41 @@ export const purchaseProduct = async ({
     product_bundle: productBundle,
   }
 
-  //  Airbus Optical supports coordinates
-  if (provider === 'airbus_optical' && coordinates) {
+  // Only add coordinates if applicable (Airbus Optical & Planet)
+  if ((provider === 'airbus_optical' || provider === 'planet') && coordinates) {
     requestBody.coordinates = coordinates
   }
 
-  // Airbus SAR requires `parameters`
-  if (provider === 'airbus_sar' && parameters) {
+  // Only add country if applicable (Airbus Optical & Airbus sSar)
+  if ((provider === 'airbus_optical' || provider === 'airbus_sar') && country) {
+    requestBody.country = country
+  }
+
+  // Always include `parameters` if provided (Airbus SAR & Optical)
+  if (parameters && Object.keys(parameters).length > 0) {
     requestBody.parameters = parameters
   }
 
-  const response = await fetch(purchaseApiUrl, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_TOKEN}`,
-    },
-    body: JSON.stringify(requestBody),
-  })
+  try {
+    const response = await fetch(purchaseApiUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${API_TOKEN}`,
+      },
+      body: JSON.stringify(requestBody),
+    })
 
-  if (!response.ok) {
-    throw new Error(`Order request failed: ${response.status} ${response.statusText}`)
+    if (!response.ok) {
+      throw new Error(`Order request failed: ${response.status} ${response.statusText}`)
+    }
+
+    const responseData = await response.json()
+    return { success: true, data: responseData }
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Error placing order:', error)
+    throw new Error('Failed to complete the order request.')
   }
-
-  const responseData = await response.json()
-  return { success: true, data: responseData }
 }

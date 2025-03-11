@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import React, { useContext } from 'react'
+import React, { useContext, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
@@ -12,7 +12,6 @@ import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getCatalog } from '@/library/catalogUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
-// import { getProductBundleForPlanet } from '@/library/planetMappingUtils'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -22,6 +21,59 @@ export const OrderDetailsPage: React.FC = () => {
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
   const isOpticalData = (): boolean => !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = getCatalog(selectedCollection)
+
+  const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
+
+  const getProviderType = (): 'airbus_optical' | 'airbus_sar' | 'planet' => {
+    if (catalog === 'planet') {
+      return 'planet'
+    }
+    return isOpticalData() ? 'airbus_optical' : 'airbus_sar'
+  }
+
+  const handleSelectionsChange = (selections: Record<string, string>) => {
+    setOrderSelections(selections)
+  }
+
+  const placeOrder = async () => {
+    if (!item || !orderSelections.productBundle) {
+      console.error('Missing order details.')
+      return
+    }
+
+    try {
+      const providerType = getProviderType()
+
+      const requestBody = {
+        workspace: workspaceUserName,
+        datasetUrl: item.links[0].href,
+        provider: providerType,
+        productBundle: orderSelections.productBundle,
+        // figure out how to pass this in
+        coordinates:
+          providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
+        parameters:
+          providerType === 'airbus_sar'
+            ? {
+                orbit: orderSelections.orbit,
+                resolution_variant: orderSelections.resolutionVariant,
+                projection: orderSelections.projection,
+              }
+            : undefined,
+        country: orderSelections.country,
+      }
+
+      console.log({ requestBody })
+
+      const response = await purchaseProduct(requestBody)
+
+      console.log('Order placed successfully:', response)
+      alert('Order placed successfully!')
+    } catch (error) {
+      console.error('Order placement failed:', error)
+      alert('Failed to place order.')
+    }
+  }
 
   const {
     data: item,
@@ -41,58 +93,7 @@ export const OrderDetailsPage: React.FC = () => {
 
   console.log({ item })
 
-  const getProviderType = () => {
-    if (catalog === 'planet') {
-      return 'planet'
-    }
-    return isOpticalData() ? 'airbus_optical' : 'airbus_sar'
-  }
-
-  console.log({ getProviderType: getProviderType() })
-
-  // want to test this with planet but that catalog is broken
-  // const getProductBundle = () => {
-  //   if (getProviderType() === 'planet') {
-  //     return item?.assets ? getProductBundleForPlanet(item.assets) : 'default_bundle'
-  //   }
-  //   return 'general_use'
-  // }
-  const placeOrder = async () => {
-    if (!item) {
-      console.error('No order item found.')
-      return
-    }
-
-    const testUrl =
-      'https://staging.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/catalogs/planet/collections/PSScene/items/20250217_101155_07_24c7'
-
-    // how will coordinates and parameters be passed in ? we are navigating to a new page
-    try {
-      const response = await purchaseProduct({
-        workspace: workspaceUserName,
-        datasetUrl: testUrl,
-        provider: getProviderType(),
-        productBundle: 'analytic_udm2',
-        coordinates: [
-          [
-            [9.6, 57.1],
-            [9.6, 57.0],
-            [9.8, 56.9],
-            [9.8, 57.0],
-            [9.6, 57.1],
-          ],
-        ],
-        parameters:
-          getProviderType() === 'airbus_sar' ? { polarization: 'HH', resolution: '5m' } : undefined,
-      })
-
-      console.log('Order placed successfully:', response)
-      alert('Order placed successfully!')
-    } catch (error) {
-      console.error('Order placement failed:', error)
-      alert('Failed to place order.')
-    }
-  }
+  if (!orderId) return <Flex>Error: No order ID provided.</Flex>
 
   if (isLoading) return <Flex>Loading...</Flex>
   if (error) return <Flex>Error loading items.</Flex>
@@ -115,12 +116,19 @@ export const OrderDetailsPage: React.FC = () => {
         </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
           <ItemInfo item={item} isOptical={isOpticalData()} />
-          <OrderSelections isOptical={isOpticalData()} />
+          <OrderSelections
+            provider={getProviderType()}
+            onSelectionChange={handleSelectionsChange}
+          />
         </Flex>
         <TermsAndConditionsContainer />
         <Flex className={styles.buttonsContainer} direction="row" gap="3">
           <Button className={styles.cancelButton}>Cancel</Button>
-          <Button className={styles.purchaseButton} onClick={placeOrder}>
+          <Button
+            className={styles.purchaseButton}
+            onClick={placeOrder}
+            disabled={!orderSelections.productBundle}
+          >
             Place Order
           </Button>
         </Flex>
