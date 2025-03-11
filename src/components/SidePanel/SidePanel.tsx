@@ -62,7 +62,7 @@ const RenderSelectionButton = () => {
 
   return (
     <Select.Root
-      defaultValue={collectionRender.id}
+      value={collectionRender.id}
       onValueChange={(renderId) =>
         dataFinderStore.send({
           type: 'setCollectionRender',
