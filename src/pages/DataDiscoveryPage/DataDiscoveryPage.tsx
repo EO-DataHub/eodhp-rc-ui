@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import { Flex, Box, Text, Grid, Select, Badge } from '@radix-ui/themes'
+import { Flex, Box, Text, Grid, Select, Badge, Container } from '@radix-ui/themes'
 import { useQueries } from '@tanstack/react-query'
 import { fetchCollections } from '@/services/collectionService'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
@@ -62,7 +62,13 @@ const renderCollections = (collections: Collection[]) => {
   }
 
   return (
-    <Grid p="5" gap="5" columns="4" width="auto" className={styles.collectionGrid}>
+    <Grid
+      p="5"
+      gap="5"
+      columns={{ lg: '4', md: '3', sm: '2' }}
+      width="auto"
+      className={styles.collectionGrid}
+    >
       {collections.map((collection) => (
         <CollectionCard key={collection.id} collection={collection} />
       ))}
@@ -102,7 +108,7 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
                 </Badge>
               </Flex>
 
-              <Grid gap="5" columns="4" width="auto">
+              <Grid gap="5" columns={{ lg: '4', md: '3' }}>
                 {group.collections.map((collection) => (
                   <CollectionCard key={collection.id} collection={collection} />
                 ))}
@@ -240,41 +246,38 @@ export const DataDiscoveryPage: React.FC = () => {
   }
 
   return (
-    <Flex direction="column" height="100vh">
-      <Box flexGrow="1">
-        <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
-        <ActionsBar searchText={searchText} onSearch={setSearchText} />
-        <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
-
-        <Flex px="5" flexGrow="1" direction="column" gap="1">
-          <Text weight="bold" size="2">
-            Group By
-          </Text>
-          <Select.Root size="3" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
-            <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
-            <Select.Content position="popper">
-              <Select.Group>
-                <Select.Item value="none">None</Select.Item>
-                <Select.Item value="dataCategory">Data Category</Select.Item>
-                <Select.Item value="resolution">Resolution</Select.Item>
-                <Select.Item value="provider">Provider</Select.Item>
-                <Select.Item value="location">Location</Select.Item>
-                <Select.Item value="keyword">Keywords</Select.Item>
-                <Select.Item value="license">License</Select.Item>
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
-        </Flex>
-        {filteredCollections.length === 0 ? (
-          <Box p="5">
-            <Text>No matching collections, please refine your search.</Text>
-          </Box>
-        ) : groupBy === 'none' ? (
-          renderCollections(filteredCollections)
-        ) : (
-          renderGroupedByCollections(groupedByCollections)
-        )}
-      </Box>
-    </Flex>
+    <Container align="center" maxWidth="1640px">
+      <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
+      <ActionsBar searchText={searchText} onSearch={setSearchText} />
+      <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
+      <Flex px="5" flexGrow="1" direction="column" gap="1">
+        <Text weight="bold" size="2">
+          Group By
+        </Text>
+        <Select.Root size="3" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
+          <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
+          <Select.Content position="popper">
+            <Select.Group>
+              <Select.Item value="none">None</Select.Item>
+              <Select.Item value="dataCategory">Data Category</Select.Item>
+              <Select.Item value="resolution">Resolution</Select.Item>
+              <Select.Item value="provider">Provider</Select.Item>
+              <Select.Item value="location">Location</Select.Item>
+              <Select.Item value="keyword">Keywords</Select.Item>
+              <Select.Item value="license">License</Select.Item>
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
+      </Flex>
+      {filteredCollections.length === 0 ? (
+        <Box p="5">
+          <Text>No matching collections, please refine your search.</Text>
+        </Box>
+      ) : groupBy === 'none' ? (
+        renderCollections(filteredCollections)
+      ) : (
+        renderGroupedByCollections(groupedByCollections)
+      )}
+    </Container>
   )
 }
