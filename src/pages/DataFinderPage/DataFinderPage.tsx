@@ -35,15 +35,19 @@ export const DataFinderPage: React.FC = () => {
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
 
   const queries = useQueries({
-    queries: catalogs.map((catalog, index) => ({
-      queryKey: ['Collections', index],
+    queries: catalogs.map((catalog) => ({
+      queryKey: ['Collections', catalog],
       queryFn: () => fetchCollections(catalog),
     })),
+    combine: (results) => ({
+      isFetched: results.every((result) => result.isFetched),
+      data: results.flatMap((result) => result.data ?? []),
+    }),
   })
 
   useEffect(() => {
-    if (queries.length > 0 && queries.every((q) => q.isFetched)) {
-      const allCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
+    if (queries.isFetched && queries.data.length > 0) {
+      const allCollections = queries.data
       const foundCollection = allCollections.find((col) => col.id === collectionId)
 
       if (foundCollection) {
