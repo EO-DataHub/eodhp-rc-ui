@@ -1,21 +1,28 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
 
+type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
+
 const ThumbnailItemLayer = ({ item }: { item: Item }) => {
   const thumbnailUrl = item.assets?.thumbnail?.href
 
   if (!thumbnailUrl) return null
 
-  //
-  const bbox = [
-    [item.bbox[0], item.bbox[1]],
-    [item.bbox[2], item.bbox[1]],
-    [item.bbox[2], item.bbox[3]],
-    [item.bbox[0], item.bbox[3]],
-  ] as [[number, number], [number, number], [number, number], [number, number]]
+  let coordinates: Coordinates = [
+    [0, 0],
+    [0, 0],
+    [0, 0],
+    [0, 0],
+  ]
+
+  if ('coordinates' in item.geometry) {
+    coordinates = (item.geometry.coordinates as number[][][])[0]
+      .slice(0, 4)
+      .reverse() as Coordinates
+  }
 
   return (
-    <Source type="image" url={thumbnailUrl} coordinates={bbox}>
+    <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
       <Layer type="raster" />
     </Source>
   )
