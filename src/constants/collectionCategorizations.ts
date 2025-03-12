@@ -424,7 +424,13 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
-    additionalFieldsToDisplay: [],
+    additionalFieldsToDisplay: [
+      'cmip6:variable_long_name',
+      'cmip6:frequency',
+      'cmip6:source_id',
+      'cmip6:experiment_id',
+      'cmip6:nominal_resolution',
+    ],
   },
 }
 
@@ -452,8 +458,19 @@ const itemCardFieldsToDisplay = {
     'end_datetime',
   ],
   [DataCategory.Hyperspectral]: [],
-  [DataCategory.Optical_Multispectral]: ['eo:cloud_cover'],
-  [DataCategory.Radar]: [],
+  [DataCategory.Optical_Multispectral]: [
+    'eo:cloud_cover',
+    'eo:snow_cover',
+    'view:sun_elevation',
+    'view:incidence_angle',
+  ],
+  [DataCategory.Radar]: [
+    'mission',
+    'sat:orbit_state',
+    'sar:polarizations',
+    'sar:instrument_mode',
+    'sar:observation_direction',
+  ],
   [DataCategory.Land_Cover]: [],
 }
 
