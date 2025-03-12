@@ -3,7 +3,6 @@ import { Collection } from '@/types'
 import { Flex, Text, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
-import InfoSymbolIcon from '@/assets/icons/info-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
@@ -56,9 +55,6 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
                 <PoundSterlingSymbolIcon width="12" height="12" />
               </IconButton>
             ) : null}
-            <IconButton radius="full" variant="solid" size="1" className={styles.button}>
-              <InfoSymbolIcon width="20" height="20" />
-            </IconButton>
           </Flex>
           <Text as="p" size="2" className={styles.text}>
             {collection.title}
