@@ -142,7 +142,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <Flex direction="column">
           <Flex justify="between">
             <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-              {item.id}
+              {data?.properties?.title ?? item.id}
             </Text>
             <Checkbox
               mt="1"
