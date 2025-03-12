@@ -4,7 +4,7 @@ import type { Item } from '@/types'
 import { Box, Flex, Text } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetItemTable } from './AssetItemTable'
-import ItemLayer from '@/components/Map/ItemLayer'
+import RasterItemLayer from '@/components/Map/layers/RasterItem'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 interface AssetSectionProps {
@@ -67,7 +67,7 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
             showThumbnail()
           }}
         >
-          {item && <ItemLayer key={item.id} item={item} showRasterTiles={true} />}
+          {item && <RasterItemLayer key={item.id} item={item} />}
         </Maplibre>
       </Box>
       <AssetItemTable assets={item?.assets} />

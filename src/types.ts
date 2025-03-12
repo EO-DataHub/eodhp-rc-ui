@@ -15,6 +15,35 @@ export interface Catalog {
   conformsTo: string[]
 }
 
+export interface BaseStacRender {
+  assets: string | string[]
+  title?: string
+  rescale?: [number, number][]
+  nodata?: number | string
+  colormap_name?: string
+  colormap?: Record<string, string>
+  color_formula?: string
+  resampling?: string
+  expression?: string
+  minmax_zoom?: [number, number]
+  bidx?: number[]
+  // the following fields are not part of the STAC Render Extension
+  variable?: string
+  tileMatrixSetId?: string
+  scale?: number
+  multiscale?: boolean
+  reference?: boolean
+  decode_times?: boolean
+  consolidated?: boolean
+  return_mask?: boolean
+}
+
+// The STAC Render Extension does not define an id field, so we add it to make
+// it easier to use render options in forms and other elements.
+export interface StacRender extends BaseStacRender {
+  id: string
+}
+
 export interface Collection {
   type: string
   stac_version: string
@@ -52,6 +81,9 @@ export interface Collection {
       type?: string
       roles?: string[]
     }
+  }
+  renders?: {
+    [key: string]: BaseStacRender
   }
 }
 
@@ -93,6 +125,8 @@ export interface Item {
       }[]
     }
   }
+  tilesUrl: string | undefined
+  render?: StacRender
 }
 
 export interface CubeData {

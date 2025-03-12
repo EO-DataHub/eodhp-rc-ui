@@ -1,7 +1,8 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Item } from '@/types'
+import { Collection, StacRender, Item } from '@/types'
+import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -10,10 +11,13 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
+export type SecondaryPanel = 'renderOptions' | undefined
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
+    secondaryPanel: undefined as SecondaryPanel,
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -23,6 +27,11 @@ const dataFinderStore = createStore({
     page: 0,
     pinnedItems: [] as Item[],
     hoveredItem: undefined as Item | undefined,
+    isFilterPanelOpen: false,
+    isVisualizationPanelOpen: false,
+    collection: undefined as Collection | undefined,
+    collectionRenderOptions: [] as StacRender[],
+    collectionRender: undefined as StacRender | undefined,
   },
   // Transitions
   on: {
@@ -31,6 +40,12 @@ const dataFinderStore = createStore({
         ...context,
         isLoading: false,
         page: 0,
+      }
+    },
+    setSecondaryPanel: (context, event: { panel: SecondaryPanel }) => {
+      return {
+        ...context,
+        secondaryPanel: event.panel,
       }
     },
     pageChange: (context, event: { page: number }) => {
@@ -116,13 +131,20 @@ const dataFinderStore = createStore({
     },
     pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
       const { item, isChecked } = event
-      const { pinnedItems } = context
+      const { pinnedItems, collectionRender } = context
 
-      return {
-        ...context,
-        pinnedItems: isChecked
-          ? [...pinnedItems, item]
-          : pinnedItems.filter((checked) => checked.id !== item.id),
+      if (isChecked) {
+        item.tilesUrl = resolveTilesUrl(item, collectionRender)
+
+        return {
+          ...context,
+          pinnedItems: [...pinnedItems, item],
+        }
+      } else {
+        return {
+          ...context,
+          pinnedItems: pinnedItems.filter((checked) => checked.id !== item.id),
+        }
       }
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
@@ -131,6 +153,31 @@ const dataFinderStore = createStore({
         hoveredItem: event.item,
       }
     },
+    setCollection: (context, event: { collection: Collection }) => {
+      const collection = event.collection
+
+      const baseRenders = collectionRenderingConfig[collection.id]?.renders ?? {}
+
+      const renders = {
+        ...baseRenders,
+        ...collection.renders,
+      }
+
+      const collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
+        ...render,
+        id,
+      }))
+
+      return {
+        ...context,
+        collection: event.collection,
+        collectionRenderOptions,
+        collectionRender: collectionRenderOptions[0] ?? undefined,
+      }
+    },
+    setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
+      collectionRender: event.collectionRender,
+    }),
   },
 })
 
