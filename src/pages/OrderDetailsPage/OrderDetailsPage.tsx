@@ -87,14 +87,21 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!orderId,
   })
 
-  if (!orderId) return <Flex>Error: No order ID provided.</Flex>
+  const getStatusMessage = () => {
+    if (!orderId) return 'Error: No order ID provided.'
+    if (isLoading) return 'Loading...'
+    if (error) return 'Error loading items.'
+    if (!item) return 'No order item found.'
+    if (orderStatus === 'success') return 'Order placed successfully!'
+    if (orderStatus === 'error') return 'Error placing order.'
+    return null
+  }
 
-  if (isLoading) return <Flex className={styles.status}>Loading...</Flex>
-  if (error) return <Flex className={styles.status}>Error loading items.</Flex>
-  if (!item) return <Flex className={styles.status}>No order item found.</Flex>
-  if (orderStatus === 'success')
-    return <Flex className={styles.status}>Order placed successfully!</Flex>
-  if (orderStatus === 'error') return <Flex className={styles.status}>Error placing order.</Flex>
+  const statusMessage = getStatusMessage()
+
+  if (statusMessage) {
+    return <Flex className={styles.status}>{statusMessage}</Flex>
+  }
 
   return (
     <>
@@ -108,11 +115,11 @@ export const OrderDetailsPage: React.FC = () => {
         <Flex direction="column" gap="2">
           <Kbd className={styles.tag}>Provider Name</Kbd>
           <Text size="3" weight="bold">
-            {item.collection}: {item.id}
+            {item?.collection}: {item?.id}
           </Text>
         </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
-          <ItemInfo item={item} isOptical={isOpticalData} />
+          {item && <ItemInfo item={item} isOptical={isOpticalData} />}
           <OrderSelections
             provider={getProviderType()}
             onSelectionChange={handleSelectionsChange}
