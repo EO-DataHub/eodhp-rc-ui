@@ -38,19 +38,19 @@
       "anyOf": [
         {
           "type": "string",
-          "title": "All",
+          "title": "Any",
           "enum": [
             "%"
           ]
         },
         {
-          "title": "Sentinel 1a",
+          "title": "Sentinel 1A",
           "enum": [
             "sentinel1a"
           ]
         },
         {
-          "title": "Sentinel 1b",
+          "title": "Sentinel 1B",
           "enum": [
             "sentinel1b"
           ]
@@ -59,7 +59,14 @@
     },
     "instrument_mode": {
       "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:instrument_mode",
+      "default": "%",
       "anyOf": [
+        {
+          "title": "Any",
+          "enum": [
+            "%"
+          ]
+        },
         {
           "title": "Wave",
           "enum": [
