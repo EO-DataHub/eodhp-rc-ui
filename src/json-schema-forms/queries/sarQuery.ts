@@ -42,6 +42,21 @@ const dispatch: QueryDispatch = {
       obj['sar:polarizations'] as string,
     )
   },
+  'sar:instrument_mode': (_, obj) => {
+    return {
+      op: 'like',
+      args: [{ property: 'properties.sar:instrument_mode' }, obj['sar:instrument_mode']],
+    }
+  },
+  'sar:observation_direction': (_, obj) => {
+    return {
+      op: 'like',
+      args: [
+        { property: 'properties.sar:observation_direction' },
+        obj['sar:observation_direction'],
+      ],
+    }
+  },
 }
 
 export default dispatch
