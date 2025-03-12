@@ -56,7 +56,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
               </IconButton>
             ) : null}
           </Flex>
-          <Text as="p" size="2" className={styles.text}>
+          <Text as="p" size="3" weight="medium" className={styles.text}>
             {collection.title}
           </Text>
           <Text as="p" size="2" mt="2" className={styles.text}>
