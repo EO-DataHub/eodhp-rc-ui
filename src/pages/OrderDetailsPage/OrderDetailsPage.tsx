@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
 import { Flex, Text, Kbd, Button, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
@@ -18,7 +18,7 @@ export const OrderDetailsPage: React.FC = () => {
   const { workspaceUserName } = useContext(AuthenticationContext)
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
-  const isOpticalData = (): boolean => !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
+  const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = getCatalog(selectedCollection)
 
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
@@ -28,48 +28,47 @@ export const OrderDetailsPage: React.FC = () => {
     if (catalog === 'planet') {
       return 'planet'
     }
-    return isOpticalData() ? 'airbus_optical' : 'airbus_sar'
+    return isOpticalData ? 'airbus_optical' : 'airbus_sar'
   }
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
     setOrderSelections(selections)
   }
 
-  const placeOrder = async () => {
-    if (!item) {
-      return
-    }
-
-    try {
-      const providerType = getProviderType()
-
-      const requestBody = {
-        workspace: workspaceUserName,
-        datasetUrl: item.links[0].href,
-        provider: providerType,
-        productBundle: orderSelections.productBundle,
-        // Todo: pass in coordinates from maps page
-        coordinates:
-          providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
-        parameters:
-          providerType === 'airbus_sar'
-            ? {
-                orbit: orderSelections.orbit,
-                resolution_variant: orderSelections.resolutionVariant,
-                projection: orderSelections.projection,
-              }
-            : undefined,
-        country: orderSelections.country,
-      }
-
-      const response = await purchaseProduct(requestBody)
-
-      if ((response as { success: boolean }).success) {
-        setOrderStatus('success')
-      }
-    } catch (error) {
+  const mutation = useMutation({
+    mutationFn: purchaseProduct,
+    onSuccess: () => {
+      setOrderStatus('success')
+    },
+    onError: () => {
       setOrderStatus('error')
+    },
+  })
+
+  const placeOrder = () => {
+    if (!item) return
+
+    const providerType = getProviderType()
+
+    const requestBody = {
+      workspace: workspaceUserName,
+      datasetUrl: item.links[0].href,
+      provider: providerType,
+      productBundle: orderSelections.productBundle,
+      coordinates:
+        providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
+      parameters:
+        providerType === 'airbus_sar'
+          ? {
+              orbit: orderSelections.orbit,
+              resolution_variant: orderSelections.resolutionVariant,
+              projection: orderSelections.projection,
+            }
+          : undefined,
+      country: orderSelections.country,
     }
+
+    mutation.mutate(requestBody)
   }
 
   const {
@@ -113,7 +112,7 @@ export const OrderDetailsPage: React.FC = () => {
           </Text>
         </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
-          <ItemInfo item={item} isOptical={isOpticalData()} />
+          <ItemInfo item={item} isOptical={isOpticalData} />
           <OrderSelections
             provider={getProviderType()}
             onSelectionChange={handleSelectionsChange}
@@ -125,9 +124,9 @@ export const OrderDetailsPage: React.FC = () => {
           <Button
             className={styles.purchaseButton}
             onClick={placeOrder}
-            disabled={!orderSelections.productBundle}
+            disabled={!orderSelections.productBundle || mutation.isPending}
           >
-            Place Order
+            {mutation.isPending ? 'Placing Order...' : 'Place Order'}
           </Button>
         </Flex>
       </Flex>
