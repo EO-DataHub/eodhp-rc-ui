@@ -95,6 +95,14 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const navigate = useNavigate()
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
+  const cardTitle = useMemo(() => {
+    if (!data?.properties?.title) {
+      return item.id
+    }
+
+    return data.properties.title
+  }, [data?.properties.title, item.id])
+
   const handlePurchase = async () => {
     // in the future we will also check if the user has purchase credits available
     if (isAuthenticated) {
@@ -142,7 +150,7 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         <Flex direction="column">
           <Flex justify="between">
             <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-              {data?.properties?.title ?? item.id}
+              {cardTitle}
             </Text>
             <Checkbox
               mt="1"
