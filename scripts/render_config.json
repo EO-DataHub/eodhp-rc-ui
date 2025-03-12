@@ -91,7 +91,7 @@
                 }
             }
         }
-    }
+    },
     "staging.eodatahub.org.uk/api/catalogue/stac/catalogs/supported-datasets/catalogs/airbus": {
         "airbus_sar_data": {
             "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
