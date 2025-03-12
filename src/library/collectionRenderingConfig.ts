@@ -18,6 +18,7 @@ const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
 type TilerType = 'titiler' | 'titiler-xarray'
+type RendererType = TilerType | 'thumbnail'
 
 const tilerUrls: Record<TilerType, string> = {
   titiler: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
@@ -25,24 +26,33 @@ const tilerUrls: Record<TilerType, string> = {
 }
 
 interface BaseCollectionConfig {
-  tilerType: TilerType
+  rendererType: RendererType
   renders?: Record<string, BaseStacRender>
 }
 
 interface TitilerCollectionConfig extends BaseCollectionConfig {
-  tilerType: 'titiler'
+  rendererType: 'titiler'
 }
 
 interface TitilerXarrayCollectionConfig extends BaseCollectionConfig {
-  tilerType: 'titiler-xarray'
+  rendererType: 'titiler-xarray'
   assetKey: string
 }
 
-type CollectionConfig = TitilerCollectionConfig | TitilerXarrayCollectionConfig
+interface ThumbnailCollectionConfig extends BaseCollectionConfig {
+  rendererType: 'thumbnail'
+}
+
+type CollectionConfig =
+  | TitilerCollectionConfig
+  | TitilerXarrayCollectionConfig
+  | ThumbnailCollectionConfig
 
 export const DATASETS = {
   SENTINEL_2: 'sentinel2_ard',
+  SENTINEL_1: 'sentinel1',
   AIRBUS_SAR: 'airbus_sar_data',
+  AIRBUS_PHR: 'airbus_phr_data',
   LAND_COVER: 'land_cover',
   EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
   EOCIS_SST: 'eocis-sst-cdrv3',
@@ -68,17 +78,17 @@ export const resolveTilesUrl = (item: Item, render?: StacRender): string | undef
   const collectionConfig = collectionRenderingConfig[item.collection]
   if (!collectionConfig) return undefined
 
-  const { tilerType } = collectionConfig
+  const { rendererType } = collectionConfig
 
-  if (!tilerType) return undefined
+  if (!rendererType) return undefined
 
   let urlParam = undefined
   let tilerUrl = undefined
 
-  if (tilerType === 'titiler') {
+  if (rendererType === 'titiler') {
     tilerUrl = tilerUrls.titiler
     urlParam = getItemUrl(item)
-  } else if (tilerType === 'titiler-xarray') {
+  } else if (rendererType === 'titiler-xarray') {
     tilerUrl = tilerUrls['titiler-xarray']
     urlParam = getAssetUrl(item, collectionConfig.assetKey)
   } else {
@@ -106,7 +116,7 @@ export const resolveTilesUrl = (item: Item, render?: StacRender): string | undef
 
 export const collectionRenderingConfig: Record<string, CollectionConfig> = {
   [DATASETS.SENTINEL_2]: {
-    tilerType: 'titiler',
+    rendererType: 'titiler',
     renders: {
       'True Color': {
         assets: 'cog',
@@ -140,8 +150,11 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
       },
     },
   },
+  [DATASETS.SENTINEL_1]: {
+    rendererType: 'thumbnail',
+  },
   [DATASETS.AIRBUS_SAR]: {
-    tilerType: 'titiler',
+    rendererType: 'titiler',
     renders: {
       default: {
         assets: 'thumbnail',
@@ -150,7 +163,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.LAND_COVER]: {
-    tilerType: 'titiler',
+    rendererType: 'titiler',
     renders: {
       default: {
         title: 'GeoTIFF',
@@ -160,7 +173,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_SST_CLIM]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -180,7 +193,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_SST]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -200,7 +213,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_LST_S3A_DAY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -220,7 +233,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_LST_S3A_NIGHT]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -240,7 +253,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_LST_S3B_DAY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -260,7 +273,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_LST_S3B_NIGHT]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -280,7 +293,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -300,7 +313,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -320,7 +333,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -340,7 +353,7 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
-    tilerType: 'titiler-xarray',
+    rendererType: 'titiler-xarray',
     assetKey: 'reference_file',
     renders: {
       default: {
@@ -358,5 +371,8 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
         return_mask: true,
       },
     },
+  },
+  [DATASETS.AIRBUS_PHR]: {
+    rendererType: 'thumbnail',
   },
 }
