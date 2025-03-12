@@ -57,11 +57,8 @@ export const purchaseProduct = async ({
       body: JSON.stringify(requestBody),
     })
 
-    if (!response.ok) {
-      throw new Error(`Order request failed: ${response.status} ${response.statusText}`)
-    }
-
     const responseData = await response.json()
+
     return { success: true, data: responseData }
   } catch (error) {
     throw new Error('Failed to complete the order request.')
