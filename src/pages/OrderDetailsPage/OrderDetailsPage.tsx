@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import React, { useContext, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
@@ -63,15 +62,13 @@ export const OrderDetailsPage: React.FC = () => {
         country: orderSelections.country,
       }
 
-      console.log({ requestBody })
-
       const response = await purchaseProduct(requestBody)
 
-      setOrderStatus('success')
-      console.log('Order placed:', response)
+      if ((response as { success: boolean }).success) {
+        setOrderStatus('success')
+      }
     } catch (error) {
       setOrderStatus('error')
-      console.error('Error placing order:', error)
     }
   }
 
@@ -90,8 +87,6 @@ export const OrderDetailsPage: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: !!orderId,
   })
-
-  console.log({ item })
 
   if (!orderId) return <Flex>Error: No order ID provided.</Flex>
 
