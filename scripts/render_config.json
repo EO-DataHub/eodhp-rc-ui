@@ -36,45 +36,46 @@
         }
       }
     },
+    "sentinel1": {
+      "eodhrc:type": "thumbnail",
+      "renders": {
+        "preview": {
+          "title": "Data Preview",
+          "assets": "thumbnail"
+        }
+      }
+    },
     "ukcp": {
       "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-      "eodhrc:type": "multidim-singlevar-items",
-      "eodhrc:renders_filters": {
-        "pr": {
-          "item_filter_cql2": "id LIKE '%.pr.%'"
-        },
-        "prsn": {
-          "item_filter_cql2": "id LIKE '%.prsn.%'"
-        },
-        "tas": {
-          "item_filter_cql2": "id LIKE '%.tas.%'"
-        }
+      "eodhrc:type": "multidim-singlevar-items"
+    },
+    "renders": {
+      "pr": {
+        "title": "Precipitation (mm/day)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "reference": true,
+        "colormap_name": "viridis",
+        "rescale": [0, 10],
+        "eodhrc:item_filter_cql2": "id LIKE '%.pr.%'"
       },
-      "renders": {
-        "pr": {
-          "title": "Precipitation (mm/day)",
-          "assets": ["reference_file"],
-          "variable": "pr",
-          "reference": true,
-          "colormap_name": "viridis",
-          "rescale": [0, 10]
-        },
-        "prsn": {
-          "title": "Snowfall Flux (mm/day)",
-          "assets": ["reference_file"],
-          "variable": "prsn",
-          "reference": true,
-          "colormap_name": "viridis",
-          "rescale": [0, 10]
-        },
-        "tas": {
-          "title": "Mean Air Temperature (°C)",
-          "assets": ["reference_file"],
-          "variable": "tas",
-          "reference": true,
-          "colormap_name": "coolwarm",
-          "rescale": [-5, 20]
-        }
+      "prsn": {
+        "title": "Snowfall Flux (mm/day)",
+        "assets": ["reference_file"],
+        "variable": "prsn",
+        "reference": true,
+        "colormap_name": "viridis",
+        "rescale": [0, 10],
+        "eodhrc:item_filter_cql2": "id LIKE '%.prsn.%'"
+      },
+      "tas": {
+        "title": "Mean Air Temperature (°C)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "reference": true,
+        "colormap_name": "coolwarm",
+        "rescale": [-5, 20],
+        "eodhrc:item_filter_cql2": "id LIKE '%.tas.%'"
       }
     },
     "land_cover": {
@@ -1290,8 +1291,7 @@
       }
     },
     "airbus_phr_data": {
-      "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-      "eodhrc:type": "png",
+      "eodhrc:type": "thumbnail",
       "renders": {
         "preview": {
           "title": "Data Preview",
@@ -1300,8 +1300,7 @@
       }
     },
     "airbus_spot_data": {
-      "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-      "eodhrc:type": "png",
+      "eodhrc:type": "thumbnail",
       "renders": {
         "preview": {
           "title": "Data Preview",
