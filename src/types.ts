@@ -96,28 +96,7 @@ export interface Item {
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
   properties: {
-    datetime: string
-    updated: string
-    start_datetime: string
-    end_datetime: string
-    'proj:code': string
-    esa_file_name: string
-    'Instrument Family Name': string
-    'Instrument Family Name Abbreviation': string
-    'Platform Number': string
-    'NSSDC Identifier': string
-    'Start Relative Orbit Number': string
-    'Start Orbit Number': string
-    'Ground Tracking Direction': string
-    'Instrument Mode': string | null
-    'eo:cloud_cover': string
-    'Product Type': string
-    'Datatake Type': string
-    data_path: string
-    'proj:shape': [number, number]
-    'proj:transform': [number, number, number, number, number, number, number, number, number]
-    instance_id: string
-    created: string
+    [key: string]: never
   }
   links: {
     rel: string

@@ -15,3 +15,13 @@ export const extractStacMetadata = (
 
   return StacFields.formatItemProperties(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
 }
+
+export const getMetadataItemProperty = (rawFieldName: string, metadataItems: MetadataItem[]) => {
+  const parts = rawFieldName.split(':')
+  let extension = ''
+  if (parts.length === 2) {
+    extension = parts[0]
+  }
+  const metadataItem = metadataItems.find((item) => item.extension === extension)
+  return metadataItem?.properties[rawFieldName]
+}

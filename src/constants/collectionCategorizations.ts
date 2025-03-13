@@ -144,6 +144,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   airbus_sar_data: {
     dataCategory: [DataCategory.Radar],
@@ -153,6 +154,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   airbus_pneo_data: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -162,6 +164,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   airbus_phr_data: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -171,6 +174,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   airbus_data_example: {
     dataCategory: [],
@@ -180,6 +184,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [],
     license: [],
+    additionalFieldsToDisplay: [],
   },
   ukcp: {
     dataCategory: [DataCategory.Climate_Projections],
@@ -189,6 +194,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Forecast],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   sentinel2_ard: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -198,6 +204,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   sentinel1: {
     dataCategory: [DataCategory.Radar],
@@ -207,6 +214,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   land_cover: {
     dataCategory: [DataCategory.Land_Cover],
@@ -216,6 +224,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3': {
     dataCategory: [DataCategory.Climate_Data],
@@ -225,6 +234,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-night': {
     dataCategory: [DataCategory.Climate_Data],
@@ -234,6 +244,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-day': {
     dataCategory: [DataCategory.Climate_Data],
@@ -243,6 +254,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-night': {
     dataCategory: [DataCategory.Climate_Data],
@@ -252,6 +264,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-day': {
     dataCategory: [DataCategory.Climate_Data],
@@ -261,6 +274,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3a': {
     dataCategory: [DataCategory.Climate_Data],
@@ -270,6 +284,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3b': {
     dataCategory: [DataCategory.Climate_Data],
@@ -279,6 +294,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3a': {
     dataCategory: [DataCategory.Climate_Data],
@@ -288,6 +304,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3n': {
     dataCategory: [DataCategory.Climate_Data],
@@ -297,6 +314,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3-climatology': {
     dataCategory: [DataCategory.Climate_Data],
@@ -306,6 +324,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   TanagerScene: {
     dataCategory: [DataCategory.Hyperspectral],
@@ -315,6 +334,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   TanagerMethane: {
     dataCategory: [],
@@ -324,6 +344,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [],
     license: [],
+    additionalFieldsToDisplay: [],
   },
   SkySatVideo: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -333,6 +354,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   SkySatScene: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -342,6 +364,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   SkySatCollect: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -351,6 +374,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   REScene: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -360,6 +384,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   REOrthoTile: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -369,6 +394,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   PSScene: {
     dataCategory: [DataCategory.Optical_Multispectral],
@@ -378,6 +404,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    additionalFieldsToDisplay: [],
   },
   cordex: {
     dataCategory: [DataCategory.Climate_Projections],
@@ -387,6 +414,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
   },
   cmip6: {
     dataCategory: [DataCategory.Climate_Projections],
@@ -396,6 +424,13 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [
+      'cmip6:variable_long_name',
+      'cmip6:frequency',
+      'cmip6:source_id',
+      'cmip6:experiment_id',
+      'cmip6:nominal_resolution',
+    ],
   },
 }
 
@@ -409,6 +444,36 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
   keyword: keywords,
 }
 
+const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
+  return id in collectionCategorization
+}
+
+const itemCardFieldsToDisplay = {
+  [DataCategory.Climate_Data]: [],
+  [DataCategory.Climate_Projections]: [
+    'variable_long_name',
+    'frequency',
+    'scenario',
+    'start_datetime',
+    'end_datetime',
+  ],
+  [DataCategory.Hyperspectral]: [],
+  [DataCategory.Optical_Multispectral]: [
+    'eo:cloud_cover',
+    'eo:snow_cover',
+    'view:sun_elevation',
+    'view:incidence_angle',
+  ],
+  [DataCategory.Radar]: [
+    'mission',
+    'sat:orbit_state',
+    'sar:polarizations',
+    'sar:instrument_mode',
+    'sar:observation_direction',
+  ],
+  [DataCategory.Land_Cover]: [],
+}
+
 export {
   dataCategories,
   resolutions,
@@ -418,5 +483,7 @@ export {
   timePeriods,
   licenses,
   collectionCategorization,
+  itemCardFieldsToDisplay,
   filterMapping,
+  isValidCollectionId,
 }
