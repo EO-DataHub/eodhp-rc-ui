@@ -15,6 +15,11 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
     throw new Error('Invalid geometry: Must be a Polygon with at least 4 coordinates.')
   }
 
+  // In case geometry has more than 5 points, we need to simplify it
+  if (geometry.coordinates[0].length > 5) {
+    geometry = turf.simplify(geometry, { tolerance: 0.001, highQuality: true, mutate: true })
+  }
+
   const coordinates = geometry.coordinates[0].slice(0, 4)
   const bbox = turf.bbox(geometry) // [minx, miny, maxx, maxy]
   const seCorner = turf.point([bbox[0], bbox[3]])
