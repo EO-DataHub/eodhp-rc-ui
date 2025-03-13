@@ -2,6 +2,8 @@
   background-color: var(--blue-contrast);
   border: 1px solid transparent;
   padding: 0px;
+  display: flex;
+  flex-grow: 1;
 
   &:hover {
     border-color: var(--app-background-dark-2);
@@ -20,16 +22,19 @@
 
   .text {
     color: var(--app-background-dark-2);
-    max-width: 145px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .thumbnailContainer {
     position: relative;
     border-radius: 8px 0 0 8px;
     margin: 0px;
-    min-width: 100px;
+    width: 100px;
 
     &:hover .overlay {
       opacity: 1;
