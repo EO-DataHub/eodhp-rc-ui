@@ -1,4 +1,4 @@
-import { Box, Flex, Grid, IconButton, Select, Text } from '@radix-ui/themes'
+import { Flex, Grid, IconButton, Select, Text } from '@radix-ui/themes'
 import styles from './QueryItems.module.scss'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
@@ -6,6 +6,8 @@ import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import useItemsQuery, { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
+import ItemList from '../ItemList'
+import { ItemCard } from '@/components/ItemCard/ItemCard'
 
 /* eslint-disable no-console */
 
@@ -30,14 +32,13 @@ const PageIndicator = ({ page, totalItemsCount }: { page: number; totalItemsCoun
 }
 
 const RenderSelectionButton = () => {
-  const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const collectionRenderOptions = useSelector(
     dataFinderStore,
     ({ context }) => context.collectionRenderOptions,
   )
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
 
-  if (isLoading || !collectionRenderOptions.length || !collectionRender) {
+  if (!collectionRenderOptions.length || !collectionRender) {
     return null
   }
 
@@ -70,7 +71,10 @@ const RenderSelectionButton = () => {
 }
 
 const QueryItemsTab = () => {
-  const { allItems, isFetching, hasPages, page, pageCount } = useItemsQuery()
+  const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+
+  const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
   const toggleFilterPanel = () => {
     console.log('toggleFilterPanel')
@@ -90,7 +94,7 @@ const QueryItemsTab = () => {
         padding: 'var(--Spacing-3, 12px) 0',
       }}
     >
-      <RenderSelectionButton />
+      {isLoading && <RenderSelectionButton />}
       <Flex justify="between">
         <Flex align="center" gap="2">
           {isFetching && (
@@ -110,15 +114,39 @@ const QueryItemsTab = () => {
         </Flex>
       </Flex>
 
-      <Flex
-        direction={'column'}
-        style={{ backgroundColor: 'blue', overflowY: 'auto', flexGrow: 1 }}
-      >
-        {Array.from({ length: 40 }).map((_, i) => (
-          <Box key={i} style={{ backgroundColor: 'yellow' }}>
-            Item {i}
-          </Box>
-        ))}
+      <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
+        {!isLoading && (
+          <ItemList
+            items={pageItems}
+            error={!!error}
+            renderItem={(item, index) => (
+              <ItemCard
+                key={`${item.id}-${index}`}
+                collectionId={collection?.id ?? null}
+                item={item}
+                // isSelected={selectedItem?.id === item.id}
+                // isThumbnailSelected={selectedThumbnail?.id === item.id}
+                // isChecked={checkedItems.some((checked) => checked.id === item.id)}
+                // onSelect={handleSelectItem}
+                // onSelectItemInfo={handleSelectItemInfo}
+                // onThumbnailSelect={handleThumbnailSelect}
+                // onCheckboxChange={handleCheckboxItemChange}
+                isSelected={false}
+                isThumbnailSelected={false}
+                isChecked={false}
+                onSelect={() => console.log('onSelect')}
+                onSelectItemInfo={() => console.log('onSelectItemInfo')}
+                onThumbnailSelect={() => console.log('onThumbnailSelect')}
+                onCheckboxChange={() => console.log('onCheckboxChange')}
+                onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
+                onMouseLeave={() =>
+                  dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })
+                }
+                isLicenseProprietary={collection?.license === 'proprietary'}
+              />
+            )}
+          />
+        )}
       </Flex>
 
       {hasPages && (
