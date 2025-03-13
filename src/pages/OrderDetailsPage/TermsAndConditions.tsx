@@ -1,24 +1,25 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Flex, Text, Checkbox, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 
 interface TermsAndConditionsContainerProps {
   provider: 'planet' | 'airbus_optical' | 'airbus_sar'
+  onTermsChange: (allChecked: boolean) => void
 }
 
 export const TermsAndConditionsContainer: React.FC<TermsAndConditionsContainerProps> = ({
   provider,
+  onTermsChange,
 }) => {
   const airbusLicenseLink = 'https://space-solutions.airbus.com/legal/licences/'
   const airbusTermsLink = 'https://space-solutions.airbus.com/legal/terms-and-conditions/'
 
-  // Base terms - no href link provided yet
-  const termsAndConditionsInfo = [
+  const baseTerms = [
     { text: 'I give consent for the EODH to place the order on my behalf.', link: '#' },
   ]
 
   if (provider !== 'planet') {
-    termsAndConditionsInfo.unshift(
+    baseTerms.unshift(
       { text: 'I have read and understand the product license.', link: airbusLicenseLink },
       {
         text: 'I have read and understand the vendor terms and conditions.',
@@ -27,11 +28,29 @@ export const TermsAndConditionsContainer: React.FC<TermsAndConditionsContainerPr
     )
   }
 
+  const [checkedTerms, setCheckedTerms] = useState<Record<number, boolean>>({})
+
+  useEffect(() => {
+    const allChecked =
+      Object.keys(checkedTerms).length === baseTerms.length &&
+      Object.values(checkedTerms).every((checked) => checked)
+
+    onTermsChange(allChecked)
+  }, [checkedTerms, baseTerms.length, onTermsChange])
+
+  const handleCheckboxChange = (index: number, checked: boolean) => {
+    setCheckedTerms((prev) => ({ ...prev, [index]: checked }))
+  }
+
   return (
     <Flex className={styles.conditionsContainer} direction="column" gap="3">
-      {termsAndConditionsInfo.map((info, index) => (
+      {baseTerms.map((info, index) => (
         <Flex key={index} gap="3" className={styles.checkGroup}>
-          <Checkbox className={styles.checkbox}></Checkbox>
+          <Checkbox
+            className={styles.checkbox}
+            checked={checkedTerms[index] || false}
+            onCheckedChange={(checked) => handleCheckboxChange(index, Boolean(checked))}
+          />
           <Text>{info.text}</Text>
           <Link
             className={styles.linkText}

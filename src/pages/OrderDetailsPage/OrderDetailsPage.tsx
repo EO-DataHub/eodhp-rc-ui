@@ -23,6 +23,7 @@ export const OrderDetailsPage: React.FC = () => {
 
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
 
   const getProviderType = (): 'airbus_optical' | 'airbus_sar' | 'planet' => {
     if (catalog === 'planet') {
@@ -44,6 +45,9 @@ export const OrderDetailsPage: React.FC = () => {
       setOrderStatus('error')
     },
   })
+
+  const isPlaceOrderDisabled =
+    !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
   const placeOrder = () => {
     if (!item) return
@@ -128,13 +132,16 @@ export const OrderDetailsPage: React.FC = () => {
             onSelectionChange={handleSelectionsChange}
           />
         </Flex>
-        <TermsAndConditionsContainer provider={getProviderType()} />
+        <TermsAndConditionsContainer
+          provider={getProviderType()}
+          onTermsChange={setTermsAccepted}
+        />
         <Flex className={styles.buttonsContainer} direction="row" gap="3">
           <Button className={styles.cancelButton}>Cancel</Button>
           <Button
             className={styles.purchaseButton}
             onClick={placeOrder}
-            disabled={!orderSelections.productBundle || mutation.isPending}
+            disabled={isPlaceOrderDisabled}
           >
             {mutation.isPending ? 'Placing Order...' : 'Place Order'}
           </Button>
