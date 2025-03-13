@@ -50,14 +50,16 @@ export const OrderDetailsPage: React.FC = () => {
 
     const providerType = getProviderType()
 
+    const storedAoi = localStorage.getItem('aoi')
+    const aoiData = storedAoi ? JSON.parse(storedAoi) : null
+    const aoiCoordinates = aoiData?.geometry?.coordinates
+
     const requestBody = {
       workspace: workspaceUserName,
       datasetUrl: item.links[0].href,
       provider: providerType,
       productBundle: orderSelections.productBundle,
-      // todo: add coordinates to the request body from maps page
-      coordinates:
-        providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
+      coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
       parameters:
         providerType === 'airbus_sar'
           ? {

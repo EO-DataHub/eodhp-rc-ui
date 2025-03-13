@@ -8,6 +8,7 @@ import MapsIcon from '@/assets/icons/maps-icon.svg?react'
 import CancelIcon from '@/assets/icons/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -105,6 +106,12 @@ export const ItemCard: React.FC<ItemCardProps> = ({
 
   const handlePurchase = async () => {
     // in the future we will also check if the user has purchase credits available
+    const aoi = dataFinderStore.getSnapshot().context.aoi
+
+    if (aoi) {
+      dataFinderStore.send({ type: 'storeAoi', aoi })
+    }
+
     if (isAuthenticated) {
       navigate(`/order-details/${item.id}`)
     } else {
