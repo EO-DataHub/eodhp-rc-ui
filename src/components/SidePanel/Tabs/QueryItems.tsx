@@ -1,11 +1,11 @@
 import { Box, Flex, Grid, IconButton, Select, Text } from '@radix-ui/themes'
-import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/pages/DataFinderPage/DataFinderPage'
 import styles from './QueryItems.module.scss'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import useItemsQuery, { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 
 /* eslint-disable no-console */
 
@@ -70,17 +70,14 @@ const RenderSelectionButton = () => {
 }
 
 const QueryItemsTab = () => {
-  const isFetching = false
-  const page = 0
-  const items = []
+  const { allItems, isFetching, hasPages, page, pageCount } = useItemsQuery()
+
   const toggleFilterPanel = () => {
     console.log('toggleFilterPanel')
   }
-  const hasPages = true
 
-  const pageCount = Math.ceil(items.length / PAGE_SIZE)
-  const setPage = (page: number) => {
-    console.log('page', page)
+  const setPage = (newPage: number) => {
+    dataFinderStore.send({ type: 'pageChange', page: newPage })
   }
 
   return (
@@ -104,7 +101,7 @@ const QueryItemsTab = () => {
           )}
         </Flex>
         <Flex width="100%" gap="2" align="center">
-          {hasPages && <PageIndicator page={page} totalItemsCount={items.length} />}
+          {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
         </Flex>
         <Flex gap="2" align="center">
           <IconButton size="2" color="gray" variant="outline" onClick={toggleFilterPanel}>

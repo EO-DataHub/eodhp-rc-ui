@@ -12,13 +12,7 @@ import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import Tabs from './Tabs/Tabs'
 
 interface SidePanelProps {
-  items: Item[]
   collection?: Collection
-  isLoading: boolean
-  isFetching: boolean
-  error: boolean
-  page: number
-  setPage: (page: number) => void
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
