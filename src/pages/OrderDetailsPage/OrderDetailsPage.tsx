@@ -55,6 +55,7 @@ export const OrderDetailsPage: React.FC = () => {
       datasetUrl: item.links[0].href,
       provider: providerType,
       productBundle: orderSelections.productBundle,
+      // todo: add coordinates to the request body from maps page
       coordinates:
         providerType !== 'airbus_sar' ? selectedCollection?.geometry ?? undefined : undefined,
       parameters:
