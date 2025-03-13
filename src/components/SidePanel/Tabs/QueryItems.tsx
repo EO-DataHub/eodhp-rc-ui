@@ -42,32 +42,30 @@ const RenderSelectionButton = () => {
   }
 
   return (
-    <Flex py="var(--Spacing-3, 12px)">
-      <Select.Root
-        value={collectionRender.id}
-        onValueChange={(renderId) =>
-          dataFinderStore.send({
-            type: 'setCollectionRender',
-            collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
-          })
-        }
-      >
-        <Select.Trigger
-          style={{
-            width: '100%',
-          }}
-        />
-        <Select.Content>
-          <Select.Group>
-            {collectionRenderOptions.map((option) => (
-              <Select.Item key={option.id} value={option.id}>
-                {option.title ?? option.id}
-              </Select.Item>
-            ))}
-          </Select.Group>
-        </Select.Content>
-      </Select.Root>
-    </Flex>
+    <Select.Root
+      value={collectionRender.id}
+      onValueChange={(renderId) =>
+        dataFinderStore.send({
+          type: 'setCollectionRender',
+          collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
+        })
+      }
+    >
+      <Select.Trigger
+        style={{
+          width: '100%',
+        }}
+      />
+      <Select.Content>
+        <Select.Group>
+          {collectionRenderOptions.map((option) => (
+            <Select.Item key={option.id} value={option.id}>
+              {option.title ?? option.id}
+            </Select.Item>
+          ))}
+        </Select.Group>
+      </Select.Content>
+    </Select.Root>
   )
 }
 
@@ -88,14 +86,15 @@ const QueryItemsTab = () => {
   return (
     <Grid
       style={{
-        backgroundColor: 'pink',
         gridTemplateRows: 'auto auto 1fr auto',
         overflow: 'hidden',
         flexGrow: 1,
+        gap: 'var(--Spacing-3, 8px)',
+        padding: 'var(--Spacing-3, 12px) 0',
       }}
     >
       <RenderSelectionButton />
-      <Flex justify="between" mt="2">
+      <Flex justify="between">
         <Flex align="center" gap="2">
           {isFetching && (
             <>
