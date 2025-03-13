@@ -62,6 +62,7 @@ export const purchaseProduct = async ({
     }
 
     const responseData = await response.json()
+
     return { success: true, data: responseData }
   } catch (error) {
     throw new Error('Failed to complete the order request.')

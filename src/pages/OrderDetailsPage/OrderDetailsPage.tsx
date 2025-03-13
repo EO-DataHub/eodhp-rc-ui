@@ -125,7 +125,7 @@ export const OrderDetailsPage: React.FC = () => {
             onSelectionChange={handleSelectionsChange}
           />
         </Flex>
-        <TermsAndConditionsContainer />
+        <TermsAndConditionsContainer provider={getProviderType()} />
         <Flex className={styles.buttonsContainer} direction="row" gap="3">
           <Button className={styles.cancelButton}>Cancel</Button>
           <Button

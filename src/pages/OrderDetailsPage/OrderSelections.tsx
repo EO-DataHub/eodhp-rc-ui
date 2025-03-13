@@ -160,13 +160,12 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
       {/* Orbit - Airbus SAR only */}
       {provider === 'airbus_sar' && renderSelect('orbit', 'Orbit')}
 
-      {/* Resolution Variant - Airbus Optical only */}
-      {provider === 'airbus_optical' &&
+      {/* Resolution Variant - Airbus SAR only */}
+      {provider === 'airbus_sar' &&
         renderSelect('resolutionVariant', 'Resolution Variant', isResolutionVariantDisabled)}
 
-      {/* Projection - Airbus Optical only */}
-      {provider === 'airbus_optical' &&
-        renderSelect('projection', 'Projection', isProjectionDisabled)}
+      {/* Projection - Airbus SAR only */}
+      {provider === 'airbus_sar' && renderSelect('projection', 'Projection', isProjectionDisabled)}
     </Flex>
   )
 }
