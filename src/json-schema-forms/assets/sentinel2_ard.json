@@ -15,9 +15,9 @@
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
     "eo:cloud_cover": {
-      "default": 0.0,
+      "default": 100.0,
       "$ref": "schemas/eo/v1.1.0/form_schema.json#/properties/eo:cloud_cover",
-      "title": "Maximum cloud cover"
+      "title": "Cloud cover"
     }
   }
 }
