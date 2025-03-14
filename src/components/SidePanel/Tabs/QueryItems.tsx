@@ -73,11 +73,15 @@ const RenderSelectionButton = () => {
 const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+  const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
-  const toggleFilterPanel = () => {
-    console.log('toggleFilterPanel')
+  const toggleQueryFiltersPanel = () => {
+    dataFinderStore.send({
+      type: 'setSecondaryPanel',
+      panel: secondaryPanel === 'query-filters' ? undefined : 'query-filters',
+    })
   }
 
   const setPage = (newPage: number) => {
@@ -108,7 +112,7 @@ const QueryItemsTab = () => {
           {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
         </Flex>
         <Flex gap="2" align="center">
-          <IconButton size="2" color="gray" variant="outline" onClick={toggleFilterPanel}>
+          <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
             <FilterAltOutlined />
           </IconButton>
         </Flex>

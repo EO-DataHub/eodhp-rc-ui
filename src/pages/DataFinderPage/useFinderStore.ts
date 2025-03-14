@@ -11,7 +11,7 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'renderOptions' | undefined
+export type SecondaryPanel = 'query-filters' | undefined
 
 const dataFinderStore = createStore({
   // Initial context
@@ -27,8 +27,6 @@ const dataFinderStore = createStore({
     page: 0,
     pinnedItems: [] as Item[],
     hoveredItem: undefined as Item | undefined,
-    isFilterPanelOpen: false,
-    isVisualizationPanelOpen: false,
     collection: undefined as Collection | undefined,
     collectionRenderOptions: [] as StacRender[],
     collectionRender: undefined as StacRender | undefined,

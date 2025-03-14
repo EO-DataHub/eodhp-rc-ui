@@ -10,23 +10,22 @@ import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import Tabs from './Tabs/Tabs'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SidePanelProps {
   collection?: Collection
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
+
   const [selectedItemInfo, setSelectedItemInfo] = useState<Item | null>(null)
   const [isCollectionInfoPanelOpen, setIsCollectionInfoPanelOpen] = useState(false)
 
-  const toggleFilterPanel = () => {
-    setIsFilterOpen((prev) => !prev)
-  }
-
   const isLicenseProprietary = collection?.license === 'proprietary'
 
-  const sidePanelsOpen = !!selectedItemInfo || isFilterOpen || isCollectionInfoPanelOpen
+  const sidePanelsOpen = !!selectedItemInfo || isCollectionInfoPanelOpen
 
   const handleSelectCollectionInfo = () => {
     // Reset item info panel
@@ -53,7 +52,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
         <Tabs />
       </Flex>
 
-      <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
+      <FilterPanel
+        isOpen={secondaryPanel === 'query-filters'}
+        onClose={() => dataFinderStore.send({ type: 'setSecondaryPanel', panel: undefined })}
+      />
 
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={!!selectedItemInfo || isCollectionInfoPanelOpen}>
