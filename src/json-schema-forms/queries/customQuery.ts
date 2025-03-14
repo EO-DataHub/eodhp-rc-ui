@@ -29,6 +29,16 @@ const dispatch: QueryDispatch = {
       ],
     }
   },
+  clear_percent: (schema, obj) => {
+    // Used in Planet data
+    return {
+      op: schema.properties?.['clear_percent']?.operator ?? '>=', // eslint-disable-line @typescript-eslint/dot-notation
+      args: [
+        { property: 'clear_percent' },
+        obj['clear_percent'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
 }
 
 export default dispatch

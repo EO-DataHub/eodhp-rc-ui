@@ -1,0 +1,31 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/planet_skysatscene.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SkySat Scene",
+  "type": "object",
+  "required": ["collection_id"],
+  "properties": {
+    "collection_id": {
+      "const": "SkySatScene"
+    },
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "cloud_percent": {
+      "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:cloud_cover"
+    },
+    "view:sun_azimuth": {
+      "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:sun_azimuth"
+    },
+    "view:sun_elevation": {
+      "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:sun_elevation"
+    },
+    "view:incidence_angle": {
+      "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:incidence_angle",
+      "title": "View angle"
+    }
+  }
+}
