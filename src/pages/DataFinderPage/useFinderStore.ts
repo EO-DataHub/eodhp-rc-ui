@@ -54,6 +54,13 @@ const dataFinderStore = createStore({
         infoPanelItem: event.item,
       }
     },
+    closeItemInfoPanel: (context) => {
+      return {
+        ...context,
+        secondaryPanel: undefined,
+        infoPanelItem: undefined,
+      }
+    },
     pageChange: (context, event: { page: number }) => {
       return {
         ...context,

@@ -53,7 +53,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={isInfoPanelOpen}>
         {secondaryPanel === 'item-info' && infoPanelItem && (
-          <ItemInfoPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
+          <ItemInfoPanel
+            item={infoPanelItem}
+            onClose={() => dataFinderStore.send({ type: 'closeItemInfoPanel' })}
+          />
         )}
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel onClose={closeSecondaryPanel} />
