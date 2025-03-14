@@ -96,8 +96,8 @@ const QueryItemsTab = () => {
         gridTemplateRows: 'auto auto 1fr auto',
         overflow: 'hidden',
         flexGrow: 1,
-        gap: 'var(--Spacing-3, 8px)',
-        padding: 'var(--Spacing-3, 12px) 0',
+        gap: 'var(--space-3)',
+        paddingTop: 'var(--space-3)',
       }}
     >
       {!isLoading && <RenderSelectionButton />}
