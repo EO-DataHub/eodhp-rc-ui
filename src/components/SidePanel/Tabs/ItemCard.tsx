@@ -23,7 +23,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isPinnable = type === 'query-item'
 
   return (
-    <Card className={`${styles.card} ${isSelected ? styles.selected : ''}`}>
+    <Card
+      key={`${type}-${item.id}`}
+      className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+    >
       <Flex direction="column" p="2" justify="between" flexGrow="1">
         <Flex direction="column">
           <Flex justify="between">
