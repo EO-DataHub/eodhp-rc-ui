@@ -1,0 +1,41 @@
+.dialogContent {
+  max-width: 750px;
+  border-radius: 12px;
+}
+
+.dialogTitle {
+  padding-right: 16px;
+}
+
+.closeButton {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+}
+
+.thumbnail {
+  display: block;
+  object-fit: cover;
+  width: 210px;
+}
+
+.details {
+  width: 100%;
+}
+
+.keywords {
+  margin-bottom: 1em;
+
+  .keyword {
+    border-radius: 12px;
+  }
+}
+
+.link {
+  text-decoration: underline;
+}
+
+.button {
+  background-color: var(--Colors-Accent-Accent-9, #4c72ba);
+  cursor: pointer;
+}

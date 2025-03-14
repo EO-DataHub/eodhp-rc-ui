@@ -1,4 +1,4 @@
-import { Button, ButtonProps } from '@radix-ui/themes'
+import { Flex, Button, ButtonProps } from '@radix-ui/themes'
 import { useEffect, useState, ReactNode, ReactElement } from 'react'
 import BackIcon from '@material-design-icons/svg/filled/chevron_left.svg?react'
 import NextIcon from '@material-design-icons/svg/filled/chevron_right.svg?react'
@@ -149,7 +149,7 @@ export const PageSelector = ({
   }, [pageCount, currentPageIndex, onGoToPage])
 
   return (
-    <div data-testid="page-control">
+    <Flex justify="between" width="100%" data-testid="page-control">
       <SelectorButton onClick={onPreviousClick} disabled={previousDisabled}>
         <BackIcon /> Back
       </SelectorButton>
@@ -157,6 +157,6 @@ export const PageSelector = ({
       <SelectorButton onClick={onNextClick} disabled={nextDisabled}>
         Next <NextIcon />
       </SelectorButton>
-    </div>
+    </Flex>
   )
 }

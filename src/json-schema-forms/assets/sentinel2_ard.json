@@ -1,0 +1,23 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/sentinel2_ard.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sentinel 2 ARD",
+  "type": "object",
+  "required": ["collection_id"],
+  "properties": {
+    "collection_id": {
+      "const": "sentinel2_ard"
+    },
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "eo:cloud_cover": {
+      "default": 100.0,
+      "$ref": "schemas/eo/v1.1.0/form_schema.json#/properties/eo:cloud_cover",
+      "title": "Cloud cover"
+    }
+  }
+}

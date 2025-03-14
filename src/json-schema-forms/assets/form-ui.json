@@ -1,0 +1,23 @@
+{
+  "ui:globalOptions": {
+    "label": false
+  },
+  "collection_id": {
+    "ui:widget": "hidden"
+  },
+  "incidence_angle": {
+    "ui:widget": "RangeWidget"
+  },
+  "view:incidence_angle": {
+    "ui:widget": "RangeWidget"
+  },
+  "view:sun_elevation": {
+    "ui:widget": "RangeWidget"
+  },
+  "eo:cloud_cover": {
+    "ui:widget": "RangeWidget"
+  },
+  "eo:snow_cover": {
+    "ui:widget": "RangeWidget"
+  }
+}

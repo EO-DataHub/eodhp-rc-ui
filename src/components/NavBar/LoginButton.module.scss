@@ -1,0 +1,57 @@
+.loginButton {
+  border-radius: var(--Radius-3-max, 6px);
+  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  border: none;
+  color: white;
+  padding: 0.65em 1em;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logoutButton {
+  cursor: pointer;
+}
+
+.logoutButton:hover {
+  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  color: white;
+}
+
+.logoutText {
+  margin-right: 1em;
+}
+
+.errorText {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  align-self: center;
+  max-width: 450px;
+}
+
+.userMenuButton {
+  background: #4c72ba;
+  color: white;
+  padding: 0.8em;
+  border-radius: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dropdownContent {
+  background: var(--Colors-Default-white, #fff);
+  margin-top: 0.5em;
+}
+
+.dropdownContent:hover {
+  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  color: white;
+}

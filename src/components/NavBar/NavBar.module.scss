@@ -1,9 +1,47 @@
 .container {
   background-color: var(--blue-9);
   width: 100%;
+  height: var(--nav-bar-height);
+  display: flex;
 
   .logo {
-    width: 180px;
-    height: auto;
+    height: 56px;
   }
+
+  .navLinks {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.link {
+  color: var(--white);
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+
+  :hover {
+    border-radius: var(--Radius-3-max, 6px);
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  &.active {
+    border-radius: var(--Radius-3-max, 6px);
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+
+  :hover {
+    pointer-events: none;
+  }
+}
+
+.text {
+  pointer-events: none;
 }

@@ -1,43 +1,75 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Collection } from '@/types'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
+import { Flex, Text, Inset, IconButton } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
-import PoundSterlingSymbolIcon from '../../../public/pound-sterling-symbol.svg?react'
+import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
+import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
+import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
+import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface CollectionCardProps {
   collection: Collection
 }
 
 export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) => {
+  const [isDetailsCardOpen, setIsDetailsCardOpen] = useState(false)
+
+  const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
+
+  const thumbnailUrl = collection.assets?.thumbnail?.href
+    ? collection.assets.thumbnail.href
+    : DefaultThumbnail
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultThumbnail
+  }
+
+  const isLicenseProprietary = collection?.license === 'proprietary'
+
+  const handleOpenDetailsCard = () => {
+    setIsDetailsCardOpen(true)
+  }
+
+  const handlePurchase = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    // TODO
+  }
+
   return (
-    <Card size="2" className={styles.card}>
-      <Inset clip="padding-box" side="top" pb="current">
-        <img
-          src="../../../public/default-thumbnail.jpg"
-          style={{
-            display: 'block',
-            objectFit: 'cover',
-            width: '100%',
-            height: 140,
-            backgroundColor: 'var(--gray-5)',
-          }}
-        />
-      </Inset>
-      <Flex justify="end" mt="-6" gap="2">
-        <IconButton radius="full" variant="solid" className={styles.button}>
-          <PoundSterlingSymbolIcon width="18" height="18" />
-        </IconButton>
-        <IconButton radius="full" variant="solid" className={styles.button}>
-          <InfoCircledIcon width="25" height="25" />
-        </IconButton>
+    <>
+      <Flex className={styles.card} direction="column" onClick={handleOpenDetailsCard}>
+        <Inset clip="padding-box" side="top" pb="current">
+          <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
+        </Inset>
+        <Flex direction="column" p="4" justify="center" flexGrow="1" position="relative">
+          <Flex justify="end" gap="2" position="absolute" right="16px" top="-12px">
+            {isLicenseProprietary ? (
+              <IconButton
+                radius="full"
+                variant="solid"
+                size="1"
+                className={styles.button}
+                onClick={handlePurchase}
+              >
+                <PoundSterlingSymbolIcon width="12" height="12" />
+              </IconButton>
+            ) : null}
+          </Flex>
+          <Text as="p" size="3" weight="medium" className={styles.text}>
+            {collection.title}
+          </Text>
+          <Text as="p" size="2" mt="2" className={styles.text}>
+            {getFormattedDateRange(dateInterval)}
+          </Text>
+        </Flex>
       </Flex>
-      <Text as="p" size="3" className={styles.text}>
-        {collection.title}
-      </Text>
-      <Text as="p" size="3" className={styles.text}>
-        {collection.extent.temporal.interval}
-      </Text>
-    </Card>
+
+      <CollectionDetailsCard
+        collection={collection}
+        isOpen={isDetailsCardOpen}
+        onClose={() => setIsDetailsCardOpen(false)}
+      />
+    </>
   )
 }

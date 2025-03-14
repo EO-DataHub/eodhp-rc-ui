@@ -1,0 +1,38 @@
+.card {
+  background-color: var(--app-background-dark-1);
+
+  .costButton {
+    background-color: var(--app-background-dark-1);
+    color: var(--blue-contrast);
+    border: 1.5px solid var(--blue-contrast);
+    width: 19px;
+    height: 19px;
+  }
+
+  .infoButton {
+    cursor: pointer;
+    background-color: var(--app-background-dark-1);
+    color: var(--blue-contrast);
+    width: 20px;
+    height: 20px;
+  }
+
+  .text {
+    color: var(--blue-contrast);
+  }
+
+  .link {
+    color: var(--blue-contrast);
+    text-decoration: none;
+  
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}

@@ -1,1 +1,5 @@
-yarn prettier . --write
+#!/bin/sh
+
+. "$(dirname "$0")/common.sh"
+
+yarn lint-staged

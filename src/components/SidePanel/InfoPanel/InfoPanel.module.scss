@@ -1,0 +1,45 @@
+.InfoPanel {
+  width: calc(100vw - 420px);
+  opacity: 0;
+  background-color: #fff;
+  border-left: 1px solid #cdced6;
+  color: #444;
+  transition: all 0.2s ease-in-out;
+  transform: translateX(-100%);
+  position: absolute;
+  left: 100%;
+  top: 0px;
+  bottom: 0px;
+  right: 0px;
+  box-sizing: border-box;
+  overflow: auto;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  &--open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+
+  .subtitle {
+    color: var(--app-background-dark-2);
+  }
+}
+
+.linkContainer {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}

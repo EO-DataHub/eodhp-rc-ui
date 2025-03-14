@@ -1,124 +1,167 @@
 import React from 'react'
 import { Flex, Select, Box } from '@radix-ui/themes'
 import styles from './QuickFilterMenu.module.scss'
+import {
+  dataCategories,
+  keywords,
+  licenses,
+  locations,
+  providers,
+  resolutions,
+  timePeriods,
+} from '@/constants/collectionCategorizations'
+import type { QuickFilter } from '@/types'
 
-export const QuickFilterMenu: React.FC = () => {
+interface QuickFilterMenuProps {
+  filters: QuickFilter
+  onFilterChange: (value: string, forKey: keyof QuickFilter) => void
+}
+
+export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFilterChange }) => {
   return (
-    <Flex p="5" gap="2" align="center" justify="between" className={styles.container}>
-      <Box flexGrow="1">
-        <Select.Root size="3">
+    <Flex
+      p="5"
+      gap="2"
+      align="center"
+      justify="between"
+      className={styles.container}
+      overflow="auto"
+    >
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.dataCategory}
+          value={filters.dataCategory}
+          onValueChange={(value) => onFilterChange(value, 'dataCategory')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Data Category" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {dataCategories.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.resolution}
+          value={filters.resolution}
+          onValueChange={(value) => onFilterChange(value, 'resolution')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Resolution" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {resolutions.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.provider}
+          value={filters.provider}
+          onValueChange={(value) => onFilterChange(value, 'provider')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Provider" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {providers.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.location}
+          value={filters.location}
+          onValueChange={(value) => onFilterChange(value, 'location')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Location" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {locations.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.keyword}
+          value={filters.keyword}
+          onValueChange={(value) => onFilterChange(value, 'keyword')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Keywords" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {keywords.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.timePeriod}
+          value={filters.timePeriod}
+          onValueChange={(value) => onFilterChange(value, 'timePeriod')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="Time Period" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {timePeriods.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1">
-        <Select.Root size="3">
+      <Box flexGrow="1" width="160px" flexShrink="0">
+        <Select.Root
+          size="3"
+          key={filters.license}
+          value={filters.license}
+          onValueChange={(value) => onFilterChange(value, 'license')}
+        >
           <Select.Trigger style={{ width: '100%' }} placeholder="License" />
-          <Select.Content style={{ marginTop: '45px' }}>
+          <Select.Content position="popper">
             <Select.Group>
-              <Select.Item value="airbus">Airbus</Select.Item>
-              <Select.Item value="centre_for_environmental_data">
-                Centre for Environmental Data
-              </Select.Item>
-              <Select.Item value="european_space_agency">European Space Agency (ESA)</Select.Item>
-              <Select.Item value="met_office">Met Office</Select.Item>
-              <Select.Item value="planet">Planet</Select.Item>
+              {licenses.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
             </Select.Group>
           </Select.Content>
         </Select.Root>

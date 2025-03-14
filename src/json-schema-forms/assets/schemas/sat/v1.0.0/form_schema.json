@@ -1,0 +1,39 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/sat/v1.0.0/form_schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SAT v1.0.0 Form Schema",
+  "type": "object",
+  "properties": {
+    "sat:platform_international_designator": {
+      "$comment": "Items must be overridden in the implementing schema to cater for specific platforms.",
+      "type": "string",
+      "default": "%",
+      "title": "International Designator",
+      "anyOf": [
+        {
+          "title": "Any platform",
+          "enum": ["%"]
+        }
+      ]
+    },
+    "sat:orbit_state": {
+      "type": "string",
+      "title": "Orbit State",
+      "default": "%",
+      "anyOf": [
+        {
+          "title": "Any",
+          "enum": ["%"]
+        },
+        {
+          "title": "Ascending",
+          "enum": ["ascending"]
+        },
+        {
+          "title": "Descending",
+          "enum": ["descending"]
+        }
+      ]
+    }
+  }
+}

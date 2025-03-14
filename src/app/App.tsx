@@ -4,7 +4,7 @@ import '@radix-ui/themes/styles.css'
 import 'react-toastify/dist/ReactToastify.css'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
-import { AuthenticationContextProvider } from '../context/AuthenticationContext'
+import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider'
 import { router } from './router'
 
 function App() {

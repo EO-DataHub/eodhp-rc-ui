@@ -1,0 +1,21 @@
+.listContainer {
+  flex: 1;
+  overflow-y: auto;
+
+  /* hide scrollbar for Chrome or extensions */
+  &::-webkit-scrollbar {
+    width: 0px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* hide scrollbar for Firefox */
+  scrollbar-width: none;
+
+  /* hide scrollbar for Internet Explorer/Edge */
+  -ms-overflow-styl ul {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
+}

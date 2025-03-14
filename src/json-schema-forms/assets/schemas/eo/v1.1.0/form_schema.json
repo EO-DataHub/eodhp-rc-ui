@@ -1,0 +1,23 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/eo/v1.1.0/form_schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "eo:cloud_cover": {
+      "type": "number",
+      "title": "Cloud cover",
+      "default": 0.0,
+      "minimum": 0.0,
+      "maximum": 100.0,
+      "operator": "<="
+    },
+    "eo:snow_cover": {
+      "type": "number",
+      "title": "Snow cover",
+      "default": 0.0,
+      "minimum": 0.0,
+      "maximum": 100.0,
+      "operator": "<="
+    }
+  }
+}
