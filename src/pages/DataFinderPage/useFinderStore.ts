@@ -11,7 +11,7 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'query-filters' | 'item-info' | undefined
+export type SecondaryPanel = 'query-filters' | 'item-info' | 'collection-info' | undefined
 
 const dataFinderStore = createStore({
   // Initial context

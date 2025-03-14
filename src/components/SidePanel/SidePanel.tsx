@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Flex } from '@radix-ui/themes'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
@@ -20,21 +20,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
 
-  const [isCollectionInfoPanelOpen, setIsCollectionInfoPanelOpen] = useState(false)
-
   const isLicenseProprietary = collection?.license === 'proprietary'
-
-  const sidePanelsOpen = isCollectionInfoPanelOpen || !!secondaryPanel
-
-  const handleSelectCollectionInfo = () => {
-    // Reset item info panel
-    setIsCollectionInfoPanelOpen(true)
-  }
 
   const closeSecondaryPanel = () =>
     dataFinderStore.send({ type: 'setSecondaryPanel', panel: undefined })
 
-  const isInfoPanelOpen = secondaryPanel === 'item-info'
+  const isInfoPanelOpen = secondaryPanel === 'item-info' || secondaryPanel === 'collection-info'
 
   return (
     <Flex height="var(--content-height)" position="relative" width="100%">
@@ -45,11 +36,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
         p="4"
         gap="2"
         style={{
-          boxShadow: sidePanelsOpen ? 'none' : undefined,
+          boxShadow: secondaryPanel ? 'none' : undefined,
         }}
       >
         <SmallCollectionCard
-          onSelectCollectionInfo={handleSelectCollectionInfo}
+          onSelectCollectionInfo={() =>
+            dataFinderStore.send({ type: 'setSecondaryPanel', panel: 'collection-info' })
+          }
           isLicenseProprietary={isLicenseProprietary}
         />
         <Tabs />
@@ -62,8 +55,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
         {secondaryPanel === 'item-info' && infoPanelItem && (
           <ItemInfoPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
         )}
-        {isCollectionInfoPanelOpen && (
-          <CollectionInfoPanel onClose={() => setIsCollectionInfoPanelOpen(false)} />
+        {secondaryPanel === 'collection-info' && (
+          <CollectionInfoPanel onClose={closeSecondaryPanel} />
         )}
       </InfoPanelWrapper>
     </Flex>
