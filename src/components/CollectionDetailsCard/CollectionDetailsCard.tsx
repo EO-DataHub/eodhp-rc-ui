@@ -1,7 +1,7 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Collection } from '@/types'
-import { Dialog, Button, Flex, Text, Badge, Link } from '@radix-ui/themes'
+import { Dialog, Button, Flex, Text, Badge } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
@@ -17,6 +17,8 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   isOpen,
   onClose,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null)
+
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
   const thumbnailUrl = collection.assets?.thumbnail?.href
@@ -38,9 +40,18 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <Dialog.Content maxWidth="750px" className={styles.dialogContent}>
+      <Dialog.Content
+        maxWidth="750px"
+        className={styles.dialogContent}
+        ref={containerRef}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          containerRef.current?.setAttribute('tabindex', '-1')
+          containerRef.current?.focus()
+        }}
+      >
         <Dialog.Close>
-          <Button variant="ghost" aria-label="Close" className={styles.closeButton}>
+          <Button variant="ghost" aria-label="Close" className={styles.closeButton} tabIndex={0}>
             <Cross1Icon />
           </Button>
         </Dialog.Close>
@@ -73,15 +84,9 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
               ))}
             </Flex>
             <Flex justify="end" mt="4">
-              <Link
-                size="2"
-                href=""
-                onClick={handleOpenCollection}
-                aria-label={`Open ${collection.title} collection`}
-                className={styles.link}
-              >
+              <Button onClick={handleOpenCollection} className={styles.button}>
                 Open Collection
-              </Link>
+              </Button>
             </Flex>
           </Flex>
         </Flex>
