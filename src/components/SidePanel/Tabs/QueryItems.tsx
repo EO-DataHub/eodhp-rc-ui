@@ -139,7 +139,9 @@ const QueryItemsTab = () => {
                 isThumbnailSelected={false}
                 isChecked={false}
                 onSelect={() => console.log('onSelect')}
-                onSelectItemInfo={() => console.log('onSelectItemInfo')}
+                onSelectItemInfo={(item) =>
+                  dataFinderStore.send({ type: 'openItemInfoPanel', item })
+                }
                 onThumbnailSelect={() => console.log('onThumbnailSelect')}
                 onCheckboxChange={() => console.log('onCheckboxChange')}
                 onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}

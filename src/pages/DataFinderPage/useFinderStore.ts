@@ -11,13 +11,14 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'query-filters' | undefined
+export type SecondaryPanel = 'query-filters' | 'item-info' | undefined
 
 const dataFinderStore = createStore({
   // Initial context
   context: {
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined as SecondaryPanel,
+    infoPanelItem: undefined as Item | undefined,
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -44,6 +45,13 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: event.panel,
+      }
+    },
+    openItemInfoPanel: (context, event: { item: Item }): typeof context => {
+      return {
+        ...context,
+        secondaryPanel: 'item-info',
+        infoPanelItem: event.item,
       }
     },
     pageChange: (context, event: { page: number }) => {
