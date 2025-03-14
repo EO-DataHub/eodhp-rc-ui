@@ -74,6 +74,8 @@ const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
+  const infoPanelItem = useSelector(dataFinderStore, ({ context }) => context.infoPanelItem)
+  const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
@@ -98,7 +100,7 @@ const QueryItemsTab = () => {
         padding: 'var(--Spacing-3, 12px) 0',
       }}
     >
-      {isLoading && <RenderSelectionButton />}
+      {!isLoading && <RenderSelectionButton />}
       <Flex justify="between">
         <Flex align="center" gap="2">
           {isFetching && (
@@ -128,22 +130,20 @@ const QueryItemsTab = () => {
                 key={`${item.id}-${index}`}
                 collectionId={collection?.id ?? null}
                 item={item}
-                // isSelected={selectedItem?.id === item.id}
+                isSelected={infoPanelItem?.id === item.id}
                 // isThumbnailSelected={selectedThumbnail?.id === item.id}
-                // isChecked={checkedItems.some((checked) => checked.id === item.id)}
+                isChecked={pinnedItems.some((checked) => checked.id === item.id)}
                 // onSelect={handleSelectItem}
-                // onSelectItemInfo={handleSelectItemInfo}
                 // onThumbnailSelect={handleThumbnailSelect}
-                // onCheckboxChange={handleCheckboxItemChange}
-                isSelected={false}
+                onCheckboxChange={(i, isChecked) =>
+                  dataFinderStore.send({ type: 'pinnedItemChange', item: i, isChecked })
+                }
                 isThumbnailSelected={false}
-                isChecked={false}
                 onSelect={() => console.log('onSelect')}
                 onSelectItemInfo={(item) =>
                   dataFinderStore.send({ type: 'openItemInfoPanel', item })
                 }
                 onThumbnailSelect={() => console.log('onThumbnailSelect')}
-                onCheckboxChange={() => console.log('onCheckboxChange')}
                 onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
                 onMouseLeave={() =>
                   dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })
