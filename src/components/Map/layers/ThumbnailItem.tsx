@@ -80,13 +80,14 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
     [0, 0],
   )
 
-  // Calculate angles and sort by angle in counter-clockwise order
+  // Calculate angles and sort by angle in clockwise order
+  // starting from the top left corner
   const sortedCoordinates = parallelogram
     .map((coord) => ({
       coord,
       angle: Math.atan2(coord[1] - centroid[1], coord[0] - centroid[0]),
     }))
-    .sort((a, b) => b.angle - a.angle) // Sort in descending order for counter-clockwise
+    .sort((a, b) => b.angle - a.angle) // Sort in descending order for clockwise
     .map((item) => item.coord)
 
   return sortedCoordinates as Coordinates
