@@ -53,6 +53,7 @@ export const DATASETS = {
   SENTINEL_1: 'sentinel1',
   AIRBUS_SAR: 'airbus_sar_data',
   AIRBUS_PHR: 'airbus_phr_data',
+  AIRBUS_SPOT: 'airbus_spot_data',
   LAND_COVER: 'land_cover',
   EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
   EOCIS_SST: 'eocis-sst-cdrv3',
@@ -373,6 +374,9 @@ export const collectionRenderingConfig: Record<string, CollectionConfig> = {
     },
   },
   [DATASETS.AIRBUS_PHR]: {
+    rendererType: 'thumbnail',
+  },
+  [DATASETS.AIRBUS_SPOT]: {
     rendererType: 'thumbnail',
   },
 }
