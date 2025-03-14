@@ -135,22 +135,26 @@ const dataFinderStore = createStore({
         drawMode: nextDrawMode,
       }
     },
-    pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
-      const { item, isChecked } = event
-      const { pinnedItems, collectionRender } = context
+    addPinnedItem: (
+      context,
+      event: { item: Item; collectionRender: StacRender },
+    ): typeof context => {
+      const isAlreadyPinned = context.pinnedItems.some(
+        (pinnedItem) =>
+          pinnedItem.id === event.item.id && pinnedItem.render?.id === event.collectionRender.id,
+      )
 
-      if (isChecked) {
-        item.tilesUrl = resolveTilesUrl(item, collectionRender)
+      if (isAlreadyPinned) return context
 
-        return {
-          ...context,
-          pinnedItems: [...pinnedItems, item],
-        }
-      } else {
-        return {
-          ...context,
-          pinnedItems: pinnedItems.filter((checked) => checked.id !== item.id),
-        }
+      const pinnedItem = {
+        ...event.item,
+        tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        render: event.collectionRender,
+      }
+
+      return {
+        ...context,
+        pinnedItems: [...context.pinnedItems, pinnedItem],
       }
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {

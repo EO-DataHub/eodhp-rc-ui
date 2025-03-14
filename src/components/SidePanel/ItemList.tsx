@@ -5,7 +5,7 @@ import styles from './ItemList.module.scss'
 
 interface ItemListProps {
   items: Item[]
-  error: boolean
+  error?: boolean
   renderItem: (item: Item, index: number) => ReactNode
 }
 

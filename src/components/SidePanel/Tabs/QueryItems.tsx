@@ -1,5 +1,4 @@
 import { Flex, Grid, IconButton, Select, Text } from '@radix-ui/themes'
-import styles from './QueryItems.module.scss'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
@@ -7,13 +6,11 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import useItemsQuery, { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import ItemList from '../ItemList'
-import { ItemCard } from '@/components/ItemCard/ItemCard'
-
-/* eslint-disable no-console */
+import ItemCard from './ItemCard'
 
 const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
   return (
-    <Flex justify="center" className={styles.paginationContainer}>
+    <Flex justify="center" mt="auto">
       {children}
     </Flex>
   )
@@ -72,10 +69,7 @@ const RenderSelectionButton = () => {
 
 const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
-  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
-  const infoPanelItem = useSelector(dataFinderStore, ({ context }) => context.infoPanelItem)
-  const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
@@ -125,32 +119,7 @@ const QueryItemsTab = () => {
           <ItemList
             items={pageItems}
             error={!!error}
-            renderItem={(item, index) => (
-              <ItemCard
-                key={`${item.id}-${index}`}
-                collectionId={collection?.id ?? null}
-                item={item}
-                isSelected={infoPanelItem?.id === item.id}
-                // isThumbnailSelected={selectedThumbnail?.id === item.id}
-                isChecked={pinnedItems.some((checked) => checked.id === item.id)}
-                // onSelect={handleSelectItem}
-                // onThumbnailSelect={handleThumbnailSelect}
-                onCheckboxChange={(i, isChecked) =>
-                  dataFinderStore.send({ type: 'pinnedItemChange', item: i, isChecked })
-                }
-                isThumbnailSelected={false}
-                onSelect={() => console.log('onSelect')}
-                onSelectItemInfo={(item) =>
-                  dataFinderStore.send({ type: 'openItemInfoPanel', item })
-                }
-                onThumbnailSelect={() => console.log('onThumbnailSelect')}
-                onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
-                onMouseLeave={() =>
-                  dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })
-                }
-                isLicenseProprietary={collection?.license === 'proprietary'}
-              />
-            )}
+            renderItem={(item) => <ItemCard item={item} type="query-item" />}
           />
         )}
       </Flex>
