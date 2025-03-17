@@ -19,6 +19,7 @@ const PinnedItemsTab = () => {
     >
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
+          cardType="pinned-item"
           items={pinnedItems}
           renderItem={(item) => <ItemCard item={item} type="pinned-item" />}
         />

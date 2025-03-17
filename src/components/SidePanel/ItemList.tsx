@@ -1,41 +1,36 @@
-import { Item } from '@/types'
+import { Item, ItemCardType } from '@/types'
 import { ReactNode } from 'react'
 import { Callout } from '../Callout/Callout'
 import styles from './ItemList.module.scss'
 
 interface ItemListProps {
   items: Item[]
+  cardType: ItemCardType
   error?: boolean
   renderItem: (item: Item, index: number) => ReactNode
 }
 
-const ItemListContent = ({ items, error, renderItem }: ItemListProps) => {
-  if (error) {
-    return (
-      <Callout type="error" message="Unable to load data. Please refresh the page and try again." />
-    )
-  }
-
-  if (items.length === 0) {
-    return (
-      <Callout
-        type="info"
-        message="No results found. Modify your filters or search criteria and try again"
-      />
-    )
-  }
-
-  return (
-    <>
-      <ul>{items.map((item, index) => renderItem(item, index))}</ul>
-    </>
-  )
+const messages = {
+  'query-item': {
+    error: 'Unable to load data. Please refresh the page and try again.',
+    empty: 'No results found. Modify your filters or search criteria and try again.',
+  },
+  'pinned-item': {
+    error: 'Unable to load pinned items. Please refresh the page and try again.',
+    empty: 'No items pinned.',
+  },
 }
 
-const ItemList = ({ items, error, renderItem }: ItemListProps) => {
+const ItemList = ({ items, cardType, error, renderItem }: ItemListProps) => {
   return (
     <div className={styles.listContainer}>
-      <ItemListContent items={items} error={error} renderItem={renderItem} />
+      {error ? (
+        <Callout type="error" message={messages[cardType].error} />
+      ) : items.length === 0 ? (
+        <Callout type="info" message={messages[cardType].empty} />
+      ) : (
+        <ul>{items.map(renderItem)}</ul>
+      )}
     </div>
   )
 }

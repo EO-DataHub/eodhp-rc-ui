@@ -3,11 +3,9 @@ import { Flex, Text, Card, IconButton, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { Item } from '@/types'
+import { Item, ItemCardType } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
-
-type ItemCardType = 'query-item' | 'pinned-item'
 
 interface ItemCardProps {
   item: Item

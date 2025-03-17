@@ -1,4 +1,4 @@
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons'
+import { ExclamationTriangleIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import { Callout as RadixCallout } from '@radix-ui/themes'
 
 type CalloutType = 'error' | 'warning' | 'info'
@@ -21,7 +21,7 @@ const alertStyles: Record<CalloutType, CalloutStyleConfig> = {
   },
   info: {
     color: 'blue',
-    icon: <ExclamationTriangleIcon />,
+    icon: <InfoCircledIcon />,
   },
 }
 

@@ -117,6 +117,7 @@ const QueryItemsTab = () => {
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         {!isLoading && (
           <ItemList
+            cardType="query-item"
             items={pageItems}
             error={!!error}
             renderItem={(item) => <ItemCard item={item} type="query-item" />}
