@@ -42,6 +42,11 @@ export const DataFinderPage: React.FC = () => {
     }
   }, [collectionId, navigate, collection, queries])
 
+  // Remove AOI from local storage on mount
+  useEffect(() => {
+    localStorage.removeItem('aoi')
+  }, [])
+
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
