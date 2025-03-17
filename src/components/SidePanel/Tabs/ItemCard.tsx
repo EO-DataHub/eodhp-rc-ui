@@ -1,11 +1,15 @@
 import { InfoCircledIcon, DrawingPinIcon, Cross2Icon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Tooltip } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Tooltip, Button } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { Item, ItemCardType } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
+import { useContext } from 'react'
+import { getCatalog } from '@/library/catalogUtils'
+import { useNavigate } from 'react-router-dom'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface ItemCardProps {
   item: Item
@@ -13,9 +17,18 @@ interface ItemCardProps {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
+  const navigate = useNavigate()
+  const { isAuthenticated, login } = useContext(AuthenticationContext)
+
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
+
   const isSelected = infoPanelItem?.id === item.id
 
+  const isLicenseProprietary = useSelector(
+    dataFinderStore,
+    (state) => state.context.collection?.license === 'proprietary',
+  )
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
   const isPinnedCard = type === 'pinned-item'
@@ -30,6 +43,28 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.onerror = null
     e.currentTarget.src = DefaultItemThumbnail
+  }
+
+  const handlePurchase = async () => {
+    // in the future we will also check if the user has purchase credits available
+    const aoi = dataFinderStore.getSnapshot().context.aoi
+
+    if (aoi) {
+      dataFinderStore.send({ type: 'storeAoi', aoi })
+    }
+
+    if (!collection) return
+
+    if (getCatalog(collection) === 'planet' && !aoi) {
+      alert('Please select coordinates before purchasing.')
+      return
+    }
+
+    if (isAuthenticated) {
+      navigate(`/order-details/${item.id}`)
+    } else {
+      await login()
+    }
   }
 
   return (
@@ -109,6 +144,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 </div>
               </IconButton>
             </Tooltip>
+            {isLicenseProprietary && (
+              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+                Purchase
+              </Button>
+            )}
           </Flex>
         </Flex>
       </Flex>
