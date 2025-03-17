@@ -1,10 +1,11 @@
-import { InfoCircledIcon, PlusIcon } from '@radix-ui/react-icons'
+import { InfoCircledIcon, DrawingPinIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { Item } from '@/types'
 import { useSelector } from '@xstate/store/react'
+import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 
 type ItemCardType = 'query-item' | 'pinned-item'
 
@@ -19,14 +20,50 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
-  const isPinned = type === 'pinned-item'
-  const isPinnable = type === 'query-item'
+  const isPinnedCard = type === 'pinned-item'
+  const isQueryCard = type === 'query-item'
+
+  const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
+    state.context.pinnedItems.some(
+      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === collectionRender,
+    ),
+  )
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultItemThumbnail
+  }
 
   return (
     <Card
       key={`${type}-${item.id}`}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
     >
+      {isQueryCard && (
+        <Flex
+          align="center"
+          justify="center"
+          flexShrink="0"
+          p="4"
+          className={styles.thumbnailContainer}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!collectionRender) return
+            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender })
+          }}
+        >
+          <img
+            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+            className={styles.thumbnail}
+            onError={handleImageError}
+          />
+          <div className={styles.overlay}>
+            <Tooltip content={isAlreadyPinned ? 'Already Pinned' : 'Pin Item'}>
+              <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
+            </Tooltip>
+          </div>
+        </Flex>
+      )}
       <Flex direction="column" p="2" justify="between" flexGrow="1">
         <Flex direction="column">
           <Flex justify="between">
@@ -38,8 +75,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {convertDateToUTCString(new Date(item.properties.datetime))}
           </Text>
         </Flex>
-        <Flex justify={isPinned ? 'between' : 'end'} gap="2" align="center">
-          {isPinned && item.render && (
+        <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
+          {isPinnedCard && item.render && (
             <Flex>
               <Text size="1" className={styles.text}>
                 {item.render.id}
@@ -47,20 +84,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="2" align="center">
-            {isPinnable && collectionRender && (
-              <Tooltip content="Add item to pinned items with current visualization settings">
-                <IconButton
-                  radius="full"
-                  variant="ghost"
-                  className={styles.button}
-                  onClick={() =>
-                    dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender })
-                  }
-                >
-                  <PlusIcon />
-                </IconButton>
-              </Tooltip>
-            )}
             <Tooltip content="More Info">
               <IconButton
                 radius="full"
