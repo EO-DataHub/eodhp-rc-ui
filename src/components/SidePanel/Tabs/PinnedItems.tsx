@@ -21,7 +21,9 @@ const PinnedItemsTab = () => {
         <ItemList
           cardType="pinned-item"
           items={pinnedItems}
-          renderItem={(item) => <ItemCard item={item} type="pinned-item" />}
+          renderItem={(item) => (
+            <ItemCard key={`pinned-item-${item.id}`} item={item} type="pinned-item" />
+          )}
         />
       </Flex>
     </Grid>

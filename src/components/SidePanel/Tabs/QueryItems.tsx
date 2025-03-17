@@ -120,7 +120,9 @@ const QueryItemsTab = () => {
             cardType="query-item"
             items={pageItems}
             error={!!error}
-            renderItem={(item) => <ItemCard item={item} type="query-item" />}
+            renderItem={(item) => (
+              <ItemCard key={`query-item-${item.id}`} item={item} type="query-item" />
+            )}
           />
         )}
       </Flex>
