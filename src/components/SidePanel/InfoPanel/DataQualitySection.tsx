@@ -1,4 +1,5 @@
-import { Flex } from '@radix-ui/themes'
+import { Flex, Heading, Link } from '@radix-ui/themes'
+import infoPanelStyles from './InfoPanel.module.scss'
 import styles from './DataQualitySection.module.scss'
 import React, { PropsWithChildren } from 'react'
 
@@ -271,72 +272,106 @@ export const DataQualitySection = () => {
   const metricCount = Object.keys(metricLabelMapping).length
 
   return (
-    <Flex gap="8">
-      <Flex
-        direction="column"
-        width="500px"
-        overflowX="auto"
-        style={{
-          border: '1px solid #00002F26',
-          alignSelf: 'self-start',
-          borderRadius: 8,
-        }}
-      >
-        <Cell className={styles.headerCell}>{labelMapping['documentation review']}</Cell>
-        <Flex flexGrow="1">
-          {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
-            <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey}>
-              <Cell
-                className={styles.headerCell}
-                style={{
-                  height: 100,
-                }}
-              >
-                {labelMapping[categoryKey] || categoryKey}
-              </Cell>
-              {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => {
-                return (
+    <Flex direction="column" gap="8">
+      <Flex direction="column">
+        <Heading as="h3" size="4" mb="2" weight="medium">
+          Documentation Quality Assurance Report
+        </Heading>
+        <Flex gap="6">
+          <Flex
+            direction="column"
+            width="500px"
+            flexShrink="0"
+            overflowX="auto"
+            style={{
+              border: '1px solid #00002F26',
+              alignSelf: 'self-start',
+              borderRadius: 8,
+            }}
+          >
+            <Cell className={styles.headerCell}>{labelMapping['documentation review']}</Cell>
+            <Flex flexGrow="1">
+              {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
+                <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey}>
                   <Cell
-                    key={subKey}
-                    className={styles.bodyCell}
+                    className={styles.headerCell}
                     style={{
-                      backgroundColor:
-                        metricColorMapping[data.value as keyof typeof metricColorMapping],
+                      height: 100,
                     }}
-                    hasBorderBottom={subKeyIndex < rowCount - 1}
                   >
-                    {labelMapping[subKey] || subKey}
+                    {labelMapping[categoryKey] || categoryKey}
                   </Cell>
-                )
-              })}
+                  {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => {
+                    return (
+                      <Cell
+                        key={subKey}
+                        className={styles.bodyCell}
+                        style={{
+                          backgroundColor:
+                            metricColorMapping[data.value as keyof typeof metricColorMapping],
+                        }}
+                        hasBorderBottom={subKeyIndex < rowCount - 1}
+                      >
+                        {labelMapping[subKey] || subKey}
+                      </Cell>
+                    )
+                  })}
+                </Flex>
+              ))}
             </Flex>
-          ))}
+          </Flex>
+          <Flex
+            direction="column"
+            minWidth="185px"
+            overflowX="auto"
+            style={{
+              border: '1px solid #00002F26',
+              alignSelf: 'self-start',
+              borderRadius: 8,
+            }}
+          >
+            <Cell className={styles.headerCell}>Key</Cell>
+            {Object.entries(metricLabelMapping).map(([key, label], index) => (
+              <Cell
+                key={key}
+                style={{
+                  height: 48,
+                  backgroundColor: metricColorMapping[key as keyof typeof metricColorMapping],
+                }}
+                hasBorderBottom={index < metricCount - 1}
+              >
+                {label}
+              </Cell>
+            ))}
+          </Flex>
         </Flex>
       </Flex>
 
-      <Flex
-        direction="column"
-        minWidth="185px"
-        overflowX="auto"
-        style={{
-          border: '1px solid #00002F26',
-          alignSelf: 'self-start',
-          borderRadius: 8,
-        }}
-      >
-        <Cell className={styles.headerCell}>Key</Cell>
-        {Object.entries(metricLabelMapping).map(([key, label], index) => (
-          <Cell
-            key={key}
-            style={{
-              height: 48,
-              backgroundColor: metricColorMapping[key as keyof typeof metricColorMapping],
-            }}
-            hasBorderBottom={index < metricCount - 1}
-          >
-            {label}
-          </Cell>
-        ))}
+      <Flex direction="column">
+        <Heading as="h3" size="4" mb="2" weight="medium">
+          Referenced Documents
+        </Heading>
+        <Flex flexGrow="1" direction="column" gap="4">
+          {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
+            <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey} gap="1">
+              <Heading as="h4" size="3" weight="medium">
+                {labelMapping[categoryKey] || categoryKey}
+              </Heading>
+              {Object.entries(categoryValue).map(([subKey, data]) => (
+                <Link
+                  key={subKey}
+                  href={data.links[0].href}
+                  target="_blank"
+                  underline="always"
+                  weight="medium"
+                  className={infoPanelStyles.link}
+                >
+                  {labelMapping[subKey] || subKey}
+                </Link>
+              ))}
+            </Flex>
+          ))}
+        </Flex>
       </Flex>
     </Flex>
   )
