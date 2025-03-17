@@ -1,4 +1,6 @@
 import { Flex } from '@radix-ui/themes'
+import styles from './DataQualitySection.module.scss'
+import React, { PropsWithChildren } from 'react'
 
 const metricLabelMapping = {
   not_assessed: 'Not Assessed',
@@ -236,6 +238,29 @@ const sampleData = {
   eodh_qa_check_version: 1.0,
 }
 
+interface CellProps {
+  className?: string
+  hasBorderBottom?: boolean
+  style?: React.CSSProperties
+}
+
+const Cell: React.FC<PropsWithChildren<CellProps>> = ({
+  children,
+  className,
+  hasBorderBottom = true,
+  style: additionalStyle,
+}) => (
+  <div
+    className={`${styles.cell} ${className}`}
+    style={{
+      borderBottom: hasBorderBottom ? '1px solid #00002F26' : undefined,
+      ...additionalStyle,
+    }}
+  >
+    {children}
+  </div>
+)
+
 export const DataQualitySection = () => {
   const documentReview = sampleData.results['documentation review']
 
@@ -249,7 +274,7 @@ export const DataQualitySection = () => {
     <Flex gap="8">
       <Flex
         direction="column"
-        minWidth="500px"
+        width="500px"
         overflowX="auto"
         style={{
           border: '1px solid #00002F26',
@@ -257,61 +282,31 @@ export const DataQualitySection = () => {
           borderRadius: 8,
         }}
       >
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            textAlign: 'center',
-            borderBottom: '1px solid #00002F26',
-            color: 'white',
-            backgroundColor: '#002060',
-            height: 48,
-            fontWeight: 'bold',
-          }}
-        >
-          {labelMapping['documentation review']}
-        </div>
+        <Cell className={styles.headerCell}>{labelMapping['documentation review']}</Cell>
         <Flex flexGrow="1">
           {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
             <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey}>
-              <div
+              <Cell
+                className={styles.headerCell}
                 style={{
-                  // width: 180,
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  textAlign: 'center',
                   height: 100,
-                  padding: 16,
-                  borderBottom: '1px solid #00002F26',
-                  color: 'white',
-                  backgroundColor: '#002060',
-                  fontWeight: 'bold',
                 }}
               >
                 {labelMapping[categoryKey] || categoryKey}
-              </div>
+              </Cell>
               {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => {
                 return (
-                  <div
+                  <Cell
                     key={subKey}
+                    className={styles.bodyCell}
                     style={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      textAlign: 'center',
-                      // width: 180,
-                      height: 100,
-                      padding: 16,
-                      borderBottom:
-                        subKeyIndex === rowCount - 1 ? undefined : '1px solid #00002F26',
                       backgroundColor:
                         metricColorMapping[data.value as keyof typeof metricColorMapping],
                     }}
+                    hasBorderBottom={subKeyIndex < rowCount - 1}
                   >
                     {labelMapping[subKey] || subKey}
-                  </div>
+                  </Cell>
                 )
               })}
             </Flex>
@@ -329,35 +324,18 @@ export const DataQualitySection = () => {
           borderRadius: 8,
         }}
       >
-        <div
-          style={{
-            padding: 12,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            textAlign: 'center',
-            borderBottom: '1px solid #00002F26',
-            color: 'white',
-            backgroundColor: '#002060',
-            fontWeight: 'bold',
-          }}
-        >
-          Key
-        </div>
+        <Cell className={styles.headerCell}>Key</Cell>
         {Object.entries(metricLabelMapping).map(([key, label], index) => (
-          <div
+          <Cell
             key={key}
             style={{
-              padding: 12,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderBottom: index === metricCount - 1 ? undefined : '1px solid #00002F26',
+              height: 48,
               backgroundColor: metricColorMapping[key as keyof typeof metricColorMapping],
             }}
+            hasBorderBottom={index < metricCount - 1}
           >
             {label}
-          </div>
+          </Cell>
         ))}
       </Flex>
     </Flex>
