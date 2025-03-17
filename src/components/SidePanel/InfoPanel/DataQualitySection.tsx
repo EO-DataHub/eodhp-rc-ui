@@ -475,11 +475,7 @@ export const DataQualitySection = () => {
             width="500px"
             flexShrink="0"
             overflowX="auto"
-            style={{
-              border: '1px solid #00002F26',
-              alignSelf: 'self-start',
-              borderRadius: 8,
-            }}
+            className={styles.tableContainer}
           >
             <Cell className={styles.headerCell}>{labelMapping['documentation review']}</Cell>
             <Flex flexGrow="1">
@@ -514,11 +510,7 @@ export const DataQualitySection = () => {
             direction="column"
             minWidth="185px"
             overflowX="auto"
-            style={{
-              border: '1px solid #00002F26',
-              alignSelf: 'self-start',
-              borderRadius: 8,
-            }}
+            className={styles.tableContainer}
           >
             <Cell className={styles.headerCell}>Key</Cell>
             {Object.entries(metricLabelMapping).map(([key, label], index) => (
