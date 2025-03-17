@@ -1,4 +1,4 @@
-import { InfoCircledIcon, DrawingPinIcon } from '@radix-ui/react-icons'
+import { InfoCircledIcon, DrawingPinIcon, Cross2Icon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -64,16 +64,31 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           </div>
         </Flex>
       )}
-      <Flex direction="column" p="2" justify="between" flexGrow="1">
-        <Flex direction="column">
-          <Flex justify="between">
-            <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-              {item.id}
+      <Flex direction="column" p="2" flexGrow={'1'}>
+        <Flex>
+          <Flex direction="column" flexGrow={'1'}>
+            <Flex justify="between">
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+                {item.id}
+              </Text>
+            </Flex>
+            <Text size="1" className={styles.text}>
+              {convertDateToUTCString(new Date(item.properties.datetime))}
             </Text>
           </Flex>
-          <Text size="1" className={styles.text}>
-            {convertDateToUTCString(new Date(item.properties.datetime))}
-          </Text>
+          {isPinnedCard && (
+            <Flex align="end" direction="column">
+              <IconButton
+                size="1"
+                variant="soft"
+                radius="full"
+                className={styles.unpinButton}
+                onClick={() => dataFinderStore.send({ type: 'removePinnedItem', item })}
+              >
+                <Cross2Icon />
+              </IconButton>
+            </Flex>
+          )}
         </Flex>
         <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
           {isPinnedCard && item.render && (

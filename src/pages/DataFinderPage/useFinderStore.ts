@@ -164,6 +164,16 @@ const dataFinderStore = createStore({
         pinnedItems: [...context.pinnedItems, pinnedItem],
       }
     },
+    removePinnedItem: (context, event: { item: Item }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.filter(
+          (pinnedItem) =>
+            // Pinned items are considered equal if their IDs and render IDs match
+            pinnedItem.id !== event.item.id || pinnedItem.render?.id !== event.item.render?.id,
+        ),
+      }
+    },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
       return {
         ...context,
