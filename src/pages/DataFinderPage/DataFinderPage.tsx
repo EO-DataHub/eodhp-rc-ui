@@ -87,6 +87,11 @@ export const DataFinderPage: React.FC = () => {
     }
   }, [isFetched])
 
+  // Remove AOI from local storage on mount
+  useEffect(() => {
+    localStorage.removeItem('aoi')
+  }, [])
+
   // Slice the visible items based on the current page
   const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 

@@ -178,6 +178,10 @@ const dataFinderStore = createStore({
     setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
       collectionRender: event.collectionRender,
     }),
+    storeAoi: (context, event: { aoi: GeoJSON.Feature }) => {
+      localStorage.setItem('aoi', JSON.stringify(event.aoi))
+      return { ...context, aoi: event.aoi }
+    },
   },
 })
 
