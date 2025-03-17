@@ -1,5 +1,4 @@
 import { Flex, Heading, Link } from '@radix-ui/themes'
-import infoPanelStyles from './InfoPanel.module.scss'
 import styles from './DataQualitySection.module.scss'
 import React, { PropsWithChildren } from 'react'
 
@@ -301,21 +300,19 @@ export const DataQualitySection = () => {
                   >
                     {labelMapping[categoryKey] || categoryKey}
                   </Cell>
-                  {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => {
-                    return (
-                      <Cell
-                        key={subKey}
-                        className={styles.bodyCell}
-                        style={{
-                          backgroundColor:
-                            metricColorMapping[data.value as keyof typeof metricColorMapping],
-                        }}
-                        hasBorderBottom={subKeyIndex < rowCount - 1}
-                      >
-                        {labelMapping[subKey] || subKey}
-                      </Cell>
-                    )
-                  })}
+                  {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => (
+                    <Cell
+                      key={subKey}
+                      className={styles.bodyCell}
+                      style={{
+                        backgroundColor:
+                          metricColorMapping[data.value as keyof typeof metricColorMapping],
+                      }}
+                      hasBorderBottom={subKeyIndex < rowCount - 1}
+                    >
+                      {labelMapping[subKey] || subKey}
+                    </Cell>
+                  ))}
                 </Flex>
               ))}
             </Flex>
@@ -347,13 +344,13 @@ export const DataQualitySection = () => {
         </Flex>
       </Flex>
 
-      <Flex direction="column">
+      <Flex direction="column" align="start">
         <Heading as="h3" size="4" mb="2" weight="medium">
           Referenced Documents
         </Heading>
-        <Flex flexGrow="1" direction="column" gap="4">
+        <Flex direction="column" gap="4" justify="start">
           {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
-            <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey} gap="1">
+            <Flex direction="column" key={categoryKey} gap="1">
               <Heading as="h4" size="3" weight="medium">
                 {labelMapping[categoryKey] || categoryKey}
               </Heading>
@@ -364,7 +361,6 @@ export const DataQualitySection = () => {
                   target="_blank"
                   underline="always"
                   weight="medium"
-                  className={infoPanelStyles.link}
                 >
                   {labelMapping[subKey] || subKey}
                 </Link>
