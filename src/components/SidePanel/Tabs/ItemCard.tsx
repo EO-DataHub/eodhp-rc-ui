@@ -192,9 +192,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 className={styles.button}
                 onClick={() => dataFinderStore.send({ type: 'openItemInfoPanel', item })}
               >
-                <div>
-                  <InfoCircledIcon />
-                </div>
+                <InfoCircledIcon />
               </IconButton>
             </Tooltip>
             {isLicenseProprietary && (
