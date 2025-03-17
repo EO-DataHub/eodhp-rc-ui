@@ -1,0 +1,1026 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/cmip6/v1.0.0/form_schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "cmip6:variable_long_name": {
+      "title": "Variable Long Name",
+      "type": "string"
+    },
+    "cmip6:variable_id": {
+      "title": "Variable ID",
+      "type": "string"
+    },
+    "cmip6:cf_standard_name": {
+      "title": "CF Standard Name",
+      "type": "string"
+    },
+    "cmip6:frequency": {
+      "type": "string",
+      "title": "Frequency",
+      "default": "%",
+      "anyOf": [
+        {
+          "title": "Any",
+          "enum": [
+            "%"
+          ]
+        },
+        {
+          "title": "mon",
+          "enum": [
+            "mon"
+          ]
+        },
+        {
+          "title": "monPt",
+          "enum": [
+            "monPt"
+          ]
+        },
+        {
+          "title": "monC",
+          "enum": [
+            "monC"
+          ]
+        },
+        {
+          "title": "day",
+          "enum": [
+            "day"
+          ]
+        }
+      ]
+    },
+    "cmip6:source_id": {
+      "type": "string",
+      "title": "Source ID",
+      "default": "%",
+      "anyOf": [
+        {
+          "title": "Any",
+          "enum": [
+            "%"
+          ]
+        },
+        {
+          "title": "CESM2",
+          "enum": [
+            "CESM2"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-HR",
+          "enum": [
+            "IPSL-CM6A-ATM-HR"
+          ]
+        },
+        {
+          "title": "UKESM1-ice-LL",
+          "enum": [
+            "UKESM1-ice-LL"
+          ]
+        },
+        {
+          "title": "INM-CM5-H",
+          "enum": [
+            "INM-CM5-H"
+          ]
+        },
+        {
+          "title": "CanESM5-CanOE",
+          "enum": [
+            "CanESM5-CanOE"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-HH",
+          "enum": [
+            "HadGEM3-GC31-HH"
+          ]
+        },
+        {
+          "title": "CESM1-1-CAM5-CMIP5",
+          "enum": [
+            "CESM1-1-CAM5-CMIP5"
+          ]
+        },
+        {
+          "title": "4AOP-v1-5",
+          "enum": [
+            "4AOP-v1-5"
+          ]
+        },
+        {
+          "title": "EC-Earth3-Veg",
+          "enum": [
+            "EC-Earth3-Veg"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-LR",
+          "enum": [
+            "IPSL-CM6A-LR"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-MR1",
+          "enum": [
+            "IPSL-CM6A-MR1"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-LR-REPROBUS",
+          "enum": [
+            "IPSL-CM6A-ATM-LR-REPROBUS"
+          ]
+        },
+        {
+          "title": "ACCESS-ESM1-5",
+          "enum": [
+            "ACCESS-ESM1-5"
+          ]
+        },
+        {
+          "title": "GISS-E2-1-G-CC",
+          "enum": [
+            "GISS-E2-1-G-CC"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-MM",
+          "enum": [
+            "HadGEM3-GC31-MM"
+          ]
+        },
+        {
+          "title": "CMCC-CM2-VHR4",
+          "enum": [
+            "CMCC-CM2-VHR4"
+          ]
+        },
+        {
+          "title": "RRTMG-SW-4-02",
+          "enum": [
+            "RRTMG-SW-4-02"
+          ]
+        },
+        {
+          "title": "CESM1-WACCM-SC",
+          "enum": [
+            "CESM1-WACCM-SC"
+          ]
+        },
+        {
+          "title": "CAM-MPAS-LR",
+          "enum": [
+            "CAM-MPAS-LR"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-MH",
+          "enum": [
+            "HadGEM3-GC31-MH"
+          ]
+        },
+        {
+          "title": "INM-CM5-0",
+          "enum": [
+            "INM-CM5-0"
+          ]
+        },
+        {
+          "title": "CAM-MPAS-HR",
+          "enum": [
+            "CAM-MPAS-HR"
+          ]
+        },
+        {
+          "title": "EC-Earth3P-VHR",
+          "enum": [
+            "EC-Earth3P-VHR"
+          ]
+        },
+        {
+          "title": "CIESM",
+          "enum": [
+            "CIESM"
+          ]
+        },
+        {
+          "title": "CESM2-WACCM",
+          "enum": [
+            "CESM2-WACCM"
+          ]
+        },
+        {
+          "title": "ECMWF-IFS-LR",
+          "enum": [
+            "ECMWF-IFS-LR"
+          ]
+        },
+        {
+          "title": "UKESM1-0-LL",
+          "enum": [
+            "UKESM1-0-LL"
+          ]
+        },
+        {
+          "title": "AWI-CM-1-1-HR",
+          "enum": [
+            "AWI-CM-1-1-HR"
+          ]
+        },
+        {
+          "title": "MIROC-ES2H-NB",
+          "enum": [
+            "MIROC-ES2H-NB"
+          ]
+        },
+        {
+          "title": "ACCESS-CM2",
+          "enum": [
+            "ACCESS-CM2"
+          ]
+        },
+        {
+          "title": "EC-Earth3P-HR",
+          "enum": [
+            "EC-Earth3P-HR"
+          ]
+        },
+        {
+          "title": "MIROC-ES2H",
+          "enum": [
+            "MIROC-ES2H"
+          ]
+        },
+        {
+          "title": "EC-Earth3",
+          "enum": [
+            "EC-Earth3"
+          ]
+        },
+        {
+          "title": "CNRM-CM6-1-HR",
+          "enum": [
+            "CNRM-CM6-1-HR"
+          ]
+        },
+        {
+          "title": "KIOST-ESM",
+          "enum": [
+            "KIOST-ESM"
+          ]
+        },
+        {
+          "title": "RRTMG-LW-4-91",
+          "enum": [
+            "RRTMG-LW-4-91"
+          ]
+        },
+        {
+          "title": "NorESM2-LM",
+          "enum": [
+            "NorESM2-LM"
+          ]
+        },
+        {
+          "title": "CNRM-ESM2-1",
+          "enum": [
+            "CNRM-ESM2-1"
+          ]
+        },
+        {
+          "title": "TaiESM1",
+          "enum": [
+            "TaiESM1"
+          ]
+        },
+        {
+          "title": "BCC-CSM2-HR",
+          "enum": [
+            "BCC-CSM2-HR"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-LM",
+          "enum": [
+            "HadGEM3-GC31-LM"
+          ]
+        },
+        {
+          "title": "E3SM-1-1-ECA",
+          "enum": [
+            "E3SM-1-1-ECA"
+          ]
+        },
+        {
+          "title": "AWI-ESM-1-REcoM",
+          "enum": [
+            "AWI-ESM-1-REcoM"
+          ]
+        },
+        {
+          "title": "GFDL-OM4p5B",
+          "enum": [
+            "GFDL-OM4p5B"
+          ]
+        },
+        {
+          "title": "EC-Earth3-LR",
+          "enum": [
+            "EC-Earth3-LR"
+          ]
+        },
+        {
+          "title": "GFDL-ESM2M",
+          "enum": [
+            "GFDL-ESM2M"
+          ]
+        },
+        {
+          "title": "SAM0-UNICON",
+          "enum": [
+            "SAM0-UNICON"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-LL",
+          "enum": [
+            "HadGEM3-GC31-LL"
+          ]
+        },
+        {
+          "title": "CMCC-CM2-HR4",
+          "enum": [
+            "CMCC-CM2-HR4"
+          ]
+        },
+        {
+          "title": "MPI-ESM-1-2-HAM",
+          "enum": [
+            "MPI-ESM-1-2-HAM"
+          ]
+        },
+        {
+          "title": "FIO-ESM-2-0",
+          "enum": [
+            "FIO-ESM-2-0"
+          ]
+        },
+        {
+          "title": "TaiESM1-TIMCOM2",
+          "enum": [
+            "TaiESM1-TIMCOM2"
+          ]
+        },
+        {
+          "title": "RTE-RRTMGP-181204",
+          "enum": [
+            "RTE-RRTMGP-181204"
+          ]
+        },
+        {
+          "title": "AWI-ESM-1-1-LR",
+          "enum": [
+            "AWI-ESM-1-1-LR"
+          ]
+        },
+        {
+          "title": "PCMDI-test-1-0",
+          "enum": [
+            "PCMDI-test-1-0"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-ICO-LR",
+          "enum": [
+            "IPSL-CM6A-ATM-ICO-LR"
+          ]
+        },
+        {
+          "title": "E3SM-2-0-NARRM",
+          "enum": [
+            "E3SM-2-0-NARRM"
+          ]
+        },
+        {
+          "title": "EC-Earth3-Veg-LR",
+          "enum": [
+            "EC-Earth3-Veg-LR"
+          ]
+        },
+        {
+          "title": "CESM2-FV2",
+          "enum": [
+            "CESM2-FV2"
+          ]
+        },
+        {
+          "title": "CAMS-CSM1-0",
+          "enum": [
+            "CAMS-CSM1-0"
+          ]
+        },
+        {
+          "title": "EC-Earth3-CC",
+          "enum": [
+            "EC-Earth3-CC"
+          ]
+        },
+        {
+          "title": "EC-Earth3-HR",
+          "enum": [
+            "EC-Earth3-HR"
+          ]
+        },
+        {
+          "title": "MRI-ESM2-0",
+          "enum": [
+            "MRI-ESM2-0"
+          ]
+        },
+        {
+          "title": "MRI-AGCM3-2-S",
+          "enum": [
+            "MRI-AGCM3-2-S"
+          ]
+        },
+        {
+          "title": "MRI-AGCM3-2-H",
+          "enum": [
+            "MRI-AGCM3-2-H"
+          ]
+        },
+        {
+          "title": "FGOALS-f3-H",
+          "enum": [
+            "FGOALS-f3-H"
+          ]
+        },
+        {
+          "title": "FGOALS-g3",
+          "enum": [
+            "FGOALS-g3"
+          ]
+        },
+        {
+          "title": "NICAM16-9S",
+          "enum": [
+            "NICAM16-9S"
+          ]
+        },
+        {
+          "title": "E3SM-1-0",
+          "enum": [
+            "E3SM-1-0"
+          ]
+        },
+        {
+          "title": "MCM-UA-1-0",
+          "enum": [
+            "MCM-UA-1-0"
+          ]
+        },
+        {
+          "title": "GFDL-RFM-DISORT",
+          "enum": [
+            "GFDL-RFM-DISORT"
+          ]
+        },
+        {
+          "title": "TaiESM1-TIMCOM",
+          "enum": [
+            "TaiESM1-TIMCOM"
+          ]
+        },
+        {
+          "title": "ECMWF-IFS-HR",
+          "enum": [
+            "ECMWF-IFS-HR"
+          ]
+        },
+        {
+          "title": "HiRAM-SIT-HR",
+          "enum": [
+            "HiRAM-SIT-HR"
+          ]
+        },
+        {
+          "title": "ICON-ESM-LR",
+          "enum": [
+            "ICON-ESM-LR"
+          ]
+        },
+        {
+          "title": "CanESM5",
+          "enum": [
+            "CanESM5"
+          ]
+        },
+        {
+          "title": "AWI-CM-1-1-MR",
+          "enum": [
+            "AWI-CM-1-1-MR"
+          ]
+        },
+        {
+          "title": "EC-Earth3-AerChem",
+          "enum": [
+            "EC-Earth3-AerChem"
+          ]
+        },
+        {
+          "title": "INM-CM4-8",
+          "enum": [
+            "INM-CM4-8"
+          ]
+        },
+        {
+          "title": "LBLRTM-12-8",
+          "enum": [
+            "LBLRTM-12-8"
+          ]
+        },
+        {
+          "title": "ARTS-2-3",
+          "enum": [
+            "ARTS-2-3"
+          ]
+        },
+        {
+          "title": "EC-Earth3-ESM-1",
+          "enum": [
+            "EC-Earth3-ESM-1"
+          ]
+        },
+        {
+          "title": "CNRM-CM6-1",
+          "enum": [
+            "CNRM-CM6-1"
+          ]
+        },
+        {
+          "title": "NorCPM1",
+          "enum": [
+            "NorCPM1"
+          ]
+        },
+        {
+          "title": "ACCESS-OM2",
+          "enum": [
+            "ACCESS-OM2"
+          ]
+        },
+        {
+          "title": "HadGEM3-GC31-HM",
+          "enum": [
+            "HadGEM3-GC31-HM"
+          ]
+        },
+        {
+          "title": "CESM2-WACCM-FV2",
+          "enum": [
+            "CESM2-WACCM-FV2"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-LR-INCA",
+          "enum": [
+            "IPSL-CM6A-LR-INCA"
+          ]
+        },
+        {
+          "title": "MIROC6",
+          "enum": [
+            "MIROC6"
+          ]
+        },
+        {
+          "title": "NorESM1-F",
+          "enum": [
+            "NorESM1-F"
+          ]
+        },
+        {
+          "title": "ECMWF-IFS-MR",
+          "enum": [
+            "ECMWF-IFS-MR"
+          ]
+        },
+        {
+          "title": "EC-Earth3P",
+          "enum": [
+            "EC-Earth3P"
+          ]
+        },
+        {
+          "title": "MIROC-ES2L",
+          "enum": [
+            "MIROC-ES2L"
+          ]
+        },
+        {
+          "title": "CanESM5-1",
+          "enum": [
+            "CanESM5-1"
+          ]
+        },
+        {
+          "title": "CMCC-CM2-SR5",
+          "enum": [
+            "CMCC-CM2-SR5"
+          ]
+        },
+        {
+          "title": "NorESM2-MM",
+          "enum": [
+            "NorESM2-MM"
+          ]
+        },
+        {
+          "title": "AWI-CM-1-1-LR",
+          "enum": [
+            "AWI-CM-1-1-LR"
+          ]
+        },
+        {
+          "title": "HiRAM-SIT-LR",
+          "enum": [
+            "HiRAM-SIT-LR"
+          ]
+        },
+        {
+          "title": "E3SM-2-1",
+          "enum": [
+            "E3SM-2-1"
+          ]
+        },
+        {
+          "title": "GISS-E2-2-G",
+          "enum": [
+            "GISS-E2-2-G"
+          ]
+        },
+        {
+          "title": "GFDL-CM4C192",
+          "enum": [
+            "GFDL-CM4C192"
+          ]
+        },
+        {
+          "title": "CESM1-CAM5-SE-HR",
+          "enum": [
+            "CESM1-CAM5-SE-HR"
+          ]
+        },
+        {
+          "title": "MPI-ESM1-2-LR",
+          "enum": [
+            "MPI-ESM1-2-LR"
+          ]
+        },
+        {
+          "title": "EC-Earth3-GrIS",
+          "enum": [
+            "EC-Earth3-GrIS"
+          ]
+        },
+        {
+          "title": "MPI-ESM1-2-XR",
+          "enum": [
+            "MPI-ESM1-2-XR"
+          ]
+        },
+        {
+          "title": "IITM-ESM",
+          "enum": [
+            "IITM-ESM"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-ICO-VHR",
+          "enum": [
+            "IPSL-CM6A-ATM-ICO-VHR"
+          ]
+        },
+        {
+          "title": "GFDL-AM4",
+          "enum": [
+            "GFDL-AM4"
+          ]
+        },
+        {
+          "title": "CESM1-CAM5-SE-LR",
+          "enum": [
+            "CESM1-CAM5-SE-LR"
+          ]
+        },
+        {
+          "title": "NESM3",
+          "enum": [
+            "NESM3"
+          ]
+        },
+        {
+          "title": "UKESM1-1-LL",
+          "enum": [
+            "UKESM1-1-LL"
+          ]
+        },
+        {
+          "title": "GISS-E2-1-G",
+          "enum": [
+            "GISS-E2-1-G"
+          ]
+        },
+        {
+          "title": "IPSL-CM5A2-INCA",
+          "enum": [
+            "IPSL-CM5A2-INCA"
+          ]
+        },
+        {
+          "title": "FGOALS-f3-L",
+          "enum": [
+            "FGOALS-f3-L"
+          ]
+        },
+        {
+          "title": "KACE-1-0-G",
+          "enum": [
+            "KACE-1-0-G"
+          ]
+        },
+        {
+          "title": "GFDL-CM4",
+          "enum": [
+            "GFDL-CM4"
+          ]
+        },
+        {
+          "title": "CAS-ESM2-0",
+          "enum": [
+            "CAS-ESM2-0"
+          ]
+        },
+        {
+          "title": "NICAM16-8S",
+          "enum": [
+            "NICAM16-8S"
+          ]
+        },
+        {
+          "title": "E3SM-1-1",
+          "enum": [
+            "E3SM-1-1"
+          ]
+        },
+        {
+          "title": "BCC-ESM1",
+          "enum": [
+            "BCC-ESM1"
+          ]
+        },
+        {
+          "title": "CMCC-ESM2",
+          "enum": [
+            "CMCC-ESM2"
+          ]
+        },
+        {
+          "title": "GISS-E2-1-H",
+          "enum": [
+            "GISS-E2-1-H"
+          ]
+        },
+        {
+          "title": "GISS-E2-2-H",
+          "enum": [
+            "GISS-E2-2-H"
+          ]
+        },
+        {
+          "title": "MPI-ESM1-2-HR",
+          "enum": [
+            "MPI-ESM1-2-HR"
+          ]
+        },
+        {
+          "title": "GFDL-GRTCODE",
+          "enum": [
+            "GFDL-GRTCODE"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-ICO-MR",
+          "enum": [
+            "IPSL-CM6A-ATM-ICO-MR"
+          ]
+        },
+        {
+          "title": "NICAM16-7S",
+          "enum": [
+            "NICAM16-7S"
+          ]
+        },
+        {
+          "title": "GFDL-ESM4",
+          "enum": [
+            "GFDL-ESM4"
+          ]
+        },
+        {
+          "title": "BCC-CSM2-MR",
+          "enum": [
+            "BCC-CSM2-MR"
+          ]
+        },
+        {
+          "title": "IPSL-CM6A-ATM-ICO-HR",
+          "enum": [
+            "IPSL-CM6A-ATM-ICO-HR"
+          ]
+        },
+        {
+          "title": "ACCESS-OM2-025",
+          "enum": [
+            "ACCESS-OM2-025"
+          ]
+        },
+        {
+          "title": "E3SM-2-0",
+          "enum": [
+            "E3SM-2-0"
+          ]
+        },
+        {
+          "title": "GISS-E3-G",
+          "enum": [
+            "GISS-E3-G"
+          ]
+        }
+      ]
+    },
+    "cmip6:source_type": {
+      "type": "string",
+      "title": "Source Type",
+      "default": "%",
+      "anyOf": [
+        {
+          "title": "Any",
+          "enum": [
+            "%"
+          ]
+        },
+        {
+          "title": "RAD",
+          "enum": [
+            "RAD"
+          ]
+        },
+        {
+          "title": "AOGCM",
+          "enum": [
+            "AOGCM"
+          ]
+        },
+        {
+          "title": "AGCM",
+          "enum": [
+            "AGCM"
+          ]
+        },
+        {
+          "title": "AER",
+          "enum": [
+            "AER"
+          ]
+        },
+        {
+          "title": "CHEM",
+          "enum": [
+            "CHEM"
+          ]
+        },
+        {
+          "title": "SLAB",
+          "enum": [
+            "SLAB"
+          ]
+        },
+        {
+          "title": "ISM",
+          "enum": [
+            "ISM"
+          ]
+        },
+        {
+          "title": "OGCM",
+          "enum": [
+            "OGCM"
+          ]
+        },
+        {
+          "title": "BGC",
+          "enum": [
+            "BGC"
+          ]
+        },
+        {
+          "title": "LAND",
+          "enum": [
+            "LAND"
+          ]
+        }
+      ]
+    },
+    "cmip6:experiment_id": {
+      "type": "string",
+      "title": "Experiment ID",
+      "default": "%",
+      "anyOf": [
+        {"title": "Any", "enum": ["%"]},
+        {"title": "s1950", "enum": ["s1950"]},
+        {"title": "s2002", "enum": ["s2002"]},
+        {"title": "s1989", "enum": ["s1989"]},
+        {"title": "s1962", "enum": ["s1962"]},
+        {"title": "s1979", "enum": ["s1979"]},
+        {"title": "s2013", "enum": ["s2013"]},
+        {"title": "s1974", "enum": ["s1974"]},
+        {"title": "s1996", "enum": ["s1996"]},
+        {"title": "s2018", "enum": ["s2018"]},
+        {"title": "s1993", "enum": ["s1993"]},
+        {"title": "s2015", "enum": ["s2015"]},
+        {"title": "s2021", "enum": ["s2021"]},
+        {"title": "s2003", "enum": ["s2003"]},
+        {"title": "s2022", "enum": ["s2022"]},
+        {"title": "s1984", "enum": ["s1984"]},
+        {"title": "s2004", "enum": ["s2004"]},
+        {"title": "s1999", "enum": ["s1999"]},
+        {"title": "s2023", "enum": ["s2023"]},
+        {"title": "s1960", "enum": ["s1960"]},
+        {"title": "s1973", "enum": ["s1973"]},
+        {"title": "s1983", "enum": ["s1983"]},
+        {"title": "s1968", "enum": ["s1968"]},
+        {"title": "s1986", "enum": ["s1986"]},
+        {"title": "s1995", "enum": ["s1995"]},
+        {"title": "s1975", "enum": ["s1975"]},
+        {"title": "s1963", "enum": ["s1963"]},
+        {"title": "s1985", "enum": ["s1985"]},
+        {"title": "s2008", "enum": ["s2008"]},
+        {"title": "s2012", "enum": ["s2012"]},
+        {"title": "s1980", "enum": ["s1980"]},
+        {"title": "s2011", "enum": ["s2011"]},
+        {"title": "s1988", "enum": ["s1988"]},
+        {"title": "s1971", "enum": ["s1971"]},
+        {"title": "s1920", "enum": ["s1920"]},
+        {"title": "s1978", "enum": ["s1978"]},
+        {"title": "s1982", "enum": ["s1982"]},
+        {"title": "s2009", "enum": ["s2009"]},
+        {"title": "s1964", "enum": ["s1964"]},
+        {"title": "s2017", "enum": ["s2017"]},
+        {"title": "s2029", "enum": ["s2029"]},
+        {"title": "s1992", "enum": ["s1992"]},
+        {"title": "s1998", "enum": ["s1998"]},
+        {"title": "s1994", "enum": ["s1994"]},
+        {"title": "s1969", "enum": ["s1969"]},
+        {"title": "s2020", "enum": ["s2020"]},
+        {"title": "s1965", "enum": ["s1965"]},
+        {"title": "s1967", "enum": ["s1967"]},
+        {"title": "s2025", "enum": ["s2025"]},
+        {"title": "s1961", "enum": ["s1961"]},
+        {"title": "s2026", "enum": ["s2026"]},
+        {"title": "s1970", "enum": ["s1970"]},
+        {"title": "s1997", "enum": ["s1997"]},
+        {"title": "s2016", "enum": ["s2016"]},
+        {"title": "s2024", "enum": ["s2024"]},
+        {"title": "s2027", "enum": ["s2027"]},
+        {"title": "s1987", "enum": ["s1987"]},
+        {"title": "s2019", "enum": ["s2019"]},
+        {"title": "s2014", "enum": ["s2014"]},
+        {"title": "s2028", "enum": ["s2028"]},
+        {"title": "s1976", "enum": ["s1976"]},
+        {"title": "s1966", "enum": ["s1966"]},
+        {"title": "s1990", "enum": ["s1990"]},
+        {"title": "s2010", "enum": ["s2010"]},
+        {"title": "s1977", "enum": ["s1977"]},
+        {"title": "s2007", "enum": ["s2007"]},
+        {"title": "s1981", "enum": ["s1981"]},
+        {"title": "s1991", "enum": ["s1991"]},
+        {"title": "s2001", "enum": ["s2001"]},
+        {"title": "s1910", "enum": ["s1910"]},
+        {"title": "s2005", "enum": ["s2005"]},
+        {"title": "s2000", "enum": ["s2000"]},
+        {"title": "s1972", "enum": ["s1972"]},
+        {"title": "s2006", "enum": ["s2006"]}
+      ]
+    },
+    "cmip6:variant_label": {
+      "title": "Variant Label",
+      "type": "string",
+      "pattern": "r[0-9]+i[0-9]+p[0-9]+f[0-9]+$"
+    }
+  }
+}
