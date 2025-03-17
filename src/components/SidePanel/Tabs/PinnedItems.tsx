@@ -2,7 +2,7 @@ import { Flex, Grid } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import ItemList from '../ItemList'
-import ItemCard from './ItemCard'
+import ItemCard from '../../ItemCard/ItemCard'
 
 const PinnedItemsTab = () => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)

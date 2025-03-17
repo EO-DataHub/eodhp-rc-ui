@@ -6,7 +6,7 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import useItemsQuery, { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import ItemList from '../ItemList'
-import ItemCard from './ItemCard'
+import ItemCard from '../../ItemCard/ItemCard'
 
 const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
   return (
