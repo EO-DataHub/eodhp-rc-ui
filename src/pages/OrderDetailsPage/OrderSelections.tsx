@@ -30,8 +30,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
 }) => {
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({
     productBundle: '',
-    country: provider !== 'planet' ? 'GB' : '',
-    license: '',
+    endUserCountry: provider !== 'planet' ? 'GB' : '',
+    licence: '',
     orbit: '',
     resolutionVariant: '',
     projection: '',
@@ -48,7 +48,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
       shared: ['Visual', 'General Use', 'Basic', 'Analytic'],
       airbus_sar: ['SSC', 'MGD', 'GEC', 'EEC'],
     },
-    license: {
+    licence: {
       airbus_optical: [
         'Standard',
         'Background Layer',
@@ -79,8 +79,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         provider === 'airbus_optical' || provider === 'planet'
           ? options.productBundle.shared
           : options.productBundle.airbus_sar
-    } else if (field === 'license') {
-      items = options.license[provider as keyof typeof options.license]
+    } else if (field === 'licence') {
+      items = options.licence[provider as keyof typeof options.licence]
     } else if (field === 'orbit') {
       items = options.orbit
     } else if (field === 'resolutionVariant') {
@@ -135,8 +135,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         <Field label="End User Country">
           <Select.Root
             size="3"
-            value={selectedValues.country}
-            onValueChange={(value) => handleChange('country', value)}
+            value={selectedValues.endUserCountry}
+            onValueChange={(value) => handleChange('endUserCountry', value)}
           >
             <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
             <Select.Content className={styles.selectContent}>
@@ -152,9 +152,9 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         </Field>
       )}
 
-      {/* License - Required for Airbus */}
+      {/* Licence - Required for Airbus */}
       {(provider === 'airbus_optical' || provider === 'airbus_sar') &&
-        renderSelect('license', 'License')}
+        renderSelect('licence', 'Licence')}
 
       {/* Orbit - Airbus SAR only */}
       {provider === 'airbus_sar' && renderSelect('orbit', 'Orbit')}

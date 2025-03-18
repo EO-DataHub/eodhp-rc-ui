@@ -7,8 +7,9 @@ export interface PurchaseRequest {
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
   coordinates?: number[][][]
-  parameters?: Record<string, unknown>
-  country?: string
+  radarOptions?: Record<string, unknown>
+  endUserCountry?: string
+  licence?: string
 }
 
 export const purchaseProduct = async ({
@@ -17,8 +18,9 @@ export const purchaseProduct = async ({
   provider,
   productBundle,
   coordinates,
-  parameters,
-  country,
+  radarOptions,
+  endUserCountry,
+  licence,
 }: PurchaseRequest): Promise<unknown> => {
   if (!workspace) {
     throw new Error('Workspace is required for placing an order.')
@@ -36,14 +38,19 @@ export const purchaseProduct = async ({
     requestBody.coordinates = coordinates
   }
 
-  // Only add country if applicable (Airbus Optical & Airbus sSar)
-  if ((provider === 'airbus_optical' || provider === 'airbus_sar') && country) {
-    requestBody.country = country
+  // Only add endUserCountry if applicable (Airbus Optical & Airbus SAR)
+  if ((provider === 'airbus_optical' || provider === 'airbus_sar') && endUserCountry) {
+    requestBody.endUserCountry = endUserCountry
+  }
+
+  // Only add licence if applicable (Airbus Optical & Airbus SAR)
+  if ((provider === 'airbus_optical' || provider === 'airbus_sar') && licence) {
+    requestBody.licence = licence
   }
 
   // Always include parameters if provided (Airbus SAR & Optical)
-  if (parameters && Object.keys(parameters).length > 0) {
-    requestBody.parameters = parameters
+  if (radarOptions && Object.keys(radarOptions).length > 0) {
+    requestBody.radarOptions = radarOptions
   }
 
   try {
