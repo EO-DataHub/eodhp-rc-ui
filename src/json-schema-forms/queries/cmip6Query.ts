@@ -51,7 +51,7 @@ const dispatch: QueryDispatch = {
   },
   'cmip6:nominal_resolution': (_, obj) => {
     return {
-      op: '=',
+      op: 'like',
       args: [{ property: 'properties.cmip6:nominal_resolution' }, obj['cmip6:nominal_resolution']],
     }
   },
