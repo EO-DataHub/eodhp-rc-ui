@@ -13,6 +13,12 @@ export type MapBounds = [number, number, number, number]
 
 export type SecondaryPanel = 'query-filters' | 'item-info' | 'collection-info' | undefined
 
+const PlaceholderRender: StacRender = {
+  id: 'default',
+  title: 'Default visualization',
+  assets: [],
+}
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
@@ -190,10 +196,15 @@ const dataFinderStore = createStore({
         ...collection.renders,
       }
 
-      const collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
+      let collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
         ...render,
         id,
       }))
+
+      // If no renders are available, create a placeholder render option
+      if (collectionRenderOptions.length === 0) {
+        collectionRenderOptions = [PlaceholderRender]
+      }
 
       return {
         ...context,
