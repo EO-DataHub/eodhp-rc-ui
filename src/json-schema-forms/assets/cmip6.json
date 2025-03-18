@@ -10,10 +10,10 @@
     "collection_id": {
       "const": "cmip6"
     },
-    "start_datetime": {
+    "start_datetime_range": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
-    "end_datetime": {
+    "end_datetime_range": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
     "cmip6:variable_long_name": {
@@ -39,6 +39,9 @@
     },
     "cmip6:variant_label": {
       "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variant_label"
+    },
+    "cmip6:nominal_resolution": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:nominal_resolution"
     }
   }
 }

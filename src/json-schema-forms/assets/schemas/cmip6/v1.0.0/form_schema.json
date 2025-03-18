@@ -218,6 +218,20 @@
         {"title": "r1i1p1f3", "enum": ["r1i1p1f3"]},
         {"title": "r1i1p2f1", "enum": ["r1i1p2f1"]}
       ]
+    },
+    "cmip6:nominal_resolution": {
+      "title": "Nominal Resolution",
+      "type": "string",
+      "default": "%",
+      "anyOf": [
+        {"title": "Any", "enum": ["%"]},
+        {"title": "10 km", "enum": ["10 km"]},
+        {"title": "50 km", "enum": ["50 km"]},
+        {"title": "100 km", "enum": ["100 km"]},
+        {"title": "250 km", "enum": ["250 km"]},
+        {"title": "500 km", "enum": ["500 km"]},
+        {"title": "10000 km", "enum": ["10000 km"]}
+      ]
     }
   }
 }

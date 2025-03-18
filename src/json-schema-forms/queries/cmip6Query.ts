@@ -49,6 +49,12 @@ const dispatch: QueryDispatch = {
       args: [{ property: 'properties.cmip6:variant_label' }, obj['cmip6:variant_label']],
     }
   },
+  'cmip6:nominal_resolution': (_, obj) => {
+    return {
+      op: '=',
+      args: [{ property: 'properties.cmip6:nominal_resolution' }, obj['cmip6:nominal_resolution']],
+    }
+  },
 }
 
 export default dispatch
