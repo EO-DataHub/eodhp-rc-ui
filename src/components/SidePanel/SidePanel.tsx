@@ -29,7 +29,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   return (
     <Flex height={'var(--content-height)'} position="relative" width="100%">
       {showCollectionPanel ? (
-        <CollectionPanel />
+        <CollectionPanel onCloseCollectionPanel={() => setShowCollectionPanel(false)} />
       ) : (
         <ItemPanel
           items={items}

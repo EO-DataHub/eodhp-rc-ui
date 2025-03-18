@@ -12,12 +12,13 @@ import { ProvidersSection } from './ProvidersSection'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
+  selectedCollection: Collection | null
 }
 
-export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({ onClose }) => {
-  const storedCollection = localStorage.getItem('selectedCollection')
-  const selectedCollection: Collection = storedCollection ? JSON.parse(storedCollection) : null
-
+export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
+  onClose,
+  selectedCollection,
+}) => {
   return (
     <>
       {selectedCollection && (

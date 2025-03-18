@@ -1,15 +1,14 @@
-import { Item } from '@/types'
 import { ReactNode } from 'react'
 import { Callout } from '../Callout/Callout'
 import styles from './ItemList.module.scss'
 
-interface ItemListProps {
-  items: Item[]
+interface ItemListProps<T> {
+  items: T[]
   error: boolean
-  renderItem: (item: Item, index: number) => ReactNode
+  renderItem: (item: T, index: number) => ReactNode
 }
 
-const ItemListContent = ({ items, error, renderItem }: ItemListProps) => {
+const ItemListContent = <T,>({ items, error, renderItem }: ItemListProps<T>) => {
   if (error) {
     return (
       <Callout type="error" message="Unable to load data. Please refresh the page and try again." />
@@ -32,7 +31,7 @@ const ItemListContent = ({ items, error, renderItem }: ItemListProps) => {
   )
 }
 
-const ItemList = ({ items, error, renderItem }: ItemListProps) => {
+const ItemList = <T,>({ items, error, renderItem }: ItemListProps<T>) => {
   return (
     <div className={styles.listContainer}>
       <ItemListContent items={items} error={error} renderItem={renderItem} />

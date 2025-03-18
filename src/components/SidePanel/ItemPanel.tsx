@@ -16,6 +16,7 @@ import { useSelector } from '@xstate/store/react'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
+import { FilterPanel } from './FilterPanel/FilterPanel'
 
 interface ItemPanelProps {
   items: Item[]
@@ -94,6 +95,8 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({
   setPage,
   setShowCollectionPanel,
 }) => {
+  const storedCollection = localStorage.getItem('selectedCollection')
+  const selectedCollection: Collection = storedCollection ? JSON.parse(storedCollection) : null
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<Item | null>(null)
   const [selectedThumbnail, setSelectedThumbnail] = useState<Item | null>(null)
@@ -232,13 +235,18 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({
           </PaginationContainer>
         )}
       </Flex>
+      <FilterPanel isOpen={isFilterOpen} onClose={toggleFilterPanel} />
+
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={!!selectedItemInfo || isCollectionInfoPanelOpen}>
         {selectedItemInfo && (
           <ItemInfoPanel item={selectedItemInfo} onClose={() => setSelectedItemInfo(null)} />
         )}
         {isCollectionInfoPanelOpen && (
-          <CollectionInfoPanel onClose={() => setIsCollectionInfoPanelOpen(false)} />
+          <CollectionInfoPanel
+            onClose={() => setIsCollectionInfoPanelOpen(false)}
+            selectedCollection={selectedCollection}
+          />
         )}
       </InfoPanelWrapper>
     </>
