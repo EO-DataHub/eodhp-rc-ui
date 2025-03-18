@@ -1,13 +1,19 @@
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
 
+export interface RadarOptions {
+  orbit?: string
+  resolutionVariant?: string
+  projection?: string
+}
+
 export interface PurchaseRequest {
   workspace: string | undefined
   datasetUrl: string
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
   coordinates?: number[][][]
-  radarOptions?: Record<string, unknown>
+  radarOptions?: RadarOptions
   endUserCountry?: string
   licence?: string
 }
