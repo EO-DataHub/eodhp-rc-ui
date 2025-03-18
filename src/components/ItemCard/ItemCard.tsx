@@ -124,6 +124,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     <Card
       key={`${type}-${item.id}`}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+      onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
+      onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
     >
       {isQueryCard && (
         <Flex
