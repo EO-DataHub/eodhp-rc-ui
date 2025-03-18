@@ -23,6 +23,7 @@ interface ServerRenderConfig {
   rescale?: [number, number][]
   colormap?: Record<string, string>
   colormap_name?: string
+  expression?: string
   variable?: string
   reference?: boolean
 }
@@ -118,6 +119,9 @@ function translateServerConfigToCollectionConfig(
         }
         if (renderConfig.rescale) {
           translatedRender.rescale = renderConfig.rescale
+        }
+        if (renderConfig.expression) {
+          translatedRender.expression = renderConfig.expression
         }
         if (renderConfig.reference !== undefined) {
           translatedRender.reference = renderConfig.reference

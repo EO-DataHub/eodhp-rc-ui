@@ -21,15 +21,14 @@
           [0, 200]
         ]
       },
-      "SWIR": {
-        "title": "SWIR",
+      "NDVI": {
+        "title": "Normalized difference vegetation index (NDVI)",
         "assets": ["cog"],
-        "bidx": [12, 8, 4],
-        "rescale": [
-          [0, 200],
-          [0, 200],
-          [0, 200]
-        ]
+        "bidx": [8, 4],
+        "colormap_name": "rdylgn",
+        "expression": "(cog_b8-cog_b4)/(cog_b8+cog_b4)",
+        "nodata": 0,
+        "rescale": [[-1, 1]]
       }
     }
   },
