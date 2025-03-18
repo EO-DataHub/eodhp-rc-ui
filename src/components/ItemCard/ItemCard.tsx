@@ -7,7 +7,6 @@ import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { getCatalog } from '@/library/catalogUtils'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -61,9 +60,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return url ? getCatalogByURL(url) : undefined
   }, [item?.links])
 
-  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
-  const catalog = collection && getCatalog(collection)
-
   // temporarily fetching item details
   const { data } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
@@ -106,11 +102,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
     if (aoi) {
       dataFinderStore.send({ type: 'storeAoi', aoi })
-    }
-
-    if (catalog && catalog === 'planet' && !aoi) {
-      alert('Please select coordinates before purchasing.')
-      return
     }
 
     if (isAuthenticated) {
