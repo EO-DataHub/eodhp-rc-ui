@@ -13,6 +13,7 @@
 
 import qs from 'qs'
 import { Item, BaseStacRender, StacRender } from '@/types'
+import serverConfig from './configFromServer.json'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
@@ -48,24 +49,27 @@ type CollectionConfig =
   | TitilerXarrayCollectionConfig
   | ThumbnailCollectionConfig
 
-export const DATASETS = {
-  SENTINEL_2: 'sentinel2_ard',
-  SENTINEL_1: 'sentinel1',
-  AIRBUS_SAR: 'airbus_sar_data',
-  AIRBUS_PHR: 'airbus_phr_data',
-  AIRBUS_SPOT: 'airbus_spot_data',
-  LAND_COVER: 'land_cover',
-  EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
-  EOCIS_SST: 'eocis-sst-cdrv3',
-  EOCIS_LST_S3A_DAY: 'eocis-lst-s3a-day',
-  EOCIS_LST_S3A_NIGHT: 'eocis-lst-s3a-night',
-  EOCIS_LST_S3B_DAY: 'eocis-lst-s3b-day',
-  EOCIS_LST_S3B_NIGHT: 'eocis-lst-s3b-night',
-  EOCIS_AEROSOL_S3A_DAILY: 'eocis-aerosol-slstr-daily-s3a',
-  EOCIS_AEROSOL_S3B_DAILY: 'eocis-aerosol-slstr-daily-s3b',
-  EOCIS_AEROSOL_S3A_MONTHLY: 'eocis-aerosol-slstr-monthly-s3a',
-  EOCIS_AEROSOL_S3B_MONTHLY: 'eocis-aerosol-slstr-monthly-s3b',
-} as const
+interface ServerRenderConfig {
+  title?: string
+  assets: string | string[]
+  bidx?: number[]
+  rescale?: [number, number][]
+  colormap?: Record<string, string>
+  colormap_name?: string
+  variable?: string
+  reference?: boolean
+}
+
+interface ServerCollectionConfig {
+  'eodhrc:type':
+    | 'raster-multiband'
+    | 'raster-singleband'
+    | 'multidim-singlevar-items'
+    | 'multidim-multivar'
+    | 'thumbnail'
+  'eodhrc:api'?: string
+  renders: Record<string, ServerRenderConfig>
+}
 
 export function getItemUrl(item: Item): string | undefined {
   return item.links.find((link) => link.rel === 'self')?.href
@@ -115,268 +119,91 @@ export const resolveTilesUrl = (item: Item, render?: StacRender): string | undef
   return `${tilerUrl}?${queryString}`
 }
 
-export const collectionRenderingConfig: Record<string, CollectionConfig> = {
-  [DATASETS.SENTINEL_2]: {
-    rendererType: 'titiler',
-    renders: {
-      'True Color': {
-        assets: 'cog',
-        title: 'True Color',
-        bidx: [3, 2, 1],
-        rescale: [
-          [0, 200],
-          [0, 200],
-          [0, 200],
-        ],
-      },
-      'False Color': {
-        assets: 'cog',
-        title: 'False Color',
-        bidx: [8, 4, 3],
-        rescale: [
-          [0, 200],
-          [0, 200],
-          [0, 200],
-        ],
-      },
-      SWIR: {
-        assets: 'cog',
-        title: 'SWIR',
-        bidx: [12, 8, 4],
-        rescale: [
-          [0, 200],
-          [0, 200],
-          [0, 200],
-        ],
-      },
-    },
-  },
-  [DATASETS.SENTINEL_1]: {
-    rendererType: 'thumbnail',
-  },
-  [DATASETS.AIRBUS_SAR]: {
-    rendererType: 'titiler',
-    renders: {
-      default: {
-        assets: 'thumbnail',
-        title: 'Thumbnail',
-      },
-    },
-  },
-  [DATASETS.LAND_COVER]: {
-    rendererType: 'titiler',
-    renders: {
-      default: {
-        title: 'GeoTIFF',
-        assets: 'GeoTIFF',
-        colormap_name: 'tab20c',
-      },
-    },
-  },
-  [DATASETS.EOCIS_SST_CLIM]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[0, 1]],
-        colormap_name: 'blues',
-        variable: 'sea_ice_fraction',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_SST]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[263.15, 310.15]],
-        colormap_name: 'jet',
-        variable: 'analysed_sst',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_LST_S3A_DAY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[263.15, 318.15]],
-        colormap_name: 'jet',
-        variable: 'lst',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_LST_S3A_NIGHT]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[263.15, 318.15]],
-        colormap_name: 'jet',
-        variable: 'lst',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_LST_S3B_DAY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[263.15, 318.15]],
-        colormap_name: 'jet',
-        variable: 'lst',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_LST_S3B_NIGHT]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[263.15, 318.15]],
-        colormap_name: 'jet',
-        variable: 'lst',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[0, 1]],
-        colormap_name: 'plasma',
-        variable: 'AOD550_mean',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[0, 1]],
-        colormap_name: 'plasma',
-        variable: 'AOD550_mean',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[0, 1]],
-        colormap_name: 'plasma',
-        variable: 'AOD550_mean',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
-    rendererType: 'titiler-xarray',
-    assetKey: 'reference_file',
-    renders: {
-      default: {
-        title: 'Default Visualization',
-        assets: 'reference_file',
-        rescale: [[0, 1]],
-        colormap_name: 'plasma',
-        variable: 'AOD550_mean',
-        tileMatrixSetId: 'WebMercatorQuad',
-        scale: 1,
-        multiscale: false,
-        reference: true,
-        decode_times: true,
-        consolidated: false,
-        return_mask: true,
-      },
-    },
-  },
-  [DATASETS.AIRBUS_PHR]: {
-    rendererType: 'thumbnail',
-  },
-  [DATASETS.AIRBUS_SPOT]: {
-    rendererType: 'thumbnail',
-  },
+function translateServerConfigToCollectionConfig(
+  serverConfig: Record<string, ServerCollectionConfig>,
+): Record<string, CollectionConfig> {
+  const result: Record<string, CollectionConfig> = {}
+
+  for (const [collectionId, config] of Object.entries(serverConfig)) {
+    const type = config['eodhrc:type']
+    const api = config['eodhrc:api']
+    const renders = config.renders
+
+    // Determine renderer type based on eodhrc:type and api
+    let rendererType: RendererType
+    if (type === 'thumbnail') {
+      rendererType = 'thumbnail'
+    } else if (api?.includes('titiler/xarray')) {
+      rendererType = 'titiler-xarray'
+    } else {
+      rendererType = 'titiler'
+    }
+
+    // Create base config
+    const baseConfig: BaseCollectionConfig = {
+      rendererType,
+      renders: {},
+    }
+
+    // Translate renders
+    if (renders) {
+      for (const [renderId, renderConfig] of Object.entries(renders)) {
+        const translatedRender: BaseStacRender = {
+          title: renderConfig.title ?? renderId,
+          assets: renderConfig.assets,
+        }
+
+        // Add additional properties based on render type
+        if (type === 'raster-multiband') {
+          if (renderConfig.bidx) {
+            translatedRender.bidx = renderConfig.bidx
+          }
+          if (renderConfig.rescale) {
+            translatedRender.rescale = renderConfig.rescale
+          }
+        } else if (type === 'raster-singleband') {
+          if (renderConfig.colormap) {
+            translatedRender.colormap = renderConfig.colormap
+          }
+          if (renderConfig.rescale) {
+            translatedRender.rescale = renderConfig.rescale
+          }
+        } else if (type === 'multidim-singlevar-items' || type === 'multidim-multivar') {
+          if (renderConfig.variable) {
+            translatedRender.variable = renderConfig.variable
+          }
+          if (renderConfig.colormap_name) {
+            translatedRender.colormap_name = renderConfig.colormap_name
+          }
+          if (renderConfig.rescale) {
+            translatedRender.rescale = renderConfig.rescale
+          }
+          if (renderConfig.reference !== undefined) {
+            translatedRender.reference = renderConfig.reference
+          }
+        }
+
+        baseConfig.renders![renderId] = translatedRender
+      }
+    }
+
+    // Add specific properties based on renderer type
+    if (rendererType === 'titiler-xarray') {
+      result[collectionId] = {
+        ...baseConfig,
+        assetKey: 'reference_file',
+      } as TitilerXarrayCollectionConfig
+    } else if (rendererType === 'thumbnail') {
+      result[collectionId] = baseConfig as ThumbnailCollectionConfig
+    } else {
+      result[collectionId] = baseConfig as TitilerCollectionConfig
+    }
+  }
+
+  return result
 }
+
+// Type assertion to ensure serverConfig matches ServerCollectionConfig
+const typedServerConfig = serverConfig as unknown as Record<string, ServerCollectionConfig>
+export const collectionRenderingConfig: Record<string, CollectionConfig> =
+  translateServerConfigToCollectionConfig(typedServerConfig)
