@@ -45,15 +45,17 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   if (!render) return undefined
 
   let tilerUrl = undefined
+  let urlParam = undefined
 
   if (render.missing_georeference && render.missing_georeference) {
     return undefined
   } else if (render.variable) {
     tilerUrl = tilerUrls['titiler-multidim']
+    urlParam = getAssetUrl(item, render.assets[0])
   } else {
     tilerUrl = tilerUrls.titiler
+    urlParam = getItemUrl(item)
   }
-  const urlParam = getAssetUrl(item, render.assets[0])
 
   let queryParams = {
     url: urlParam,
