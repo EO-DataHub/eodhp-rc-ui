@@ -10,7 +10,7 @@ import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { SidePanelCollectionCard } from './SidePanelCollectionCard/SidePanelCollectionCard'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
-import { FilterPanel } from './FilterPanel/FilterPanel'
+import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
@@ -23,15 +23,12 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
   const {
     searchText,
     setSearchText,
-    // filters,
-    // setFilters,
-    // groupBy,
-    // setGroupBy,
-    // isLoading,
+    filters,
+    setFilters,
+    groupBy,
+    setGroupBy,
     error,
-    // errorMessages,
     filteredCollections,
-    // groupedByCollections,
   } = useCollections()
 
   const navigate = useNavigate()
@@ -59,7 +56,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
         p="4"
         gap="2"
         style={{
-          boxShadow: selectedCollectionInfo !== null ? 'none' : undefined,
+          boxShadow: selectedCollectionInfo !== null || isFilterOpen ? 'none' : undefined,
         }}
       >
         <IconButton size="2" variant="ghost" onClick={onCloseCollectionPanel}>
@@ -101,7 +98,14 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
         />
       </Flex>
 
-      <FilterPanel isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <CollectionFilterPanel
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        filters={filters}
+        setFilters={setFilters}
+        groupBy={groupBy}
+        setGroupBy={setGroupBy}
+      />
 
       <InfoPanelWrapper isOpen={selectedCollectionInfo !== null}>
         {selectedCollectionInfo !== null && (

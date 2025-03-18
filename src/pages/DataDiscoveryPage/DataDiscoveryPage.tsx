@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { Flex, Box, Text, Grid, Select, Badge, Container } from '@radix-ui/themes'
+import { Flex, Box, Text, Grid, Select, Badge, Container, Separator } from '@radix-ui/themes'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
@@ -154,6 +154,7 @@ export const DataDiscoveryPage: React.FC = () => {
   return (
     <Container align="center" maxWidth="1640px">
       <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
+      <Separator style={{ width: '100%' }} />
       <ActionsBar searchText={searchText} onSearch={setSearchText} />
       <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
       <Flex px="5" flexGrow="1" direction="column" gap="1">

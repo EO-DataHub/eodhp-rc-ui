@@ -44,7 +44,7 @@ const isCollectionMatchingSearch = (collection: Collection, searchText: string) 
 export const GROUP_BY_KEY = 'groupBy'
 
 export const useCollections = () => {
-  const [filters, setFilters] = useState({})
+  const [filters, setFilters] = useState<QuickFilter>({})
   const [groupBy, setGroupBy] = useState<keyof QuickFilter | 'none'>('none')
   const [searchText, setSearchText] = useState('')
 
