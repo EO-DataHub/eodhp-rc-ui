@@ -5,6 +5,7 @@ import airbus_sar_schema from '@/json-schema-forms/assets/airbus_sar_data.json'
 import airbus_spot_schema from '@/json-schema-forms/assets/airbus_spot_data.json'
 import airbus_pneo_schema from '@/json-schema-forms/assets/airbus_pneo_data.json'
 import airbus_phr_schema from '@/json-schema-forms/assets/airbus_phr_data.json'
+import cmip6_schema from '@/json-schema-forms/assets/cmip6.json'
 
 type JSONSchema = Record<string, unknown>
 
@@ -15,6 +16,7 @@ const rjsfCollections: Record<string, JSONSchema> = {
   airbus_spot_data: airbus_spot_schema,
   airbus_pneo_data: airbus_pneo_schema,
   airbus_phr_data: airbus_phr_schema,
+  cmip6: cmip6_schema,
 }
 
 export default rjsfCollections
