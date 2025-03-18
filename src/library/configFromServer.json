@@ -1231,21 +1231,27 @@
     "renders": {
       "analysed_sst": {
         "assets": ["reference_file"],
-        "title": "Analysed sea surface temperature",
+        "title": "Analysed sea surface temperature (K)",
         "variable": "analysed_sst",
-        "reference": true
+        "reference": true,
+        "rescale": [[271, 306]],
+        "colormap_name": "coolwarm"
       },
       "analysed_sst_uncertainty": {
         "assets": ["reference_file"],
-        "title": "Estimated error standard deviation of analysed_sst",
+        "title": "Estimated error standard deviation of analysed_sst (K)",
         "variable": "analysed_sst_uncertainty",
-        "reference": true
+        "reference": true,
+        "rescale": [[0, 3]],
+        "colormap_name": "reds"
       },
       "sea_ice_fraction": {
         "assets": ["reference_file"],
-        "title": "Sea ice area fraction",
+        "title": "Sea ice area fraction (%)",
         "variable": "sea_ice_fraction",
-        "reference": true
+        "reference": true,
+        "rescale": [[0, 1]],
+        "colormap_name": "blues_r"
       }
     }
   },
