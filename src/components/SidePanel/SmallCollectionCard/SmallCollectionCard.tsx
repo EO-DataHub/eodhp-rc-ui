@@ -7,12 +7,14 @@ import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?re
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
+  onChangeCollection: (show: boolean) => void
   isLicenseProprietary: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
   isLicenseProprietary,
+  onChangeCollection,
 }) => {
   const storedCollection = localStorage.getItem('selectedCollection')
   const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
@@ -39,7 +41,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
         <Text size="2" className={styles.text}>
           {getFormattedDateRange(dateInterval)}
         </Text>
-        <Link href="/" size="2" mt="2" className={styles.link}>
+        <Link size="2" mt="2" className={styles.link} onClick={() => onChangeCollection(true)}>
           Change Collection
         </Link>
       </Flex>
