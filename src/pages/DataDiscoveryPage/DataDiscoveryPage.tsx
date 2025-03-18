@@ -1,59 +1,18 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect } from 'react'
 
 import { Flex, Box, Text, Grid, Select, Badge, Container } from '@radix-ui/themes'
-import { useQueries } from '@tanstack/react-query'
-import { fetchCollections } from '@/services/collectionService'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import type { Collection, QuickFilter } from '@/types'
-import { catalogs } from '@/constants/catalogs'
-import { collectionCategorization, filterMapping } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
 import styles from './DataDiscoveryPage.module.scss'
 import { useSearchParams } from 'react-router-dom'
-import { flexibleSearch } from '@/library/stringUtils'
+import { GROUP_BY_KEY, useCollections } from '@/hooks/useCollections'
 
 interface GroupByCollection {
   category: { label: string; value: string }
   collections: Collection[]
-}
-
-const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
-  return id in collectionCategorization
-}
-
-const GROUP_BY_KEY = 'groupBy'
-
-const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
-  const searchFields: (keyof Collection)[] = ['id', 'title', 'description', 'keywords', 'providers']
-
-  for (const field of searchFields) {
-    if (field in collection) {
-      const value = collection[field]
-
-      if (typeof value === 'string' && flexibleSearch(value, searchText) !== -1) {
-        return true
-      }
-
-      if (
-        Array.isArray(value) &&
-        value.some((item) => {
-          if (typeof item === 'string') {
-            return flexibleSearch(item, searchText) !== -1
-          }
-          if (typeof item === 'object' && 'name' in item) {
-            return flexibleSearch(item.name, searchText) !== -1
-          }
-          return false
-        })
-      ) {
-        return true
-      }
-    }
-  }
-
-  return false // No match found
 }
 
 const renderCollections = (collections: Collection[]) => {
@@ -121,83 +80,27 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 }
 
 export const DataDiscoveryPage: React.FC = () => {
+  const {
+    searchText,
+    setSearchText,
+    filters,
+    setFilters,
+    groupBy,
+    setGroupBy,
+    isLoading,
+    error,
+    errorMessages,
+    filteredCollections,
+    groupedByCollections,
+  } = useCollections()
+
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const filters = Object.fromEntries(searchParams.entries())
-  const groupBy = (searchParams.get(GROUP_BY_KEY) ?? 'none') as keyof QuickFilter | 'none'
-  const [searchText, setSearchText] = useState('')
-
-  const queries = useQueries({
-    queries: catalogs.map((catalog, index) => ({
-      queryKey: ['Collections', index],
-      queryFn: () => fetchCollections(catalog),
-    })),
-  })
-
-  const isLoading = queries.some((query) => query.isLoading)
-  const error = queries.some((query) => query.isError)
-  const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
-
-  const sortedCollections = useMemo(() => {
-    const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
-
-    // sort and filter base on search text
-    return [...mergedCollections]
-      .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
-      .filter((collection) => {
-        return isCollectionMatchingSearch(collection, searchText)
-      })
-  }, [queries, searchText])
-
-  const filteredCollections = useMemo(() => {
-    // no filter applied
-    if (Object.keys(filters).length === 0) {
-      return sortedCollections
-    }
-
-    return sortedCollections.filter((collection) => {
-      if (!isValidCollectionId(collection.id)) {
-        return false
-      }
-
-      const categorizationData = collectionCategorization[collection.id]
-      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
-
-      // one collection must satisfy all selected filter options to be included
-      for (const [filterKey, filterValue] of entries) {
-        if (
-          filterKey in categorizationData &&
-          !(categorizationData[filterKey] as string[]).includes(filterValue)
-        ) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [filters, sortedCollections])
-
-  const groupedByCollections = useMemo(() => {
-    if (groupBy === 'none') {
-      return []
-    }
-
-    const categories = filterMapping[groupBy]
-
-    return categories.map((category) => {
-      return {
-        category,
-        collections: filteredCollections.filter((collection) => {
-          if (!isValidCollectionId(collection.id)) {
-            return false
-          }
-
-          const categorizationData = collectionCategorization[collection.id]
-          return (categorizationData[groupBy][0] as string) === category.value
-        }),
-      }
-    })
-  }, [filteredCollections, groupBy])
+  useEffect(() => {
+    setFilters(Object.fromEntries(searchParams.entries()))
+    const groupBy = (searchParams.get(GROUP_BY_KEY) ?? 'none') as keyof QuickFilter | 'none'
+    setGroupBy(groupBy)
+  }, [searchParams, setFilters, setGroupBy])
 
   const handleFilterChange = (value: string, key: keyof QuickFilter) => {
     const newParams = new URLSearchParams(searchParams)
@@ -207,12 +110,14 @@ export const DataDiscoveryPage: React.FC = () => {
       newParams.set(key, value)
     }
     setSearchParams(newParams)
+    setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleRemoveFilter = (key: keyof QuickFilter) => {
     const newParams = new URLSearchParams(searchParams)
     newParams.delete(key)
     setSearchParams(newParams)
+    setFilters((prev) => ({ ...prev, [key]: undefined }))
   }
 
   const handleGroupBy = (value: keyof QuickFilter | 'none') => {
@@ -223,6 +128,7 @@ export const DataDiscoveryPage: React.FC = () => {
       newParams.set(GROUP_BY_KEY, value)
     }
     setSearchParams(newParams)
+    setGroupBy(value)
   }
 
   if (isLoading) {
