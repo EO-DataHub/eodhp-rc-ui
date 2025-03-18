@@ -1,20 +1,37 @@
 {
   "sentinel2_ard": {
     "renders": {
-      "True Color": {
-        "title": "RGB",
+      "Natural Color": {
+        "title": "Natural Color",
         "assets": ["cog"],
-        "bidx": [4, 3, 2],
+        "bidx": [3, 2, 1],
+        "color_formula": "Gamma RGB 6 Saturation 0.8 Sigmoidal RGB 25 0.35",
+        "nodata": 0
+      },
+      "True Color (RGB)": {
+        "title": "True Color (RGB)",
+        "assets": ["cog"],
+        "bidx": [3, 2, 1],
         "rescale": [
           [0, 200],
           [0, 200],
           [0, 200]
         ]
       },
-      "False Color": {
-        "title": "False Color",
+      "Color infrared": {
+        "title": "Color infrared",
         "assets": ["cog"],
-        "bidx": [8, 4, 3],
+        "bidx": [7, 3, 2],
+        "rescale": [
+          [0, 200],
+          [0, 200],
+          [0, 200]
+        ]
+      },
+      "Shortwave infrared": {
+        "title": "Shortwave infrared",
+        "assets": ["cog"],
+        "bidx": [10, 8, 3],
         "rescale": [
           [0, 200],
           [0, 200],
@@ -24,9 +41,9 @@
       "NDVI": {
         "title": "Normalized difference vegetation index (NDVI)",
         "assets": ["cog"],
-        "bidx": [8, 4],
+        "bidx": [7, 3],
         "colormap_name": "rdylgn",
-        "expression": "(cog_b8-cog_b4)/(cog_b8+cog_b4)",
+        "expression": "(cog_b7-cog_b3)/(cog_b7+cog_b3)",
         "nodata": 0,
         "rescale": [[-1, 1]]
       }
