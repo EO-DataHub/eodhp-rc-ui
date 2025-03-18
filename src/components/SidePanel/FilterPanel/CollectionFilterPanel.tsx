@@ -1,6 +1,6 @@
 import React from 'react'
 import { ReloadIcon, Cross1Icon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton } from '@radix-ui/themes'
+import { Flex, Text, IconButton, Heading, Select } from '@radix-ui/themes'
 import styles from './FilterPanel.module.scss'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { QuickFilter } from '@/types'
@@ -19,19 +19,25 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
   onClose,
   filters,
   setFilters,
-  // groupBy,
+  groupBy,
+  setGroupBy,
 }) => {
   const handleFilterChange = (value: string, key: keyof QuickFilter) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
   }
+
+  const handleGroupBy = (value: keyof QuickFilter | 'none') => {
+    setGroupBy(value)
+  }
+
   return (
     <Flex
       direction="column"
       p="4"
       className={`${styles.filterPanel} ${isOpen ? styles['filterPanel--open'] : ''}`}
     >
-      <Flex direction="column" gap="6" height="100%">
-        <Flex justify="between">
+      <Flex direction="column" gap="5" height="100%">
+        <Flex justify="between" align="center">
           <IconButton size="2" variant="ghost">
             <Flex gap="2" align="center">
               <ReloadIcon />
@@ -42,12 +48,37 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
             <Cross1Icon />
           </IconButton>
         </Flex>
-        <QuickFilterMenu
-          filters={filters}
-          onFilterChange={handleFilterChange}
-          flexDirection="column"
-          inputSize="2"
-        />
+        <Flex direction="column" gap="2">
+          <Heading size="2" as="h4">
+            Filters
+          </Heading>
+          <QuickFilterMenu
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            flexDirection="column"
+            inputSize="2"
+          />
+        </Flex>
+
+        <Flex direction="column" gap="2">
+          <Heading size="2" as="h4">
+            Group By
+          </Heading>
+          <Select.Root size="2" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
+            <Select.Trigger style={{ width: '100%' }} placeholder="Group By" />
+            <Select.Content position="popper">
+              <Select.Group>
+                <Select.Item value="none">None</Select.Item>
+                <Select.Item value="dataCategory">Data Category</Select.Item>
+                <Select.Item value="resolution">Resolution</Select.Item>
+                <Select.Item value="provider">Provider</Select.Item>
+                <Select.Item value="location">Location</Select.Item>
+                <Select.Item value="keyword">Keywords</Select.Item>
+                <Select.Item value="license">License</Select.Item>
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
+        </Flex>
       </Flex>
     </Flex>
   )
