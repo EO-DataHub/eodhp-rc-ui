@@ -16,8 +16,8 @@ export interface Catalog {
 }
 
 export interface BaseStacRender {
-  assets: string | string[]
-  title?: string
+  assets: string[]
+  title: string
   rescale?: [number, number][]
   nodata?: number | string
   colormap_name?: string
@@ -36,6 +36,7 @@ export interface BaseStacRender {
   decode_times?: boolean
   consolidated?: boolean
   return_mask?: boolean
+  missing_georeference?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make

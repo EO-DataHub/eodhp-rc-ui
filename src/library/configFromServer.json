@@ -1,7 +1,5 @@
 {
   "sentinel2_ard": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-multiband",
     "renders": {
       "True Color": {
         "title": "RGB",
@@ -36,17 +34,14 @@
     }
   },
   "sentinel1": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "thumbnail"
+        "assets": ["thumbnail"]
       }
     }
   },
   "ukcp": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-singlevar-items",
     "renders": {
       "pr": {
         "title": "Precipitation (mm/day)",
@@ -54,8 +49,7 @@
         "variable": "pr",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [0, 10],
-        "eodhrc:item_filter_cql2": "id LIKE '%.pr.%'"
+        "rescale": [0, 10]
       },
       "prsn": {
         "title": "Snowfall Flux (mm/day)",
@@ -63,8 +57,7 @@
         "variable": "prsn",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [0, 10],
-        "eodhrc:item_filter_cql2": "id LIKE '%.prsn.%'"
+        "rescale": [0, 10]
       },
       "tas": {
         "title": "Mean Air Temperature (°C)",
@@ -72,17 +65,14 @@
         "variable": "tas",
         "reference": true,
         "colormap_name": "coolwarm",
-        "rescale": [-5, 20],
-        "eodhrc:item_filter_cql2": "id LIKE '%.tas.%'"
+        "rescale": [-5, 20]
       }
     }
   },
   "land_cover": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-singleband",
     "renders": {
       "title": "Land Cover Map",
-      "assets": "GeoTIFF",
+      "assets": ["GeoTIFF"],
       "colormap": {
         "0": "#000000",
         "10": "#ffff64",
@@ -126,8 +116,6 @@
     }
   },
   "eocis-aerosol-slstr-daily-s3a": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -366,8 +354,6 @@
     }
   },
   "eocis-aerosol-slstr-monthly-s3a": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -606,8 +592,6 @@
     }
   },
   "eocis-aerosol-slstr-daily-s3b": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -846,8 +830,6 @@
     }
   },
   "eocis-aerosol-slstr-monthly-s3b": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -1086,8 +1068,6 @@
     }
   },
   "eocis-lst-s3a-day": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1128,8 +1108,6 @@
     }
   },
   "eocis-lst-s3a-night": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1170,8 +1148,6 @@
     }
   },
   "eocis-lst-s3b-day": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1212,8 +1188,6 @@
     }
   },
   "eocis-lst-s3b-night": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1254,8 +1228,6 @@
     }
   },
   "eocis-sst-cdrv3": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "analysed_sst": {
         "assets": ["reference_file"],
@@ -1278,30 +1250,26 @@
     }
   },
   "airbus_sar_data": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-singleband",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "thumbnail"
+        "assets": ["thumbnail"]
       }
     }
   },
   "airbus_phr_data": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "quicklook"
+        "assets": ["quicklook"]
       }
     }
   },
   "airbus_spot_data": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "quicklook"
+        "assets": ["quicklook"]
       }
     }
   }
