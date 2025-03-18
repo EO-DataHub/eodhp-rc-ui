@@ -1,11 +1,9 @@
 import React, { useContext, useMemo } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { Item } from '@/types'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Checkbox, Button, Tooltip } from '@radix-ui/themes'
+import { Item, ItemCardType } from '@/types'
+import { Cross2Icon, DrawingPinIcon, InfoCircledIcon } from '@radix-ui/react-icons'
+import { Flex, Text, Card, IconButton, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
-import MapsIcon from '@/assets/icons/maps-icon.svg?react'
-import CancelIcon from '@/assets/icons/cancel-filled-icon.svg?react'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -17,23 +15,14 @@ import {
   itemCardFieldsToDisplay,
 } from '@/constants/collectionCategorizations'
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
+import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
 import { getCatalogByURL } from '@/library/catalogUtils'
 
 interface ItemCardProps {
   item: Item
-  collectionId: string | null
-  isSelected: boolean
-  isThumbnailSelected: boolean
-  isChecked: boolean
-  onSelect: (item: Item) => void
-  onSelectItemInfo: (item: Item) => void
-  onThumbnailSelect: (item: Item) => void
-  onCheckboxChange: (item: Item, isChecked: boolean) => void
-  onMouseEnter?: (item: Item) => void
-  onMouseLeave?: (item: Item) => void
-  isLicenseProprietary: boolean
+  type: ItemCardType
 }
 
 const renderAdditionalFields = (item: Item, collectionId: string | null) => {
@@ -65,20 +54,7 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   })
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({
-  item,
-  collectionId,
-  isSelected,
-  isThumbnailSelected,
-  isChecked,
-  onSelect,
-  onSelectItemInfo,
-  onCheckboxChange,
-  onMouseEnter,
-  onMouseLeave,
-  onThumbnailSelect,
-  isLicenseProprietary,
-}) => {
+const ItemCard = ({ item, type }: ItemCardProps) => {
   const rootCatalog = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url ? getCatalogByURL(url) : undefined
@@ -96,13 +72,29 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   const navigate = useNavigate()
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
-  const cardTitle = useMemo(() => {
-    if (!data?.properties?.title) {
-      return item.id
-    }
+  const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
 
-    return data.properties.title
-  }, [data?.properties.title, item.id])
+  const isSelected = infoPanelItem?.id === item.id
+
+  const isLicenseProprietary = useSelector(
+    dataFinderStore,
+    (state) => state.context.collection?.license === 'proprietary',
+  )
+  const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+
+  const isPinnedCard = type === 'pinned-item'
+  const isQueryCard = type === 'query-item'
+
+  const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
+    state.context.pinnedItems.some(
+      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === collectionRender,
+    ),
+  )
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    e.currentTarget.onerror = null
+    e.currentTarget.src = DefaultItemThumbnail
+  }
 
   const handlePurchase = async () => {
     // in the future we will also check if the user has purchase credits available
@@ -119,83 +111,94 @@ export const ItemCard: React.FC<ItemCardProps> = ({
     }
   }
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.onerror = null
-    e.currentTarget.src = DefaultItemThumbnail
-  }
-
   return (
     <Card
+      key={`${type}-${item.id}`}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
-      onClick={() => onSelect(item)}
-      onMouseEnter={() => onMouseEnter?.(item)}
-      onMouseLeave={() => onMouseLeave?.(item)}
+      onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
+      onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
     >
-      <Flex
-        align="center"
-        justify="center"
-        flexShrink="0"
-        p="4"
-        className={`${styles.thumbnailContainer} ${
-          isThumbnailSelected ? styles.thumbnailSelected : ''
-        }`}
-        onClick={(e) => {
-          e.stopPropagation()
-          onThumbnailSelect(item)
-        }}
-      >
-        <img
-          src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
-          className={styles.thumbnail}
-          onError={handleImageError}
-        />
-        <div className={`${styles.overlay} ${isThumbnailSelected ? styles.overlayActive : ''}`}>
-          {isThumbnailSelected ? <CancelIcon /> : <MapsIcon />}
-        </div>
-      </Flex>
-      <Flex direction="column" p="2" justify="between" flexGrow="1">
-        <Flex direction="column">
-          <Flex justify="between">
-            <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-              {cardTitle}
-            </Text>
-            <Checkbox
-              mt="1"
-              variant="surface"
-              checked={isChecked}
-              onCheckedChange={(checked) => onCheckboxChange(item, Boolean(checked))}
-              style={{ flexShrink: 0, flexGrow: 0 }}
-            />
-          </Flex>
-          <Text size="1" className={styles.text}>
-            {convertDateToUTCString(new Date(item.properties.datetime))}
-          </Text>
-          {data && renderAdditionalFields(data, collectionId)}
+      {isQueryCard && (
+        <Flex
+          align="center"
+          justify="center"
+          flexShrink="0"
+          p="4"
+          className={styles.thumbnailContainer}
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!collectionRender) return
+            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender })
+          }}
+        >
+          <img
+            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+            className={styles.thumbnail}
+            onError={handleImageError}
+          />
+          <div className={styles.overlay}>
+            <Tooltip content={isAlreadyPinned ? 'Already Pinned' : 'Pin Item'}>
+              <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
+            </Tooltip>
+          </div>
         </Flex>
-        <Flex justify="end" gap="2" align="center">
-          <Tooltip content="More Info">
-            <IconButton
-              radius="full"
-              variant="ghost"
-              className={styles.button}
-              onClick={() => onSelectItemInfo(item)}
-            >
-              <InfoCircledIcon />
-            </IconButton>
-          </Tooltip>
-          {isLicenseProprietary && (
-            <Button
-              variant="ghost"
-              className={styles.button}
-              onClick={async () => {
-                await handlePurchase()
-              }}
-            >
-              Purchase
-            </Button>
+      )}
+      <Flex direction="column" p="2" flexGrow={'1'}>
+        <Flex>
+          <Flex direction="column" flexGrow={'1'}>
+            <Flex justify="between">
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+                {item.id}
+              </Text>
+            </Flex>
+            <Text size="1" className={styles.text}>
+              {convertDateToUTCString(new Date(item.properties.datetime))}
+            </Text>
+            {data && renderAdditionalFields(data, item.collection)}
+          </Flex>
+          {isPinnedCard && (
+            <Flex align="end" direction="column">
+              <IconButton
+                size="1"
+                variant="soft"
+                radius="full"
+                className={styles.unpinButton}
+                onClick={() => dataFinderStore.send({ type: 'removePinnedItem', item })}
+              >
+                <Cross2Icon />
+              </IconButton>
+            </Flex>
           )}
+        </Flex>
+        <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
+          {isPinnedCard && item.render && (
+            <Flex>
+              <Text size="1" className={styles.text}>
+                {item.render.id}
+              </Text>
+            </Flex>
+          )}
+          <Flex justify="end" gap="2" align="center">
+            <Tooltip content="More Info">
+              <IconButton
+                radius="full"
+                variant="ghost"
+                className={styles.button}
+                onClick={() => dataFinderStore.send({ type: 'openItemInfoPanel', item })}
+              >
+                <InfoCircledIcon />
+              </IconButton>
+            </Tooltip>
+            {isLicenseProprietary && (
+              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+                Purchase
+              </Button>
+            )}
+          </Flex>
         </Flex>
       </Flex>
     </Card>
   )
 }
+
+export default ItemCard

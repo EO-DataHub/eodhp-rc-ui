@@ -87,6 +87,8 @@ export interface Collection {
   }
 }
 
+export type ItemCardType = 'query-item' | 'pinned-item'
+
 export interface Item {
   type: string
   stac_version: string

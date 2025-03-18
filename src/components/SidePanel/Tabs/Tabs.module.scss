@@ -1,0 +1,50 @@
+.TabsRoot {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	overflow: hidden;
+}
+
+.TabsList {
+	flex-shrink: 0;
+	display: flex;
+	border-bottom: 1px solid var(--mauve-6);
+}
+
+.TabsContent {
+	display: none;
+	overflow: hidden;
+}
+
+.TabsContent[data-state='active'] {
+	display: flex; 
+	flex-grow: 1;
+  flex-direction: column;
+}
+
+.TabsTrigger {
+	align-items: center;
+	background-color: white;
+	color: var(--neutral-10);
+	display: flex;
+	flex: 1;
+	font-family: inherit;
+	font-size: 15px;
+	font-weight: 400;
+	height: 45px;
+	justify-content: center;
+	line-height: 1;
+	padding: 0 20px;
+	user-select: none;
+}
+
+.TabsTrigger:hover {
+	color: var(--accent-10);
+}
+.TabsTrigger[data-state="active"] {
+	color: var(--accent-12);
+	font-weight: 600;
+	box-shadow:
+		inset 0 -1px 0 0 var(--accent-10),
+		0 1px 0 0 var(--accent-10);
+}
