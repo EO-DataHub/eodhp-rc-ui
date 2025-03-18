@@ -46,12 +46,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   const options = {
     productBundle: {
       shared: ['Visual', 'General Use', 'Basic', 'Analytic'],
-      airbus_sar: [
-        'SSC (Single Look Slant Range Complex)',
-        'MGD (Multilook Ground Range Detected)',
-        'GEC (Geocoded Ellipsoid Corrected)',
-        'EEC (Enhanced Ellipsoid Corrected)',
-      ],
+      airbus_sar: ['SSC', 'MGD', 'GEC', 'EEC'],
     },
     license: {
       airbus_optical: [
@@ -59,17 +54,21 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         'Background Layer',
         'Standard + Background Layer',
         'Academic',
-        'Media License',
+        'Media Licence',
         'Standard Multi End-Users (2-5)',
         'Standard Multi End-Users (6-10)',
         'Standard Multi End-Users (11-30)',
-        'Standard Multi End-Users (+30)',
+        'Standard Multi End-Users (>30)',
       ],
-      airbus_sar: ['Single User', 'Multi User (2-5)', 'Multi User (6-30)'],
+      airbus_sar: [
+        'Single User Licence',
+        'Multi User (2 - 5) Licence',
+        'Multi User (6 - 30) Licence',
+      ],
     },
-    orbit: ['Rapid (Standard)', 'Science (Higher Precision)'],
-    resolutionVariant: ['Radiometrically Enhanced', 'Spatially Enhanced'],
-    projection: ['Auto', 'UTM (Standard)', 'UPS (Polar)'],
+    orbit: ['rapid', 'science'],
+    resolutionVariant: ['RE', 'SE'],
+    projection: ['Auto', 'UTM', 'UPS'],
   }
 
   const renderSelect = (field: keyof typeof options, label: string, isDisabled = false) => {
