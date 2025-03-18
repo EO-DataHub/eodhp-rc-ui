@@ -143,8 +143,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
             <Select.Content className={styles.selectContent}>
               <Select.Group>
                 {countries.map((country) => (
-                  <Select.Item key={country.code} value={country.code} className={styles.item}>
-                    {country.name}
+                  <Select.Item key={country.id} value={country.id} className={styles.item}>
+                    {country.label}
                   </Select.Item>
                 ))}
               </Select.Group>
