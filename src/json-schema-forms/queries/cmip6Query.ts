@@ -45,7 +45,7 @@ const dispatch: QueryDispatch = {
   },
   'cmip6:variant_label': (_, obj) => {
     return {
-      op: '=',
+      op: 'like',
       args: [{ property: 'properties.cmip6:variant_label' }, obj['cmip6:variant_label']],
     }
   },
