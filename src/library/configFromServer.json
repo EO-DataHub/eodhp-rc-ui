@@ -1,52 +1,63 @@
 {
   "sentinel2_ard": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-multiband",
     "renders": {
-      "True Color": {
-        "title": "RGB",
+      "Natural Color": {
+        "title": "Natural Color",
         "assets": ["cog"],
-        "bidx": [4, 3, 2],
+        "bidx": [3, 2, 1],
+        "color_formula": "Gamma RGB 6 Saturation 0.8 Sigmoidal RGB 25 0.35",
+        "nodata": 0
+      },
+      "True Color (RGB)": {
+        "title": "True Color (RGB)",
+        "assets": ["cog"],
+        "bidx": [3, 2, 1],
         "rescale": [
           [0, 200],
           [0, 200],
           [0, 200]
         ]
       },
-      "False Color": {
-        "title": "False Color",
+      "Color infrared": {
+        "title": "Color infrared",
         "assets": ["cog"],
-        "bidx": [8, 4, 3],
+        "bidx": [7, 3, 2],
         "rescale": [
           [0, 200],
           [0, 200],
           [0, 200]
         ]
       },
-      "SWIR": {
-        "title": "SWIR",
+      "Shortwave infrared": {
+        "title": "Shortwave infrared",
         "assets": ["cog"],
-        "bidx": [12, 8, 4],
+        "bidx": [10, 8, 3],
         "rescale": [
           [0, 200],
           [0, 200],
           [0, 200]
         ]
+      },
+      "NDVI": {
+        "title": "Normalized difference vegetation index (NDVI)",
+        "assets": ["cog"],
+        "bidx": [7, 3],
+        "colormap_name": "rdylgn",
+        "expression": "(cog_b7-cog_b3)/(cog_b7+cog_b3)",
+        "nodata": 0,
+        "rescale": [[-1, 1]]
       }
     }
   },
   "sentinel1": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "thumbnail"
+        "assets": ["thumbnail"]
       }
     }
   },
   "ukcp": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-singlevar-items",
     "renders": {
       "pr": {
         "title": "Precipitation (mm/day)",
@@ -54,8 +65,7 @@
         "variable": "pr",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [0, 10],
-        "eodhrc:item_filter_cql2": "id LIKE '%.pr.%'"
+        "rescale": [0, 10]
       },
       "prsn": {
         "title": "Snowfall Flux (mm/day)",
@@ -63,8 +73,7 @@
         "variable": "prsn",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [0, 10],
-        "eodhrc:item_filter_cql2": "id LIKE '%.prsn.%'"
+        "rescale": [0, 10]
       },
       "tas": {
         "title": "Mean Air Temperature (°C)",
@@ -72,17 +81,14 @@
         "variable": "tas",
         "reference": true,
         "colormap_name": "coolwarm",
-        "rescale": [-5, 20],
-        "eodhrc:item_filter_cql2": "id LIKE '%.tas.%'"
+        "rescale": [-5, 20]
       }
     }
   },
   "land_cover": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-singleband",
     "renders": {
       "title": "Land Cover Map",
-      "assets": "GeoTIFF",
+      "assets": ["GeoTIFF"],
       "colormap": {
         "0": "#000000",
         "10": "#ffff64",
@@ -126,8 +132,6 @@
     }
   },
   "eocis-aerosol-slstr-daily-s3a": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -366,8 +370,6 @@
     }
   },
   "eocis-aerosol-slstr-monthly-s3a": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -606,8 +608,6 @@
     }
   },
   "eocis-aerosol-slstr-daily-s3b": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -846,8 +846,6 @@
     }
   },
   "eocis-aerosol-slstr-monthly-s3b": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "pixel_count": {
         "assets": ["reference_file"],
@@ -1086,8 +1084,6 @@
     }
   },
   "eocis-lst-s3a-day": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1128,8 +1124,6 @@
     }
   },
   "eocis-lst-s3a-night": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1170,8 +1164,6 @@
     }
   },
   "eocis-lst-s3b-day": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1212,8 +1204,6 @@
     }
   },
   "eocis-lst-s3b-night": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "lst": {
         "assets": ["reference_file"],
@@ -1254,54 +1244,56 @@
     }
   },
   "eocis-sst-cdrv3": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/xarray",
-    "eodhrc:type": "multidim-multivar",
     "renders": {
       "analysed_sst": {
         "assets": ["reference_file"],
-        "title": "Analysed sea surface temperature",
+        "title": "Analysed sea surface temperature (K)",
         "variable": "analysed_sst",
-        "reference": true
+        "reference": true,
+        "rescale": [[271, 306]],
+        "colormap_name": "coolwarm"
       },
       "analysed_sst_uncertainty": {
         "assets": ["reference_file"],
-        "title": "Estimated error standard deviation of analysed_sst",
+        "title": "Estimated error standard deviation of analysed_sst (K)",
         "variable": "analysed_sst_uncertainty",
-        "reference": true
+        "reference": true,
+        "rescale": [[0, 3]],
+        "colormap_name": "reds"
       },
       "sea_ice_fraction": {
         "assets": ["reference_file"],
-        "title": "Sea ice area fraction",
+        "title": "Sea ice area fraction (%)",
         "variable": "sea_ice_fraction",
-        "reference": true
+        "reference": true,
+        "rescale": [[0, 1]],
+        "colormap_name": "blues_r"
       }
     }
   },
   "airbus_sar_data": {
-    "eodhrc:api": "https://staging.eodatahub.org.uk/titiler/core",
-    "eodhrc:type": "raster-singleband",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "thumbnail"
+        "assets": ["thumbnail"]
       }
     }
   },
   "airbus_phr_data": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "quicklook"
+        "assets": ["quicklook"],
+        "missing_georeference": true
       }
     }
   },
   "airbus_spot_data": {
-    "eodhrc:type": "thumbnail",
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": "quicklook"
+        "assets": ["quicklook"],
+        "missing_georeference": true
       }
     }
   }
