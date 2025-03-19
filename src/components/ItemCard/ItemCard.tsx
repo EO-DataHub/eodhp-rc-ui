@@ -202,7 +202,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           <Flex direction="column" flexGrow={'1'}>
             <Flex justify="between">
               <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-                {item.id}
+                {data?.properties?.title ?? item.id}
               </Text>
             </Flex>
             <Text size="1" className={styles.text}>
