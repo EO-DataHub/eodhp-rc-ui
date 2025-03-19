@@ -54,14 +54,23 @@ const dataFinderStore = createStore({
         secondaryPanel: event.panel,
       }
     },
-    openItemInfoPanel: (context, event: { item: Item }): typeof context => {
+    toggleItemInfoPanel: (context, event: { item: Item }): typeof context => {
+      // Panel is already open with the same item, close it
+      if (context.infoPanelItem?.id === event.item.id) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+          infoPanelItem: undefined,
+        }
+      }
+
       return {
         ...context,
         secondaryPanel: 'item-info',
         infoPanelItem: event.item,
       }
     },
-    closeItemInfoPanel: (context) => {
+    closeSecondaryPanel: (context) => {
       return {
         ...context,
         secondaryPanel: undefined,

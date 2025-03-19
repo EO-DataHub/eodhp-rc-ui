@@ -259,7 +259,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             )}
             <Tooltip content="More Info">
               <ActionButton
-                onClick={() => dataFinderStore.send({ type: 'openItemInfoPanel', item })}
+                active={isSelected}
+                onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
               >
                 <InfoCircledIcon />
               </ActionButton>
