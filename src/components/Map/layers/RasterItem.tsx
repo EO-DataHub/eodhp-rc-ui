@@ -9,6 +9,8 @@ const RasterItemLayer = ({ item }: { item: Item }) => {
   const rendererType = collectionRenderingConfig[item.collection]?.rendererType
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
 
+  if (item.visible === false) return null
+
   if (rendererType === 'thumbnail') {
     return <ThumbnailItemLayer item={item} />
   }

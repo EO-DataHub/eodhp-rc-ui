@@ -162,6 +162,7 @@ const dataFinderStore = createStore({
 
       const pinnedItem = {
         ...event.item,
+        visible: true,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         render: event.collectionRender,
       }
@@ -188,6 +189,20 @@ const dataFinderStore = createStore({
       return {
         ...context,
         hoveredItem: event.item,
+      }
+    },
+    toggleItemVisibility: (context, event: { item: Item }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.map((pinnedItem) => {
+          if (pinnedItem.id === event.item.id && pinnedItem.render?.id === event.item.render?.id) {
+            return {
+              ...pinnedItem,
+              visible: !pinnedItem.visible,
+            }
+          }
+          return pinnedItem
+        }),
       }
     },
     zoomToItem: (context, event: { item: Item }) => {

@@ -91,6 +91,7 @@ export type ItemCardType = 'query-item' | 'pinned-item'
 
 export interface Item {
   type: string
+  visible: boolean
   stac_version: string
   stac_extensions: string[]
   id: string

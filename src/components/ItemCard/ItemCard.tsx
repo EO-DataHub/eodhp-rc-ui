@@ -1,7 +1,13 @@
 import React, { useContext, useMemo } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
-import { Cross2Icon, DrawingPinIcon, EyeOpenIcon, InfoCircledIcon } from '@radix-ui/react-icons'
+import {
+  Cross2Icon,
+  DrawingPinIcon,
+  EyeOpenIcon,
+  InfoCircledIcon,
+  ZoomInIcon,
+} from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
@@ -196,6 +202,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
+                  <ZoomInIcon />
+                </ActionButton>
+                <ActionButton
+                  onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
+                >
                   <EyeOpenIcon />
                 </ActionButton>
               </>
