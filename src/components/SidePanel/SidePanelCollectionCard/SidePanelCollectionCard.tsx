@@ -60,7 +60,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
             </IconButton>
 
             <Link size="2" className={styles.link} onClick={onChangeCollection}>
-              Change Collection
+              Open Collection
             </Link>
           </Flex>
         </Flex>
