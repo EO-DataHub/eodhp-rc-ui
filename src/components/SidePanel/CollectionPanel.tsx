@@ -163,6 +163,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
         {groupBy === 'none' ? (
           <ItemList
             items={filteredCollections}
+            cardType="query-item"
             error={error}
             renderItem={(collection) => (
               <SidePanelCollectionCard

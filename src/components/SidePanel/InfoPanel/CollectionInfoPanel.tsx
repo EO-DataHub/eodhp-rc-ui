@@ -9,10 +9,11 @@ import { Collection } from '@/types'
 import { AssetItemTable } from './AssetItemTable'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { ProvidersSection } from './ProvidersSection'
+import { DataQualitySection } from './DataQualitySection'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
-  selectedCollection: Collection | null
+  selectedCollection: Collection | null | undefined
 }
 
 export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
@@ -92,7 +93,7 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
               </Tabs.Content>
 
               <Tabs.Content value="data_quality">
-                <Text>No additional data quality metrics available.</Text>
+                <DataQualitySection />
               </Tabs.Content>
             </Box>
           </Tabs.Root>
