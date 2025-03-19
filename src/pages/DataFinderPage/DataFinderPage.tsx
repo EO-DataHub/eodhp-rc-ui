@@ -57,7 +57,12 @@ export const DataFinderPage: React.FC = () => {
     }
   }, [collectionId, navigate, collection, queries])
 
-  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
+  const queryKey = JSON.stringify({
+    queryFilter,
+    aoi: aoi?.geometry,
+    mapBounds,
+    collectionId: collection?.id,
+  })
   const fetchFunction = () =>
     fetchItems({
       limit: MAX_TOTAL_ITEMS,
