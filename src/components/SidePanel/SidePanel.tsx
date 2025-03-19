@@ -22,8 +22,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
-  const closeSecondaryPanel = () =>
-    dataFinderStore.send({ type: 'setSecondaryPanel', panel: undefined })
+  const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
   const isInfoPanelOpen = secondaryPanel === 'item-info' || secondaryPanel === 'collection-info'
 
@@ -53,10 +52,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={isInfoPanelOpen}>
         {secondaryPanel === 'item-info' && infoPanelItem && (
-          <ItemInfoPanel
-            item={infoPanelItem}
-            onClose={() => dataFinderStore.send({ type: 'closeItemInfoPanel' })}
-          />
+          <ItemInfoPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
         )}
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel onClose={closeSecondaryPanel} />

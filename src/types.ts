@@ -129,6 +129,10 @@ export interface Item {
   }
   tilesUrl: string | undefined
   render?: StacRender
+  mapRender?: {
+    visible: boolean
+    opacity: number
+  }
 }
 
 export interface CubeData {

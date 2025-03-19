@@ -3,6 +3,7 @@ import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import * as turf from '@turf/turf'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -18,6 +19,9 @@ const PlaceholderRender: StacRender = {
   title: 'Default visualization',
   assets: [],
 }
+
+const pinnedItemIsEqual = (a: Item, b: Item) =>
+  a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
 
 const dataFinderStore = createStore({
   // Initial context
@@ -53,14 +57,23 @@ const dataFinderStore = createStore({
         secondaryPanel: event.panel,
       }
     },
-    openItemInfoPanel: (context, event: { item: Item }): typeof context => {
+    toggleItemInfoPanel: (context, event: { item: Item }): typeof context => {
+      // Panel is already open with the same item, close it
+      if (context.infoPanelItem?.id === event.item.id) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+          infoPanelItem: undefined,
+        }
+      }
+
       return {
         ...context,
         secondaryPanel: 'item-info',
         infoPanelItem: event.item,
       }
     },
-    closeItemInfoPanel: (context) => {
+    closeSecondaryPanel: (context) => {
       return {
         ...context,
         secondaryPanel: undefined,
@@ -152,9 +165,8 @@ const dataFinderStore = createStore({
       context,
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
-      const isAlreadyPinned = context.pinnedItems.some(
-        (pinnedItem) =>
-          pinnedItem.id === event.item.id && pinnedItem.render?.id === event.collectionRender.id,
+      const isAlreadyPinned = context.pinnedItems.some((pinnedItem) =>
+        pinnedItemIsEqual(pinnedItem, event.item),
       )
 
       if (isAlreadyPinned) return context
@@ -163,6 +175,10 @@ const dataFinderStore = createStore({
         ...event.item,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         render: event.collectionRender,
+        mapRender: {
+          visible: true,
+          opacity: 1,
+        },
       }
 
       return {
@@ -174,17 +190,74 @@ const dataFinderStore = createStore({
       return {
         ...context,
         pinnedItems: context.pinnedItems.filter(
-          (pinnedItem) =>
-            // Pinned items are considered equal if their IDs and render IDs match
-            pinnedItem.id !== event.item.id || pinnedItem.render?.id !== event.item.render?.id,
+          (pinnedItem) => !pinnedItemIsEqual(pinnedItem, event.item),
         ),
       }
+    },
+    clearAllPinnedItems: {
+      pinnedItems: [],
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
       return {
         ...context,
         hoveredItem: event.item,
       }
+    },
+    toggleItemVisibility: (context, event: { item: Item }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.map((pinnedItem) => {
+          if (pinnedItem.id === event.item.id && pinnedItem.render?.id === event.item.render?.id) {
+            return {
+              ...pinnedItem,
+              mapRender: {
+                ...pinnedItem.mapRender,
+                visible: !pinnedItem.mapRender?.visible,
+                opacity: pinnedItem.mapRender?.opacity ?? 1,
+              },
+            }
+          }
+          return pinnedItem
+        }),
+      }
+    },
+    changeItemOpacity: (context, event: { item: Item; opacity: number }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.map((pinnedItem) => {
+          if (pinnedItem.id === event.item.id && pinnedItem.render?.id === event.item.render?.id) {
+            return {
+              ...pinnedItem,
+              mapRender: {
+                ...pinnedItem.mapRender,
+                opacity: event.opacity,
+                visible: pinnedItem.mapRender?.visible ?? true,
+              },
+            }
+          }
+          return pinnedItem
+        }),
+      }
+    },
+    zoomToItem: (context, event: { item: Item }) => {
+      const { mapInstance } = context
+      if (!mapInstance) return context
+
+      const { geometry } = event.item
+      if (!geometry) return context
+
+      try {
+        const [minX, minY, maxX, maxY] = turf.bbox(geometry)
+
+        mapInstance.fitBounds([minX, minY, maxX, maxY], {
+          padding: 20,
+          duration: 100,
+        })
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to zoom to item:', error)
+      }
+      return context
     },
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection

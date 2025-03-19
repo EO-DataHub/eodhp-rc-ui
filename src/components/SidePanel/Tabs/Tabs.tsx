@@ -20,17 +20,15 @@ const Tabs = () => {
     pinnedItemsLabel += ` (${pinnedItems.length})`
   }
 
-  const closeSecondaryPanel = () =>
-    dataFinderStore.send({
-      type: 'setSecondaryPanel',
-      panel: undefined,
-    })
-
   return (
     <T.Root
       className={styles.TabsRoot}
       defaultValue="query-items-tab"
-      onValueChange={closeSecondaryPanel}
+      onValueChange={() =>
+        dataFinderStore.send({
+          type: 'closeSecondaryPanel',
+        })
+      }
     >
       <T.List className={styles.TabsList}>
         <T.Trigger className={styles.TabsTrigger} value="query-items-tab">
