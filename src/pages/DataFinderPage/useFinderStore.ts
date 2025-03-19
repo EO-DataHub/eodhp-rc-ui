@@ -180,6 +180,9 @@ const dataFinderStore = createStore({
         ),
       }
     },
+    clearAllPinnedItems: {
+      pinnedItems: [],
+    },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
       return {
         ...context,

@@ -1,11 +1,29 @@
-import { Flex, Grid } from '@radix-ui/themes'
+import { Button, Flex, Grid, Text } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
+import { ReloadIcon } from '@radix-ui/react-icons'
+
+const ClearAllButton = () => {
+  return (
+    <Flex width="fit-content" px="2">
+      <Button
+        variant="ghost"
+        size="2"
+        onClick={() => dataFinderStore.send({ type: 'clearAllPinnedItems' })}
+      >
+        <ReloadIcon width="var(--space-4, 16px)" height="var(--space-4, 16px)" />
+        <Text>Clear All</Text>
+      </Button>
+    </Flex>
+  )
+}
 
 const PinnedItemsTab = () => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
+
+  const isEmpty = pinnedItems.length === 0
 
   return (
     <Grid
@@ -17,6 +35,7 @@ const PinnedItemsTab = () => {
         paddingTop: 'var(--space-3)',
       }}
     >
+      {!isEmpty && <ClearAllButton />}
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
           cardType="pinned-item"
