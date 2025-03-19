@@ -120,9 +120,10 @@ export const Map = () => {
       onMoveEnd={handleMapBoundsChange}
       onLoad={() => {
         const mapInstance = mapRef.current?.getMap()
-        // Send the map instance to the store
+
         if (!mapInstance) return
 
+        // Send the map instance to the store
         dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
         // Listen to draw mode changes
