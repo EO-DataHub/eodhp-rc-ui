@@ -4,6 +4,7 @@ import { Flex, Text, IconButton, Heading, Select } from '@radix-ui/themes'
 import styles from './FilterPanel.module.scss'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { QuickFilter } from '@/types'
+import { FilterTags } from '@/components/FilterTags/FilterTags'
 
 interface CollectionFilterPanelProps {
   isOpen: boolean
@@ -35,6 +36,10 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
     setFilters({})
   }
 
+  const handleRemoveFilter = (key: keyof QuickFilter) => {
+    setFilters((prev) => ({ ...prev, [key]: undefined }))
+  }
+
   return (
     <Flex
       direction="column"
@@ -53,6 +58,7 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
             <Cross1Icon />
           </IconButton>
         </Flex>
+        <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} variant="compact" />
         <Flex direction="column" gap="2">
           <Heading size="2" as="h4">
             Filters

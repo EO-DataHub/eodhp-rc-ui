@@ -89,6 +89,7 @@ export const useCollections = () => {
       for (const [filterKey, filterValue] of entries) {
         if (
           filterKey in categorizationData &&
+          filterValue !== undefined &&
           !(categorizationData[filterKey] as string[]).includes(filterValue)
         ) {
           return false
