@@ -91,7 +91,6 @@ export type ItemCardType = 'query-item' | 'pinned-item'
 
 export interface Item {
   type: string
-  visible: boolean
   stac_version: string
   stac_extensions: string[]
   id: string
@@ -130,6 +129,10 @@ export interface Item {
   }
   tilesUrl: string | undefined
   render?: StacRender
+  mapRender?: {
+    visible: boolean
+    opacity: number
+  }
 }
 
 export interface CubeData {

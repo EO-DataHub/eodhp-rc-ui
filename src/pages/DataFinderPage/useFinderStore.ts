@@ -162,9 +162,12 @@ const dataFinderStore = createStore({
 
       const pinnedItem = {
         ...event.item,
-        visible: true,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         render: event.collectionRender,
+        mapRender: {
+          visible: true,
+          opacity: 1,
+        },
       }
 
       return {
@@ -198,7 +201,29 @@ const dataFinderStore = createStore({
           if (pinnedItem.id === event.item.id && pinnedItem.render?.id === event.item.render?.id) {
             return {
               ...pinnedItem,
-              visible: !pinnedItem.visible,
+              mapRender: {
+                ...pinnedItem.mapRender,
+                visible: !pinnedItem.mapRender?.visible,
+                opacity: pinnedItem.mapRender?.opacity ?? 1,
+              },
+            }
+          }
+          return pinnedItem
+        }),
+      }
+    },
+    changeItemOpacity: (context, event: { item: Item; opacity: number }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.map((pinnedItem) => {
+          if (pinnedItem.id === event.item.id && pinnedItem.render?.id === event.item.render?.id) {
+            return {
+              ...pinnedItem,
+              mapRender: {
+                ...pinnedItem.mapRender,
+                opacity: event.opacity,
+                visible: pinnedItem.mapRender?.visible ?? true,
+              },
             }
           }
           return pinnedItem

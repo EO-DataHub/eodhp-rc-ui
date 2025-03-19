@@ -1,14 +1,15 @@
-import React, { useContext, useMemo } from 'react'
+import React, { useContext, useMemo, useState } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
 import {
+  BlendingModeIcon,
   Cross2Icon,
   DrawingPinIcon,
   EyeOpenIcon,
   InfoCircledIcon,
   ZoomInIcon,
 } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Button, Tooltip } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -63,14 +64,45 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
 const ActionButton = ({
   children,
   onClick,
+  active,
 }: {
   children: React.ReactNode
   onClick: () => void
+  active?: boolean
 }) => {
   return (
-    <IconButton size="1" radius="full" variant="ghost" className={styles.button} onClick={onClick}>
+    <IconButton
+      size="1"
+      radius="full"
+      variant="ghost"
+      className={`${styles.button} ${active ? styles.active : ''}`}
+      onClick={onClick}
+    >
       {children}
     </IconButton>
+  )
+}
+
+const OpacitySelector = ({ item }: { item: Item }) => {
+  return (
+    <Flex width="100%" gap="1" align="start" direction="column">
+      <Text size="1" className={styles.text}>
+        Opacity
+      </Text>
+      <Slider
+        min={0}
+        max={1}
+        step={0.1}
+        defaultValue={[item.mapRender?.opacity ?? 1]}
+        onValueChange={(value) =>
+          dataFinderStore.send({
+            type: 'changeItemOpacity',
+            item,
+            opacity: value[0],
+          })
+        }
+      />
+    </Flex>
   )
 }
 
@@ -110,6 +142,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === collectionRender,
     ),
   )
+
+  const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.onerror = null
@@ -190,6 +224,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
         </Flex>
+        {displayOpacitySelector && (
+          <Flex align="center">
+            <OpacitySelector item={item} />
+          </Flex>
+        )}
         <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
           {isPinnedCard && item.render && (
             <Flex>
@@ -205,9 +244,16 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                   <ZoomInIcon />
                 </ActionButton>
                 <ActionButton
+                  active={item.mapRender?.visible}
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
                 >
                   <EyeOpenIcon />
+                </ActionButton>
+                <ActionButton
+                  active={displayOpacitySelector}
+                  onClick={() => setOpacitySelectorVisible(!displayOpacitySelector)}
+                >
+                  <BlendingModeIcon />
                 </ActionButton>
               </>
             )}

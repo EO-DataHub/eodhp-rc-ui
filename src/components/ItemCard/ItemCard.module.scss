@@ -18,6 +18,7 @@
     color: var(--blue-contrast);
     width: 16px;
     height: 16px;
+
   }
 
   .text {
@@ -74,6 +75,11 @@
 
   .button {
     cursor: pointer;
+
+    &.active {
+      background-color: var(--blue-4);
+    }
+
   }
 
   .unpinButton {
