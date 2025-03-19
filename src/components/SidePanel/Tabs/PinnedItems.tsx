@@ -3,7 +3,7 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
-import { ReloadIcon } from '@radix-ui/react-icons'
+import { Cross2Icon } from '@radix-ui/react-icons'
 
 const ClearAllButton = () => {
   return (
@@ -13,7 +13,7 @@ const ClearAllButton = () => {
         size="2"
         onClick={() => dataFinderStore.send({ type: 'clearAllPinnedItems' })}
       >
-        <ReloadIcon width="16px" height="16px" />
+        <Cross2Icon width="16px" height="16px" />
         <Text>Clear All</Text>
       </Button>
     </Flex>
