@@ -3,6 +3,7 @@ import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import * as turf from '@turf/turf'
 
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
@@ -188,6 +189,26 @@ const dataFinderStore = createStore({
         ...context,
         hoveredItem: event.item,
       }
+    },
+    zoomToItem: (context, event: { item: Item }) => {
+      const { mapInstance } = context
+      if (!mapInstance) return context
+
+      const { geometry } = event.item
+      if (!geometry) return context
+
+      try {
+        const [minX, minY, maxX, maxY] = turf.bbox(geometry)
+
+        mapInstance.fitBounds([minX, minY, maxX, maxY], {
+          padding: 20,
+          duration: 100,
+        })
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to zoom to item:', error)
+      }
+      return context
     },
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection

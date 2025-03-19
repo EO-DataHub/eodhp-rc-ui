@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
-import { Cross2Icon, DrawingPinIcon, InfoCircledIcon } from '@radix-ui/react-icons'
+import { Cross2Icon, DrawingPinIcon, EyeOpenIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip } from '@radix-ui/themes'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
@@ -52,6 +52,20 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
       </Text>
     )
   })
+}
+
+const ActionButton = ({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode
+  onClick: () => void
+}) => {
+  return (
+    <IconButton size="1" radius="full" variant="ghost" className={styles.button} onClick={onClick}>
+      {children}
+    </IconButton>
+  )
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
@@ -179,15 +193,19 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="2" align="center">
+            {isPinnedCard && (
+              <>
+                <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
+                  <EyeOpenIcon />
+                </ActionButton>
+              </>
+            )}
             <Tooltip content="More Info">
-              <IconButton
-                radius="full"
-                variant="ghost"
-                className={styles.button}
+              <ActionButton
                 onClick={() => dataFinderStore.send({ type: 'openItemInfoPanel', item })}
               >
                 <InfoCircledIcon />
-              </IconButton>
+              </ActionButton>
             </Tooltip>
             {isLicenseProprietary && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
