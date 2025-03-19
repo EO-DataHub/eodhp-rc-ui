@@ -237,7 +237,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
           )}
-          <Flex justify="end" gap="2" align="center">
+          <Flex justify="end" gap="4" align="center">
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
