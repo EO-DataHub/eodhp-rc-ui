@@ -241,30 +241,36 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
-                  <ZoomInIcon />
+                  <Tooltip content="Zoom to item">
+                    <ZoomInIcon />
+                  </Tooltip>
                 </ActionButton>
                 <ActionButton
                   active={item.mapRender?.visible}
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
                 >
-                  <EyeOpenIcon />
+                  <Tooltip content="Toggle visibility">
+                    <EyeOpenIcon />
+                  </Tooltip>
                 </ActionButton>
                 <ActionButton
                   active={displayOpacitySelector}
                   onClick={() => setOpacitySelectorVisible(!displayOpacitySelector)}
                 >
-                  <BlendingModeIcon />
+                  <Tooltip content="Change item opacity">
+                    <BlendingModeIcon />
+                  </Tooltip>
                 </ActionButton>
               </>
             )}
-            <Tooltip content="More Info">
-              <ActionButton
-                active={isSelected}
-                onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
-              >
+            <ActionButton
+              active={isSelected}
+              onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
+            >
+              <Tooltip content="More Info">
                 <InfoCircledIcon />
-              </ActionButton>
-            </Tooltip>
+              </Tooltip>
+            </ActionButton>
             {isLicenseProprietary && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
                 Purchase
