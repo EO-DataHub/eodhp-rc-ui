@@ -10,7 +10,7 @@ const RasterItemLayer = ({ item }: { item: Item }) => {
 
   if (!collectionRender) return null
 
-  if (collectionRender.missing_georeference && collectionRender.missing_georeference) {
+  if (collectionRender.missing_georeference) {
     return <ThumbnailItemLayer item={item} />
   }
 

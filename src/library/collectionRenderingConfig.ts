@@ -50,7 +50,7 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   let tilerUrl = undefined
   let urlParam = undefined
 
-  if (render.missing_georeference && render.missing_georeference) {
+  if (render.missing_georeference) {
     return undefined
   } else if (render.variable) {
     tilerUrl = tilerUrls['titiler-multidim']
@@ -95,45 +95,28 @@ function translateServerConfigToCollectionConfig(
     // Translate renders
     if (renders) {
       for (const [renderId, renderConfig] of Object.entries(renders)) {
+        const optionalProps = {
+          bidx: renderConfig.bidx,
+          rescale: renderConfig.rescale,
+          colormap: renderConfig.colormap,
+          variable: renderConfig.variable,
+          colormap_name: renderConfig.colormap_name,
+          color_formula: renderConfig.color_formula,
+          expression: renderConfig.expression,
+          reference: renderConfig.reference,
+          missing_georeference: renderConfig.missing_georeference,
+        }
+
+        const definedProps = Object.fromEntries(
+          Object.entries(optionalProps).filter((entry) => entry[1] !== undefined),
+        )
+
         const translatedRender: BaseStacRender = {
           title: renderConfig.title ?? renderId,
           assets: renderConfig.assets,
+          ...definedProps,
         }
 
-        // Add additional properties based on render type
-        if (renderConfig.bidx) {
-          translatedRender.bidx = renderConfig.bidx
-        }
-        if (renderConfig.rescale) {
-          translatedRender.rescale = renderConfig.rescale
-        }
-        if (renderConfig.colormap) {
-          translatedRender.colormap = renderConfig.colormap
-        }
-        if (renderConfig.rescale) {
-          translatedRender.rescale = renderConfig.rescale
-        }
-        if (renderConfig.variable) {
-          translatedRender.variable = renderConfig.variable
-        }
-        if (renderConfig.colormap_name) {
-          translatedRender.colormap_name = renderConfig.colormap_name
-        }
-        if (renderConfig.color_formula) {
-          translatedRender.color_formula = renderConfig.color_formula
-        }
-        if (renderConfig.rescale) {
-          translatedRender.rescale = renderConfig.rescale
-        }
-        if (renderConfig.expression) {
-          translatedRender.expression = renderConfig.expression
-        }
-        if (renderConfig.reference !== undefined) {
-          translatedRender.reference = renderConfig.reference
-        }
-        if (renderConfig.missing_georeference !== undefined) {
-          translatedRender.missing_georeference = renderConfig.missing_georeference
-        }
         baseConfig.renders![renderId] = translatedRender
       }
     }
