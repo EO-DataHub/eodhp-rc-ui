@@ -20,6 +20,9 @@ const PlaceholderRender: StacRender = {
   assets: [],
 }
 
+const pinnedItemIsEqual = (a: Item, b: Item) =>
+  a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
@@ -162,9 +165,8 @@ const dataFinderStore = createStore({
       context,
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
-      const isAlreadyPinned = context.pinnedItems.some(
-        (pinnedItem) =>
-          pinnedItem.id === event.item.id && pinnedItem.render?.id === event.collectionRender.id,
+      const isAlreadyPinned = context.pinnedItems.some((pinnedItem) =>
+        pinnedItemIsEqual(pinnedItem, event.item),
       )
 
       if (isAlreadyPinned) return context
@@ -188,9 +190,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         pinnedItems: context.pinnedItems.filter(
-          (pinnedItem) =>
-            // Pinned items are considered equal if their IDs and render IDs match
-            pinnedItem.id !== event.item.id || pinnedItem.render?.id !== event.item.render?.id,
+          (pinnedItem) => !pinnedItemIsEqual(pinnedItem, event.item),
         ),
       }
     },
