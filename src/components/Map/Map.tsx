@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 
@@ -28,6 +28,8 @@ const DEFAULT_MAP_VIEW = {
   zoom: 1,
 }
 
+const MAP_STORAGE_KEY = 'mapViewState'
+
 function DrawControl() {
   const drawInstance = useRef<MapboxDraw | null>(null)
 
@@ -51,9 +53,7 @@ function DrawControl() {
 
       return draw as unknown as IControl
     },
-    {
-      position: 'top-right',
-    },
+    { position: 'top-right' },
   )
   return null
 }
@@ -62,7 +62,25 @@ export const Map = () => {
   const mapRef = useRef<MapRef>(null)
   const { pageItems } = useItemsQuery()
 
-  const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
+  // Load previous map state from local storage, or use default
+  const savedViewState =
+    JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
+  const [viewState, setViewState] = useState(savedViewState)
+
+  const handleMapBoundsChange = () => {
+    if (mapRef.current) {
+      const center = mapRef.current.getMap().getCenter()
+      const updatedState = {
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: mapRef.current.getMap().getZoom(),
+      }
+
+      localStorage.setItem(MAP_STORAGE_KEY, JSON.stringify(updatedState))
+      setViewState(updatedState)
+    }
+    dataFinderStore.send({ type: 'mapBoundsChange' })
+  }
 
   const isDrawing = useSelector(
     dataFinderStore,
@@ -73,6 +91,12 @@ export const Map = () => {
   // on page load and should be on top of the other layers. Ideally we not need
   // to do this but there is no way to control the order of the layers in the
   // MapboxDraw control.
+
+  // Clear the stored map extent when a session starts
+  useEffect(() => {
+    localStorage.removeItem(MAP_STORAGE_KEY)
+  }, [])
+
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
   useEffect(() => {
     if (!mapInstance) return
@@ -89,16 +113,16 @@ export const Map = () => {
 
   return (
     <Maplibre
-      initialViewState={DEFAULT_MAP_VIEW}
+      initialViewState={viewState}
       mapStyle={MAP_STYLE}
       ref={mapRef}
       cursor={isDrawing ? 'crosshair' : 'grab'}
+      onMoveEnd={handleMapBoundsChange}
       onLoad={() => {
         const mapInstance = mapRef.current?.getMap()
-        if (!mapInstance) {
-          return
-        }
         // Send the map instance to the store
+        if (!mapInstance) return
+
         dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
         // Listen to draw mode changes
@@ -121,7 +145,6 @@ export const Map = () => {
         // Update bounds on load
         handleMapBoundsChange()
       }}
-      onMoveEnd={handleMapBoundsChange}
     >
       <NavigationControl />
       <DrawControl />
