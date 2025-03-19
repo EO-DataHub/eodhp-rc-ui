@@ -75,7 +75,7 @@ const ActionButton = ({
       size="1"
       radius="full"
       variant="ghost"
-      className={`${styles.button} ${active ? styles.active : ''}`}
+      className={`${styles.iconButton} ${active ? styles.active : ''}`}
       onClick={onClick}
     >
       {children}
