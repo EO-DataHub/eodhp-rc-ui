@@ -35,7 +35,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
     <>
       <Flex className={styles.card} width="100%">
         <img src={thumbnailUrl} onError={handleImageError} className={styles.thumbnail} />
-        <Flex direction="column" p="2" justify="center" flexGrow="1" gap="5">
+        <Flex direction="column" p="2" justify="between" flexGrow="1" gap="5">
           <Flex direction="column">
             <Text as="p" size="3" weight="medium" className={styles.text}>
               {collection.title}

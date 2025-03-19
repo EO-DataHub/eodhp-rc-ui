@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Flex, Text, Heading, IconButton, TextField } from '@radix-ui/themes'
+import { Flex, Text, Heading, IconButton, TextField, Badge } from '@radix-ui/themes'
 import styles from './SidePanel.module.scss'
+import listStyles from './ItemList.module.scss'
 import { useCollections } from '@/hooks/useCollections'
 import ItemList from './ItemList'
 import { useNavigate } from 'react-router-dom'
@@ -11,9 +12,72 @@ import { SidePanelCollectionCard } from './SidePanelCollectionCard/SidePanelColl
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
+import { Callout } from '../Callout/Callout'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
+}
+
+interface GroupByCollection {
+  category: { label: string; value: string }
+  collections: Collection[]
+}
+
+const renderGroupedByCollections = (
+  groupedByCollections: GroupByCollection[],
+  onSelectCollectionInfo: (collection: Collection) => void,
+  onChangeCollection: (collection: Collection) => void,
+) => {
+  if (!groupedByCollections) {
+    return (
+      <Callout
+        type="info"
+        message="No results found. Modify your filters or search criteria and try again"
+      />
+    )
+  }
+
+  return (
+    <Flex direction="column" gap="5" flexGrow="1" className={listStyles.listContainer}>
+      {groupedByCollections.map(
+        (group) =>
+          group.collections.length > 0 && (
+            <Flex gap="2" direction="column" key={group.category.value}>
+              <Flex gap="2" align="center">
+                <Text size="3" weight="bold">
+                  {group.category.label}
+                </Text>
+                <Badge
+                  radius="full"
+                  highContrast
+                  variant="solid"
+                  className={styles.collectionCount}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {group.collections.length}
+                </Badge>
+              </Flex>
+              <Flex gap="5" direction="column">
+                {group.collections.map((collection) => (
+                  <SidePanelCollectionCard
+                    key={collection.id}
+                    collection={collection}
+                    onSelectCollectionInfo={() => onSelectCollectionInfo(collection)}
+                    onChangeCollection={() => onChangeCollection(collection)}
+                  />
+                ))}
+              </Flex>
+            </Flex>
+          ),
+      )}
+    </Flex>
+  )
 }
 
 export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollectionPanel }) => {
@@ -25,6 +89,8 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     setSearchText,
     filters,
     setFilters,
+    collectionCount,
+    groupedByCollections,
     groupBy,
     setGroupBy,
     error,
@@ -44,6 +110,11 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     setSelectedCollectionInfo(null)
     localStorage.setItem('selectedCollection', JSON.stringify(collection))
     navigate(`/finder/${collection.id}`)
+  }
+
+  const handleOpenFilterPanel = () => {
+    setIsFilterOpen(true)
+    setSelectedCollectionInfo(null)
   }
 
   return (
@@ -80,22 +151,35 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
               <MagnifyingGlassIcon />
             </TextField.Slot>
           </TextField.Root>
-          <IconButton size="2" color="gray" variant="outline" onClick={() => setIsFilterOpen(true)}>
+          <IconButton size="2" color="gray" variant="outline" onClick={handleOpenFilterPanel}>
             <FilterAltOutlined />
           </IconButton>
         </Flex>
-        <ItemList
-          items={filteredCollections}
-          error={error}
-          renderItem={(collection) => (
-            <SidePanelCollectionCard
-              key={collection.id}
-              collection={collection}
-              onSelectCollectionInfo={() => handleSelectCollectionInfo(collection)}
-              onChangeCollection={() => handleChangeCollection(collection)}
-            />
-          )}
-        />
+
+        <Text size="1" style={{ alignSelf: 'flex-end' }}>
+          {filteredCollections.length} of {collectionCount}
+        </Text>
+
+        {groupBy === 'none' ? (
+          <ItemList
+            items={filteredCollections}
+            error={error}
+            renderItem={(collection) => (
+              <SidePanelCollectionCard
+                key={collection.id}
+                collection={collection}
+                onSelectCollectionInfo={() => handleSelectCollectionInfo(collection)}
+                onChangeCollection={() => handleChangeCollection(collection)}
+              />
+            )}
+          />
+        ) : (
+          renderGroupedByCollections(
+            groupedByCollections,
+            handleSelectCollectionInfo,
+            handleChangeCollection,
+          )
+        )}
       </Flex>
 
       <CollectionFilterPanel

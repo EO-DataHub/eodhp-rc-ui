@@ -58,6 +58,7 @@ export const useCollections = () => {
   const isLoading = queries.some((query) => query.isLoading)
   const error = queries.some((query) => query.isError)
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
+  const collectionCount = queries.reduce((total, query) => total + (query.data?.length ?? 0), 0)
 
   const sortedCollections = useMemo(() => {
     const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
@@ -121,6 +122,7 @@ export const useCollections = () => {
   }, [filteredCollections, groupBy])
 
   return {
+    collectionCount,
     searchText,
     setSearchText,
     filters,
@@ -130,6 +132,7 @@ export const useCollections = () => {
     isLoading,
     error,
     errorMessages,
+    sortedCollections,
     filteredCollections,
     groupedByCollections,
   }

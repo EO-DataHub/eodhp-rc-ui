@@ -30,6 +30,11 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
     setGroupBy(value)
   }
 
+  const handleReset = () => {
+    setGroupBy('none')
+    setFilters({})
+  }
+
   return (
     <Flex
       direction="column"
@@ -38,7 +43,7 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
     >
       <Flex direction="column" gap="5" height="100%">
         <Flex justify="between" align="center">
-          <IconButton size="2" variant="ghost">
+          <IconButton size="2" variant="ghost" onClick={handleReset}>
             <Flex gap="2" align="center">
               <ReloadIcon />
               <Text>Reset</Text>
