@@ -17,7 +17,7 @@ interface CollectionConfig {
 }
 
 interface ServerRenderConfig {
-  title?: string
+  title: string
   assets: string[]
   bidx?: number[]
   rescale?: [number, number][]
@@ -27,6 +27,7 @@ interface ServerRenderConfig {
   expression?: string
   variable?: string
   reference?: boolean
+  missing_georeference?: boolean
 }
 
 interface ServerCollectionConfig {
@@ -130,7 +131,9 @@ function translateServerConfigToCollectionConfig(
         if (renderConfig.reference !== undefined) {
           translatedRender.reference = renderConfig.reference
         }
-
+        if (renderConfig.missing_georeference !== undefined) {
+          translatedRender.missing_georeference = renderConfig.missing_georeference
+        }
         baseConfig.renders![renderId] = translatedRender
       }
     }

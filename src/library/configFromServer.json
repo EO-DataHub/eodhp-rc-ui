@@ -1283,7 +1283,8 @@
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": ["quicklook"]
+        "assets": ["quicklook"],
+        "missing_georeference": true
       }
     }
   },
@@ -1291,7 +1292,8 @@
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": ["quicklook"]
+        "assets": ["quicklook"],
+        "missing_georeference": true
       }
     }
   }

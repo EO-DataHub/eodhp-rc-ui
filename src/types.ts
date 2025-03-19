@@ -16,8 +16,8 @@ export interface Catalog {
 }
 
 export interface BaseStacRender {
-  assets: string[]
   title: string
+  assets: string[]
   rescale?: [number, number][]
   nodata?: number | string
   colormap_name?: string
