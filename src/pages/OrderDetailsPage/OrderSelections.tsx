@@ -30,8 +30,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
 }) => {
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({
     productBundle: '',
-    country: provider !== 'planet' ? 'GB' : '',
-    license: '',
+    endUserCountry: provider !== 'planet' ? 'GB' : '',
+    licence: '',
     orbit: '',
     resolutionVariant: '',
     projection: '',
@@ -46,30 +46,29 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   const options = {
     productBundle: {
       shared: ['Visual', 'General Use', 'Basic', 'Analytic'],
-      airbus_sar: [
-        'SSC (Single Look Slant Range Complex)',
-        'MGD (Multilook Ground Range Detected)',
-        'GEC (Geocoded Ellipsoid Corrected)',
-        'EEC (Enhanced Ellipsoid Corrected)',
-      ],
+      airbus_sar: ['SSC', 'MGD', 'GEC', 'EEC'],
     },
-    license: {
+    licence: {
       airbus_optical: [
         'Standard',
         'Background Layer',
         'Standard + Background Layer',
         'Academic',
-        'Media License',
+        'Media Licence',
         'Standard Multi End-Users (2-5)',
         'Standard Multi End-Users (6-10)',
         'Standard Multi End-Users (11-30)',
-        'Standard Multi End-Users (+30)',
+        'Standard Multi End-Users (>30)',
       ],
-      airbus_sar: ['Single User', 'Multi User (2-5)', 'Multi User (6-30)'],
+      airbus_sar: [
+        'Single User Licence',
+        'Multi User (2 - 5) Licence',
+        'Multi User (6 - 30) Licence',
+      ],
     },
-    orbit: ['Rapid (Standard)', 'Science (Higher Precision)'],
-    resolutionVariant: ['Radiometrically Enhanced', 'Spatially Enhanced'],
-    projection: ['Auto', 'UTM (Standard)', 'UPS (Polar)'],
+    orbit: ['rapid', 'science'],
+    resolutionVariant: ['RE', 'SE'],
+    projection: ['Auto', 'UTM', 'UPS'],
   }
 
   const renderSelect = (field: keyof typeof options, label: string, isDisabled = false) => {
@@ -80,8 +79,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         provider === 'airbus_optical' || provider === 'planet'
           ? options.productBundle.shared
           : options.productBundle.airbus_sar
-    } else if (field === 'license') {
-      items = options.license[provider as keyof typeof options.license]
+    } else if (field === 'licence') {
+      items = options.licence[provider as keyof typeof options.licence]
     } else if (field === 'orbit') {
       items = options.orbit
     } else if (field === 'resolutionVariant') {
@@ -136,15 +135,15 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         <Field label="End User Country">
           <Select.Root
             size="3"
-            value={selectedValues.country}
-            onValueChange={(value) => handleChange('country', value)}
+            value={selectedValues.endUserCountry}
+            onValueChange={(value) => handleChange('endUserCountry', value)}
           >
             <Select.Trigger className={styles.selectTrigger} placeholder="Select" />
             <Select.Content className={styles.selectContent}>
               <Select.Group>
                 {countries.map((country) => (
-                  <Select.Item key={country.code} value={country.code} className={styles.item}>
-                    {country.name}
+                  <Select.Item key={country.id} value={country.id} className={styles.item}>
+                    {country.label}
                   </Select.Item>
                 ))}
               </Select.Group>
@@ -153,9 +152,9 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
         </Field>
       )}
 
-      {/* License - Required for Airbus */}
+      {/* Licence - Required for Airbus */}
       {(provider === 'airbus_optical' || provider === 'airbus_sar') &&
-        renderSelect('license', 'License')}
+        renderSelect('licence', 'Licence')}
 
       {/* Orbit - Airbus SAR only */}
       {provider === 'airbus_sar' && renderSelect('orbit', 'Orbit')}

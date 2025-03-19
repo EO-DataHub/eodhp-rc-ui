@@ -18,11 +18,11 @@
       "$ref": "#/$defs/platform_international_designator",
       "title": "Datasource"
     },
-    "sat:orbit_state": {
+    "Orbit Direction": {
       "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:orbit_state",
       "title": "Orbit Direction"
     },
-    "sar:polarizations": {
+    "Polarisation": {
       "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:polarizations",
       "title": "Polarisation"
     },

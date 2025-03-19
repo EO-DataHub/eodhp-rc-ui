@@ -64,7 +64,8 @@ export const OrderDetailsPage: React.FC = () => {
       provider: providerType,
       productBundle: orderSelections.productBundle,
       coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
-      parameters:
+      licence: orderSelections.licence,
+      radarOptions:
         providerType === 'airbus_sar'
           ? {
               orbit: orderSelections.orbit,
@@ -72,7 +73,7 @@ export const OrderDetailsPage: React.FC = () => {
               projection: orderSelections.projection,
             }
           : undefined,
-      country: orderSelections.country,
+      endUserCountry: orderSelections.country,
     }
 
     mutation.mutate(requestBody)

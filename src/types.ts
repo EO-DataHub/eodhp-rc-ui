@@ -88,6 +88,8 @@ export interface Collection {
   }
 }
 
+export type ItemCardType = 'query-item' | 'pinned-item'
+
 export interface Item {
   type: string
   stac_version: string
@@ -128,6 +130,10 @@ export interface Item {
   }
   tilesUrl: string | undefined
   render?: StacRender
+  mapRender?: {
+    visible: boolean
+    opacity: number
+  }
 }
 
 export interface CubeData {

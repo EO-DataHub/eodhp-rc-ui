@@ -102,7 +102,12 @@ const ThumbnailItemLayer = ({ item }: { item: Item }) => {
 
   return (
     <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
-      <Layer type="raster" />
+      <Layer
+        type="raster"
+        paint={{
+          'raster-opacity': item.mapRender?.opacity ?? 1,
+        }}
+      />
     </Source>
   )
 }

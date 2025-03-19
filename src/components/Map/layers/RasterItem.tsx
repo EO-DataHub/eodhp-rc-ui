@@ -10,10 +10,12 @@ const RasterItemLayer = ({ item }: { item: Item }) => {
 
   if (!collectionRender) return null
 
+  if (item.mapRender?.visible === false) return null
+  
   if (collectionRender.missing_georeference) {
     return <ThumbnailItemLayer item={item} />
   }
-
+  
   // When on assets tab, resolve the tiles url when rendering
   const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, collectionRender)
 
@@ -21,7 +23,12 @@ const RasterItemLayer = ({ item }: { item: Item }) => {
 
   return (
     <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
-      <Layer type="raster" />
+      <Layer
+        type="raster"
+        paint={{
+          'raster-opacity': item.mapRender?.opacity ?? 1,
+        }}
+      />
     </Source>
   )
 }

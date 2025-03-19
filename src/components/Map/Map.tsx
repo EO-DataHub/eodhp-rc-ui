@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
-import { Item } from '@/types'
 
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
@@ -12,6 +11,7 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
+import useItemsQuery from '@/hooks/useItemsQuery'
 
 interface DrawConstants {
   classes: {
@@ -58,8 +58,9 @@ function DrawControl() {
   return null
 }
 
-export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
+export const Map = () => {
   const mapRef = useRef<MapRef>(null)
+  const { pageItems } = useItemsQuery()
 
   const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
 
@@ -84,7 +85,7 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
         }
       })
     }, 100)
-  }, [mapInstance, visibleItems])
+  }, [mapInstance, pageItems])
 
   return (
     <Maplibre
@@ -125,7 +126,7 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
       <NavigationControl />
       <DrawControl />
       <PinnedItemsLayer />
-      <QueryItemsLayer queryItems={visibleItems} />
+      <QueryItemsLayer queryItems={pageItems} />
       <HoveredItemLayer />
     </Maplibre>
   )

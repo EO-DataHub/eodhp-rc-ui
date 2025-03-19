@@ -4,6 +4,7 @@ import sar from './sarQuery.ts'
 import sat from './satQuery.ts'
 import custom from './customQuery.ts'
 import view from './viewQuery.ts'
+import cmip6 from './cmip6Query.ts'
 import { buildPolygonFromBBox } from './queryUtils.ts'
 
 type JSONSchema = Record<string, unknown>
@@ -18,6 +19,7 @@ const dispatchTable: QueryParams = {
   sar: sar,
   sat: sat,
   view: view,
+  cmip6: cmip6,
 }
 
 /**
