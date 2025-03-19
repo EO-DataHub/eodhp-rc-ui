@@ -11,13 +11,20 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'renderOptions' | undefined
+export type SecondaryPanel = 'query-filters' | 'item-info' | 'collection-info' | undefined
+
+const PlaceholderRender: StacRender = {
+  id: 'default',
+  title: 'Default visualization',
+  assets: [],
+}
 
 const dataFinderStore = createStore({
   // Initial context
   context: {
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined as SecondaryPanel,
+    infoPanelItem: undefined as Item | undefined,
     mapInstance: undefined as MapInstance | undefined,
     drawInstance: undefined as MapboxDraw | undefined,
     drawMode: undefined as DrawMode | undefined,
@@ -27,8 +34,6 @@ const dataFinderStore = createStore({
     page: 0,
     pinnedItems: [] as Item[],
     hoveredItem: undefined as Item | undefined,
-    isFilterPanelOpen: false,
-    isVisualizationPanelOpen: false,
     collection: undefined as Collection | undefined,
     collectionRenderOptions: [] as StacRender[],
     collectionRender: undefined as StacRender | undefined,
@@ -46,6 +51,20 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: event.panel,
+      }
+    },
+    openItemInfoPanel: (context, event: { item: Item }): typeof context => {
+      return {
+        ...context,
+        secondaryPanel: 'item-info',
+        infoPanelItem: event.item,
+      }
+    },
+    closeItemInfoPanel: (context) => {
+      return {
+        ...context,
+        secondaryPanel: undefined,
+        infoPanelItem: undefined,
       }
     },
     pageChange: (context, event: { page: number }) => {
@@ -129,22 +148,36 @@ const dataFinderStore = createStore({
         drawMode: nextDrawMode,
       }
     },
-    pinnedItemChange: (context, event: { item: Item; isChecked: boolean }) => {
-      const { item, isChecked } = event
-      const { pinnedItems, collectionRender } = context
+    addPinnedItem: (
+      context,
+      event: { item: Item; collectionRender: StacRender },
+    ): typeof context => {
+      const isAlreadyPinned = context.pinnedItems.some(
+        (pinnedItem) =>
+          pinnedItem.id === event.item.id && pinnedItem.render?.id === event.collectionRender.id,
+      )
 
-      if (isChecked) {
-        item.tilesUrl = resolveTilesUrl(item, collectionRender)
+      if (isAlreadyPinned) return context
 
-        return {
-          ...context,
-          pinnedItems: [...pinnedItems, item],
-        }
-      } else {
-        return {
-          ...context,
-          pinnedItems: pinnedItems.filter((checked) => checked.id !== item.id),
-        }
+      const pinnedItem = {
+        ...event.item,
+        tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        render: event.collectionRender,
+      }
+
+      return {
+        ...context,
+        pinnedItems: [...context.pinnedItems, pinnedItem],
+      }
+    },
+    removePinnedItem: (context, event: { item: Item }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.filter(
+          (pinnedItem) =>
+            // Pinned items are considered equal if their IDs and render IDs match
+            pinnedItem.id !== event.item.id || pinnedItem.render?.id !== event.item.render?.id,
+        ),
       }
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
@@ -163,10 +196,15 @@ const dataFinderStore = createStore({
         ...collection.renders,
       }
 
-      const collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
+      let collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
         ...render,
         id,
       }))
+
+      // If no renders are available, create a placeholder render option
+      if (collectionRenderOptions.length === 0) {
+        collectionRenderOptions = [PlaceholderRender]
+      }
 
       return {
         ...context,
@@ -178,6 +216,10 @@ const dataFinderStore = createStore({
     setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
       collectionRender: event.collectionRender,
     }),
+    storeAoi: (context, event: { aoi: GeoJSON.Feature }) => {
+      localStorage.setItem('aoi', JSON.stringify(event.aoi))
+      return { ...context, aoi: event.aoi }
+    },
   },
 })
 

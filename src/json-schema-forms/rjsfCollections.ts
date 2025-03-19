@@ -10,6 +10,7 @@ import planet_reorthotile_schema from '@/json-schema-forms/assets/planet_reortho
 import planet_rescene_schema from '@/json-schema-forms/assets/planet_rescene.json'
 import planet_skysatscene_schema from '@/json-schema-forms/assets/planet_skysatscene.json'
 import planet_skysatcollection_schema from '@/json-schema-forms/assets/planet_skysatcollect.json'
+import cmip6_schema from '@/json-schema-forms/assets/cmip6.json'
 
 type JSONSchema = Record<string, unknown>
 
@@ -25,6 +26,7 @@ const rjsfCollections: Record<string, JSONSchema> = {
   REScene: planet_rescene_schema,
   SkySatScene: planet_skysatscene_schema,
   SkySatCollect: planet_skysatcollection_schema,
+  cmip6: cmip6_schema,
 }
 
 export default rjsfCollections

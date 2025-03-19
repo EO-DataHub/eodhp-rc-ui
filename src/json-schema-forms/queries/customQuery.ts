@@ -19,6 +19,24 @@ const dispatch: QueryDispatch = {
       ],
     }
   },
+  start_datetime_range: (_, obj) => {
+    return {
+      op: '>=',
+      args: [
+        { property: 'properties.end_datetime' },
+        obj['start_datetime_range'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
+  end_datetime_range: (_, obj) => {
+    return {
+      op: '<=',
+      args: [
+        { property: 'properties.start_datetime' },
+        obj['end_datetime_range'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
   incidence_angle: (schema, obj) => {
     // Used in Airbus SAR data
     return {
