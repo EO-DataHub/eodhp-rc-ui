@@ -13,7 +13,7 @@ const ClearAllButton = () => {
         size="2"
         onClick={() => dataFinderStore.send({ type: 'clearAllPinnedItems' })}
       >
-        <ReloadIcon width="var(--space-4, 16px)" height="var(--space-4, 16px)" />
+        <ReloadIcon width="16px" height="16px" />
         <Text>Clear All</Text>
       </Button>
     </Flex>
