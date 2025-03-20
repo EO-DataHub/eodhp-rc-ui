@@ -118,6 +118,7 @@ const dataFinderStore = createStore({
         mapBounds: clippedBounds,
       }
     },
+
     drawControlLoad: (context, event: { drawInstance: MapboxDraw | undefined }) => {
       return {
         ...context,
@@ -131,12 +132,16 @@ const dataFinderStore = createStore({
       const { features } = event.mapEvent
       const aoi = features[0]
 
+      localStorage.setItem('aoiData', JSON.stringify(aoi))
+
       return {
         ...context,
         aoi,
       }
     },
     drawDelete: (context) => {
+      localStorage.removeItem('aoiData')
+
       return {
         ...context,
         aoi: undefined,
