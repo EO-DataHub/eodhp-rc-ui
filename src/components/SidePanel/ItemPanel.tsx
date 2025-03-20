@@ -19,6 +19,7 @@ interface ItemPanelProps {
 export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollectionPanel }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
@@ -53,7 +54,11 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={isInfoPanelOpen}>
         {secondaryPanel === 'item-info' && infoPanelItem && (
-          <ItemInfoPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
+          <ItemInfoPanel
+            item={infoPanelItem}
+            isUserItem={isUserCollection}
+            onClose={closeSecondaryPanel}
+          />
         )}
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel selectedCollection={collection} onClose={closeSecondaryPanel} />

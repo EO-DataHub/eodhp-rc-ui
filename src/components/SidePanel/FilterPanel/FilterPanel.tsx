@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { ReloadIcon, Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
@@ -13,8 +14,7 @@ interface FilterPanelProps {
 }
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => {
-  const storedCollection = localStorage.getItem('selectedCollection')
-  const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
+  const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const queryFormRef = useRef<QueryFormRef>(null)
 
   function storeQuery(query: object) {
@@ -47,7 +47,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
         </Flex>
         <QueryForm
           ref={queryFormRef}
-          schema={rjsfCollections[selectedCollection?.id]}
+          schema={selectedCollection?.id ? rjsfCollections[selectedCollection.id] : {}}
           onSubmit={storeQuery}
           //Filters are currently focused on the globe, may change to selected areas in the future
           boundingBox={[-180.0, -90.0, 179.9, 90.0]}

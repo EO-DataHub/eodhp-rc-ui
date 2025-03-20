@@ -13,10 +13,11 @@ import { AssetSection } from './AssetSection'
 
 interface ItemInfoPanelProps {
   item: Item | null
+  isUserItem?: boolean
   onClose: () => void
 }
 
-export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
+export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
   const rootCatalog = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url ? getCatalogByURL(url) : undefined
@@ -27,8 +28,12 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
     queryFn: () =>
       fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
-    enabled: !!item,
+    enabled: !!item && !isUserItem,
   })
+
+  const dataResult = isUserItem ? item : data
+  const isLoadingResult = isUserItem ? false : isLoading
+  const errorResult = isUserItem ? false : !!error
 
   return (
     <>
@@ -69,18 +74,26 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
 
             <Box pt="6">
               <Tabs.Content value="metadata">
-                <MetadataSection stacElement={data} isLoading={isLoading} hasError={!!error} />
+                <MetadataSection
+                  stacElement={dataResult}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
+                />
               </Tabs.Content>
 
               <Tabs.Content value="assets">
-                <AssetSection item={data} isLoading={isLoading} hasError={!!error} />
+                <AssetSection
+                  item={dataResult}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
+                />
               </Tabs.Content>
 
               <Tabs.Content value="resources">
                 <AdditionalResourcesSection
-                  links={data?.links}
-                  isLoading={isLoading}
-                  hasError={!!error}
+                  links={dataResult?.links}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
                 />
               </Tabs.Content>
             </Box>

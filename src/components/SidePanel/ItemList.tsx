@@ -1,6 +1,6 @@
 import { ItemCardType } from '@/types'
 import { ReactNode } from 'react'
-import { Callout } from '../Callout/Callout'
+import { Callout } from '@/components/Callout/Callout'
 import styles from './ItemList.module.scss'
 
 interface ItemListProps<T> {

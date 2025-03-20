@@ -5,7 +5,9 @@ import { Dialog, Button, Flex, Text, Badge } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
+
 interface CollectionDetailsCardProps {
   collection: Collection
   isOpen: boolean
@@ -33,8 +35,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   const navigate = useNavigate()
 
   const handleOpenCollection = () => {
-    // persist selected collection even after a page reload or browser restart
-    localStorage.setItem('selectedCollection', JSON.stringify(collection))
+    dataFinderStore.send({ type: 'setCollection', collection: collection })
     navigate(`/finder/${collection.id}`)
   }
 
