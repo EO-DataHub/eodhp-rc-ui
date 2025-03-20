@@ -80,7 +80,7 @@ jobs:
     needs: build
     steps:
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{vars.GHA_AWS_DEPLOY_ROLE_EODH}} # Role in Sparkgeo Management account
           aws-region: ${{env.DEPLOYMENT_REGION}}
