@@ -97,13 +97,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   }
 
   const handlePurchase = async () => {
-    // in the future we will also check if the user has purchase credits available
-    const aoi = dataFinderStore.getSnapshot().context.aoi
-
-    if (aoi) {
-      dataFinderStore.send({ type: 'storeAoi', aoi })
-    }
-
     if (isAuthenticated) {
       navigate(`/order-details/${item.id}`)
     } else {

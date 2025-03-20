@@ -29,6 +29,7 @@ const DEFAULT_MAP_VIEW = {
 }
 
 const MAP_STORAGE_KEY = 'mapViewState'
+const AOI_STORAGE_KEY = 'aoiData'
 
 function DrawControl() {
   const drawInstance = useRef<MapboxDraw | null>(null)
@@ -55,6 +56,18 @@ function DrawControl() {
     },
     { position: 'top-right' },
   )
+
+  // Restore AOI when the draw instance is available
+  useEffect(() => {
+    if (drawInstance.current) {
+      const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+      if (storedAoi) {
+        const parsedAoi = JSON.parse(storedAoi)
+        drawInstance.current.add(parsedAoi)
+      }
+    }
+  }, [])
+
   return null
 }
 
@@ -66,6 +79,17 @@ export const Map = () => {
   const savedViewState =
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
+
+  // Load AOI from local storage on mount
+  useEffect(() => {
+    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+    if (storedAoi) {
+      const parsedAoi = JSON.parse(storedAoi)
+      dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+    }
+  }, [])
+
+  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
   const handleMapBoundsChange = () => {
     if (mapRef.current) {
@@ -92,12 +116,6 @@ export const Map = () => {
   // to do this but there is no way to control the order of the layers in the
   // MapboxDraw control.
 
-  // Clear the stored map extent when a session starts
-  useEffect(() => {
-    localStorage.removeItem(MAP_STORAGE_KEY)
-  }, [])
-
-  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
   useEffect(() => {
     if (!mapInstance) return
 
