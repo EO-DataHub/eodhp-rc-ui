@@ -52,9 +52,8 @@ export const DataFinderPage: React.FC = () => {
 
       const foundCollection = allCollections.find((col) => col.id === collectionId)
       if (foundCollection) {
-        const isUserCollection = !!userCollectionQuery.data?.some(
-          (col) => col.id === foundCollection.id,
-        )
+        const isUserCollection =
+          userCollectionQuery.data?.some((col) => col.id === foundCollection.id) ?? false
         dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection })
         dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
       } else {
