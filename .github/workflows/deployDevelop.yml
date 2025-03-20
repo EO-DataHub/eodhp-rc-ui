@@ -69,6 +69,7 @@ jobs:
 
   deploy_s3:
     name: Deploy to S3
+    environment: ${{ github.ref_name }}
     env:
       output_build_s3: ${{needs.build.outputs.output_build_s3}}
     runs-on: ubuntu-latest
