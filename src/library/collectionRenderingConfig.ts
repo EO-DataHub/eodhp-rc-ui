@@ -62,13 +62,14 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
 
   let queryParams = {
     url: urlParam,
-  } as { url: string; rescale?: string[] }
+  } as { url: string; rescale?: string[]; colormap?: string }
 
   if (render) {
     queryParams = {
       ...queryParams,
       ...render,
       rescale: render.rescale ? render.rescale.map((r) => r.join(',')) : undefined,
+      colormap: JSON.stringify(render.colormap),
     }
   }
 
