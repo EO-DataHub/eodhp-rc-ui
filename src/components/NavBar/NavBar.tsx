@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { Flex, Link, Text } from '@radix-ui/themes'
 import { LoginButton } from './LoginButton'
 import MapsIcon from '@/assets/icons/maps-icon.svg?react'
+import FolderIcon from '@/assets/icons/folder-filled.svg?react'
 import AppsIcon from '@/assets/icons/apps-icon.svg?react'
 import { useLocation } from 'react-router-dom'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
@@ -12,6 +14,7 @@ export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
+  const { isAuthenticated } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
 
   return (
@@ -36,6 +39,14 @@ export const NavBar: React.FC = () => {
               <Text className={styles.text}>Maps</Text>
             </Flex>
           </Link>
+          {isAuthenticated && (
+            <Link href="/my-data/" className={styles.link}>
+              <Flex gap="3" align="center" px="4" py="2">
+                <FolderIcon className={styles.icon} />
+                <Text className={styles.text}>My Data</Text>
+              </Flex>
+            </Link>
+          )}
         </Flex>
 
         <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />

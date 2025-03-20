@@ -4,6 +4,7 @@ import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
+const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
 const HUB_ENV = import.meta.env.VITE_HUB_ENV
 
 interface FetchItemsParams {
@@ -101,4 +102,27 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
 
   const data = await response.json()
   return data as Item
+}
+
+export const fetchUserItems = async (selectedCollection: Collection): Promise<Item[]> => {
+  const itemsLink = selectedCollection.links.find((link) => link.rel === 'items')?.href
+  if (!itemsLink) {
+    throw new Error("No 'items' link found in user collection.")
+  }
+
+  const response = await fetch(itemsLink, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${API_TOKEN}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user items')
+  }
+
+  const data = await response.json()
+  return data.features as Item[]
 }

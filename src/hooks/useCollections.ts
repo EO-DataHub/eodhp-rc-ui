@@ -10,7 +10,7 @@ import {
 import { useMemo, useState } from 'react'
 import { flexibleSearch } from '@/library/stringUtils'
 
-const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
+export const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
   const searchFields: (keyof Collection)[] = ['id', 'title', 'description', 'keywords', 'providers']
 
   for (const field of searchFields) {

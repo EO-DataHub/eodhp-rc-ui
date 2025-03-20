@@ -41,6 +41,7 @@ const dataFinderStore = createStore({
     collection: undefined as Collection | undefined,
     collectionRenderOptions: [] as StacRender[],
     collectionRender: undefined as StacRender | undefined,
+    isUserCollection: false, //initially assume that the collection does not belong to the user
   },
   // Transitions
   on: {
@@ -289,6 +290,12 @@ const dataFinderStore = createStore({
     setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
       collectionRender: event.collectionRender,
     }),
+    setIsUserCollection: (context, event: { isUserCollection: boolean }) => {
+      return {
+        ...context,
+        isUserCollection: event.isUserCollection,
+      }
+    },
     storeAoi: (context, event: { aoi: GeoJSON.Feature }) => {
       localStorage.setItem('aoi', JSON.stringify(event.aoi))
       return { ...context, aoi: event.aoi }

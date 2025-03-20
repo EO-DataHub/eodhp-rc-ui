@@ -132,6 +132,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     dataFinderStore,
     (state) => state.context.collection?.license === 'proprietary',
   )
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
   const isPinnedCard = type === 'pinned-item'
@@ -279,7 +280,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && (
+            {isLicenseProprietary && !isUserCollection && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
                 Purchase
               </Button>
