@@ -101,6 +101,24 @@
       }
     }
   },
+  "PSScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "missing_georeference": true
+      }
+    }
+  },
+  "SkySatCollect": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "missing_georeference": true
+      }
+    }
+  },
   "land_cover": {
     "renders": {
       "title": "Land Cover Map",
