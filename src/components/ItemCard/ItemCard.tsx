@@ -165,6 +165,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     }
   }
 
+  const cardTitle = useMemo(() => {
+    if (!data?.properties?.title) {
+      return item.id
+    }
+
+    return data.properties.title
+  }, [data?.properties?.title, item.id])
+
   return (
     <Card
       key={`${type}-${item.id}`}
@@ -202,7 +210,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           <Flex direction="column" flexGrow={'1'}>
             <Flex justify="between">
               <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
-                {data?.properties?.title ?? item.id}
+                {cardTitle}
               </Text>
             </Flex>
             <Text size="1" className={styles.text}>

@@ -15,7 +15,12 @@ const useItemsQuery = () => {
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const page = useSelector(dataFinderStore, (state) => state.context.page)
 
-  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
+  const queryKey = JSON.stringify({
+    queryFilter,
+    aoi: aoi?.geometry,
+    mapBounds,
+    collectionId: collection?.id,
+  })
   const fetchFunction = () =>
     fetchItems({
       limit: MAX_TOTAL_ITEMS,

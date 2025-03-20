@@ -7,9 +7,14 @@ import { CrossCircledIcon } from '@radix-ui/react-icons'
 interface FilterTagsProps {
   filters: QuickFilter
   onRemoveFilter: (key: keyof QuickFilter) => void
+  variant?: 'full' | 'compact'
 }
 
-export const FilterTags: React.FC<FilterTagsProps> = ({ filters, onRemoveFilter }) => {
+export const FilterTags: React.FC<FilterTagsProps> = ({
+  filters,
+  onRemoveFilter,
+  variant = 'full',
+}) => {
   const filterTags = useMemo(
     () =>
       Object.entries(filters)
@@ -24,7 +29,14 @@ export const FilterTags: React.FC<FilterTagsProps> = ({ filters, onRemoveFilter 
 
   return (
     filterTags.length > 0 && (
-      <Flex p="5" pt="0" gap="2" align="center" overflow="auto">
+      <Flex
+        wrap="wrap"
+        p={variant === 'full' ? '5' : '0'}
+        pt="0"
+        gap="2"
+        align="center"
+        overflow="auto"
+      >
         {filterTags.map(
           (tag, index) =>
             tag &&
