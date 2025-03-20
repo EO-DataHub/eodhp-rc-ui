@@ -52,8 +52,24 @@
   "sentinel1": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Single-Look Complex (SLC) Data Preview",
         "assets": ["thumbnail"]
+      }
+    }
+  },
+  "sentinel1_ard": {
+    "renders": {
+      "VV": {
+        "title": "Backscatter VV (Vertical-Vertical)",
+        "assets": ["data"],
+        "bidx": [1],
+        "rescale": [[-24, -9]]
+      },
+      "VH": {
+        "title": "Backscatter VH (Vertical-Horizontal)",
+        "assets": ["data"],
+        "bidx": [2],
+        "rescale": [[-40, -24]]
       }
     }
   },
