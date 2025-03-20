@@ -166,7 +166,7 @@ const dataFinderStore = createStore({
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
       const isAlreadyPinned = context.pinnedItems.some((pinnedItem) =>
-        pinnedItemIsEqual(pinnedItem, event.item),
+        pinnedItemIsEqual(pinnedItem, { ...event.item, render: event.collectionRender }),
       )
 
       if (isAlreadyPinned) return context
