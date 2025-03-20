@@ -1,5 +1,6 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
-import { Item } from '@/types'
+import { Item, StacRender } from '@/types'
+import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
 
@@ -93,8 +94,8 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
   return sortedCoordinates as Coordinates
 }
 
-const ThumbnailItemLayer = ({ item }: { item: Item }) => {
-  const thumbnailUrl = item.assets?.thumbnail?.href
+export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+  const thumbnailUrl = getAssetUrl(item, render.assets[0])
 
   if (!thumbnailUrl) return null
 
@@ -111,4 +112,3 @@ const ThumbnailItemLayer = ({ item }: { item: Item }) => {
     </Source>
   )
 }
-export default ThumbnailItemLayer
