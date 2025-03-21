@@ -10,10 +10,10 @@
     "collection_id": {
       "const": "default"
     },
-    "start_datetime_range": {
+    "start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
-    "end_datetime_range": {
+    "end_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     }
   }
