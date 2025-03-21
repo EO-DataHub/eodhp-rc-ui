@@ -100,16 +100,46 @@ export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacR
 
   if (!thumbnailUrl) return null
 
-  const coordinates = normalizeCoordinates(item.geometry)
+  let coordinates: Coordinates
+
+  if (render.thumbnail_georeference === 'bbox') {
+    // item.bbox is in the format [minx, miny, maxx, maxy]
+    // wind the coordinates in clockwise order starting from the top left
+    coordinates = [
+      [item.bbox[0], item.bbox[3]],
+      [item.bbox[2], item.bbox[3]],
+      [item.bbox[2], item.bbox[1]],
+      [item.bbox[0], item.bbox[1]],
+    ] as Coordinates
+  } else if (render.thumbnail_georeference === 'geometry') {
+    coordinates = normalizeCoordinates(item.geometry)
+  } else {
+    return null
+  }
+
+  const geojson = turf.polygon([
+    [
+      [item.bbox[0], item.bbox[1]],
+      [item.bbox[2], item.bbox[1]],
+      [item.bbox[2], item.bbox[3]],
+      [item.bbox[0], item.bbox[3]],
+      [item.bbox[0], item.bbox[1]],
+    ],
+  ])
 
   return (
-    <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
-      <Layer
-        type="raster"
-        paint={{
-          'raster-opacity': item.mapRender?.opacity ?? 1,
-        }}
-      />
-    </Source>
+    <>
+      <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
+        <Layer
+          type="raster"
+          paint={{
+            'raster-opacity': item.mapRender?.opacity ?? 1,
+          }}
+        />
+      </Source>
+      <Source type="geojson" data={geojson}>
+        <Layer type="line" paint={{ 'line-color': '#000000', 'line-width': 20 }} />
+      </Source>
+    </>
   )
 }
