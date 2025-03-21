@@ -5,6 +5,9 @@ import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 
+const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
+const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
+
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
   SIMPLE_SELECT: 'simple_select',
@@ -67,7 +70,7 @@ const dataFinderStore = createStore({
   // Transitions
   on: {
     hydrateFromLocalStorage: (context) => {
-      const contextJson = localStorage.getItem('dataFinderStoreContextContext')
+      const contextJson = localStorage.getItem(LOCAL_STORAGE_CONTEXT_KEY)
       if (!context.isContextHydrated) {
         try {
           if (contextJson) {
@@ -350,8 +353,6 @@ const dataFinderStore = createStore({
   },
 })
 
-const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
-
 // This inspector is used to persist some parts of the context to local storage
 // on every state change but the initial state and onMount.
 dataFinderStore.inspect((inspectEvent) => {
@@ -368,7 +369,7 @@ dataFinderStore.inspect((inspectEvent) => {
       )
 
       try {
-        localStorage.setItem('dataFinderStoreContextContext', JSON.stringify(persistedContext))
+        localStorage.setItem(LOCAL_STORAGE_CONTEXT_KEY, JSON.stringify(persistedContext))
       } catch (error) {
         // eslint-disable-next-line no-console
         console.error('Failed to save context to local storage:', error)
