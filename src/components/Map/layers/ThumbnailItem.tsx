@@ -95,6 +95,7 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
 }
 
 export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+  // The thumbnail asset key is configurable: render.assets can be ["thumbnail"] or ["quicklook"] etc.
   const thumbnailUrl = getAssetUrl(item, render.assets[0])
 
   if (!thumbnailUrl) return null
