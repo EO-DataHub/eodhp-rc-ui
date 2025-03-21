@@ -24,6 +24,7 @@ const pinnedItemIsEqual = (a: Item, b: Item) =>
   a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
 
 interface AppContext {
+  isContextHydrated: boolean
   isLoading: boolean
   secondaryPanel: SecondaryPanel
   infoPanelItem?: Item
@@ -45,6 +46,7 @@ interface AppContext {
 const dataFinderStore = createStore({
   // Initial context
   context: {
+    isContextHydrated: false,
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined,
     infoPanelItem: undefined,
@@ -64,37 +66,27 @@ const dataFinderStore = createStore({
   } as AppContext,
   // Transitions
   on: {
-    onMount: (context) => {
-      const contextJson = localStorage.getItem('appContext')
-      try {
-        if (contextJson) {
-          const contextFromLocalStorage = JSON.parse(contextJson) as Partial<AppContext>
+    hydrateFromLocalStorage: (context) => {
+      const contextJson = localStorage.getItem('dataFinderStoreContextContext')
+      if (!context.isContextHydrated) {
+        try {
+          if (contextJson) {
+            const contextFromLocalStorage = JSON.parse(contextJson) as Partial<AppContext>
 
-          return {
-            ...context,
-            ...contextFromLocalStorage.pinnedItems,
+            return {
+              ...context,
+              isContextHydrated: true,
+              ...contextFromLocalStorage,
+            }
           }
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to load context from local storage:', error)
         }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to load context from local storage:', error)
       }
       return context
     },
-    onUnmount: (context: AppContext): AppContext => {
-      try {
-        localStorage.setItem(
-          'appContext',
-          JSON.stringify({
-            pinnedItems: context.pinnedItems,
-          }),
-        )
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to save context to local storage:', error)
-      }
-      return context
-    },
+
     onFetched: (context) => {
       return {
         ...context,
@@ -356,6 +348,33 @@ const dataFinderStore = createStore({
       return { ...context, aoi: event.aoi }
     },
   },
+})
+
+const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
+
+// This inspector is used to persist some parts of the context to local storage
+// on every state change but the initial state and onMount.
+dataFinderStore.inspect((inspectEvent) => {
+  if (inspectEvent.type === '@xstate.snapshot') {
+    const { event } = inspectEvent
+
+    // Do not save the context to local storage on initial state
+    if (!['@xstate.init'].includes(event.type)) {
+      // @ts-expect-error - snapshot is not typed correctly
+      const context = inspectEvent.snapshot.context
+
+      const persistedContext = Object.fromEntries(
+        PERSISTED_CONTEXT_KEYS.map((key) => [key, context[key]]),
+      )
+
+      try {
+        localStorage.setItem('dataFinderStoreContextContext', JSON.stringify(persistedContext))
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to save context to local storage:', error)
+      }
+    }
+  }
 })
 
 export default dataFinderStore

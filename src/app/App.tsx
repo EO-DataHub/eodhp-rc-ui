@@ -12,20 +12,8 @@ import { useEffect } from 'react'
 function App() {
   useEffect(() => {
     dataFinderStore.send({
-      type: 'onMount',
+      type: 'hydrateFromLocalStorage',
     })
-
-    const handleBeforeUnload = () => {
-      dataFinderStore.send({
-        type: 'onUnmount',
-      })
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-    }
   }, [])
 
   return (
