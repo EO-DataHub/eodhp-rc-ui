@@ -27,7 +27,7 @@ interface ServerRenderConfig {
   expression?: string
   variable?: string
   reference?: boolean
-  georeference?: string
+  thumbnail_georeference?: string
 }
 
 interface ServerCollectionConfig {
@@ -50,7 +50,7 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   let tilerUrl = undefined
   let urlParam = undefined
 
-  if (render.georeference) {
+  if (render.thumbnail_georeference) {
     return undefined
   } else if (render.variable) {
     tilerUrl = tilerUrls['titiler-multidim']
@@ -105,7 +105,7 @@ function translateServerConfigToCollectionConfig(
           color_formula: renderConfig.color_formula,
           expression: renderConfig.expression,
           reference: renderConfig.reference,
-          georeference: renderConfig.georeference,
+          thumbnail_georeference: renderConfig.thumbnail_georeference,
         }
 
         const definedProps = Object.fromEntries(
