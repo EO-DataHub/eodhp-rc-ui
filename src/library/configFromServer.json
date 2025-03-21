@@ -74,7 +74,7 @@
     }
   },
   "cmip6": {
-    "eodhrc:multidim-variable-time-items": true,
+    "eodhrc:time-variable-items": true,
     "eodhrc:render-key-properties": ["cmip6:variable_id", "cmip6:frequency"],
     "renders": {
       "pr--mon": {
@@ -128,7 +128,7 @@
     }
   },
   "ukcp": {
-    "eodhrc:multidim-variable-time-items": true,
+    "eodhrc:time-variable-items": true,
     "eodhrc:render-key-properties": ["var_id"],
     "renders": {
       "pr": {
