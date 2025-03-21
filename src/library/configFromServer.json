@@ -106,7 +106,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "georeference": "bbox"
       }
     }
   },
@@ -115,7 +115,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "georeference": "bbox"
       }
     }
   },
@@ -180,7 +180,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "georeference": "geometry"
       }
     }
   },
@@ -189,7 +189,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "georeference": "geometry"
       }
     }
   },

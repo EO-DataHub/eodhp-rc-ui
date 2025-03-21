@@ -11,7 +11,7 @@ export const ItemLayer = ({ item }: { item: Item }) => {
 
   if (item.mapRender?.visible === false) return null
 
-  if (render.missing_georeference) {
+  if (render.georeference) {
     return <ThumbnailItemLayer item={item} render={render} />
   }
 
