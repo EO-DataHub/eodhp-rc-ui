@@ -38,7 +38,7 @@ export function getItemUrl(item: Item): string | undefined {
   return item.links.find((link) => link.rel === 'self')?.href
 }
 
-function getAssetUrl(item: Item, asset: string): string | undefined {
+export function getAssetUrl(item: Item, asset: string): string | undefined {
   return item.assets?.[asset]?.href
 }
 
