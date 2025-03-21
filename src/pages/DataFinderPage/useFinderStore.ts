@@ -23,28 +23,78 @@ const PlaceholderRender: StacRender = {
 const pinnedItemIsEqual = (a: Item, b: Item) =>
   a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
 
+interface AppContext {
+  isLoading: boolean
+  secondaryPanel: SecondaryPanel
+  infoPanelItem?: Item
+  mapInstance?: MapInstance
+  drawInstance?: MapboxDraw
+  drawMode?: DrawMode
+  aoi?: GeoJSON.Feature
+  mapBounds?: MapBounds
+  queryFilter?: object
+  page: number
+  pinnedItems: Item[]
+  hoveredItem?: Item
+  collection?: Collection
+  collectionRenderOptions: StacRender[]
+  collectionRender?: StacRender
+  isUserCollection: boolean
+}
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
-    secondaryPanel: undefined as SecondaryPanel,
-    infoPanelItem: undefined as Item | undefined,
-    mapInstance: undefined as MapInstance | undefined,
-    drawInstance: undefined as MapboxDraw | undefined,
-    drawMode: undefined as DrawMode | undefined,
-    aoi: undefined as GeoJSON.Feature | undefined,
-    mapBounds: undefined as MapBounds | undefined,
-    queryFilter: undefined as object | undefined,
+    secondaryPanel: undefined,
+    infoPanelItem: undefined,
+    mapInstance: undefined,
+    drawInstance: undefined,
+    drawMode: undefined,
+    aoi: undefined,
+    mapBounds: undefined,
+    queryFilter: undefined,
     page: 0,
-    pinnedItems: [] as Item[],
-    hoveredItem: undefined as Item | undefined,
-    collection: undefined as Collection | undefined,
-    collectionRenderOptions: [] as StacRender[],
-    collectionRender: undefined as StacRender | undefined,
-    isUserCollection: false, //initially assume that the collection does not belong to the user
-  },
+    pinnedItems: [],
+    hoveredItem: undefined,
+    collection: undefined,
+    collectionRenderOptions: [],
+    collectionRender: undefined,
+    isUserCollection: false,
+  } as AppContext,
   // Transitions
   on: {
+    onMount: (context) => {
+      const contextJson = localStorage.getItem('appContext')
+      try {
+        if (contextJson) {
+          const contextFromLocalStorage = JSON.parse(contextJson) as Partial<AppContext>
+
+          return {
+            ...context,
+            ...contextFromLocalStorage.pinnedItems,
+          }
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load context from local storage:', error)
+      }
+      return context
+    },
+    onUnmount: (context: AppContext): AppContext => {
+      try {
+        localStorage.setItem(
+          'appContext',
+          JSON.stringify({
+            pinnedItems: context.pinnedItems,
+          }),
+        )
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to save context to local storage:', error)
+      }
+      return context
+    },
     onFetched: (context) => {
       return {
         ...context,

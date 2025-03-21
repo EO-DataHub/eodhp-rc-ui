@@ -6,8 +6,28 @@ import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
 import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider'
 import { router } from './router'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { useEffect } from 'react'
 
 function App() {
+  useEffect(() => {
+    dataFinderStore.send({
+      type: 'onMount',
+    })
+
+    const handleBeforeUnload = () => {
+      dataFinderStore.send({
+        type: 'onUnmount',
+      })
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
   return (
     <ErrorBoundary fallback={<div>We&apos;re sorry. Something is broken.</div>}>
       <AuthenticationContextProvider>
