@@ -1,4 +1,5 @@
 // This should come from a server somewhere, rather than being hard-coded in the application eventually.
+import default_schema from '@/json-schema-forms/assets/default.json'
 import sentinel1_schema from '@/json-schema-forms/assets/sentinel1.json'
 import sentinel2_ard_schema from '@/json-schema-forms/assets/sentinel2_ard.json'
 import airbus_sar_schema from '@/json-schema-forms/assets/airbus_sar_data.json'
@@ -11,10 +12,13 @@ import planet_rescene_schema from '@/json-schema-forms/assets/planet_rescene.jso
 import planet_skysatscene_schema from '@/json-schema-forms/assets/planet_skysatscene.json'
 import planet_skysatcollection_schema from '@/json-schema-forms/assets/planet_skysatcollect.json'
 import cmip6_schema from '@/json-schema-forms/assets/cmip6.json'
+import ukcp18_schema from '@/json-schema-forms/assets/ukcp18.json'
+import cordex_schema from '@/json-schema-forms/assets/cordex.json'
 
 type JSONSchema = Record<string, unknown>
 
 const rjsfCollections: Record<string, JSONSchema> = {
+  default: default_schema,
   sentinel1: sentinel1_schema,
   sentinel2_ard: sentinel2_ard_schema,
   airbus_sar_data: airbus_sar_schema,
@@ -27,6 +31,8 @@ const rjsfCollections: Record<string, JSONSchema> = {
   SkySatScene: planet_skysatscene_schema,
   SkySatCollect: planet_skysatcollection_schema,
   cmip6: cmip6_schema,
+  ukcp: ukcp18_schema,
+  cordex: cordex_schema,
 }
 
 export default rjsfCollections

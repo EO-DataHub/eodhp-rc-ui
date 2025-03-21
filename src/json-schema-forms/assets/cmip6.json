@@ -16,14 +16,9 @@
     "end_datetime_range": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
-    "cmip6:variable_long_name": {
-      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variable_long_name"
-    },
-    "cmip6:cf_standard_name": {
-      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:cf_standard_name"
-    },
     "cmip6:variable_id": {
-      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variable_id"
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variable_id",
+      "title": "Variable"
     },
     "cmip6:frequency": {
       "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:frequency"

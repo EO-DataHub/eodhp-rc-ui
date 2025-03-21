@@ -1,0 +1,24 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/ukcp18.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UK Climate Projections (UKCP18)",
+  "type": "object",
+  "required": [
+    "collection_id"
+  ],
+  "properties": {
+    "collection_id": {
+      "const": "ukcp"
+    },
+    "start_datetime_range": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime_range": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "ukcp18:variable_id": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variable_id",
+      "title": "Variable"
+    }
+  }
+}
