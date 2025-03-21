@@ -16,8 +16,8 @@ export interface Catalog {
 }
 
 export interface BaseStacRender {
-  assets: string | string[]
-  title?: string
+  title: string
+  assets: string[]
   rescale?: [number, number][]
   nodata?: number | string
   colormap_name?: string
@@ -36,6 +36,7 @@ export interface BaseStacRender {
   decode_times?: boolean
   consolidated?: boolean
   return_mask?: boolean
+  missing_georeference?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
@@ -129,6 +130,10 @@ export interface Item {
   }
   tilesUrl: string | undefined
   render?: StacRender
+  mapRender?: {
+    visible: boolean
+    opacity: number
+  }
 }
 
 export interface CubeData {

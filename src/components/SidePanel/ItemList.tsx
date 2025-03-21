@@ -1,13 +1,13 @@
-import { Item, ItemCardType } from '@/types'
+import { ItemCardType } from '@/types'
 import { ReactNode } from 'react'
-import { Callout } from '../Callout/Callout'
+import { Callout } from '@/components/Callout/Callout'
 import styles from './ItemList.module.scss'
 
-interface ItemListProps {
-  items: Item[]
+interface ItemListProps<T> {
+  items: T[]
   cardType: ItemCardType
   error?: boolean
-  renderItem: (item: Item, index: number) => ReactNode
+  renderItem: (item: T, index: number) => ReactNode
 }
 
 const messages = {
@@ -21,7 +21,7 @@ const messages = {
   },
 }
 
-const ItemList = ({ items, cardType, error, renderItem }: ItemListProps) => {
+const ItemList = <T,>({ items, cardType, error, renderItem }: ItemListProps<T>) => {
   return (
     <div className={styles.listContainer}>
       {error ? (

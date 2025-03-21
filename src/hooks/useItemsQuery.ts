@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchItems } from '@/services/ItemService'
+import { fetchItems, fetchUserItems } from '@/services/ItemService'
 import { Item } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -10,20 +10,30 @@ export const PAGE_SIZE = 10
 
 const useItemsQuery = () => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const page = useSelector(dataFinderStore, (state) => state.context.page)
 
-  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
-  const fetchFunction = () =>
-    fetchItems({
-      limit: MAX_TOTAL_ITEMS,
-      mapBounds: mapBounds,
-      aoi: aoi,
-      selectedCollection: collection ?? undefined,
-      queryFilter: queryFilter,
-    })
+  const queryKey = JSON.stringify({
+    queryFilter,
+    aoi: aoi?.geometry,
+    mapBounds,
+    collectionId: collection?.id,
+  })
+
+  const fetchFunction = () => {
+    return isUserCollection && collection
+      ? fetchUserItems(collection)
+      : fetchItems({
+          limit: MAX_TOTAL_ITEMS,
+          mapBounds: mapBounds,
+          aoi: aoi,
+          selectedCollection: collection ?? undefined,
+          queryFilter: queryFilter,
+        })
+  }
 
   const {
     data: allItems = [],

@@ -11,15 +11,16 @@ import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getCatalog } from '@/library/catalogUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const { workspaceUserName } = useContext(AuthenticationContext)
-  const storedCollection = localStorage.getItem('selectedCollection')
-  const selectedCollection = storedCollection ? JSON.parse(storedCollection) : null
+  const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
-  const catalog = getCatalog(selectedCollection)
+  const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
 
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
