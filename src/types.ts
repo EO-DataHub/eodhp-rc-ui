@@ -36,7 +36,7 @@ export interface BaseStacRender {
   decode_times?: boolean
   consolidated?: boolean
   return_mask?: boolean
-  thumbnail_georeference?: string
+  quicklook_georeference?: string
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make

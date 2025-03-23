@@ -94,15 +94,15 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
   return sortedCoordinates as Coordinates
 }
 
-export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
-  // The thumbnail asset key is configurable: render.assets can be ["thumbnail"] or ["quicklook"] etc.
-  const thumbnailUrl = getAssetUrl(item, render.assets[0])
+export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+  // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
+  const quicklookUrl = getAssetUrl(item, render.assets[0])
 
-  if (!thumbnailUrl) return null
+  if (!quicklookUrl) return null
 
   let coordinates: Coordinates
 
-  if (render.thumbnail_georeference === 'bbox') {
+  if (render.quicklook_georeference === 'bbox') {
     // item.bbox is in the format [minx, miny, maxx, maxy]
     // wind the coordinates in clockwise order starting from the top left
     coordinates = [
@@ -111,7 +111,7 @@ export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacR
       [item.bbox[2], item.bbox[1]],
       [item.bbox[0], item.bbox[1]],
     ] as Coordinates
-  } else if (render.thumbnail_georeference === 'geometry') {
+  } else if (render.quicklook_georeference === 'geometry') {
     coordinates = normalizeCoordinates(item.geometry)
   } else {
     return null
@@ -129,7 +129,7 @@ export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacR
 
   return (
     <>
-      <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
+      <Source type="image" url={quicklookUrl} coordinates={coordinates}>
         <Layer
           type="raster"
           paint={{

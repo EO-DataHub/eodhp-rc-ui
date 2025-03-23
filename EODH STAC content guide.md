@@ -132,7 +132,7 @@ Items represent individual assets within a collection. They should include the f
 5. **Visualization**:
 
    - Display geospatial data on interactive maps.
-   - Include previews or thumbnails for assets where possible.
+   - Include previews or quicklooks for assets where possible.
 
 ---
 

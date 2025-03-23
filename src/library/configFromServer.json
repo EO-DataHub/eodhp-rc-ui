@@ -53,7 +53,7 @@
     "renders": {
       "preview": {
         "title": "Single-Look Complex (SLC) Data Preview",
-        "assets": ["thumbnail"]
+        "assets": ["quicklook"]
       }
     }
   },
@@ -105,8 +105,8 @@
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": ["thumbnail"],
-        "thumbnail_georeference": "bbox"
+        "assets": ["quicklook"],
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -114,8 +114,8 @@
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": ["thumbnail"],
-        "thumbnail_georeference": "bbox"
+        "assets": ["quicklook"],
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -171,7 +171,7 @@
     "renders": {
       "preview": {
         "title": "Data Preview",
-        "assets": ["thumbnail"]
+        "assets": ["quicklook"]
       }
     }
   },
@@ -180,7 +180,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "thumbnail_georeference": "geometry"
+        "quicklook_georeference": "geometry"
       }
     }
   },
@@ -189,7 +189,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "thumbnail_georeference": "geometry"
+        "quicklook_georeference": "geometry"
       }
     }
   },
