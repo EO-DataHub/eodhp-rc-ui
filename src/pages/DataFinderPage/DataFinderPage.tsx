@@ -38,36 +38,60 @@ export const DataFinderPage: React.FC = () => {
     enabled: !!workspaceUserName,
   })
 
+  // Try to find the collection in the public collections as soon as they are
+  // fetched
   useEffect(() => {
-    if (isAuthenticating) return
+    if (!collectionQueries.isFetched) return
 
-    if (collectionQueries.isFetched && (!isAuthenticated || userCollectionQuery.isFetched)) {
-      //Start with all public collections
-      let allCollections = collectionQueries.data
+    const foundPublicCollection = collectionQueries.data.find((col) => col.id === collectionId)
 
-      //If the user is authenticated, also add their private collections
-      if (isAuthenticated) {
-        allCollections = [...allCollections, ...(userCollectionQuery.data ?? [])]
-      }
+    if (foundPublicCollection) {
+      dataFinderStore.send({
+        type: 'setCollection',
+        collection: foundPublicCollection,
+      })
+    }
+  }, [collectionId, isAuthenticating, collectionQueries])
 
-      const foundCollection = allCollections.find((col) => col.id === collectionId)
-      if (foundCollection) {
-        const isUserCollection =
-          userCollectionQuery.data?.some((col) => col.id === foundCollection.id) ?? false
-        dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection })
-        dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
-      } else {
-        navigate('/')
-      }
+  // Once the user collections are fetched, try to find the collection in the
+  // user collections and set it as the active collection
+  useEffect(() => {
+    if (!isAuthenticated || !userCollectionQuery.isFetched || !collectionId) return
+
+    const foundUserCollection = userCollectionQuery.data?.find((col) => col.id === collectionId)
+
+    if (foundUserCollection) {
+      dataFinderStore.send({
+        type: 'setCollection',
+        collection: foundUserCollection,
+      })
+      dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
+    }
+  }, [collectionId, isAuthenticated, userCollectionQuery])
+
+  // If the collection is not found in the public or user collections, navigate
+  // to the home page
+  useEffect(() => {
+    if (
+      isAuthenticating ||
+      !collectionId ||
+      !collectionQueries.isFetched ||
+      (isAuthenticated && !userCollectionQuery.isFetched)
+    )
+      return
+
+    const allCollections = [...collectionQueries.data, ...(userCollectionQuery.data ?? [])]
+    const found = allCollections.find((col) => col.id === collectionId)
+    if (!found) {
+      navigate('/')
     }
   }, [
     collectionId,
-    navigate,
-    collection,
     collectionQueries,
     userCollectionQuery,
     isAuthenticated,
     isAuthenticating,
+    navigate,
   ])
 
   // Remove AOI from local storage on mount
