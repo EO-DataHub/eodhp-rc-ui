@@ -96,17 +96,18 @@ const QueryItemsTab = () => {
     >
       {!isLoading && <RenderSelectionButton />}
       <Flex justify="between">
-        <Flex align="center" gap="2">
-          {isFetching && (
+        {isLoading || isFetching ? (
+          <Flex align="center" gap="2">
             <>
               <LoadingIndicator />
               <Text size="2">Loading...</Text>
             </>
-          )}
-        </Flex>
-        <Flex width="100%" gap="2" align="center">
-          {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
-        </Flex>
+          </Flex>
+        ) : (
+          <Flex width="100%" gap="2" align="center">
+            {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
+          </Flex>
+        )}
         <Flex gap="2" align="center">
           <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
             <FilterAltOutlined />
