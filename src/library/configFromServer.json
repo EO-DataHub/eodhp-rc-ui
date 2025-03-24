@@ -119,6 +119,33 @@
       }
     }
   },
+  "SkySatScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REOrthoTile": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
   "land_cover": {
     "renders": {
       "Land Cover Map": {
