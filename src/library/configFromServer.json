@@ -106,7 +106,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -115,7 +115,34 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "SkySatScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REOrthoTile": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -180,7 +207,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "quicklook_georeference": "geometry"
       }
     }
   },
@@ -189,7 +216,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "quicklook_georeference": "geometry"
       }
     }
   },

@@ -94,22 +94,39 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
   return sortedCoordinates as Coordinates
 }
 
-export const ThumbnailItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
-  // The thumbnail asset key is configurable: render.assets can be ["thumbnail"] or ["quicklook"] etc.
-  const thumbnailUrl = getAssetUrl(item, render.assets[0])
+export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+  // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
+  const quicklookUrl = getAssetUrl(item, render.assets[0])
 
-  if (!thumbnailUrl) return null
+  if (!quicklookUrl) return null
 
-  const coordinates = normalizeCoordinates(item.geometry)
+  let coordinates: Coordinates
+
+  if (render.quicklook_georeference === 'bbox') {
+    // item.bbox is in the format [minx, miny, maxx, maxy]
+    // wind the coordinates in clockwise order starting from the top left
+    coordinates = [
+      [item.bbox[0], item.bbox[3]],
+      [item.bbox[2], item.bbox[3]],
+      [item.bbox[2], item.bbox[1]],
+      [item.bbox[0], item.bbox[1]],
+    ] as Coordinates
+  } else if (render.quicklook_georeference === 'geometry') {
+    coordinates = normalizeCoordinates(item.geometry)
+  } else {
+    return null
+  }
 
   return (
-    <Source type="image" url={thumbnailUrl} coordinates={coordinates}>
-      <Layer
-        type="raster"
-        paint={{
-          'raster-opacity': item.mapRender?.opacity ?? 1,
-        }}
-      />
-    </Source>
+    <>
+      <Source type="image" url={quicklookUrl} coordinates={coordinates}>
+        <Layer
+          type="raster"
+          paint={{
+            'raster-opacity': item.mapRender?.opacity ?? 1,
+          }}
+        />
+      </Source>
+    </>
   )
 }
