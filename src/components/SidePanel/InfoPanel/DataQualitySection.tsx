@@ -1,6 +1,7 @@
 import { Flex, Heading, Link } from '@radix-ui/themes'
 import styles from './DataQualitySection.module.scss'
 import React, { PropsWithChildren } from 'react'
+import { LockClosedIcon } from '@radix-ui/react-icons'
 
 const metricLabelMapping = {
   not_assessed: 'Not Assessed',
@@ -329,6 +330,7 @@ export const DataQualitySection = () => {
                 }}
                 hasBorderBottom={index < metricCount - 1}
               >
+                {key === 'not_public' && <LockClosedIcon width={20} height={20} />}
                 {label}
               </Cell>
             ))}
