@@ -24,18 +24,6 @@ export default defineConfig(({ mode }) => {
       },
     ],
     base: `${env.VITE_BASE_PATH || '/'}`,
-    build: {
-      outDir: 'dist', // Output directory for build files
-      assetsDir: 'assets', // Directory for static assets
-      manifest: true, // Generate a manifest.json for hashed assets
-      rollupOptions: {
-        output: {
-          entryFileNames: 'assets/[name].[hash].js', // Add hash to JS files
-          chunkFileNames: 'assets/[name].[hash].js', // Add hash to chunk files
-          assetFileNames: 'assets/[name].[hash].[ext]', // Add hash to other assets (CSS, images, etc.)
-        },
-      },
-    },
     server: {
       host: '127.0.0.1',
       port: 5173,
