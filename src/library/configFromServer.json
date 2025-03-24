@@ -81,7 +81,7 @@
         "variable": "pr",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [[0, 10]]
+        "rescale": [0, 10]
       },
       "prsn": {
         "title": "Snowfall Flux (mm/day)",
@@ -89,7 +89,7 @@
         "variable": "prsn",
         "reference": true,
         "colormap_name": "viridis",
-        "rescale": [[0, 10]]
+        "rescale": [0, 10]
       },
       "tas": {
         "title": "Mean Air Temperature (°C)",
@@ -97,7 +97,7 @@
         "variable": "tas",
         "reference": true,
         "colormap_name": "coolwarm",
-        "rescale": [[-5, 20]]
+        "rescale": [-5, 20]
       }
     }
   },
