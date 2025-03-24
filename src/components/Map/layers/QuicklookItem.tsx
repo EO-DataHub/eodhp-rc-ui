@@ -117,16 +117,6 @@ export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacR
     return null
   }
 
-  const geojson = turf.polygon([
-    [
-      [item.bbox[0], item.bbox[1]],
-      [item.bbox[2], item.bbox[1]],
-      [item.bbox[2], item.bbox[3]],
-      [item.bbox[0], item.bbox[3]],
-      [item.bbox[0], item.bbox[1]],
-    ],
-  ])
-
   return (
     <>
       <Source type="image" url={quicklookUrl} coordinates={coordinates}>
@@ -136,9 +126,6 @@ export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacR
             'raster-opacity': item.mapRender?.opacity ?? 1,
           }}
         />
-      </Source>
-      <Source type="geojson" data={geojson}>
-        <Layer type="line" paint={{ 'line-color': '#000000', 'line-width': 20 }} />
       </Source>
     </>
   )
