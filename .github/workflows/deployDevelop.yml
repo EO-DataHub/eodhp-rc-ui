@@ -110,7 +110,14 @@ jobs:
             --content-type text/html \
             --cache-control 'max-age=300';
           
-      - name: transfer to S3
+      - name: Transfer to S3
         run: >
           aws s3 cp ./dist/index.html s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}index.html --cache-control max-age=0,must-revalidate;
           aws s3 sync ./dist s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }} --exclude "index.html" --cache-control max-age=31536000;
+      
+      - name: Upload silent-check-sso.html
+        run: >
+          aws s3 cp ./dist/silent-check-sso.html
+          s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}silent-check-sso.html
+          --cache-control max-age=0,must-revalidate
+          --content-type text/html
