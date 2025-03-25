@@ -1,5 +1,5 @@
 import { CheckCircledIcon } from '@radix-ui/react-icons'
-import { Badge, Flex, Heading, Table, Text } from '@radix-ui/themes'
+import { Badge, Flex, Heading, Link, Table, Text } from '@radix-ui/themes'
 
 // temporary because the date string in the data looks really weird
 function formatCustomDate(timestamp: string) {
@@ -143,6 +143,25 @@ export const ProductValidationSection = () => {
             ))}
           </Table.Body>
         </Table.Root>
+
+        <Flex direction="column" align="start">
+          <Heading as="h3" size="4" mb="2" weight="medium">
+            Additional Information
+          </Heading>
+          <Flex direction="column" gap="2">
+            {tableData.links.map((data) => (
+              <Link
+                key={data.rel}
+                href={data.href}
+                target="_blank"
+                underline="always"
+                weight="medium"
+              >
+                {data.title}
+              </Link>
+            ))}
+          </Flex>
+        </Flex>
       </Flex>
     </Flex>
   )
