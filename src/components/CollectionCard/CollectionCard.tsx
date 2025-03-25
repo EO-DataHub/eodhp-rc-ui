@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Collection } from '@/types'
-import { Flex, Text, Inset, IconButton } from '@radix-ui/themes'
+import { Flex, Text, Inset } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
@@ -31,11 +31,6 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     setIsDetailsCardOpen(true)
   }
 
-  const handlePurchase = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation()
-    // TODO
-  }
-
   return (
     <>
       <Flex className={styles.card} direction="column" onClick={handleOpenDetailsCard}>
@@ -45,15 +40,9 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
         <Flex direction="column" p="4" justify="center" flexGrow="1" position="relative">
           <Flex justify="end" gap="2" position="absolute" right="16px" top="-12px">
             {isLicenseProprietary ? (
-              <IconButton
-                radius="full"
-                variant="solid"
-                size="1"
-                className={styles.button}
-                onClick={handlePurchase}
-              >
+              <div className={styles.poundSign}>
                 <PoundSterlingSymbolIcon width="12" height="12" />
-              </IconButton>
+              </div>
             ) : null}
           </Flex>
           <Text as="p" size="3" weight="medium" className={styles.text}>
