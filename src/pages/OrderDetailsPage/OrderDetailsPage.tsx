@@ -52,6 +52,7 @@ export const OrderDetailsPage: React.FC = () => {
   })
   const aoiDataRef = useRef<Feature<Polygon> | null>(null)
 
+  // set aoiDataRef.current to the stored aoiData if it exists
   useEffect(() => {
     const storedAoi = localStorage.getItem('aoiData')
     if (!isFullScene && storedAoi) {

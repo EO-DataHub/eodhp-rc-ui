@@ -7,12 +7,16 @@ import countries from '../../data/countries.json'
 interface FieldProps {
   label: string
   children: React.ReactNode
+  required?: boolean
 }
 
-const Field: React.FC<FieldProps> = ({ label, children }) => (
+const Field: React.FC<FieldProps> = ({ label, children, required }) => (
   <Flex direction="column" gap="1">
     <Flex className={styles.selection} direction="row" gap="3">
-      <Text weight="bold">{label}</Text>
+      <Flex>
+        <Text weight="bold">{label}</Text>
+        {required && <span className={styles.asterisk}>*</span>}
+      </Flex>
       <InfoCircledIcon />
     </Flex>
     <Flex>{children}</Flex>
@@ -94,7 +98,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
     if (!items) return null
 
     return (
-      <Field label={label}>
+      <Field label={label} required={['productBundle', 'licence'].includes(field)}>
         <Select.Root
           size="3"
           value={selectedValues[field]}
@@ -132,7 +136,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
 
       {/* End User Country - Required for Airbus */}
       {(provider === 'airbus_optical' || provider === 'airbus_sar') && (
-        <Field label="End User Country">
+        <Field label="End User Country" required>
           <Select.Root
             size="3"
             value={selectedValues.endUserCountry}
