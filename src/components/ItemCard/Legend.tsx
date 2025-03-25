@@ -16,11 +16,9 @@ interface LegendProps {
 const Legend = ({ item }: LegendProps) => {
   const legendId = useId()
 
-  const customColorMap = item?.render?.colormap
   const colormap_name = item?.render?.colormap_name
   const rescale = item?.render?.rescale?.[0] ?? null
-  const { data: apiColorMap } = useColormap(!customColorMap ? colormap_name : undefined)
-  const colormap = customColorMap ?? apiColorMap
+  const { data: colormap } = useColormap(colormap_name)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
