@@ -7,6 +7,7 @@ import useColormap from '@/hooks/useColormap'
 const HEIGHT = 50
 const GRADIENT_HEIGHT = 20
 const MARGIN = { top: 0, bottom: 0, left: 10, right: 10 }
+const EPSILON_RATIO = 0.1 // 10% of the domain range on the legend
 
 interface LegendProps {
   item: Item
@@ -17,14 +18,13 @@ const Legend = ({ item }: LegendProps) => {
 
   const customColorMap = item?.render?.colormap
   const colormap_name = item?.render?.colormap_name
+  const rescale = item?.render?.rescale?.[0] ?? null
   const { data: apiColorMap } = useColormap(!customColorMap ? colormap_name : undefined)
   const colormap = customColorMap ?? apiColorMap
 
   const containerRef = useRef<HTMLDivElement>(null)
-
   const [width, setWidth] = useState(1)
 
-  // SVGs require an absolute width, so we calculate the container width
   useEffect(() => {
     if (!containerRef.current) return
 
@@ -46,13 +46,32 @@ const Legend = ({ item }: LegendProps) => {
     .map(Number)
     .sort((a, b) => a - b)
   const range = domain.map((d) => colormap[d])
-
   const innerWidth = width - MARGIN.left - MARGIN.right
 
-  const xScale = scaleLinear({
-    domain: [0, 255],
-    range: [0, innerWidth],
-  })
+  // 💡 Use rescale values as physical domain if present
+  const physicalDomain = rescale ?? null
+  const physicalScale = physicalDomain
+    ? scaleLinear({
+        domain: physicalDomain,
+        range: [0, innerWidth],
+      })
+    : null
+
+  const tickCount = 6
+
+  const physicalTicks =
+    physicalScale && physicalDomain
+      ? [
+          physicalDomain[0],
+          ...physicalScale.ticks(tickCount).filter((t) => {
+            const epsilon = (physicalDomain[1] - physicalDomain[0]) * EPSILON_RATIO
+            return (
+              Math.abs(t - physicalDomain[0]) > epsilon && Math.abs(t - physicalDomain[1]) > epsilon
+            )
+          }),
+          physicalDomain[1],
+        ]
+      : undefined
 
   return (
     <div ref={containerRef} style={{ width: '100%' }}>
@@ -74,20 +93,22 @@ const Legend = ({ item }: LegendProps) => {
           stroke="#000"
         />
 
-        <AxisBottom
-          top={GRADIENT_HEIGHT + 5}
-          left={MARGIN.left}
-          scale={xScale}
-          tickValues={[0, 50, 100, 150, 200, 255]}
-          tickFormat={(d) => `${Number(d)}`}
-          tickLabelProps={() => ({
-            fill: '#000',
-            fontSize: 10,
-            textAnchor: 'middle',
-          })}
-          stroke="#000"
-          tickStroke="#000"
-        />
+        {physicalScale && (
+          <AxisBottom
+            top={GRADIENT_HEIGHT + 5}
+            left={MARGIN.left}
+            scale={physicalScale}
+            tickValues={physicalTicks}
+            tickFormat={(d) => Number(d).toString()}
+            tickLabelProps={() => ({
+              fill: '#000',
+              fontSize: 10,
+              textAnchor: 'middle',
+            })}
+            stroke="#000"
+            tickStroke="#000"
+          />
+        )}
       </svg>
     </div>
   )
