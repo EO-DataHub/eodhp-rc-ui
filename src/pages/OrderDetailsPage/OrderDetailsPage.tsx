@@ -15,6 +15,7 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { OrderButtons } from './OrderButtons'
 import { PartialSceneSelect } from './PartialSceneSelect'
+import type { Feature, Polygon } from 'geojson'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -49,19 +50,19 @@ export const OrderDetailsPage: React.FC = () => {
       setOrderStatus('error')
     },
   })
+  const aoiDataRef = useRef<Feature<Polygon> | null>(null)
 
-  // Clear AOI data selecting full scene
   useEffect(() => {
-    if (isFullScene) {
+    const storedAoi = localStorage.getItem('aoiData')
+    if (!isFullScene && storedAoi) {
+      aoiDataRef.current = JSON.parse(storedAoi)
+    } else if (isFullScene) {
       aoiDataRef.current = null
     }
   }, [isFullScene])
 
   const isPlaceOrderDisabled =
     !orderSelections.productBundle || mutation.isPending || !termsAccepted
-
-  const storedAoi = localStorage.getItem('aoiData')
-  const aoiDataRef = useRef(storedAoi ? JSON.parse(storedAoi) : null)
 
   const placeOrder = () => {
     if (!item) return
@@ -135,9 +136,17 @@ export const OrderDetailsPage: React.FC = () => {
         </Flex>
       </Link>
       <Flex direction="column" height="100vh" className={styles.mainContainer}>
-        <Flex direction="row" gap="6" className={styles.bodyContainer}>
+        <Flex gap="6" className={styles.bodyContainer}>
           {item && (
-            <ItemInfo item={item} isOptical={isOpticalData} aoiGeojson={aoiDataRef.current} />
+            <ItemInfo
+              item={item}
+              isOptical={isOpticalData}
+              aoiGeojson={
+                aoiDataRef.current
+                  ? { type: 'FeatureCollection', features: [aoiDataRef.current] }
+                  : undefined
+              }
+            />
           )}
           <Flex direction="column" gap="2">
             <Kbd className={styles.tag}>{catalog}</Kbd>
@@ -146,7 +155,7 @@ export const OrderDetailsPage: React.FC = () => {
             </Text>
             <Text>Workspace: {workspaceUserName}</Text>
 
-            {aoiDataRef ? (
+            {aoiDataRef.current && getProviderType() !== 'airbus_sar' ? (
               <PartialSceneSelect
                 checked={isFullScene}
                 onChange={(checked) => setIsFullScene(checked)}

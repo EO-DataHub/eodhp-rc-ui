@@ -48,6 +48,12 @@
   margin-top: 2em;
   margin-bottom: 2em;
   justify-content: space-between;
+  gap: 2em;
+
+  > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 
   .selectionsContainer {
     flex: 1;
