@@ -35,6 +35,14 @@ const RenderSelectionButton = () => {
   )
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
 
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+
+  // If the collection is a time variable collection, don't render the render selection button
+  // the render is set at the item level
+  if (collection?.['eodhrc:time-variable-items']) {
+    return null
+  }
+
   if (!collectionRenderOptions.length || !collectionRender) {
     return null
   }

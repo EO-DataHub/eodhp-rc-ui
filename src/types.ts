@@ -83,6 +83,8 @@ export interface Collection {
       roles?: string[]
     }
   }
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
   renders?: {
     [key: string]: BaseStacRender
   }
