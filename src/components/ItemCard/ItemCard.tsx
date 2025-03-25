@@ -170,7 +170,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   return (
     <Card
-      key={`${type}-${item.id}`}
+      key={item.id}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}

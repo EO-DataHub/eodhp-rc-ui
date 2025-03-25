@@ -20,9 +20,6 @@ const PlaceholderRender: StacRender = {
   assets: [],
 }
 
-const pinnedItemIsEqual = (a: Item, b: Item) =>
-  a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
-
 const dataFinderStore = createStore({
   // Initial context
   context: {
@@ -171,14 +168,14 @@ const dataFinderStore = createStore({
       context,
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
-      const isAlreadyPinned = context.pinnedItems.some((pinnedItem) =>
-        pinnedItemIsEqual(pinnedItem, { ...event.item, render: event.collectionRender }),
-      )
+      const pinnedItemId = [event.item.id, event.collectionRender.id].join('-')
+      const isAlreadyPinned = context.pinnedItems.some((i) => i.id === pinnedItemId)
 
       if (isAlreadyPinned) return context
 
       const pinnedItem = {
         ...event.item,
+        id: pinnedItemId,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         render: event.collectionRender,
         mapRender: {
@@ -195,9 +192,7 @@ const dataFinderStore = createStore({
     removePinnedItem: (context, event: { item: Item }) => {
       return {
         ...context,
-        pinnedItems: context.pinnedItems.filter(
-          (pinnedItem) => !pinnedItemIsEqual(pinnedItem, event.item),
-        ),
+        pinnedItems: context.pinnedItems.filter((i) => i.id !== event.item.id),
       }
     },
     clearAllPinnedItems: {
