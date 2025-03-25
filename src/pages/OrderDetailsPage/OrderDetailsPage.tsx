@@ -151,7 +151,7 @@ export const OrderDetailsPage: React.FC = () => {
           )}
           <Flex direction="column" gap="2">
             <Kbd className={styles.tag}>{catalog}</Kbd>
-            <Text size="3" weight="bold">
+            <Text size="4" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
             <Text>Workspace: {workspaceUserName}</Text>
