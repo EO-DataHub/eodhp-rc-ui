@@ -107,7 +107,8 @@ jobs:
             --bucket ${{ env.DEPLOYMENT_BUCKET }} \
             --key ${{ env.DEPLOYMENT_FOLDER }} \
             --body placeholder.html \
-            --content-type text/html
+            --content-type text/html \
+            --cache-control 'max-age=300';
           
       - name: transfer to S3
         run: >
