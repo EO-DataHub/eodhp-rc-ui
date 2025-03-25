@@ -135,6 +135,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const collectionRenderOptions = useSelector(
+    dataFinderStore,
+    ({ context }) => context.collectionRenderOptions,
+  )
+  const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const [itemRender, setItemRender] = useState(collectionRender)
 
   useEffect(() => {
@@ -146,6 +151,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       setItemRender(collectionRender)
       return
     }
+
+    // by default, set the item render for time variable items to undefined
+    setItemRender(undefined)
 
     // For time variable items, check if we have the required data
     if (!data?.properties) {
@@ -163,18 +171,17 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         .map((key) => data.properties[key])
         .join('--')
 
-      if (collection.renders?.[renderKey]) {
+      const render = collectionRenderOptions.find((render) => render.id === renderKey)
+      if (render) {
         setItemRender({
-          ...collection.renders[renderKey],
+          ...render,
           id: renderKey,
-          title: collection.renders[renderKey].title,
+          title: render.title ?? '',
+          assets: render.assets ?? [],
         })
       }
-    } else {
-      // If the item does not have all the required properties, use collectionRender
-      setItemRender(undefined)
     }
-  }, [collection, data?.properties, collectionRender])
+  }, [collection, data?.properties, collectionRender, collectionRenderOptions, queryFilter])
 
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
@@ -221,7 +228,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           justify="center"
           flexShrink="0"
           p="4"
-          className={styles.thumbnailContainer}
+          className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
           onClick={(e) => {
             e.stopPropagation()
             if (!itemRender) return
