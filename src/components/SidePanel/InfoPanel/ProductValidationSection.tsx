@@ -110,7 +110,7 @@ export const ProductValidationSection = () => {
     <Flex direction="column" gap="8">
       <Flex direction="column" gap="4" align="start">
         <Heading as="h3" size="4" weight="medium">
-          Radiometric Certainty
+          Radiometric Uncertainty
         </Heading>
         <Text>
           <Text weight="medium">Time Period: </Text>
