@@ -53,8 +53,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({ isOpen, onClose }) => 
               : rjsfCollections.default
           }
           onSubmit={storeQuery}
-          //Filters are currently focused on the globe, may change to selected areas in the future
-          boundingBox={[-180.0, -90.0, 179.9, 90.0]}
         />
       </Flex>
     </Flex>
