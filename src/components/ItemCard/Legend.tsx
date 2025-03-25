@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { scaleLinear } from '@visx/scale'
 import { AxisBottom } from '@visx/axis'
 import { Item } from '@/types'
+import useColormap from '@/hooks/useColormap'
 
 const HEIGHT = 50
 const GRADIENT_HEIGHT = 20
@@ -12,8 +13,15 @@ interface LegendProps {
 }
 
 const Legend = ({ item }: LegendProps) => {
-  const colorMap = item?.render?.colormap
+  const legendId = useId()
+
+  const customColorMap = item?.render?.colormap
+  const colormap_name = item?.render?.colormap_name
+  const { data: apiColorMap } = useColormap(!customColorMap ? colormap_name : undefined)
+  const colormap = customColorMap ?? apiColorMap
+
   const containerRef = useRef<HTMLDivElement>(null)
+
   const [width, setWidth] = useState(1)
 
   // SVGs require an absolute width, so we calculate the container width
@@ -30,14 +38,14 @@ const Legend = ({ item }: LegendProps) => {
 
     resizeObserver.observe(containerRef.current)
     return () => resizeObserver.disconnect()
-  }, [])
+  }, [colormap])
 
-  if (!colorMap || width === 0) return null
+  if (!colormap || width === 0) return null
 
-  const domain = Object.keys(colorMap)
+  const domain = Object.keys(colormap)
     .map(Number)
     .sort((a, b) => a - b)
-  const range = domain.map((d) => colorMap[d])
+  const range = domain.map((d) => colormap[d])
 
   const innerWidth = width - MARGIN.left - MARGIN.right
 
@@ -50,7 +58,7 @@ const Legend = ({ item }: LegendProps) => {
     <div ref={containerRef} style={{ width: '100%' }}>
       <svg width={width} height={HEIGHT}>
         <defs>
-          <linearGradient id="legend-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <linearGradient id={legendId} x1="0%" y1="0%" x2="100%" y2="0%">
             {domain.map((value, index) => (
               <stop key={value} offset={`${(value / 255) * 100}%`} stopColor={range[index]} />
             ))}
@@ -62,7 +70,7 @@ const Legend = ({ item }: LegendProps) => {
           y={0}
           width={innerWidth}
           height={GRADIENT_HEIGHT}
-          fill="url(#legend-gradient)"
+          fill={`url(#${legendId})`}
           stroke="#000"
         />
 
