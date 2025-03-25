@@ -85,6 +85,14 @@
         "rescale": [[3.561188073319953e-8, 0.00015669361280743044]],
         "reference": true
       },
+      "pr--day": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[0, 0.0001]],
+        "reference": true
+      },
       "tas--mon": {
         "title": "Near-Surface Air Temperature (K)",
         "assets": ["reference_file"],

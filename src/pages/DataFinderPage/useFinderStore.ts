@@ -267,9 +267,9 @@ const dataFinderStore = createStore({
     },
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection
+      const collectionConfig = collectionRenderingConfig[collection.id]
 
-      const baseRenders = collectionRenderingConfig[collection.id]?.renders ?? {}
-
+      const baseRenders = collectionConfig?.renders ?? {}
       const renders = {
         ...baseRenders,
         ...collection.renders,
@@ -285,9 +285,20 @@ const dataFinderStore = createStore({
         collectionRenderOptions = [PlaceholderRender]
       }
 
+      // Merge in the collection configuration
+      const mergedCollection = {
+        ...collection,
+        'eodhrc:time-variable-items':
+          collectionConfig?.['eodhrc:time-variable-items'] ??
+          collection['eodhrc:time-variable-items'],
+        'eodhrc:render-key-properties':
+          collectionConfig?.['eodhrc:render-key-properties'] ??
+          collection['eodhrc:render-key-properties'],
+      }
+
       return {
         ...context,
-        collection: event.collection,
+        collection: mergedCollection,
         collectionRenderOptions,
         collectionRender: collectionRenderOptions[0] ?? undefined,
       }
