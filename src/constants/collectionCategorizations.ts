@@ -369,7 +369,7 @@ const collectionCategorization = {
   SkySatCollect: {
     dataCategory: [DataCategory.Optical_Multispectral],
     resolution: [Resolution.From_1m_To_10m],
-    provider: [Provider.Airbus],
+    provider: [Provider.Planet],
     location: [Location.Global],
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
@@ -408,7 +408,7 @@ const collectionCategorization = {
   },
   cordex: {
     dataCategory: [DataCategory.Climate_Projections],
-    resolution: [Resolution.From_1km_To_10km],
+    resolution: [Resolution.From_10km_To_100km],
     provider: [Provider.Multiple_Contributors, Provider.CEDA],
     location: [Location.Continental],
     keyword: [],
@@ -418,7 +418,7 @@ const collectionCategorization = {
   },
   cmip6: {
     dataCategory: [DataCategory.Climate_Projections],
-    resolution: [Resolution.From_1km_To_10km],
+    resolution: [Resolution.Greater_Than_100km],
     provider: [Provider.Multiple_Contributors, Provider.CEDA],
     location: [Location.Global],
     keyword: [],
