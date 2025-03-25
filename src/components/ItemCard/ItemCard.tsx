@@ -133,14 +133,43 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     (state) => state.context.collection?.license === 'proprietary',
   )
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
-  const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const [itemRender, setItemRender] = useState(collectionRender)
+
+  // Handle time variable items
+  if (collection?.['eodhrc:time-variable-items'] && collection['eodhrc:render-key-properties']) {
+    // Check if all required properties exist
+    const hasAllProperties = collection['eodhrc:render-key-properties'].every(
+      (key) => data?.properties?.[key] !== undefined,
+    )
+
+    if (hasAllProperties) {
+      // For time variable items, construct the render key from the specified properties
+      const renderKey = collection['eodhrc:render-key-properties']
+        .map((key) => data?.properties?.[key])
+        .join('--')
+
+      if (collection.renders?.[renderKey]) {
+        setItemRender({
+          ...collection.renders[renderKey],
+          id: renderKey,
+          title: collection.renders[renderKey].title,
+        })
+      }
+    } else {
+      // If the item does not have all the required properties, remove the render
+      // A time variable item should always have all the required properties
+      setItemRender(undefined)
+    }
+  }
 
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
 
   const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
     state.context.pinnedItems.some(
-      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === collectionRender,
+      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === itemRender,
     ),
   )
 
@@ -183,8 +212,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           className={styles.thumbnailContainer}
           onClick={(e) => {
             e.stopPropagation()
-            if (!collectionRender) return
-            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender })
+            if (!itemRender) return
+            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender: itemRender })
           }}
         >
           <img
@@ -235,7 +264,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           {isPinnedCard && item.render && (
             <Flex>
               <Text size="1" className={styles.text}>
-                {item.render.id}
+                {item.render.title}
               </Text>
             </Flex>
           )}
