@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useMemo, useState, useEffect } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
 import {
@@ -137,17 +137,30 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const [itemRender, setItemRender] = useState(collectionRender)
 
-  // Handle time variable items
-  if (collection?.['eodhrc:time-variable-items'] && collection['eodhrc:render-key-properties']) {
+  useEffect(() => {
+    // If not a time variable item, use collectionRender
+    if (
+      !collection?.['eodhrc:time-variable-items'] ||
+      !collection['eodhrc:render-key-properties']
+    ) {
+      setItemRender(collectionRender)
+      return
+    }
+
+    // For time variable items, check if we have the required data
+    if (!data?.properties) {
+      return
+    }
+
     // Check if all required properties exist
     const hasAllProperties = collection['eodhrc:render-key-properties'].every(
-      (key) => data?.properties?.[key] !== undefined,
+      (key) => data.properties[key] !== undefined,
     )
 
     if (hasAllProperties) {
       // For time variable items, construct the render key from the specified properties
       const renderKey = collection['eodhrc:render-key-properties']
-        .map((key) => data?.properties?.[key])
+        .map((key) => data.properties[key])
         .join('--')
 
       if (collection.renders?.[renderKey]) {
@@ -158,11 +171,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         })
       }
     } else {
-      // If the item does not have all the required properties, remove the render
-      // A time variable item should always have all the required properties
+      // If the item does not have all the required properties, use collectionRender
       setItemRender(undefined)
     }
-  }
+  }, [collection, data?.properties, collectionRender])
 
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
