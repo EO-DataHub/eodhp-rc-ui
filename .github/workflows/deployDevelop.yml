@@ -101,9 +101,13 @@ jobs:
         run: ls -la ./dist
 
       - name: Create folder in S3
-        run: >
-          touch test;
-          aws s3api put-object --bucket ${{ env.DEPLOYMENT_BUCKET }} --key ${{ env.DEPLOYMENT_FOLDER }} --body 'test' --content-type text/html;
+        run: |
+          echo "" > placeholder.html
+          aws s3api put-object \
+            --bucket ${{ env.DEPLOYMENT_BUCKET }} \
+            --key ${{ env.DEPLOYMENT_FOLDER }} \
+            --body placeholder.html \
+            --content-type text/html
           
       - name: transfer to S3
         run: >
