@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react'
 import { Flex, Text, Checkbox, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 
-interface TermsAndConditionsContainerProps {
+interface TermsAndConditionsProps {
   provider: 'planet' | 'airbus_optical' | 'airbus_sar'
   onTermsChange: (allChecked: boolean) => void
 }
 
-export const TermsAndConditionsContainer: React.FC<TermsAndConditionsContainerProps> = ({
+export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
   provider,
   onTermsChange,
 }) => {

@@ -1,11 +1,11 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
-import { Flex, Text, Kbd, Button, Link } from '@radix-ui/themes'
+import { Flex, Text, Kbd, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
-import { TermsAndConditionsContainer } from './TermsAndConditions'
+import { TermsAndConditions } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
 import { getCatalog } from '@/library/catalogUtils'
@@ -13,6 +13,8 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { OrderButtons } from './OrderButtons'
+import { PartialSceneSelect } from './PartialSceneSelect'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -25,6 +27,7 @@ export const OrderDetailsPage: React.FC = () => {
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
+  const [isFullScene, setIsFullScene] = useState(false)
 
   const getProviderType = (): 'airbus_optical' | 'airbus_sar' | 'planet' => {
     if (catalog === 'planet') {
@@ -50,14 +53,15 @@ export const OrderDetailsPage: React.FC = () => {
   const isPlaceOrderDisabled =
     !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
+  const storedAoi = localStorage.getItem('aoiData')
+  const aoiDataRef = useRef(storedAoi ? JSON.parse(storedAoi) : null)
+
   const placeOrder = () => {
     if (!item) return
 
     const providerType = getProviderType()
 
-    const storedAoi = localStorage.getItem('aoi')
-    const aoiData = storedAoi ? JSON.parse(storedAoi) : null
-    const aoiCoordinates = aoiData?.geometry?.coordinates
+    const aoiCoordinates = aoiDataRef.current?.geometry?.coordinates
 
     const requestBody = {
       workspace: workspaceUserName,
@@ -108,6 +112,14 @@ export const OrderDetailsPage: React.FC = () => {
 
   const statusMessage = getStatusMessage()
 
+  useEffect(() => {
+    return () => {
+      if (isFullScene) {
+        aoiDataRef.current = null
+      }
+    }
+  }, [isFullScene])
+
   if (statusMessage) {
     return <Flex className={styles.status}>{statusMessage}</Flex>
   }
@@ -121,32 +133,41 @@ export const OrderDetailsPage: React.FC = () => {
         </Flex>
       </Link>
       <Flex direction="column" height="100vh" className={styles.mainContainer}>
-        <Flex direction="column" gap="2">
-          <Kbd className={styles.tag}>Provider Name</Kbd>
-          <Text size="3" weight="bold">
-            {item?.collection}: {item?.id}
-          </Text>
-        </Flex>
         <Flex direction="row" gap="6" className={styles.bodyContainer}>
-          {item && <ItemInfo item={item} isOptical={isOpticalData} />}
-          <OrderSelections
-            provider={getProviderType()}
-            onSelectionChange={handleSelectionsChange}
-          />
-        </Flex>
-        <TermsAndConditionsContainer
-          provider={getProviderType()}
-          onTermsChange={setTermsAccepted}
-        />
-        <Flex className={styles.buttonsContainer} direction="row" gap="3">
-          <Button className={styles.cancelButton}>Cancel</Button>
-          <Button
-            className={styles.purchaseButton}
-            onClick={placeOrder}
-            disabled={isPlaceOrderDisabled}
-          >
-            {mutation.isPending ? 'Placing Order...' : 'Place Order'}
-          </Button>
+          {item && (
+            <ItemInfo item={item} isOptical={isOpticalData} aoiGeojson={aoiDataRef.current} />
+          )}
+          <Flex direction="column" gap="2">
+            <Kbd className={styles.tag}>{catalog}</Kbd>
+            <Text size="3" weight="bold">
+              {item?.collection}: {item?.id}
+            </Text>
+            <Text>Workspace: {workspaceUserName}</Text>
+
+            {aoiDataRef ? (
+              <PartialSceneSelect
+                checked={isFullScene}
+                onChange={(checked) => setIsFullScene(checked)}
+              />
+            ) : null}
+
+            <OrderSelections
+              provider={getProviderType()}
+              onSelectionChange={handleSelectionsChange}
+            />
+            {/* todo : placeholder for now, add cost route */}
+            <Text size="3" weight="bold" className={styles.cost}>
+              Total cost $1000
+            </Text>
+
+            <TermsAndConditions provider={getProviderType()} onTermsChange={setTermsAccepted} />
+
+            <OrderButtons
+              onPlaceOrder={placeOrder}
+              isPlacingOrder={mutation.isPending}
+              isDisabled={isPlaceOrderDisabled}
+            />
+          </Flex>
         </Flex>
       </Flex>
     </>

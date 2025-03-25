@@ -26,7 +26,7 @@
 .buttonsContainer {
   justify-content: right;
   margin-top: 2em;
-  padding-bottom: 3em;
+  padding-bottom: 6em;
 
   .cancelButton {
     border-radius: var(--Radius-2-max, 4px);
@@ -51,6 +51,8 @@
 
   .selectionsContainer {
     flex: 1;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
 
     .selection {
       align-items: center;
@@ -70,6 +72,7 @@
 
   .itemInfoContainer {
     flex: 1;
+    flex-direction: column;
     height: fit-content;
     border-radius: var(--Radius-2, 4px);
     border: 1px solid var(--Colors-Neutral-Neutral-Alpha-6, rgba(0, 0, 47, 0.15));
@@ -114,4 +117,31 @@
   justify-content: center;
   align-items: center;
   margin-top: 5em;
+}
+
+.cost {
+  justify-content: right;
+  margin-bottom: 1em;
+  display: flex;
+}
+
+.partialSceneText {
+  background-color: #0051f212;
+  padding: 1em;
+  margin-top: 1em;
+  justify-content: center;
+
+  .infoIcon {
+    margin-top: 0.2em;
+    margin-right: 0.5em;
+  }
+}
+
+.sceneCheckbox {
+  align-items: center;
+  margin-top: 0.5em;
+}
+
+.labelText {
+  margin-left: 0.5em;
 }
