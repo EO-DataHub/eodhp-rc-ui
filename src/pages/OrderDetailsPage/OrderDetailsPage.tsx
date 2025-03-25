@@ -50,6 +50,13 @@ export const OrderDetailsPage: React.FC = () => {
     },
   })
 
+  // Clear AOI data selecting full scene
+  useEffect(() => {
+    if (isFullScene) {
+      aoiDataRef.current = null
+    }
+  }, [isFullScene])
+
   const isPlaceOrderDisabled =
     !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
@@ -61,7 +68,10 @@ export const OrderDetailsPage: React.FC = () => {
 
     const providerType = getProviderType()
 
-    const aoiCoordinates = aoiDataRef.current?.geometry?.coordinates
+    const aoiCoordinates =
+      !isFullScene && aoiDataRef.current?.geometry?.coordinates
+        ? aoiDataRef.current.geometry.coordinates
+        : undefined
 
     const requestBody = {
       workspace: workspaceUserName,
@@ -111,14 +121,6 @@ export const OrderDetailsPage: React.FC = () => {
   }
 
   const statusMessage = getStatusMessage()
-
-  useEffect(() => {
-    return () => {
-      if (isFullScene) {
-        aoiDataRef.current = null
-      }
-    }
-  }, [isFullScene])
 
   if (statusMessage) {
     return <Flex className={styles.status}>{statusMessage}</Flex>
