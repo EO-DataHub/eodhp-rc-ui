@@ -7,7 +7,7 @@ const PinnedItemsLayer = () => {
   return (
     <>
       {pinnedItems.map((item) => (
-        <ItemLayer key={`pinned-item-${item.id}`} item={item} />
+        <ItemLayer key={item.pinId} item={item} />
       ))}
     </>
   )
