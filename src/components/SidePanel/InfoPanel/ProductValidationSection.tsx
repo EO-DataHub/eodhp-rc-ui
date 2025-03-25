@@ -97,14 +97,18 @@ export const ProductValidationSection = () => {
   const tableData = sampleData.results['data validation']['radiometric uncertainty']
   const timePeriod = `${formatCustomDate(sampleData.check_datetime_validity_start)} - ${formatCustomDate(sampleData.check_datetime_validity_end)}`
   const metrics = tableData.stated_value[0].map((item) => item.split('%')[0])
-  const bands = tableData.stated_value[0].map((item) => item.match(/\((.*?)\)/)![1])
+  const bands = tableData.stated_value[0].map((item) => {
+    const match = item.match(/\((.*?)\)/)
+    return match ? match[1] : ''
+  })
   const statuses = tableData.value[1]
   const overallStatus = tableData.value[0] as Status
 
-  const rows: { metric: string; band: string; status: string }[] = []
-  for (let i = 0; i < bands.length; i++) {
-    rows.push({ metric: metrics[i], band: bands[i], status: statuses[i] })
-  }
+  const rows = bands.map((band, i) => ({
+    metric: metrics[i],
+    band,
+    status: statuses[i],
+  }))
 
   return (
     <Flex direction="column" gap="8">
