@@ -102,9 +102,10 @@ jobs:
 
       - name: Create folder in S3
         run: >
-          aws s3api put-object --bucket ${{ env.DEPLOYMENT_BUCKET }} --key ${{ env.DEPLOYMENT_FOLDER }};
+          touch test;
+          aws s3api put-object --bucket ${{ env.DEPLOYMENT_BUCKET }} --key ${{ env.DEPLOYMENT_FOLDER }} --body 'test' --content-type text/html;
           
       - name: transfer to S3
         run: >
-          aws s3 cp ./dist/index.html s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}/index.html --cache-control max-age=0,must-revalidate;
-          aws s3 sync ./dist s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}/ --exclude "index.html" --cache-control max-age=31536000;
+          aws s3 cp ./dist/index.html s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}index.html --cache-control max-age=0,must-revalidate;
+          aws s3 sync ./dist s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }} --exclude "index.html" --cache-control max-age=31536000;
