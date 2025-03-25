@@ -7,7 +7,6 @@ import view from './viewQuery.ts'
 import cmip6 from './cmip6Query.ts'
 import ukcp18 from './ukcp18Query.ts'
 import cordex from './cordexQuery.ts'
-import { buildPolygonFromBBox } from './queryUtils.ts'
 
 type JSONSchema = Record<string, unknown>
 
@@ -29,18 +28,12 @@ const dispatchTable: QueryParams = {
 /**
  * Constructs a full CQL2 query payload for POSTing to a STAC search engine.
  * @param schema The JSON Schema against which to validate.
- * @param boundingBox An array of longitude and latitude bounds in LBRT order.
  * @param formData The data returned from an RJSF form based on a valid schema.
  * @returns {object} The CQL2 query payload.
  */
-export function buildQuery(
-  schema: JSONSchema,
-  boundingBox: [number, number, number, number],
-  formData: Record<string, unknown>,
-): object {
+export function buildQuery(schema: JSONSchema, formData: Record<string, unknown>): object {
   const flatFormData = flattenForm(formData)
   const filter = buildFilter(schema, flatFormData)
-  filter.args.push(buildPolygonFromBBox(boundingBox))
 
   return {
     fields: {
