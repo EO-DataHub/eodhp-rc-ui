@@ -40,6 +40,12 @@
     border-radius: var(--Radius-2-max, 4px);
     background: var(--Colors-Accent-Accent-9, #4c72ba);
     cursor: pointer;
+
+    &:disabled {
+      background: var(--Colors-Neutral-Neutral-4, #eee);
+      color: var(--Colors-Neutral-Neutral-11, #888);
+      cursor: not-allowed;
+    }
   }
 }
 
