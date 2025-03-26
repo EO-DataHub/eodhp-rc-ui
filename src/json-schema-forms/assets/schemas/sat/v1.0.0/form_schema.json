@@ -27,11 +27,11 @@
         },
         {
           "title": "Ascending",
-          "enum": ["ascending"]
+          "enum": ["asc%"]
         },
         {
           "title": "Descending",
-          "enum": ["descending"]
+          "enum": ["desc%"]
         }
       ]
     }

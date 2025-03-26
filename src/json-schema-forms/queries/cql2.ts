@@ -7,6 +7,7 @@ import view from './viewQuery.ts'
 import cmip6 from './cmip6Query.ts'
 import ukcp18 from './ukcp18Query.ts'
 import cordex from './cordexQuery.ts'
+import sentinel1 from './sentinel1Query.ts'
 
 type JSONSchema = Record<string, unknown>
 
@@ -23,6 +24,7 @@ const dispatchTable: QueryParams = {
   cmip6: cmip6,
   ukcp: ukcp18,
   cordex: cordex,
+  sentinel1: sentinel1,
 }
 
 /**
