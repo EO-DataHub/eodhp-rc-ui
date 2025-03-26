@@ -10,6 +10,7 @@ import { AssetItemTable } from './AssetItemTable'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { ProvidersSection } from './ProvidersSection'
 import { DataQualitySection } from './DataQualitySection'
+import { ProductValidationSection } from './ProductValidationSection'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
@@ -65,7 +66,8 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="providers">Providers</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
-              <Tabs.Trigger value="data_quality">Data Quality</Tabs.Trigger>
+              <Tabs.Trigger value="document_qa">Document QA</Tabs.Trigger>
+              <Tabs.Trigger value="product_validation">Product Validation</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="6">
@@ -92,8 +94,12 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
                 <AdditionalResourcesSection links={selectedCollection.links} />
               </Tabs.Content>
 
-              <Tabs.Content value="data_quality">
+              <Tabs.Content value="document_qa">
                 <DataQualitySection />
+              </Tabs.Content>
+
+              <Tabs.Content value="product_validation">
+                <ProductValidationSection />
               </Tabs.Content>
             </Box>
           </Tabs.Root>
