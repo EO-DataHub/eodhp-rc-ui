@@ -6,7 +6,7 @@ import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
 
 // eslint-disable-next-line react-refresh/only-export-components
 function RouteErrorFallback() {
-  const error = useRouteError() as Error
+  const error = useRouteError()
 
   return (
     <div
@@ -20,12 +20,25 @@ function RouteErrorFallback() {
     >
       <p>&nbsp;We&apos;re sorry. Something is broken...</p>
       <p>
-        <strong>Error:</strong> {error.message}
+        <strong>Error:</strong>
       </p>
-      <details style={{ marginTop: '1rem' }}>
-        <summary>Stack trace</summary>
-        <pre>{error.stack}</pre>
-      </details>
+
+      <pre>
+        {error instanceof Error
+          ? error.message
+          : typeof error === 'string'
+            ? error
+            : error instanceof Response
+              ? `Response: ${error.status} ${error.statusText}`
+              : JSON.stringify(error, null, 2)}
+      </pre>
+
+      {error instanceof Error && error.stack && (
+        <details style={{ marginTop: '1rem' }}>
+          <summary>Stack trace</summary>
+          <pre>{error.stack}</pre>
+        </details>
+      )}
     </div>
   )
 }
