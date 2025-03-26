@@ -52,7 +52,7 @@
   "sentinel1": {
     "renders": {
       "preview": {
-        "title": "Single-Look Complex (SLC) Data Preview",
+        "title": "Single-Look Complex (SLC) Preview (approximate location)",
         "assets": ["thumbnail"]
       }
     }
@@ -168,7 +168,7 @@
   "PSScene": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"],
         "quicklook_georeference": "bbox"
       }
@@ -177,7 +177,7 @@
   "SkySatCollect": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"],
         "quicklook_georeference": "bbox"
       }
@@ -186,7 +186,7 @@
   "SkySatScene": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"],
         "quicklook_georeference": "bbox"
       }
@@ -195,7 +195,7 @@
   "REScene": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"],
         "quicklook_georeference": "bbox"
       }
@@ -204,7 +204,7 @@
   "REOrthoTile": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"],
         "quicklook_georeference": "bbox"
       }
@@ -261,7 +261,7 @@
   "airbus_sar_data": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["thumbnail"]
       }
     }
@@ -269,7 +269,7 @@
   "airbus_phr_data": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["quicklook"],
         "quicklook_georeference": "geometry"
       }
@@ -278,7 +278,7 @@
   "airbus_spot_data": {
     "renders": {
       "preview": {
-        "title": "Data Preview",
+        "title": "Preview (approximate location)",
         "assets": ["quicklook"],
         "quicklook_georeference": "geometry"
       }
