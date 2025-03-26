@@ -16,7 +16,7 @@ function rgbaToHex([r, g, b, a]: number[]): string {
 
 const useColormap = (colormap_name?: string) =>
   useQuery({
-    queryKey: [colormap_name],
+    queryKey: ['Colormap', colormap_name],
     queryFn: () => fetch(`${API_URL}/colorMaps/${colormap_name}`).then((res) => res.json()),
     enabled: !!colormap_name,
     select: (data) => {
