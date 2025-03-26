@@ -10,7 +10,7 @@ import { router } from './router'
 function ErrorFallback({ error }: { error: Error }) {
   return (
     <div>
-      <p>We&apos;re sorry. Something is broken.</p>
+      <p>We&apos;re sorry. Something is broken..</p>
       <p>Error: {error.message}</p>
       <details style={{ marginTop: '1rem' }}>
         <summary>Stack trace</summary>
