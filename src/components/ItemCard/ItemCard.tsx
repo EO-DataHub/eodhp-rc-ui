@@ -26,6 +26,7 @@ import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
 import { getCatalogByURL } from '@/library/catalogUtils'
+import Legend from './Legend'
 
 interface ItemCardProps {
   item: Item
@@ -217,7 +218,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   return (
     <Card
-      key={`${type}-${item.id}`}
+      key={item.id}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
@@ -279,6 +280,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             <OpacitySelector item={item} />
           </Flex>
         )}
+        <Legend item={item} />
         <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
           {isPinnedCard && item.render && (
             <Flex>

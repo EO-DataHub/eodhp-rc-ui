@@ -97,6 +97,7 @@ export interface Item {
   stac_version: string
   stac_extensions: string[]
   id: string
+  pinId?: string
   collection: string
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
