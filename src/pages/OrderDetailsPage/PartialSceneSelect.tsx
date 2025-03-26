@@ -18,11 +18,7 @@ export function PartialSceneSelect({ onChange, checked = false }: PartialSceneSe
         </Text>
       </Flex>
       <Flex className={styles.sceneCheckbox}>
-        <Checkbox
-          className={styles.checkbox}
-          checked={checked}
-          onCheckedChange={(checked: boolean) => onChange(Boolean(checked))}
-        />
+        <Checkbox className={styles.checkbox} checked={checked} onCheckedChange={onChange} />
         <label className={styles.labelText}>Purchase full scene</label>
       </Flex>
     </>

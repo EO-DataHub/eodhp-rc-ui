@@ -10,7 +10,7 @@ interface FieldProps {
   required?: boolean
 }
 
-const Field: React.FC<FieldProps> = ({ label, children, required }) => (
+const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
   <Flex direction="column" gap="1">
     <Flex className={styles.selection} direction="row" gap="3">
       <Flex>

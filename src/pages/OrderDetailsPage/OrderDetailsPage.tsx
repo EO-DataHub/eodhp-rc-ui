@@ -1,8 +1,8 @@
-import React, { useContext, useEffect, useState, useRef } from 'react'
+import React, { useContext, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
-import { Flex, Text, Kbd, Link } from '@radix-ui/themes'
+import { Flex, Text, Link, Badge } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
 import { TermsAndConditions } from './TermsAndConditions'
@@ -30,12 +30,10 @@ export const OrderDetailsPage: React.FC = () => {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [isFullScene, setIsFullScene] = useState(false)
 
-  const getProviderType = (): 'airbus_optical' | 'airbus_sar' | 'planet' => {
-    if (catalog === 'planet') {
-      return 'planet'
-    }
+  const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' => {
+    if (catalog === 'planet') return 'planet'
     return isOpticalData ? 'airbus_optical' : 'airbus_sar'
-  }
+  }, [catalog, isOpticalData])
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
     setOrderSelections(selections)
@@ -50,30 +48,27 @@ export const OrderDetailsPage: React.FC = () => {
       setOrderStatus('error')
     },
   })
-  const aoiDataRef = useRef<Feature<Polygon> | null>(null)
 
-  // set aoiDataRef.current to the stored aoiData if it exists
-  useEffect(() => {
-    const storedAoi = localStorage.getItem('aoiData')
-    if (!isFullScene && storedAoi) {
-      aoiDataRef.current = JSON.parse(storedAoi)
-    } else if (isFullScene) {
-      aoiDataRef.current = null
+  const rawAoi = useMemo(() => {
+    const stored = localStorage.getItem('aoiData')
+    if (!stored) return null
+
+    try {
+      return JSON.parse(stored) as Feature<Polygon>
+    } catch (e) {
+      return null
     }
-  }, [isFullScene])
+  }, [])
+
+  const aoiData = !isFullScene ? rawAoi : null
+  const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
   const isPlaceOrderDisabled =
     !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
   const placeOrder = () => {
     if (!item) return
-
-    const providerType = getProviderType()
-
-    const aoiCoordinates =
-      !isFullScene && aoiDataRef.current?.geometry?.coordinates
-        ? aoiDataRef.current.geometry.coordinates
-        : undefined
+    const aoiCoordinates = aoiData?.geometry?.coordinates
 
     const requestBody = {
       workspace: workspaceUserName,
@@ -142,37 +137,30 @@ export const OrderDetailsPage: React.FC = () => {
             <ItemInfo
               item={item}
               isOptical={isOpticalData}
-              aoiGeojson={
-                aoiDataRef.current
-                  ? { type: 'FeatureCollection', features: [aoiDataRef.current] }
-                  : undefined
-              }
+              aoiGeojson={aoiData ? { type: 'FeatureCollection', features: [aoiData] } : undefined}
             />
           )}
           <Flex direction="column" gap="2">
-            <Kbd className={styles.tag}>{catalog}</Kbd>
+            <Badge className={styles.tag}>{catalog}</Badge>
             <Text size="4" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
             <Text>Workspace: {workspaceUserName}</Text>
 
-            {aoiDataRef.current && getProviderType() !== 'airbus_sar' ? (
+            {hasInitialAoi && providerType !== 'airbus_sar' ? (
               <PartialSceneSelect
                 checked={isFullScene}
                 onChange={(checked) => setIsFullScene(checked)}
               />
             ) : null}
 
-            <OrderSelections
-              provider={getProviderType()}
-              onSelectionChange={handleSelectionsChange}
-            />
+            <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
             {/* todo : placeholder for now, add cost route */}
             <Text size="3" weight="bold" className={styles.cost}>
               Total cost $1000
             </Text>
 
-            <TermsAndConditions provider={getProviderType()} onTermsChange={setTermsAccepted} />
+            <TermsAndConditions provider={providerType} onTermsChange={setTermsAccepted} />
 
             <OrderButtons
               onPlaceOrder={placeOrder}
