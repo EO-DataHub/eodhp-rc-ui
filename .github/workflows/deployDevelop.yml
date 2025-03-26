@@ -52,14 +52,14 @@ jobs:
           VITE_AWS_REGION: ${{ vars.VITE_AWS_REGION }}
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
           VITE_HUB_APP_WORKSPACE_NAME: ${{ vars.VITE_HUB_APP_WORKSPACE_NAME }}
-          VITE_HUB_BASE_URL: ${{vars.VITE_HUB_BASE_URL}}
+          VITE_HUB_BASE_URL: ${{ vars.VITE_HUB_BASE_URL }}
           VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
           VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
           VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
           VITE_SPARKGEO_BASE_URL: ${{ vars.VITE_SPARKGEO_BASE_URL }}
           VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
-          VITE_TITILER_XARRAY_BASE_URL: ${{vars.VITE_TITILER_XARRAY_BASE_URL }}
-          VITE_HUB_ENV: ${{vars.VITE_HUB_ENV}}
+          VITE_TITILER_XARRAY_BASE_URL: ${{ vars.VITE_TITILER_XARRAY_BASE_URL }}
+          VITE_HUB_ENV: ${{ vars.VITE_HUB_ENV }}
 
       - name: Stage build files for upload to s3
         uses: actions/upload-artifact@v4
@@ -72,7 +72,7 @@ jobs:
     name: Deploy to S3
     environment: ${{ github.ref_name }}
     env:
-      output_build_s3: ${{needs.build.outputs.output_build_s3}}
+      output_build_s3: ${{ needs.build.outputs.output_build_s3 }}
       DEPLOYMENT_BUCKET: ${{ vars.DEPLOYMENT_BUCKET }}
       DEPLOYMENT_FOLDER: ${{ vars.DEPLOYMENT_FOLDER }}
       DEPLOYMENT_REGION: ${{ vars.DEPLOYMENT_REGION }}
@@ -82,13 +82,13 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{vars.GHA_AWS_DEPLOY_ROLE_EODH}} # Role in Sparkgeo Management account
-          aws-region: ${{env.DEPLOYMENT_REGION}}
+          role-to-assume: ${{ vars.GHA_AWS_DEPLOY_ROLE_EODH }} # Role in Sparkgeo Management account
+          aws-region: ${{ env.DEPLOYMENT_REGION }}
 
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Create vitrual environment
+      - name: Create virtual environment
         run: python3 -m venv .venv
 
       - name: Download artifacts and copy website to s3
@@ -100,24 +100,21 @@ jobs:
       - name: List files in ./dist for debugging
         run: ls -la ./dist
 
-      - name: Create folder in S3
-        run: |
-          echo "" > placeholder.html
-          aws s3api put-object \
-            --bucket ${{ env.DEPLOYMENT_BUCKET }} \
-            --key ${{ env.DEPLOYMENT_FOLDER }} \
-            --body placeholder.html \
-            --content-type text/html \
-            --cache-control 'max-age=300';
-          
       - name: Transfer to S3
         run: >
           aws s3 cp ./dist/index.html s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}index.html --cache-control max-age=0,must-revalidate;
           aws s3 sync ./dist s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }} --exclude "index.html" --cache-control max-age=31536000;
-      
+
       - name: Upload silent-check-sso.html
         run: >
           aws s3 cp ./dist/silent-check-sso.html
           s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}silent-check-sso.html
+          --cache-control max-age=0,must-revalidate
+          --content-type text/html
+
+      - name: Upload index.html as folder fallback object
+        run: >
+          aws s3 cp ./dist/index.html
+          s3://${{ env.DEPLOYMENT_BUCKET }}/${{ env.DEPLOYMENT_FOLDER }}
           --cache-control max-age=0,must-revalidate
           --content-type text/html
