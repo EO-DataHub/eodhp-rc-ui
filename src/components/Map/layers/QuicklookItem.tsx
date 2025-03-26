@@ -94,6 +94,28 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
   return sortedCoordinates as Coordinates
 }
 
+function squareBoundingBox(
+  bbox: [number, number, number, number],
+): [number, number, number, number] {
+  const [xmin, ymin, xmax, ymax] = bbox
+  const width = xmax - xmin
+  const height = ymax - ymin
+
+  if (width === height) {
+    return bbox // Already square
+  }
+
+  if (width > height) {
+    const diff = width - height
+    const halfDiff = diff / 2
+    return [xmin, ymin - halfDiff, xmax, ymax + halfDiff]
+  } else {
+    const diff = height - width
+    const halfDiff = diff / 2
+    return [xmin - halfDiff, ymin, xmax + halfDiff, ymax]
+  }
+}
+
 export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
   const quicklookUrl = getAssetUrl(item, render.assets[0])
@@ -110,6 +132,16 @@ export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacR
       [item.bbox[2], item.bbox[3]],
       [item.bbox[2], item.bbox[1]],
       [item.bbox[0], item.bbox[1]],
+    ] as Coordinates
+  } else if (render.quicklook_georeference === 'bbox-squared') {
+    const bbox = squareBoundingBox(item.bbox)
+    // item.bbox is in the format [minx, miny, maxx, maxy]
+    // wind the coordinates in clockwise order starting from the top left
+    coordinates = [
+      [bbox[0], bbox[3]],
+      [bbox[2], bbox[3]],
+      [bbox[2], bbox[1]],
+      [bbox[0], bbox[1]],
     ] as Coordinates
   } else if (render.quicklook_georeference === 'geometry') {
     coordinates = normalizeCoordinates(item.geometry)
