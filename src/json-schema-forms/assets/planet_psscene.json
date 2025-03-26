@@ -3,11 +3,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "PlanetScope Scene",
   "type": "object",
-  "required": ["collection_id"],
   "properties": {
-    "collection_id": {
-      "const": "PSScene"
-    },
     "start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },

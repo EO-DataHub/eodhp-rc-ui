@@ -73,7 +73,71 @@
       }
     }
   },
+  "cmip6": {
+    "eodhrc:time-variable-items": true,
+    "eodhrc:render-key-properties": ["cmip6:variable_id", "cmip6:frequency"],
+    "renders": {
+      "pr--mon": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[3.561188073319953e-8, 0.00015669361280743044]],
+        "reference": true
+      },
+      "pr--day": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[0, 0.0001]],
+        "reference": true
+      },
+      "tas--mon": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "viridis",
+        "rescale": [[242.7581201171875, 303.6510852050781]],
+        "reference": true
+      },
+      "tasmax--mon": {
+        "title": "Daily Maximum Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tasmax",
+        "colormap_name": "viridis",
+        "rescale": [[246.91323547363282, 327.6965942382812]],
+        "reference": true
+      },
+      "tasmax--monC": {
+        "title": "Daily Maximum Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tasmax",
+        "colormap_name": "viridis",
+        "rescale": [[240.66668914794923, 309.8084539794922]],
+        "reference": true
+      },
+      "tas--monC": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "viridis",
+        "rescale": [[238.64452270507812, 304.79125915527345]],
+        "reference": true
+      },
+      "pr--monC": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[5.631761812452395e-9, 0.00015450975362909958]],
+        "reference": true
+      }
+    }
+  },
   "ukcp": {
+    "eodhrc:time-variable-items": true,
+    "eodhrc:render-key-properties": ["var_id"],
     "renders": {
       "pr": {
         "title": "Precipitation (mm/day)",
@@ -106,7 +170,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -115,7 +179,34 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "missing_georeference": true
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "SkySatScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REScene": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
+      }
+    }
+  },
+  "REOrthoTile": {
+    "renders": {
+      "preview": {
+        "title": "Data Preview",
+        "assets": ["thumbnail"],
+        "quicklook_georeference": "bbox"
       }
     }
   },
@@ -180,7 +271,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "quicklook_georeference": "geometry"
       }
     }
   },
@@ -189,7 +280,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["quicklook"],
-        "missing_georeference": true
+        "quicklook_georeference": "geometry"
       }
     }
   },

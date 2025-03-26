@@ -36,7 +36,7 @@ export interface BaseStacRender {
   decode_times?: boolean
   consolidated?: boolean
   return_mask?: boolean
-  missing_georeference?: boolean
+  quicklook_georeference?: string
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
@@ -83,6 +83,8 @@ export interface Collection {
       roles?: string[]
     }
   }
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
   renders?: {
     [key: string]: BaseStacRender
   }
@@ -95,6 +97,7 @@ export interface Item {
   stac_version: string
   stac_extensions: string[]
   id: string
+  pinId?: string
   collection: string
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry

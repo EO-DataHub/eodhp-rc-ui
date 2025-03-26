@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState } from 'react'
+import React, { useContext, useMemo, useState, useEffect } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
 import {
@@ -26,6 +26,7 @@ import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
 import { getCatalogByURL } from '@/library/catalogUtils'
+import Legend from './Legend'
 
 interface ItemCardProps {
   item: Item
@@ -133,14 +134,62 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     (state) => state.context.collection?.license === 'proprietary',
   )
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
-  const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const collectionRenderOptions = useSelector(
+    dataFinderStore,
+    ({ context }) => context.collectionRenderOptions,
+  )
+  const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const [itemRender, setItemRender] = useState(collectionRender)
+
+  useEffect(() => {
+    // If not a time variable item, use collectionRender
+    if (
+      !collection?.['eodhrc:time-variable-items'] ||
+      !collection['eodhrc:render-key-properties']
+    ) {
+      setItemRender(collectionRender)
+      return
+    }
+
+    // by default, set the item render for time variable items to undefined
+    setItemRender(undefined)
+
+    // For time variable items, check if we have the required data
+    if (!data?.properties) {
+      return
+    }
+
+    // Check if all required properties exist
+    const hasAllProperties = collection['eodhrc:render-key-properties'].every(
+      (key) => data.properties[key] !== undefined,
+    )
+
+    if (hasAllProperties) {
+      // For time variable items, construct the render key from the specified properties
+      const renderKey = collection['eodhrc:render-key-properties']
+        .map((key) => data.properties[key])
+        .join('--')
+
+      const render = collectionRenderOptions.find((render) => render.id === renderKey)
+      if (render) {
+        setItemRender({
+          ...render,
+          id: renderKey,
+          title: render.title ?? '',
+          assets: render.assets ?? [],
+        })
+      }
+    }
+  }, [collection, data?.properties, collectionRender, collectionRenderOptions, queryFilter])
 
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
 
   const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
     state.context.pinnedItems.some(
-      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === collectionRender,
+      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === itemRender,
     ),
   )
 
@@ -169,7 +218,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   return (
     <Card
-      key={`${type}-${item.id}`}
+      key={item.id}
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
@@ -180,11 +229,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           justify="center"
           flexShrink="0"
           p="4"
-          className={styles.thumbnailContainer}
+          className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
           onClick={(e) => {
             e.stopPropagation()
-            if (!collectionRender) return
-            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender })
+            if (!itemRender) return
+            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender: itemRender })
           }}
         >
           <img
@@ -231,11 +280,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             <OpacitySelector item={item} />
           </Flex>
         )}
+        <Legend item={item} />
         <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
           {isPinnedCard && item.render && (
             <Flex>
               <Text size="1" className={styles.text}>
-                {item.render.id}
+                {item.render.title}
               </Text>
             </Flex>
           )}

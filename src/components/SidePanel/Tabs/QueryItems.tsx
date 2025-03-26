@@ -35,6 +35,14 @@ const RenderSelectionButton = () => {
   )
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
 
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+
+  // If the collection is a time variable collection, don't render the render selection button
+  // the render is set at the item level
+  if (collection?.['eodhrc:time-variable-items']) {
+    return null
+  }
+
   if (!collectionRenderOptions.length || !collectionRender) {
     return null
   }
@@ -96,17 +104,18 @@ const QueryItemsTab = () => {
     >
       {!isLoading && <RenderSelectionButton />}
       <Flex justify="between">
-        <Flex align="center" gap="2">
-          {isFetching && (
+        {isLoading || isFetching ? (
+          <Flex align="center" gap="2">
             <>
               <LoadingIndicator />
               <Text size="2">Loading...</Text>
             </>
-          )}
-        </Flex>
-        <Flex width="100%" gap="2" align="center">
-          {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
-        </Flex>
+          </Flex>
+        ) : (
+          <Flex width="100%" gap="2" align="center">
+            {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
+          </Flex>
+        )}
         <Flex gap="2" align="center">
           <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
             <FilterAltOutlined />

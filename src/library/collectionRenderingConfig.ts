@@ -14,6 +14,8 @@ const tilerUrls: Record<TilerType, string> = {
 
 interface CollectionConfig {
   renders?: Record<string, BaseStacRender>
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
 }
 
 interface ServerRenderConfig {
@@ -27,11 +29,13 @@ interface ServerRenderConfig {
   expression?: string
   variable?: string
   reference?: boolean
-  missing_georeference?: boolean
+  quicklook_georeference?: string
 }
 
 interface ServerCollectionConfig {
   renders: Record<string, ServerRenderConfig>
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
 }
 
 export function getItemUrl(item: Item): string | undefined {
@@ -50,7 +54,7 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   let tilerUrl = undefined
   let urlParam = undefined
 
-  if (render.missing_georeference) {
+  if (render.quicklook_georeference) {
     return undefined
   } else if (render.variable) {
     tilerUrl = tilerUrls['titiler-multidim']
@@ -69,7 +73,7 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
       ...queryParams,
       ...render,
       rescale: render.rescale ? render.rescale.map((r) => r.join(',')) : undefined,
-      colormap: JSON.stringify(render.colormap),
+      colormap: render.colormap ? JSON.stringify(render.colormap) : undefined,
     }
   }
 
@@ -105,7 +109,7 @@ function translateServerConfigToCollectionConfig(
           color_formula: renderConfig.color_formula,
           expression: renderConfig.expression,
           reference: renderConfig.reference,
-          missing_georeference: renderConfig.missing_georeference,
+          quicklook_georeference: renderConfig.quicklook_georeference,
         }
 
         const definedProps = Object.fromEntries(
@@ -120,6 +124,14 @@ function translateServerConfigToCollectionConfig(
 
         baseConfig.renders![renderId] = translatedRender
       }
+    }
+
+    if (config['eodhrc:time-variable-items']) {
+      baseConfig['eodhrc:time-variable-items'] = config['eodhrc:time-variable-items']
+    }
+
+    if (config['eodhrc:render-key-properties']) {
+      baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
     }
 
     // Add specific properties based on renderer type

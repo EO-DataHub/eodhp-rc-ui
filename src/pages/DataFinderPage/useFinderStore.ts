@@ -5,6 +5,9 @@ import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 
+const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
+const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
+
 export const DrawModes = {
   DRAW_POLYGON: 'draw_polygon',
   SIMPLE_SELECT: 'simple_select',
@@ -20,31 +23,70 @@ const PlaceholderRender: StacRender = {
   assets: [],
 }
 
-const pinnedItemIsEqual = (a: Item, b: Item) =>
-  a.id && b.id && a.id === b.id && a.render?.id === b.render?.id
+interface AppContext {
+  isContextHydrated: boolean
+  isLoading: boolean
+  secondaryPanel: SecondaryPanel
+  infoPanelItem?: Item
+  mapInstance?: MapInstance
+  drawInstance?: MapboxDraw
+  drawMode?: DrawMode
+  aoi?: GeoJSON.Feature
+  mapBounds?: MapBounds
+  queryFilter?: object
+  page: number
+  pinnedItems: Item[]
+  hoveredItem?: Item
+  collection?: Collection
+  collectionRenderOptions: StacRender[]
+  collectionRender?: StacRender
+  isUserCollection: boolean
+}
 
 const dataFinderStore = createStore({
   // Initial context
   context: {
+    isContextHydrated: false,
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
-    secondaryPanel: undefined as SecondaryPanel,
-    infoPanelItem: undefined as Item | undefined,
-    mapInstance: undefined as MapInstance | undefined,
-    drawInstance: undefined as MapboxDraw | undefined,
-    drawMode: undefined as DrawMode | undefined,
-    aoi: undefined as GeoJSON.Feature | undefined,
-    mapBounds: undefined as MapBounds | undefined,
-    queryFilter: undefined as object | undefined,
+    secondaryPanel: undefined,
+    infoPanelItem: undefined,
+    mapInstance: undefined,
+    drawInstance: undefined,
+    drawMode: undefined,
+    aoi: undefined,
+    mapBounds: undefined,
+    queryFilter: undefined,
     page: 0,
-    pinnedItems: [] as Item[],
-    hoveredItem: undefined as Item | undefined,
-    collection: undefined as Collection | undefined,
-    collectionRenderOptions: [] as StacRender[],
-    collectionRender: undefined as StacRender | undefined,
-    isUserCollection: false, //initially assume that the collection does not belong to the user
-  },
+    pinnedItems: [],
+    hoveredItem: undefined,
+    collection: undefined,
+    collectionRenderOptions: [],
+    collectionRender: undefined,
+    isUserCollection: false,
+  } as AppContext,
   // Transitions
   on: {
+    hydrateFromLocalStorage: (context) => {
+      const contextJson = localStorage.getItem(LOCAL_STORAGE_CONTEXT_KEY)
+      if (!context.isContextHydrated) {
+        try {
+          if (contextJson) {
+            const contextFromLocalStorage = JSON.parse(contextJson) as Partial<AppContext>
+
+            return {
+              ...context,
+              isContextHydrated: true,
+              ...contextFromLocalStorage,
+            }
+          }
+        } catch (error) {
+          // eslint-disable-next-line no-console
+          console.error('Failed to load context from local storage:', error)
+        }
+      }
+      return context
+    },
+
     onFetched: (context) => {
       return {
         ...context,
@@ -171,14 +213,14 @@ const dataFinderStore = createStore({
       context,
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
-      const isAlreadyPinned = context.pinnedItems.some((pinnedItem) =>
-        pinnedItemIsEqual(pinnedItem, { ...event.item, render: event.collectionRender }),
-      )
+      const pinnedItemId = [event.item.id, event.collectionRender.id].join('-')
+      const isAlreadyPinned = context.pinnedItems.some((i) => i.pinId === pinnedItemId)
 
       if (isAlreadyPinned) return context
 
       const pinnedItem = {
         ...event.item,
+        pinId: pinnedItemId,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         render: event.collectionRender,
         mapRender: {
@@ -195,9 +237,7 @@ const dataFinderStore = createStore({
     removePinnedItem: (context, event: { item: Item }) => {
       return {
         ...context,
-        pinnedItems: context.pinnedItems.filter(
-          (pinnedItem) => !pinnedItemIsEqual(pinnedItem, event.item),
-        ),
+        pinnedItems: context.pinnedItems.filter((i) => i.pinId !== event.item.pinId),
       }
     },
     clearAllPinnedItems: {
@@ -267,9 +307,9 @@ const dataFinderStore = createStore({
     },
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection
+      const collectionConfig = collectionRenderingConfig[collection.id]
 
-      const baseRenders = collectionRenderingConfig[collection.id]?.renders ?? {}
-
+      const baseRenders = collectionConfig?.renders ?? {}
       const renders = {
         ...baseRenders,
         ...collection.renders,
@@ -285,9 +325,20 @@ const dataFinderStore = createStore({
         collectionRenderOptions = [PlaceholderRender]
       }
 
+      // Merge in the collection configuration
+      const mergedCollection = {
+        ...collection,
+        'eodhrc:time-variable-items':
+          collectionConfig?.['eodhrc:time-variable-items'] ??
+          collection['eodhrc:time-variable-items'],
+        'eodhrc:render-key-properties':
+          collectionConfig?.['eodhrc:render-key-properties'] ??
+          collection['eodhrc:render-key-properties'],
+      }
+
       return {
         ...context,
-        collection: event.collection,
+        collection: mergedCollection,
         collectionRenderOptions,
         collectionRender: collectionRenderOptions[0] ?? undefined,
       }
@@ -306,6 +357,31 @@ const dataFinderStore = createStore({
       return { ...context, aoi: event.aoi }
     },
   },
+})
+
+// This inspector is used to persist some parts of the context to local storage
+// on every state change but the initial state and onMount.
+dataFinderStore.inspect((inspectEvent) => {
+  if (inspectEvent.type === '@xstate.snapshot') {
+    const { event } = inspectEvent
+
+    // Do not save the context to local storage on initial state
+    if (!['@xstate.init'].includes(event.type)) {
+      // @ts-expect-error - snapshot is not typed correctly
+      const context = inspectEvent.snapshot.context
+
+      const persistedContext = Object.fromEntries(
+        PERSISTED_CONTEXT_KEYS.map((key) => [key, context[key]]),
+      )
+
+      try {
+        localStorage.setItem(LOCAL_STORAGE_CONTEXT_KEY, JSON.stringify(persistedContext))
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to save context to local storage:', error)
+      }
+    }
+  }
 })
 
 export default dataFinderStore
