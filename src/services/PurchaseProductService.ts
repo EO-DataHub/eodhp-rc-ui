@@ -1,5 +1,6 @@
+import { fetchWorkspaceTokens } from './workspaceTokenService'
+
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
-const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
 
 export interface RadarOptions {
   orbit?: string
@@ -9,6 +10,7 @@ export interface RadarOptions {
 
 export interface PurchaseRequest {
   workspace: string | undefined
+  token: string | undefined
   datasetUrl: string
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
@@ -20,6 +22,7 @@ export interface PurchaseRequest {
 
 export const purchaseProduct = async ({
   workspace,
+  token,
   datasetUrl,
   provider,
   productBundle,
@@ -31,6 +34,12 @@ export const purchaseProduct = async ({
   if (!workspace) {
     throw new Error('Workspace is required for placing an order.')
   }
+
+  if (!token) {
+    throw new Error('No token found. You need to be logged in to place an order')
+  }
+
+  const { access } = await fetchWorkspaceTokens({ workspace, token })
 
   const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
 
@@ -65,7 +74,7 @@ export const purchaseProduct = async ({
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_TOKEN}`,
+        Authorization: `Bearer ${access}`,
       },
       body: JSON.stringify(requestBody),
     })
