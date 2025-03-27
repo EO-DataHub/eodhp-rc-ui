@@ -17,6 +17,7 @@ import { OrderButtons } from './OrderButtons'
 import { PartialSceneSelect } from './PartialSceneSelect'
 import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/QuoteService'
+import { bboxToPolygon } from '@/library/geoUtils'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -108,6 +109,21 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!orderId,
   })
 
+  const coordinates = useMemo((): number[][][] | undefined => {
+    if (providerType === 'airbus_sar') return undefined
+
+    if (aoiData?.geometry?.type === 'Polygon') {
+      return aoiData.geometry.coordinates
+    }
+
+    if (item?.bbox) {
+      const polygon = bboxToPolygon(item.bbox)
+      return polygon.type === 'Polygon' ? polygon.coordinates : undefined
+    }
+
+    return undefined
+  }, [providerType, aoiData, item])
+
   const {
     data: quote,
     isLoading: isQuoteLoading,
@@ -120,22 +136,7 @@ export const OrderDetailsPage: React.FC = () => {
         catalog: catalog as 'planet' | 'airbus',
         collection: selectedCollection?.id ?? '',
         item: orderId ?? '',
-        coordinates:
-          providerType !== 'airbus_sar'
-            ? aoiData?.geometry?.coordinates ??
-              (item?.bbox
-                ? [
-                    [
-                      [item.bbox[0], item.bbox[1]],
-                      [item.bbox[0], item.bbox[3]],
-                      [item.bbox[2], item.bbox[3]],
-                      [item.bbox[2], item.bbox[1]],
-                      [item.bbox[0], item.bbox[1]],
-                    ],
-                  ]
-                : undefined)
-            : undefined,
-
+        coordinates: coordinates,
         licence: orderSelections.licence,
       }),
     enabled: !!item && !!orderSelections.licence,
