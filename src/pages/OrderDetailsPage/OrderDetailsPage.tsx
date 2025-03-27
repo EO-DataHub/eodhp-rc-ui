@@ -16,6 +16,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { OrderButtons } from './OrderButtons'
 import { PartialSceneSelect } from './PartialSceneSelect'
 import type { Feature, Polygon } from 'geojson'
+import { fetchQuote } from '@/services/QuoteService'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -107,6 +108,28 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!orderId,
   })
 
+  const {
+    data: quote,
+    isLoading: isQuoteLoading,
+    error: quoteError,
+  } = useQuery({
+    queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
+    queryFn: () =>
+      fetchQuote({
+        parentCatalog: 'commercial',
+        catalog: catalog as 'planet' | 'airbus',
+        collection: selectedCollection?.id ?? '',
+        item: orderId ?? '',
+        coordinates:
+          providerType !== 'airbus_sar' && aoiData?.geometry?.coordinates
+            ? aoiData.geometry.coordinates
+            : undefined,
+        licence: orderSelections.licence,
+      }),
+    enabled: !!item && !!orderSelections.licence,
+    refetchOnWindowFocus: false,
+  })
+
   const getStatusMessage = () => {
     if (!orderId) return 'Error: No order ID provided.'
     if (isLoading) return 'Loading...'
@@ -121,6 +144,18 @@ export const OrderDetailsPage: React.FC = () => {
 
   if (statusMessage) {
     return <Flex className={styles.status}>{statusMessage}</Flex>
+  }
+
+  const formatCurrency = (value: number, currency = 'USD') => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+      }).format(value)
+    } catch (error) {
+      return `${currency} ${value.toFixed(2)}`
+    }
   }
 
   return (
@@ -155,10 +190,12 @@ export const OrderDetailsPage: React.FC = () => {
             ) : null}
 
             <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
-            {/* todo : placeholder for now, add cost route */}
-            <Text size="3" weight="bold" className={styles.cost}>
-              Total cost $1000
-            </Text>
+
+            {!isQuoteLoading && !quoteError && quote?.data && (
+              <Text size="3" weight="bold" className={styles.cost}>
+                Total cost: {formatCurrency(quote.data.value, quote.data.units)}
+              </Text>
+            )}
 
             <TermsAndConditions provider={providerType} onTermsChange={setTermsAccepted} />
 
