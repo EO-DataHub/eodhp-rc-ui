@@ -121,9 +121,21 @@ export const OrderDetailsPage: React.FC = () => {
         collection: selectedCollection?.id ?? '',
         item: orderId ?? '',
         coordinates:
-          providerType !== 'airbus_sar' && aoiData?.geometry?.coordinates
-            ? aoiData.geometry.coordinates
+          providerType !== 'airbus_sar'
+            ? aoiData?.geometry?.coordinates ??
+              (item?.bbox
+                ? [
+                    [
+                      [item.bbox[0], item.bbox[1]],
+                      [item.bbox[0], item.bbox[3]],
+                      [item.bbox[2], item.bbox[3]],
+                      [item.bbox[2], item.bbox[1]],
+                      [item.bbox[0], item.bbox[1]],
+                    ],
+                  ]
+                : undefined)
             : undefined,
+
         licence: orderSelections.licence,
       }),
     enabled: !!item && !!orderSelections.licence,
