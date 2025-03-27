@@ -1,0 +1,42 @@
+.thumbnail {
+  width: 100px;
+  display: block;
+  object-fit: cover;
+  background-color: var(--gray-5);
+}
+
+.card {
+  background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
+  border-radius: 4px;
+  overflow: hidden;
+
+  .text {
+    color: var(--blue-contrast);
+  }
+
+  .link {
+    color: var(--blue-contrast);
+    text-decoration: none;
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.costButton {
+  background-color: var(--app-background-dark-1);
+  color: var(--blue-contrast);
+  border: 1.5px solid var(--blue-contrast);
+  width: 19px;
+  height: 19px;
+}
+
+.infoButton {
+  cursor: pointer;
+  background-color: var(--app-background-dark-1);
+  color: var(--blue-contrast);
+  width: 20px;
+  height: 20px;
+}

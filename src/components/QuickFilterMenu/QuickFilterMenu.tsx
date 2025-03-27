@@ -15,21 +15,31 @@ import type { QuickFilter } from '@/types'
 interface QuickFilterMenuProps {
   filters: QuickFilter
   onFilterChange: (value: string, forKey: keyof QuickFilter) => void
+  flexDirection?: 'column' | 'row'
+  inputSize?: '1' | '2' | '3'
 }
 
-export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFilterChange }) => {
+export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
+  filters,
+  onFilterChange,
+  flexDirection = 'row',
+  inputSize = '3',
+}) => {
+  const width = flexDirection === 'row' ? '160px' : '100%'
+
   return (
     <Flex
-      p="5"
+      p={flexDirection === 'row' ? '5' : '0'}
+      direction={flexDirection}
       gap="2"
       align="center"
       justify="between"
       className={styles.container}
       overflow="auto"
     >
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.dataCategory}
           value={filters.dataCategory}
           onValueChange={(value) => onFilterChange(value, 'dataCategory')}
@@ -47,9 +57,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.resolution}
           value={filters.resolution}
           onValueChange={(value) => onFilterChange(value, 'resolution')}
@@ -67,9 +77,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.provider}
           value={filters.provider}
           onValueChange={(value) => onFilterChange(value, 'provider')}
@@ -87,9 +97,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.location}
           value={filters.location}
           onValueChange={(value) => onFilterChange(value, 'location')}
@@ -107,9 +117,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.keyword}
           value={filters.keyword}
           onValueChange={(value) => onFilterChange(value, 'keyword')}
@@ -127,9 +137,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.timePeriod}
           value={filters.timePeriod}
           onValueChange={(value) => onFilterChange(value, 'timePeriod')}
@@ -147,9 +157,9 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({ filters, onFil
         </Select.Root>
       </Box>
 
-      <Box flexGrow="1" width="160px" flexShrink="0">
+      <Box flexGrow="1" width={width} flexShrink="0">
         <Select.Root
-          size="3"
+          size={inputSize}
           key={filters.license}
           value={filters.license}
           onValueChange={(value) => onFilterChange(value, 'license')}

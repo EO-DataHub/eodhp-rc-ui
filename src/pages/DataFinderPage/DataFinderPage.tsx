@@ -1,39 +1,26 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
-import { useQuery } from '@tanstack/react-query'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
-import { useQueries } from '@tanstack/react-query'
-import { fetchCollections } from '@/services/collectionService'
-import { fetchItems } from '@/services/ItemService'
-import { Item } from '@/types'
+import { useQuery, useQueries } from '@tanstack/react-query'
+import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
 
-export const MAX_TOTAL_ITEMS = 100
-export const PAGE_SIZE = 10
-
 export const DataFinderPage: React.FC = () => {
+  const { isAuthenticating, isAuthenticated, workspaceUserName } = useContext(AuthenticationContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
-  const page = useSelector(dataFinderStore, (state) => state.context.page)
-  const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
-  const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  // This is a replacement for the isLoading flag from useQuery. Due to the usage of placeholder data
-  // in the useQuery hook, we need to keep track of the loading outside of it, because isLoading will
-  // be false after the first render.
-  const isLoading = useSelector(dataFinderStore, (state) => state.context.isLoading)
-
-  const queries = useQueries({
+  const collectionQueries = useQueries({
     queries: catalogs.map((catalog) => ({
       queryKey: ['Collections', catalog],
       queryFn: () => fetchCollections(catalog),
@@ -44,67 +31,81 @@ export const DataFinderPage: React.FC = () => {
     }),
   })
 
-  useEffect(() => {
-    if (queries.isFetched) {
-      const allCollections = queries.data
-      const foundCollection = allCollections.find((col) => col.id === collectionId)
-
-      if (foundCollection) {
-        dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
-      } else {
-        navigate('/')
-      }
-    }
-  }, [collectionId, navigate, collection, queries])
-
-  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
-  const fetchFunction = () =>
-    fetchItems({
-      limit: MAX_TOTAL_ITEMS,
-      mapBounds: mapBounds,
-      aoi: aoi,
-      selectedCollection: collection ?? undefined,
-      queryFilter: queryFilter,
-    })
-
-  const {
-    data: itemList = [],
-    isFetching,
-    isFetched,
-    error,
-  } = useQuery<Item[]>({
-    queryKey: ['Items', queryKey],
-    queryFn: fetchFunction,
+  const userCollectionQuery = useQuery({
+    queryKey: ['UserCollections', workspaceUserName],
+    queryFn: () => fetchUserCollections(workspaceUserName!),
     refetchOnWindowFocus: false,
-    enabled: !!queryFilter || !!aoi || !!mapBounds,
-    placeholderData: (previousValue: Item[] | undefined): Item[] => previousValue ?? [],
+    enabled: !!workspaceUserName,
   })
 
-  // Reset page after refetch
+  // Try to find the collection in the public collections as soon as they are
+  // fetched
   useEffect(() => {
-    if (isFetched) {
-      dataFinderStore.send({ type: 'onFetched' })
-    }
-  }, [isFetched])
+    if (!collectionQueries.isFetched) return
 
-  // Slice the visible items based on the current page
-  const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+    const foundPublicCollection = collectionQueries.data.find((col) => col.id === collectionId)
+
+    if (foundPublicCollection) {
+      dataFinderStore.send({
+        type: 'setCollection',
+        collection: foundPublicCollection,
+      })
+    }
+  }, [collectionId, isAuthenticating, collectionQueries])
+
+  // Once the user collections are fetched, try to find the collection in the
+  // user collections and set it as the active collection
+  useEffect(() => {
+    if (!isAuthenticated || !userCollectionQuery.isFetched || !collectionId) return
+
+    const foundUserCollection = userCollectionQuery.data?.find((col) => col.id === collectionId)
+
+    if (foundUserCollection) {
+      dataFinderStore.send({
+        type: 'setCollection',
+        collection: foundUserCollection,
+      })
+      dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
+    }
+  }, [collectionId, isAuthenticated, userCollectionQuery])
+
+  // If the collection is not found in the public or user collections, navigate
+  // to the home page
+  useEffect(() => {
+    if (
+      isAuthenticating ||
+      !collectionId ||
+      !collectionQueries.isFetched ||
+      (isAuthenticated && !userCollectionQuery.isFetched)
+    )
+      return
+
+    const allCollections = [...collectionQueries.data, ...(userCollectionQuery.data ?? [])]
+    const found = allCollections.find((col) => col.id === collectionId)
+    if (!found) {
+      navigate('/')
+    }
+  }, [
+    collectionId,
+    collectionQueries,
+    userCollectionQuery,
+    isAuthenticated,
+    isAuthenticating,
+    navigate,
+  ])
+
+  // Remove AOI from local storage on mount
+  useEffect(() => {
+    localStorage.removeItem('aoi')
+  }, [])
 
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
-        <SidePanel
-          items={itemList}
-          collection={collection ?? undefined}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          error={!!error}
-          page={page}
-          setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}
-        />
+        <SidePanel collection={collection ?? undefined} />
       </Box>
       <Box height="100%">
-        <Map visibleItems={paginatedItems} />
+        <Map />
       </Box>
     </Box>
   )

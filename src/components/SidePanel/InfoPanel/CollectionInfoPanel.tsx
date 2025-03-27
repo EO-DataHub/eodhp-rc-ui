@@ -9,15 +9,18 @@ import { Collection } from '@/types'
 import { AssetItemTable } from './AssetItemTable'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { ProvidersSection } from './ProvidersSection'
+import { DataQualitySection } from './DataQualitySection'
+import { ProductValidationSection } from './ProductValidationSection'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
+  selectedCollection: Collection | null | undefined
 }
 
-export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({ onClose }) => {
-  const storedCollection = localStorage.getItem('selectedCollection')
-  const selectedCollection: Collection = storedCollection ? JSON.parse(storedCollection) : null
-
+export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
+  onClose,
+  selectedCollection,
+}) => {
   return (
     <>
       {selectedCollection && (
@@ -63,7 +66,8 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({ onClos
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="providers">Providers</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
-              <Tabs.Trigger value="data_quality">Data Quality</Tabs.Trigger>
+              <Tabs.Trigger value="document_qa">Document QA</Tabs.Trigger>
+              <Tabs.Trigger value="product_validation">Product Validation</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="6">
@@ -90,8 +94,12 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({ onClos
                 <AdditionalResourcesSection links={selectedCollection.links} />
               </Tabs.Content>
 
-              <Tabs.Content value="data_quality">
-                <Text>No additional data quality metrics available.</Text>
+              <Tabs.Content value="document_qa">
+                <DataQualitySection />
+              </Tabs.Content>
+
+              <Tabs.Content value="product_validation">
+                <ProductValidationSection />
               </Tabs.Content>
             </Box>
           </Tabs.Root>

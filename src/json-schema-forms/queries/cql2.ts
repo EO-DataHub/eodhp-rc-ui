@@ -4,7 +4,10 @@ import sar from './sarQuery.ts'
 import sat from './satQuery.ts'
 import custom from './customQuery.ts'
 import view from './viewQuery.ts'
-import { buildPolygonFromBBox } from './queryUtils.ts'
+import cmip6 from './cmip6Query.ts'
+import ukcp18 from './ukcp18Query.ts'
+import cordex from './cordexQuery.ts'
+import sentinel1 from './sentinel1Query.ts'
 
 type JSONSchema = Record<string, unknown>
 
@@ -18,23 +21,21 @@ const dispatchTable: QueryParams = {
   sar: sar,
   sat: sat,
   view: view,
+  cmip6: cmip6,
+  ukcp: ukcp18,
+  cordex: cordex,
+  sentinel1: sentinel1,
 }
 
 /**
  * Constructs a full CQL2 query payload for POSTing to a STAC search engine.
  * @param schema The JSON Schema against which to validate.
- * @param boundingBox An array of longitude and latitude bounds in LBRT order.
  * @param formData The data returned from an RJSF form based on a valid schema.
  * @returns {object} The CQL2 query payload.
  */
-export function buildQuery(
-  schema: JSONSchema,
-  boundingBox: [number, number, number, number],
-  formData: Record<string, unknown>,
-): object {
+export function buildQuery(schema: JSONSchema, formData: Record<string, unknown>): object {
   const flatFormData = flattenForm(formData)
   const filter = buildFilter(schema, flatFormData)
-  filter.args.push(buildPolygonFromBBox(boundingBox))
 
   return {
     fields: {
@@ -125,11 +126,6 @@ function buildQueryParams(
  */
 function buildFilter(schema: JSONSchema, obj: Record<string, unknown>): QueryCondition {
   const args: QueryCondition[] = []
-
-  args.push({
-    op: '=',
-    args: [{ property: 'collection' }, obj.collection_id],
-  })
 
   for (const namespace in dispatchTable) {
     args.push(...buildQueryParams(dispatchTable[namespace], schema, obj))

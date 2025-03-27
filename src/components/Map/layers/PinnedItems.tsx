@@ -1,13 +1,13 @@
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import RasterItemLayer from './RasterItem'
+import { ItemLayer } from './Item'
 
 const PinnedItemsLayer = () => {
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   return (
     <>
       {pinnedItems.map((item) => (
-        <RasterItemLayer key={`pinned-item-${item.id}`} item={item} />
+        <ItemLayer key={item.pinId} item={item} />
       ))}
     </>
   )

@@ -2,7 +2,6 @@ import React, { useMemo } from 'react'
 import { Flex, Text } from '@radix-ui/themes'
 import { Item } from '@/types'
 import styles from './OrderDetailsPage.module.scss'
-import DefaultItemThumbnail from '@/assets/icons/default-item-thumbnail.jpg'
 import { MetadataItem } from '@/types'
 import { extractStacMetadata } from '@/library/extractStacMetadata'
 import {
@@ -10,22 +9,15 @@ import {
   extractSAROrderItemDetails,
 } from '@/pages/OrderDetailsPage/extractOrderItemDetails'
 import parse from 'html-react-parser'
+import { ItemMap } from './ItemMap'
 
 interface ItemInfoProps {
   item: Item
   isOptical: boolean
+  aoiGeojson?: GeoJSON.FeatureCollection
 }
 
-export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
-  const thumbnailUrl = item.assets?.thumbnail?.href
-    ? item.assets?.thumbnail?.href
-    : DefaultItemThumbnail
-
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.onerror = null
-    e.currentTarget.src = DefaultItemThumbnail
-  }
-
+export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson }) => {
   const metadata: MetadataItem[] = useMemo(() => {
     const ignoredFields = ['assets', 'providers', 'links']
     return item ? extractStacMetadata(item, ignoredFields) : []
@@ -50,12 +42,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical }) => {
   return (
     <Flex gap="2" className={styles.itemInfoContainer}>
       <Flex>
-        <img
-          src={thumbnailUrl}
-          alt="Item thumbnail"
-          className={styles.thumbnail}
-          onError={handleImageError}
-        />
+        <ItemMap item={item} aoiGeojson={aoiGeojson} />
       </Flex>
 
       <Flex direction="column" gap="0.5" className={styles.itemInfo}>

@@ -43,8 +43,6 @@ interface SAROrderItem {
   Path: string
   Look: string
   Orbit: OrbitData
-  Resolution: string
-  Projection: string
 }
 
 interface IncidenceAngle {
@@ -113,7 +111,5 @@ export const extractSAROrderItemDetails = (metadata: MetadataItem[]): SAROrderIt
       'Relative Orbit': meta.sat?.['sat:relative_orbit']?.formatted ?? 'N/A',
       'Absolute Orbit': meta.sat?.['sat:absolute_orbit']?.formatted ?? 'N/A',
     },
-    Resolution: meta['']?.gsd?.formatted ?? 'N/A',
-    Projection: meta['']?.format?.formatted ?? 'N/A',
   }
 }

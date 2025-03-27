@@ -1,0 +1,53 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/sentinel1_ard.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Sentinel 1 ARD",
+  "type": "object",
+  "properties": {
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "sat:orbit_state": {
+      "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:orbit_state",
+      "title": "Path"
+    },
+    "sentinel1:platform": {
+      "$ref": "#/$defs/platform_international_designator",
+      "title": "Datasource"
+    },
+    "sar:polarizations": {
+      "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:polarizations",
+      "title": "Polarization"
+    }
+  },
+  "$defs": {
+    "platform_international_designator": {
+      "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:platform_international_designator",
+      "default": "%",
+      "anyOf": [
+        {
+          "type": "string",
+          "title": "Any",
+          "enum": [
+            "%"
+          ]
+        },
+        {
+          "title": "Sentinel 1A",
+          "enum": [
+            "sentinel-1a"
+          ]
+        },
+        {
+          "title": "Sentinel 1B",
+          "enum": [
+            "sentinel-1b"
+          ]
+        }
+      ]
+    }
+  }
+}

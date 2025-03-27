@@ -3,30 +3,26 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Sentinel 1 SAR",
   "type": "object",
-  "required": ["collection_id"],
   "properties": {
-    "collection_id": {
-      "const": "sentinel1"
-    },
     "start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
     "end_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
-    "platform": {
+    "sentinel1:platform": {
       "$ref": "#/$defs/platform_international_designator",
       "title": "Datasource"
     },
-    "sat:orbit_state": {
+    "sentinel1:Orbit Direction": {
       "$ref": "schemas/sat/v1.0.0/form_schema.json#/properties/sat:orbit_state",
       "title": "Orbit Direction"
     },
-    "sar:polarizations": {
+    "sentinel1:Polarisation": {
       "$ref": "schemas/sar/v1.0.0/form_schema.json#/properties/sar:polarizations",
       "title": "Polarisation"
     },
-    "instrument_mode": {
+    "sentinel1:instrument_mode": {
       "$ref": "#/$defs/instrument_mode",
       "title": "Mode"
     }
