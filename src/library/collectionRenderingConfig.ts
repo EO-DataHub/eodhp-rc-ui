@@ -7,7 +7,7 @@ const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 type TilerType = 'titiler' | 'titiler-multidim'
 
 const tilerUrls: Record<TilerType, string> = {
-  titiler: `${TITILER_URL}/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+  titiler: `${TITILER_URL}/core/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
   'titiler-multidim': `${TITILER_URL}/xarray/tiles/{z}/{x}/{y}@1x`,
 }
 
