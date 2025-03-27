@@ -20,7 +20,7 @@ import type { Feature, Polygon } from 'geojson'
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { workspaceUserName } = useContext(AuthenticationContext)
+  const { workspaceUserName, token } = useContext(AuthenticationContext)
   const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
@@ -72,6 +72,7 @@ export const OrderDetailsPage: React.FC = () => {
 
     const requestBody = {
       workspace: workspaceUserName,
+      token,
       datasetUrl: item.links[0].href,
       provider: providerType,
       productBundle: orderSelections.productBundle,
