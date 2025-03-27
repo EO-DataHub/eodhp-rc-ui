@@ -20,6 +20,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
+  // const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
@@ -44,7 +45,14 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
             dataFinderStore.send({ type: 'setSecondaryPanel', panel: 'collection-info' })
           }
           isLicenseProprietary={isLicenseProprietary}
-          onChangeCollection={() => setShowCollectionPanel(true)}
+          onChangeCollection={() => {
+            // console.log('onChangeCollectionInfo', queryFilter)
+            // For now, just clear the query filter every time we change collections.
+            // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
+            dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
+
+            setShowCollectionPanel(true)
+          }}
         />
         <Tabs />
       </Flex>
