@@ -191,11 +191,17 @@ export const OrderDetailsPage: React.FC = () => {
 
             <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
 
-            {!isQuoteLoading && !quoteError && quote?.data && (
-              <Text size="3" weight="bold" className={styles.cost}>
-                Total cost: {formatCurrency(quote.data.value, quote.data.units)}
-              </Text>
-            )}
+            <Text size="3" weight="bold" className={styles.cost}>
+              {!orderSelections.licence
+                ? 'Select a licence type to get a quote.'
+                : isQuoteLoading
+                  ? 'Fetching cost...'
+                  : quoteError
+                    ? 'Error fetching cost.'
+                    : quote?.data
+                      ? `Total cost: ${formatCurrency(quote.data.value, quote.data.units || 'USD')}`
+                      : null}
+            </Text>
 
             <TermsAndConditions provider={providerType} onTermsChange={setTermsAccepted} />
 
