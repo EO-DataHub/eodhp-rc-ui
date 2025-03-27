@@ -148,7 +148,8 @@ export const OrderDetailsPage: React.FC = () => {
     if (isLoading) return 'Loading...'
     if (error) return 'Error loading items.'
     if (!item) return 'No order item found.'
-    if (orderStatus === 'success') return 'Order placed successfully!'
+    if (orderStatus === 'success')
+      return 'Order Confirmed: Data will be available in the My Data section as soon as it is ready. '
     if (orderStatus === 'error') return 'Error placing order.'
     return null
   }

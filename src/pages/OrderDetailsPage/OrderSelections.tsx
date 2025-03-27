@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Flex, Text, Select } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
 import countries from '../../data/countries.json'
 
 interface FieldProps {
@@ -17,7 +16,6 @@ const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
         <Text weight="bold">{label}</Text>
         {required && <span className={styles.asterisk}>*</span>}
       </Flex>
-      <InfoCircledIcon />
     </Flex>
     <Flex>{children}</Flex>
   </Flex>
