@@ -8,7 +8,7 @@ import { buildArrayFilter } from './queryUtils.ts'
  * @param values A comma-separated string of values to search for.
  * @returns A QueryCondition representing the filter.
  */
-function buildPolarizationsFilter(key: string, values: string): QueryCondition {
+export function buildPolarizationsFilter(key: string, values: string): QueryCondition {
   const includedPolarizations: string[] = values.split(',')
   const excludedPolarizations: string[] = ['HH', 'VV', 'HV', 'VH']
 
