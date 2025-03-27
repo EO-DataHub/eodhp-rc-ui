@@ -3,6 +3,7 @@ import { Item, StacRender } from '@/types'
 import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
+import proj4 from 'proj4'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -94,26 +95,51 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
   return sortedCoordinates as Coordinates
 }
 
-function squareBoundingBox(
-  bbox: [number, number, number, number],
-): [number, number, number, number] {
-  const [xmin, ymin, xmax, ymax] = bbox
-  const width = xmax - xmin
-  const height = ymax - ymin
-
-  if (width === height) {
-    return bbox // Already square
+/**
+ * Transforms a geographic bounding box to a local UTM zone, makes it square, and transforms back to geographic coordinates.
+ *
+ * @param {number[]} bbox - The geographic bounding box [minlon, minlat, maxlon, maxlat].
+ * @returns {number[]} - The transformed and squared geographic bounding box [minlon, minlat, maxlon, maxlat].
+ */
+function squareAndTransformBoundingBox(bbox: number[]): number[] {
+  if (bbox.length !== 4) {
+    throw new Error('Bounding box must have 4 elements: [minlon, minlat, maxlon, maxlat]')
   }
 
-  if (width > height) {
-    const diff = width - height
-    const halfDiff = diff / 2
-    return [xmin, ymin - halfDiff, xmax, ymax + halfDiff]
-  } else {
-    const diff = height - width
-    const halfDiff = diff / 2
-    return [xmin - halfDiff, ymin, xmax + halfDiff, ymax]
-  }
+  const [minlon, minlat, maxlon, maxlat] = bbox
+
+  // Calculate the center of the bounding box.
+  const centerlon = (minlon + maxlon) / 2
+
+  // Determine the UTM zone based on the center longitude.
+  const utmZone = Math.floor((centerlon + 180) / 6) + 1
+  const utmProjection = `+proj=utm +zone=${utmZone} +ellps=WGS84 +datum=WGS84 +units=m +no_defs`
+  const wgs84Projection = 'EPSG:4326'
+
+  // Transform the bounding box to UTM coordinates.
+  const utmMin = proj4(wgs84Projection, utmProjection, [minlon, minlat])
+  const utmMax = proj4(wgs84Projection, utmProjection, [maxlon, maxlat])
+
+  // Calculate the width and height of the bounding box in UTM coordinates.
+  const width = utmMax[0] - utmMin[0]
+  const height = utmMax[1] - utmMin[1]
+
+  // Calculate the side length of the square bounding box.
+  const sideLength = Math.max(width, height)
+
+  // Calculate the new UTM coordinates for the square bounding box.
+  const utmMinSquare: number[] = [
+    utmMin[0] - (sideLength - width) / 2,
+    utmMin[1] - (sideLength - height) / 2,
+  ]
+  const utmMaxSquare: number[] = [utmMinSquare[0] + sideLength, utmMinSquare[1] + sideLength]
+
+  // Transform the square bounding box back to geographic coordinates.
+  const geoMinSquare = proj4(utmProjection, wgs84Projection, utmMinSquare)
+  const geoMaxSquare = proj4(utmProjection, wgs84Projection, utmMaxSquare)
+
+  // Return the squared geographic bounding box.
+  return [geoMinSquare[0], geoMinSquare[1], geoMaxSquare[0], geoMaxSquare[1]]
 }
 
 export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
@@ -134,7 +160,7 @@ export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacR
       [item.bbox[0], item.bbox[1]],
     ] as Coordinates
   } else if (render.quicklook_georeference === 'bbox-squared') {
-    const bbox = squareBoundingBox(item.bbox)
+    const bbox = squareAndTransformBoundingBox(item.bbox)
     // item.bbox is in the format [minx, miny, maxx, maxy]
     // wind the coordinates in clockwise order starting from the top left
     coordinates = [
