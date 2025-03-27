@@ -57,7 +57,6 @@ jobs:
           VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
           VITE_SPARKGEO_BASE_URL: ${{ vars.VITE_SPARKGEO_BASE_URL }}
           VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
-          VITE_TITILER_XARRAY_BASE_URL: ${{vars.VITE_TITILER_XARRAY_BASE_URL }}
           VITE_HUB_ENV: ${{vars.VITE_HUB_ENV}}
 
       - name: Stage build files for upload to s3
