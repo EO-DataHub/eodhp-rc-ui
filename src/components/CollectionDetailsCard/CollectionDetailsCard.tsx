@@ -36,6 +36,8 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 
   const handleOpenCollection = () => {
     dataFinderStore.send({ type: 'setCollection', collection: collection })
+    // See: ItemPanel.tsx ~ln 50
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
     navigate(`/finder/${collection.id}`)
   }
 
