@@ -16,6 +16,8 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { OrderButtons } from './OrderButtons'
 import { PartialSceneSelect } from './PartialSceneSelect'
 import type { Feature, Polygon } from 'geojson'
+import { fetchQuote } from '@/services/QuoteService'
+import { bboxToPolygon } from '@/library/geoUtils'
 
 export const OrderDetailsPage: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>()
@@ -108,12 +110,47 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!orderId,
   })
 
+  const coordinates = useMemo((): number[][][] | undefined => {
+    if (providerType === 'airbus_sar') return undefined
+
+    if (aoiData?.geometry?.type === 'Polygon') {
+      return aoiData.geometry.coordinates
+    }
+
+    if (item?.bbox) {
+      const polygon = bboxToPolygon(item.bbox)
+      return polygon.type === 'Polygon' ? polygon.coordinates : undefined
+    }
+
+    return undefined
+  }, [providerType, aoiData, item])
+
+  const {
+    data: quote,
+    isLoading: isQuoteLoading,
+    error: quoteError,
+  } = useQuery({
+    queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
+    queryFn: () =>
+      fetchQuote({
+        parentCatalog: 'commercial',
+        catalog: catalog as 'planet' | 'airbus',
+        collection: selectedCollection?.id ?? '',
+        item: orderId ?? '',
+        coordinates: coordinates,
+        licence: orderSelections.licence,
+      }),
+    enabled: !!item && !!orderSelections.licence,
+    refetchOnWindowFocus: false,
+  })
+
   const getStatusMessage = () => {
     if (!orderId) return 'Error: No order ID provided.'
     if (isLoading) return 'Loading...'
     if (error) return 'Error loading items.'
     if (!item) return 'No order item found.'
-    if (orderStatus === 'success') return 'Order placed successfully!'
+    if (orderStatus === 'success')
+      return 'Order Confirmed: Data will be available in the My Data section as soon as it is ready. '
     if (orderStatus === 'error') return 'Error placing order.'
     return null
   }
@@ -122,6 +159,18 @@ export const OrderDetailsPage: React.FC = () => {
 
   if (statusMessage) {
     return <Flex className={styles.status}>{statusMessage}</Flex>
+  }
+
+  const formatCurrency = (value: number, currency = 'USD') => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 2,
+      }).format(value)
+    } catch (error) {
+      return `${currency} ${value.toFixed(2)}`
+    }
   }
 
   return (
@@ -156,9 +205,17 @@ export const OrderDetailsPage: React.FC = () => {
             ) : null}
 
             <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
-            {/* todo : placeholder for now, add cost route */}
+
             <Text size="3" weight="bold" className={styles.cost}>
-              Total cost $1000
+              {!orderSelections.licence
+                ? 'Select a licence type to get a quote.'
+                : isQuoteLoading
+                  ? 'Fetching cost...'
+                  : quoteError
+                    ? 'Error fetching cost.'
+                    : quote?.data
+                      ? `Total cost: ${formatCurrency(quote.data.value, quote.data.units || 'USD')}`
+                      : null}
             </Text>
 
             <TermsAndConditions provider={providerType} onTermsChange={setTermsAccepted} />
