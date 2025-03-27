@@ -170,7 +170,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
+        "quicklook_georeference": "bbox-squared"
       }
     }
   },
@@ -179,7 +179,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
+        "quicklook_georeference": "bbox-squared"
       }
     }
   },
@@ -188,7 +188,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
+        "quicklook_georeference": "bbox-squared"
       }
     }
   },
@@ -197,7 +197,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
+        "quicklook_georeference": "bbox-squared"
       }
     }
   },
@@ -206,7 +206,7 @@
       "preview": {
         "title": "Data Preview",
         "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
+        "quicklook_georeference": "bbox-squared"
       }
     }
   },
