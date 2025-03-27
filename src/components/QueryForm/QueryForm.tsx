@@ -100,7 +100,6 @@ export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(({ schema, onS
       uiSchema={uiSchema}
       widgets={widgets}
       validator={validator}
-      onChange={(e: IChangeEvent) => setFormData(e.formData)}
       onSubmit={(d: IChangeEvent) => {
         onSubmit(buildQuery(d.schema as JSONSchema, d.formData))
       }}
