@@ -25,7 +25,6 @@ import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractS
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/ItemService'
-import { getCatalogByURL } from '@/library/catalogUtils'
 import Legend from './Legend'
 
 interface ItemCardProps {
@@ -108,16 +107,15 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const rootCatalog = useMemo(() => {
+  const catalogUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url ? getCatalogByURL(url) : undefined
+    return url
   }, [item?.links])
 
   // temporarily fetching item details
   const { data } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () =>
-      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
+    queryFn: () => fetchItem({ catalog: catalogUrl, collection: item?.collection, item: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item,
   })

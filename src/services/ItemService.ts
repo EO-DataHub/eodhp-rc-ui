@@ -3,9 +3,7 @@ import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 
-const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
-const HUB_ENV = import.meta.env.VITE_HUB_ENV
 
 interface FetchItemsParams {
   limit: number
@@ -37,10 +35,7 @@ export const fetchItems = async ({
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
   const catalog = selectedCollection ? getCatalog(selectedCollection) : null
-  const fetchUrl =
-    HUB_ENV === 'staging' && catalog
-      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/search`
-      : `${API_URL}/api/catalogue/stac/search`
+  const fetchUrl = `${catalog}/search`
 
   const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
 
@@ -83,11 +78,7 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
   if (!item || !collection || !catalog) {
     throw new Error('Item is not valid')
   }
-
-  const url =
-    HUB_ENV === 'staging'
-      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/collections/${collection}/items/${item}`
-      : `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections/${collection}/items/${item}`
+  const url = `${catalog}/items/${item}`
 
   const response = await fetch(url, {
     method: 'GET',
