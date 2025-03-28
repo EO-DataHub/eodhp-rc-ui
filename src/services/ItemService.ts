@@ -3,8 +3,6 @@ import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 
-const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
-
 interface FetchItemsParams {
   limit: number
   mapBounds?: MapBounds
@@ -111,10 +109,16 @@ export const fetchItem = async ({ collectionUrl, itemId }: FetchItemParams): Pro
   return data as Item
 }
 
-export const fetchUserItems = async (selectedCollection: Collection): Promise<Item[]> => {
+export const fetchUserItems = async (
+  selectedCollection: Collection,
+  workspace_token: string,
+): Promise<Item[]> => {
   const itemsLink = selectedCollection.links.find((link) => link.rel === 'items')?.href
   if (!itemsLink) {
     throw new Error("No 'items' link found in user collection.")
+  }
+  if (!workspace_token) {
+    throw new Error('Workspace_token is required for fetch user items.')
   }
 
   const response = await fetch(itemsLink, {
@@ -122,7 +126,7 @@ export const fetchUserItems = async (selectedCollection: Collection): Promise<It
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${workspace_token}`,
     },
   })
 

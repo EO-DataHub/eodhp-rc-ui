@@ -39,7 +39,7 @@ export const purchaseProduct = async ({
     throw new Error('No token found. You need to be logged in to place an order')
   }
 
-  const { access } = await fetchWorkspaceTokens({ workspace, token })
+  const { access } = await fetchWorkspaceTokens(workspace, token)
 
   const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
 

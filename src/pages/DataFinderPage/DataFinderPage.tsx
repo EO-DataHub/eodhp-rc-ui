@@ -3,8 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
+import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
 import { useQuery, useQueries } from '@tanstack/react-query'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
@@ -14,7 +16,8 @@ import dataFinderStore from './useFinderStore'
 import styles from './DataFinderPage.module.scss'
 
 export const DataFinderPage: React.FC = () => {
-  const { isAuthenticating, isAuthenticated, workspaceUserName } = useContext(AuthenticationContext)
+  const { isAuthenticating, isAuthenticated, workspaceUserName, token } =
+    useContext(AuthenticationContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
@@ -31,66 +34,74 @@ export const DataFinderPage: React.FC = () => {
     }),
   })
 
-  const userCollectionQuery = useQuery({
-    queryKey: ['UserCollections', workspaceUserName],
-    queryFn: () => fetchUserCollections(workspaceUserName!),
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', workspaceUserName, token],
+    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName,
+    enabled: !!workspaceUserName && !!token,
   })
 
-  // Try to find the collection in the public collections as soon as they are
-  // fetched
+  const userCollectionQuery = useQuery({
+    queryKey: ['UserCollections', workspaceUserName],
+    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
+    refetchOnWindowFocus: false,
+    enabled: !!workspaceUserName && !!workspaceTokensData,
+  })
+
+  const findCollectionById = (
+    collections: Collection[] | undefined,
+    id: string | undefined,
+  ): Collection | undefined => {
+    return collections?.find((col) => col.id === id)
+  }
+
+  // Collection selection and redirection if not found
   useEffect(() => {
-    if (!collectionQueries.isFetched) return
+    if (!collectionId || isAuthenticating) return
 
-    const foundPublicCollection = collectionQueries.data.find((col) => col.id === collectionId)
+    const isUserCollectionId = collectionId.startsWith('my-')
+    const collectionIdWithoutPrefix = isUserCollectionId
+      ? collectionId.replace(/^my-/, '')
+      : collectionId
 
-    if (foundPublicCollection) {
-      dataFinderStore.send({
-        type: 'setCollection',
-        collection: foundPublicCollection,
-      })
+    if (isUserCollectionId) {
+      // search only in user collections
+      if (isAuthenticated && userCollectionQuery.isFetched) {
+        const foundUser = findCollectionById(userCollectionQuery.data, collectionIdWithoutPrefix)
+        if (foundUser) {
+          dataFinderStore.send({ type: 'setCollection', collection: foundUser })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
+          return
+        }
+      }
+    } else {
+      // search only in public collections
+      if (collectionQueries.isFetched) {
+        const foundPublic = findCollectionById(collectionQueries.data, collectionIdWithoutPrefix)
+        if (foundPublic) {
+          dataFinderStore.send({ type: 'setCollection', collection: foundPublic })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
+          return
+        }
+      }
     }
-  }, [collectionId, isAuthenticating, collectionQueries])
 
-  // Once the user collections are fetched, try to find the collection in the
-  // user collections and set it as the active collection
-  useEffect(() => {
-    if (!isAuthenticated || !userCollectionQuery.isFetched || !collectionId) return
+    // redirect if collection not found
+    const allFetched = isUserCollectionId
+      ? userCollectionQuery.isFetched
+      : collectionQueries.isFetched
 
-    const foundUserCollection = userCollectionQuery.data?.find((col) => col.id === collectionId)
-
-    if (foundUserCollection) {
-      dataFinderStore.send({
-        type: 'setCollection',
-        collection: foundUserCollection,
-      })
-      dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
-    }
-  }, [collectionId, isAuthenticated, userCollectionQuery])
-
-  // If the collection is not found in the public or user collections, navigate
-  // to the home page
-  useEffect(() => {
-    if (
-      isAuthenticating ||
-      !collectionId ||
-      !collectionQueries.isFetched ||
-      (isAuthenticated && !userCollectionQuery.isFetched)
-    )
-      return
-
-    const allCollections = [...collectionQueries.data, ...(userCollectionQuery.data ?? [])]
-    const found = allCollections.find((col) => col.id === collectionId)
-    if (!found) {
+    if (allFetched) {
       navigate('/')
     }
   }, [
     collectionId,
-    collectionQueries,
-    userCollectionQuery,
-    isAuthenticated,
     isAuthenticating,
+    isAuthenticated,
+    collectionQueries.data,
+    collectionQueries.isFetched,
+    userCollectionQuery.data,
+    userCollectionQuery.isFetched,
     navigate,
   ])
 
