@@ -33,8 +33,10 @@ export const OrderDetailsPage: React.FC = () => {
   const [isFullScene, setIsFullScene] = useState(false)
 
   const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' => {
-    if (catalog === 'planet') return 'planet'
-    return isOpticalData ? 'airbus_optical' : 'airbus_sar'
+    if (catalog?.includes('planet')) return 'planet'
+    if (catalog?.includes('airbus')) return isOpticalData ? 'airbus_optical' : 'airbus_sar'
+    // fallback if unknown
+    return 'airbus_optical'
   }, [catalog, isOpticalData])
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
@@ -139,7 +141,8 @@ export const OrderDetailsPage: React.FC = () => {
         coordinates: coordinates,
         licence: orderSelections.licence,
       }),
-    enabled: !!item && !!orderSelections.licence,
+    enabled: !!item && (providerType === 'planet' || !!orderSelections.licence),
+
     refetchOnWindowFocus: false,
   })
 
@@ -190,7 +193,7 @@ export const OrderDetailsPage: React.FC = () => {
             />
           )}
           <Flex direction="column" gap="2">
-            <Badge className={styles.tag}>{catalog}</Badge>
+            <Badge className={styles.tag}>{providerType}</Badge>
             <Text size="4" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
@@ -206,14 +209,16 @@ export const OrderDetailsPage: React.FC = () => {
             <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
 
             <Text size="3" weight="bold" className={styles.cost}>
-              {!orderSelections.licence
+              {providerType !== 'planet' && !orderSelections.licence
                 ? 'Select a licence type to get a quote.'
                 : isQuoteLoading
                   ? 'Fetching cost...'
                   : quoteError
                     ? 'Error fetching cost.'
                     : quote?.data
-                      ? `Total cost: ${formatCurrency(quote.data.value, quote.data.units || 'USD')}`
+                      ? providerType === 'planet'
+                        ? `Total credits: ${quote.data.value} ${quote.data.units}`
+                        : `Total cost: ${formatCurrency(quote.data.value, quote.data.units || 'USD')}`
                       : null}
             </Text>
 
