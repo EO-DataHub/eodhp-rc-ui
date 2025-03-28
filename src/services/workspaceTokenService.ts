@@ -8,13 +8,10 @@ interface WorkspaceScopedTokenResponse {
   scope: string
 }
 
-export const fetchWorkspaceTokens = async ({
-  workspace,
-  token,
-}: {
-  workspace: string
-  token: string
-}): Promise<WorkspaceScopedTokenResponse> => {
+export const fetchWorkspaceTokens = async (
+  workspace: string,
+  token: string,
+): Promise<WorkspaceScopedTokenResponse> => {
   try {
     const response = await fetch(`${HUB_BASE_URL}/api/workspaces/${workspace}/me/sessions`, {
       method: 'POST',

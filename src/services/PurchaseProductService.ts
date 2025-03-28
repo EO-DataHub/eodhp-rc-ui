@@ -38,7 +38,7 @@ export const purchaseProduct = async ({
     throw new Error('No token found. You need to be logged in to place an order')
   }
 
-  const { access } = await fetchWorkspaceTokens({ workspace, token })
+  const { access } = await fetchWorkspaceTokens(workspace, token)
 
   const itemLink = item.links.find((link) => link.rel === 'self')?.href
 
