@@ -22,9 +22,14 @@ interface StacQueryBodyParams {
 }
 
 interface FetchItemParams {
-  catalog?: string
-  collection?: string
-  item?: string
+  collectionUrl?: string
+  itemId?: string
+}
+
+interface FetchItemFromCollectionParams {
+  catalogUrl?: string
+  collectionId?: string
+  itemId?: string
 }
 
 export const fetchItems = async ({
@@ -73,12 +78,23 @@ export const fetchItems = async ({
   const data = await response.json()
   return data.features as Item[]
 }
-
-export const fetchItem = async ({ catalog, collection, item }: FetchItemParams): Promise<Item> => {
-  if (!item || !collection || !catalog) {
+export const fetchItemFromCollection = async ({
+  catalogUrl,
+  collectionId,
+  itemId,
+}: FetchItemFromCollectionParams): Promise<Item> => {
+  if (!itemId || !collectionId || !catalogUrl) {
     throw new Error('Item is not valid')
   }
-  const url = `${catalog}/collections/${collection}/items/${item}`
+  const collectionUrl = `${catalogUrl}/collections/${collectionId}/items/${itemId}`
+  return fetchItem({ collectionUrl, itemId })
+}
+
+export const fetchItem = async ({ collectionUrl, itemId }: FetchItemParams): Promise<Item> => {
+  if (!itemId || !collectionUrl) {
+    throw new Error('Item is not valid')
+  }
+  const url = `${collectionUrl}/items/${itemId}`
 
   const response = await fetch(url, {
     method: 'GET',

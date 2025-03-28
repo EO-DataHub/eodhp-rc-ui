@@ -107,7 +107,7 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const catalogUrl = useMemo(() => {
+  const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
   }, [item?.links])
@@ -115,7 +115,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   // temporarily fetching item details
   const { data } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ catalog: catalogUrl, collection: item?.collection, item: item?.id }),
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item,
   })

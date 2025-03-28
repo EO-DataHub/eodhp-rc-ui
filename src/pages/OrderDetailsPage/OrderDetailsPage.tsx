@@ -1,7 +1,7 @@
 import React, { useContext, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItemFromCollection } from '@/services/ItemService'
 import { Flex, Text, Link, Badge } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
@@ -101,10 +101,10 @@ export const OrderDetailsPage: React.FC = () => {
   } = useQuery({
     queryKey: ['Items', catalog, selectedCollection?.id, orderId],
     queryFn: () =>
-      fetchItem({
-        catalog: catalog,
-        collection: selectedCollection?.id,
-        item: orderId,
+      fetchItemFromCollection({
+        catalogUrl: catalog,
+        collectionId: selectedCollection?.id,
+        itemId: orderId,
       }),
     refetchOnWindowFocus: false,
     enabled: !!orderId,
