@@ -95,11 +95,11 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
               </Tabs.Content>
 
               <Tabs.Content value="document_qa">
-                <DataQualitySection />
+                <DataQualitySection collection={selectedCollection} />
               </Tabs.Content>
 
               <Tabs.Content value="product_validation">
-                <ProductValidationSection />
+                <ProductValidationSection collection={selectedCollection} />
               </Tabs.Content>
             </Box>
           </Tabs.Root>

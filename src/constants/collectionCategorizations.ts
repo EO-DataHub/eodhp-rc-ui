@@ -144,6 +144,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_sar_data: {
@@ -154,6 +155,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_pneo_data: {
@@ -164,6 +166,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_phr_data: {
@@ -174,6 +177,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: 'airbus_phr_qa',
     additionalFieldsToDisplay: [],
   },
   airbus_data_example: {
@@ -184,6 +188,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [],
     license: [],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   ukcp: {
@@ -194,6 +199,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   sentinel2_ard: {
@@ -204,6 +210,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: 'sentinel-2_l1c_qa',
     additionalFieldsToDisplay: [],
   },
   sentinel1: {
@@ -214,6 +221,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   land_cover: {
@@ -224,6 +232,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3': {
@@ -234,6 +243,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-night': {
@@ -244,6 +254,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-day': {
@@ -254,6 +265,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-night': {
@@ -264,6 +276,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-day': {
@@ -274,6 +287,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3a': {
@@ -284,6 +298,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3b': {
@@ -294,6 +309,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3a': {
@@ -304,6 +320,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3n': {
@@ -314,6 +331,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3-climatology': {
@@ -324,6 +342,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerScene: {
@@ -334,6 +353,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerMethane: {
@@ -344,6 +364,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [],
     license: [],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatVideo: {
@@ -354,6 +375,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatScene: {
@@ -364,6 +386,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatCollect: {
@@ -374,6 +397,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   REScene: {
@@ -384,6 +408,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   REOrthoTile: {
@@ -394,6 +419,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   PSScene: {
@@ -404,6 +430,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: 'planet_psscene_qa',
     additionalFieldsToDisplay: [],
   },
   cordex: {
@@ -414,6 +441,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   cmip6: {
@@ -424,6 +452,7 @@ const collectionCategorization = {
     keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [
       'cmip6:variable_long_name',
       'cmip6:frequency',

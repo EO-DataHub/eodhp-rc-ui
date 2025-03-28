@@ -170,3 +170,136 @@ export interface QuickFilter {
   timePeriod?: string
   license?: string
 }
+
+export interface DocumentQA {
+  type: 'FeatureCollection'
+  features: {
+    type: 'Feature'
+    stac_version: string
+    stac_extensions: string[]
+    id: string
+    collection: string
+    bbox: [number, number, number, number]
+    geometry: GeoJSON.Geometry
+    properties: {
+      [key: string]: never
+    }
+    links: {
+      rel: string
+      type: string
+      href: string
+    }[]
+    assets: {
+      [key: string]: {
+        roles?: string[]
+        description?: string
+        href: string
+        type?: string
+        title?: string
+      }
+    }
+  }[]
+  links: {
+    rel: string
+    type: string
+    href: string
+  }[]
+  numReturned: number
+  numMatched: number
+}
+
+export type DocumentQAMetric =
+  | 'not assessed'
+  | 'not assessable'
+  | 'basic'
+  | 'good'
+  | 'excellent'
+  | 'ideal'
+  | 'not_public'
+
+export interface DocumentQAOutput {
+  data_collection: string
+  data_id_field: string
+  uuid: string
+  check_name: string
+  results: {
+    product_information: {
+      [key: string]: {
+        metric: DocumentQAMetric
+        value: string
+        links: {
+          rel: string
+          type: string
+          href: string
+          title: string
+        }[]
+      }
+    }
+    metrology: {
+      [key: string]: {
+        metric: DocumentQAMetric
+        value: string
+        links: {
+          rel: string
+          type: string
+          href: string
+          title: string
+        }[]
+      }
+    }
+    product_generation: {
+      [key: string]: {
+        metric: DocumentQAMetric
+        value: string
+        links: {
+          rel: string
+          type: string
+          href: string
+          title: string
+        }[]
+      }
+    }
+  }
+  result_vocab: string
+  check_datetime: string
+  check_datetime_validity_start: string
+  check_datetime_validity_end: string
+  check_creator: string
+  contact_point: string
+  publisher: string
+  eodh_qa_check_version: number
+}
+
+export interface DocumentRadiometricOutput {
+  data_collection: string
+  data_id_field: string
+  uuid: string
+  check_name: string
+  results: {
+    'data validation': {
+      'radiometric uncertainty': {
+        metric: string
+        value: [string, string[]]
+        stated_value: string[]
+        links: {
+          rel: string
+          type: string
+          href: string
+          title: string
+        }[]
+      }
+    }
+  }
+  result_vocab: {
+    pass: string
+    'partial pass': string
+    fail: string
+  }
+  check_datetime: string
+  check_datetime_validity_start: string
+  check_datetime_validity_end: string
+  check_creator: string
+  contact_point: string
+  publisher: string
+  eodh_qa_check_version: number
+}
