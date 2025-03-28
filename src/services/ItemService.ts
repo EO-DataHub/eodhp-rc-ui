@@ -86,7 +86,7 @@ export const fetchItemFromCollection = async ({
   if (!itemId || !collectionId || !catalogUrl) {
     throw new Error('Item is not valid')
   }
-  const collectionUrl = `${catalogUrl}/collections/${collectionId}/items/${itemId}`
+  const collectionUrl = `${catalogUrl}/collections/${collectionId}`
   return fetchItem({ collectionUrl, itemId })
 }
 
