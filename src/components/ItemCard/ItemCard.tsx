@@ -207,6 +207,25 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     }
   }
 
+  const handlePinToggle = () => {
+    if (!itemRender) return
+    if (!isAlreadyPinned) {
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item,
+        collectionRender: itemRender,
+      })
+    } else {
+      dataFinderStore.send({
+        type: 'removePinnedItem',
+        item: {
+          ...item,
+          pinId: getPinnedItemId(item, itemRender),
+        },
+      })
+    }
+  }
+
   const cardTitle = useMemo(() => {
     if (!data?.properties?.title) {
       return item.id
@@ -229,11 +248,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           flexShrink="0"
           p="4"
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (!itemRender) return
-            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender: itemRender })
-          }}
+          onClick={handlePinToggle}
         >
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
@@ -241,7 +256,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             onError={handleImageError}
           />
           <div className={styles.overlay}>
-            <Tooltip content={isAlreadyPinned ? 'Already Pinned' : 'Pin Item'}>
+            <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
               <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
             </Tooltip>
           </div>
@@ -267,7 +282,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={() => dataFinderStore.send({ type: 'removePinnedItem', item })}
+                onClick={handlePinToggle}
               >
                 <Cross2Icon />
               </IconButton>
@@ -289,20 +304,22 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="4" align="center">
-            {isQueryCard && itemRender && !isAlreadyPinned && (
-              <ActionButton
-                onClick={() =>
-                  dataFinderStore.send({
-                    type: 'addPinnedItem',
-                    item,
-                    collectionRender: itemRender,
-                  })
-                }
-              >
-                <Tooltip content="Pin Item">
-                  <DrawingPinIcon />
-                </Tooltip>
-              </ActionButton>
+            {isQueryCard && itemRender && (
+              <>
+                {!isAlreadyPinned ? (
+                  <ActionButton onClick={handlePinToggle}>
+                    <Tooltip content="Pin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                ) : (
+                  <ActionButton onClick={handlePinToggle} active={isAlreadyPinned}>
+                    <Tooltip content="Unpin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                )}
+              </>
             )}
             {isPinnedCard && (
               <>
