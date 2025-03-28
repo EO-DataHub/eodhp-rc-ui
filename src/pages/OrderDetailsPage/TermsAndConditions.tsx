@@ -54,7 +54,11 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
             checked={checkedTerms[index] || false}
             onCheckedChange={(checked) => handleCheckboxChange(index, Boolean(checked))}
           />
-          <Text>{info.text}</Text>
+          <Flex>
+            <Text>{info.text}</Text>
+            <span className={styles.asterisk}>*</span>
+          </Flex>
+
           {info.link && (
             <Link
               className={styles.linkText}
