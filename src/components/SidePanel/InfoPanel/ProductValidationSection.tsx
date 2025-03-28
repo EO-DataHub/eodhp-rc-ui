@@ -75,8 +75,6 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
     })
   }, [data?.features])
 
-  // const qaOutputUrl = data?.features?.[0].assets?.['qa-outputs'].href
-
   const {
     data: output,
     isLoading: isOutputQueryLoading,
@@ -87,16 +85,10 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
       if (!qaOutputUrl) {
         return null
       }
-      const response = await fetch(qaOutputUrl, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      })
+      const response = await fetch(qaOutputUrl)
       return response.json()
     },
     refetchOnWindowFocus: false,
-    // enabled: !!qaOutputUrl,
   })
 
   useEffect(() => {

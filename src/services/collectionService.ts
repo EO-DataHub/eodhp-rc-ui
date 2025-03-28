@@ -62,7 +62,6 @@ export const fetchDocumentQA = async (catalog: string | null, collection: string
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_TOKEN}`,
     },
   })
 
