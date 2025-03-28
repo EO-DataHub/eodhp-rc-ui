@@ -4,10 +4,10 @@
   "title": "RapidEye Ortho Tile",
   "type": "object",
   "properties": {
-    "start_datetime": {
+    "planet:start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
-    "end_datetime": {
+    "planet:end_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
     "eo:cloud_cover": {

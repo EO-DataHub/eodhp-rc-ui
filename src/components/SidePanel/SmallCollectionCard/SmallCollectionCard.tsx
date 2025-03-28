@@ -19,6 +19,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onChangeCollection,
 }) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
   return (
@@ -26,7 +27,9 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
       <Flex direction="column">
         <Flex justify="between" align="center">
           <Text weight="medium" size="4" className={styles.text}>
-            {collection?.title ?? 'No Collection Selected'}
+            {collection
+              ? `${isUserCollection ? 'My ' : ''}${collection.title}`
+              : 'No Collection Selected'}
           </Text>
           <Flex justify="end" gap="2">
             {isLicenseProprietary && (

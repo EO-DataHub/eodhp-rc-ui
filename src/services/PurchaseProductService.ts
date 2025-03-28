@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_HUB_BASE_URL
-const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
+import { Item } from '@/types'
+import { fetchWorkspaceTokens } from './workspaceTokenService'
 
 export interface RadarOptions {
   orbit?: string
@@ -9,34 +9,47 @@ export interface RadarOptions {
 
 export interface PurchaseRequest {
   workspace: string | undefined
-  datasetUrl: string
+  token: string | undefined
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
   coordinates?: number[][][]
   radarOptions?: RadarOptions
   endUserCountry?: string
   licence?: string
+  item: Item
 }
 
 export const purchaseProduct = async ({
   workspace,
-  datasetUrl,
+  token,
   provider,
   productBundle,
   coordinates,
   radarOptions,
   endUserCountry,
   licence,
+  item,
 }: PurchaseRequest): Promise<unknown> => {
   if (!workspace) {
     throw new Error('Workspace is required for placing an order.')
   }
 
-  const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
+  if (!token) {
+    throw new Error('No token found. You need to be logged in to place an order')
+  }
+
+  const { access } = await fetchWorkspaceTokens(workspace, token)
+
+  const itemLink = item.links.find((link) => link.rel === 'self')?.href
+
+  if (!itemLink) {
+    throw new Error("No 'self' link found in item.")
+  }
+
+  const purchaseApiUrl = `${itemLink}/order`
 
   const requestBody: Record<string, unknown> = {
-    url: datasetUrl,
-    product_bundle: productBundle,
+    productBundle,
   }
 
   // Only add coordinates if applicable (Airbus Optical & Planet)
@@ -65,7 +78,7 @@ export const purchaseProduct = async ({
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_TOKEN}`,
+        Authorization: `Bearer ${access}`,
       },
       body: JSON.stringify(requestBody),
     })

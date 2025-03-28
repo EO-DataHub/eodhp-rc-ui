@@ -8,6 +8,7 @@ import cmip6 from './cmip6Query.ts'
 import ukcp18 from './ukcp18Query.ts'
 import cordex from './cordexQuery.ts'
 import sentinel1 from './sentinel1Query.ts'
+import planet from './planetQuery.ts'
 
 type JSONSchema = Record<string, unknown>
 
@@ -25,6 +26,7 @@ const dispatchTable: QueryParams = {
   ukcp: ukcp18,
   cordex: cordex,
   sentinel1: sentinel1,
+  planet: planet,
 }
 
 /**
@@ -37,12 +39,23 @@ export function buildQuery(schema: JSONSchema, formData: Record<string, unknown>
   const flatFormData = flattenForm(formData)
   const filter = buildFilter(schema, flatFormData)
 
+  let isPlanet = false
+  if (
+    schema.$id == 'https://test.eodatahub.org/schemas/planet_psscene.json' ||
+    schema.$id == 'https://test.eodatahub.org/schemas/planet_reorthotile.json' ||
+    schema.$id == 'https://test.eodatahub.org/schemas/planet_rescene.json' ||
+    schema.$id == 'https://test.eodatahub.org/schemas/planet_skysatcollect.json' ||
+    schema.$id == 'https://test.eodatahub.org/schemas/planet_skysatscene.json'
+  ) {
+    isPlanet = true
+  }
+
   return {
     fields: {
       include: ['properties'],
     },
     filter,
-    sortby: buildSort(),
+    sortby: buildSort(isPlanet),
   }
 }
 
@@ -86,11 +99,11 @@ function flattenForm(form: Record<string, unknown>): Record<string, unknown> {
  * Creates a sort-by clause.
  * @returns {*[]}
  */
-function buildSort(): { field: string; direction: 'asc' | 'desc' }[] {
+function buildSort(isPlanet: boolean): { field: string; direction: 'asc' | 'desc' }[] {
   // Super-simple hard-coded sort by date descending. In the future we'll need to make this more complex.
   return [
     {
-      field: 'properties.end_datetime',
+      field: isPlanet ? 'datetime' : 'properties.end_datetime',
       direction: 'desc',
     },
   ]

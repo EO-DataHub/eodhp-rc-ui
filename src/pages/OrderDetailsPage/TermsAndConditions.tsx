@@ -15,7 +15,10 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
   const airbusTermsLink = 'https://space-solutions.airbus.com/legal/terms-and-conditions/'
 
   const baseTerms = [
-    { text: 'I give consent for the EODH to place the order on my behalf.', link: '#' },
+    {
+      text: 'I give consent for the Earth Observation Data Hub to place the order on my behalf.',
+      link: '',
+    },
   ]
 
   if (provider !== 'planet') {
@@ -52,14 +55,16 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
             onCheckedChange={(checked) => handleCheckboxChange(index, Boolean(checked))}
           />
           <Text>{info.text}</Text>
-          <Link
-            className={styles.linkText}
-            href={info.link}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn more
-          </Link>
+          {info.link && (
+            <Link
+              className={styles.linkText}
+              href={info.link}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Learn more
+            </Link>
+          )}
         </Flex>
       ))}
     </Flex>
