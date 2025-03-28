@@ -13,7 +13,7 @@ import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -187,7 +187,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
     state.context.pinnedItems.some(
-      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === itemRender,
+      (pinnedItem) =>
+        collectionRender && pinnedItem.pinId === getPinnedItemId(item, collectionRender),
     ),
   )
 
@@ -203,6 +204,29 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       navigate(`/order-details/${item.id}`)
     } else {
       await login()
+    }
+  }
+
+  const handlePinToggle = () => {
+    if (!itemRender) return
+    if (!isAlreadyPinned) {
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item,
+        collectionRender: itemRender,
+      })
+      dataFinderStore.send({
+        type: 'zoomToItem',
+        item,
+      })
+    } else {
+      dataFinderStore.send({
+        type: 'removePinnedItem',
+        item: {
+          ...item,
+          pinId: getPinnedItemId(item, itemRender),
+        },
+      })
     }
   }
 
@@ -228,11 +252,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           flexShrink="0"
           p="4"
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (!itemRender) return
-            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender: itemRender })
-          }}
+          onClick={handlePinToggle}
         >
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
@@ -240,7 +260,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             onError={handleImageError}
           />
           <div className={styles.overlay}>
-            <Tooltip content={isAlreadyPinned ? 'Already Pinned' : 'Pin Item'}>
+            <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
               <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
             </Tooltip>
           </div>
@@ -266,7 +286,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={() => dataFinderStore.send({ type: 'removePinnedItem', item })}
+                onClick={handlePinToggle}
               >
                 <Cross2Icon />
               </IconButton>
@@ -288,6 +308,23 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="4" align="center">
+            {isQueryCard && itemRender && (
+              <>
+                {!isAlreadyPinned ? (
+                  <ActionButton onClick={handlePinToggle}>
+                    <Tooltip content="Pin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                ) : (
+                  <ActionButton onClick={handlePinToggle} active={isAlreadyPinned}>
+                    <Tooltip content="Unpin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                )}
+              </>
+            )}
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
@@ -317,7 +354,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
             >
-              <Tooltip content="More Info">
+              <Tooltip content="View Metadata">
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
