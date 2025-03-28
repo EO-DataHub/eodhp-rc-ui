@@ -23,8 +23,6 @@ import {
 } from '@/constants/collectionCategorizations'
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
 import { useSelector } from '@xstate/store/react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
 import Legend from './Legend'
 
 interface ItemCardProps {
@@ -32,7 +30,8 @@ interface ItemCardProps {
   type: ItemCardType
 }
 
-const renderAdditionalFields = (item: Item, collectionId: string | null) => {
+const renderAdditionalFields = (item: Item) => {
+  const collectionId = item.collection
   if (!collectionId || !isValidCollectionId(collectionId)) {
     return null
   }
@@ -107,19 +106,6 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const catalogUrl = useMemo(() => {
-    const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url
-  }, [item?.links])
-
-  // temporarily fetching item details
-  const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ catalog: catalogUrl, collection: item?.collection, item: item?.id }),
-    refetchOnWindowFocus: false,
-    enabled: !!item,
-  })
-
   const navigate = useNavigate()
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
@@ -155,19 +141,19 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     setItemRender(undefined)
 
     // For time variable items, check if we have the required data
-    if (!data?.properties) {
+    if (!item?.properties) {
       return
     }
 
     // Check if all required properties exist
     const hasAllProperties = collection['eodhrc:render-key-properties'].every(
-      (key) => data.properties[key] !== undefined,
+      (key) => item.properties[key] !== undefined,
     )
 
     if (hasAllProperties) {
       // For time variable items, construct the render key from the specified properties
       const renderKey = collection['eodhrc:render-key-properties']
-        .map((key) => data.properties[key])
+        .map((key) => item.properties[key])
         .join('--')
 
       const render = collectionRenderOptions.find((render) => render.id === renderKey)
@@ -180,7 +166,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         })
       }
     }
-  }, [collection, data?.properties, collectionRender, collectionRenderOptions, queryFilter])
+  }, [collection, item?.properties, collectionRender, collectionRenderOptions, queryFilter])
 
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
@@ -207,12 +193,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   }
 
   const cardTitle = useMemo(() => {
-    if (!data?.properties?.title) {
+    if (!item?.properties?.title) {
       return item.id
     }
 
-    return data.properties.title
-  }, [data?.properties?.title, item.id])
+    return item.properties.title
+  }, [item?.properties?.title, item.id])
 
   return (
     <Card
@@ -257,7 +243,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             <Text size="1" className={styles.text}>
               {convertDateToUTCString(new Date(item.properties.datetime))}
             </Text>
-            {data && renderAdditionalFields(data, item.collection)}
+            {item && renderAdditionalFields(item)}
           </Flex>
           {isPinnedCard && (
             <Flex align="end" direction="column">

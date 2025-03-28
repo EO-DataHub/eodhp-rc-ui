@@ -1,37 +1,33 @@
-import React, { useMemo } from 'react'
 import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import { MetadataSection } from './MetadataSection'
-import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
 interface ItemInfoPanelProps {
-  item: Item | null
+  item: Item
   isUserItem?: boolean
   onClose: () => void
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
-  const catalogUrl = useMemo(() => {
-    const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url
-  }, [item?.links])
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ catalog: catalogUrl, collection: item?.collection, item: item?.id }),
-    refetchOnWindowFocus: false,
-    enabled: !!item && !isUserItem,
-  })
+  const isLoadingResult = isUserItem ? false : false
+  const errorResult = isUserItem ? false : false
 
-  const dataResult = isUserItem ? item : data
-  const isLoadingResult = isUserItem ? false : isLoading
-  const errorResult = isUserItem ? false : !!error
+  const getStatusMessage = () => {
+    if (!item) return 'No item data available.'
+    return null
+  }
+
+  const statusMessage = getStatusMessage()
+
+  if (statusMessage) {
+    return <Flex className={styles.status}>{statusMessage}</Flex>
+  }
 
   return (
     <>
@@ -73,7 +69,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
             <Box pt="6">
               <Tabs.Content value="metadata">
                 <MetadataSection
-                  stacElement={dataResult}
+                  stacElement={item}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                 />
@@ -81,15 +77,13 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
 
               <Tabs.Content value="assets">
                 <AssetSection
-                  item={dataResult}
-                  isLoading={isLoadingResult}
-                  hasError={!!errorResult}
+                  item={item}
                 />
               </Tabs.Content>
 
               <Tabs.Content value="resources">
                 <AdditionalResourcesSection
-                  links={dataResult?.links}
+                  links={item?.links}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                 />

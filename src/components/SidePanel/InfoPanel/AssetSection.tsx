@@ -1,16 +1,13 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import type { Item } from '@/types'
-import { Box, Flex, Text } from '@radix-ui/themes'
+import { Box, Flex } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetItemTable } from './AssetItemTable'
 import ItemLayer from '@/components/Map/layers/Item'
-import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 interface AssetSectionProps {
   item: Item | null | undefined
-  isLoading: boolean
-  hasError: boolean
 }
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
@@ -20,7 +17,7 @@ const DEFAULT_MAP_VIEW = {
   zoom: 1,
 }
 
-export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, hasError }) => {
+export const AssetSection: React.FC<AssetSectionProps> = ({ item }) => {
   const mapRef = useRef<MapRef>(null)
 
   const showThumbnail = useCallback(() => {
@@ -42,19 +39,6 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
   useEffect(() => {
     showThumbnail()
   }, [showThumbnail])
-
-  if (isLoading) {
-    return (
-      <Flex gap="3" align="center">
-        <LoadingIndicator size="3" />
-        <Text>Loading data...</Text>
-      </Flex>
-    )
-  }
-
-  if (hasError) {
-    return <Text color="red">Error loading items!</Text>
-  }
 
   return (
     <Flex direction="column" gap="6">

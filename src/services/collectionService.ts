@@ -1,4 +1,4 @@
-import { Collection } from '@/types'
+import { Collection, Item } from '@/types'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
@@ -23,6 +23,27 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
 
   const data = await response.json()
   return data.collections as Collection[]
+}
+
+export const fetchItemParentCollection = async (item: Item): Promise<Collection[]> => {
+  const collectionLink = item.links.find((link) => link.rel === 'parent')?.href
+  if (!collectionLink) {
+    throw new Error("No 'parent' link found in item.")
+  }
+
+  const response = await fetch(collectionLink, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Collection')
+  }
+
+  const data = await response.json()
+  return data as Collection[]
 }
 
 export const fetchUserCollections = async (workspace: string): Promise<Collection[]> => {

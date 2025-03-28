@@ -1,7 +1,7 @@
 import React, { useContext, useState, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItemById } from '@/services/ItemService'
 import { Flex, Text, Link, Badge } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import { OrderSelections } from './OrderSelections'
@@ -25,7 +25,7 @@ export const OrderDetailsPage: React.FC = () => {
   const { workspaceUserName, token } = useContext(AuthenticationContext)
   const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
-  const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
+  const catalogUrl = selectedCollection ? getCatalog(selectedCollection) : undefined
 
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
@@ -33,9 +33,9 @@ export const OrderDetailsPage: React.FC = () => {
   const [isFullScene, setIsFullScene] = useState(false)
 
   const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' => {
-    if (catalog === 'planet') return 'planet'
+    if (catalogUrl?.includes('planet')) return 'planet'
     return isOpticalData ? 'airbus_optical' : 'airbus_sar'
-  }, [catalog, isOpticalData])
+  }, [catalogUrl, isOpticalData])
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
     setOrderSelections(selections)
@@ -94,21 +94,27 @@ export const OrderDetailsPage: React.FC = () => {
     mutation.mutate(requestBody)
   }
 
+  if (!selectedCollection || !orderId) {
+    return <Flex className={styles.status}>{'No collection or order ID selected'}</Flex>
+  }
+
   const {
     data: item,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['Items', catalog, selectedCollection?.id, orderId],
+    queryKey: ['Items', selectedCollection, orderId],
     queryFn: () =>
-      fetchItem({
-        catalog: catalog,
-        collection: selectedCollection?.id,
-        item: orderId,
+      fetchItemById({
+        collection: selectedCollection,
+        itemId: orderId,
       }),
     refetchOnWindowFocus: false,
     enabled: !!orderId,
   })
+  if (!item) {
+    return <Flex className={styles.status}>{`No item found for ID ${orderId}`}</Flex>
+  }
 
   const coordinates = useMemo((): number[][][] | undefined => {
     if (providerType === 'airbus_sar') return undefined
@@ -130,15 +136,12 @@ export const OrderDetailsPage: React.FC = () => {
     isLoading: isQuoteLoading,
     error: quoteError,
   } = useQuery({
-    queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
+    queryKey: ['Quote', item, orderSelections.licence, aoiData],
     queryFn: () =>
       fetchQuote({
-        parentCatalog: 'commercial',
-        catalog: catalog as 'planet' | 'airbus',
-        collection: selectedCollection?.id ?? '',
-        item: orderId ?? '',
-        coordinates: coordinates,
+        item: item,
         licence: orderSelections.licence,
+        coordinates: coordinates,
       }),
     enabled: !!item && !!orderSelections.licence,
     refetchOnWindowFocus: false,
@@ -191,7 +194,7 @@ export const OrderDetailsPage: React.FC = () => {
             />
           )}
           <Flex direction="column" gap="2">
-            <Badge className={styles.tag}>{catalog}</Badge>
+            <Badge className={styles.tag}>{providerType}</Badge>
             <Text size="4" weight="bold">
               {item?.collection}: {item?.id}
             </Text>

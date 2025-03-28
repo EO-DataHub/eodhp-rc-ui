@@ -21,10 +21,9 @@ interface StacQueryBodyParams {
   bbox?: MapBounds
 }
 
-interface FetchItemParams {
-  catalog?: string
-  collection?: string
-  item?: string
+interface FetchItemByIdParams {
+  collection: Collection
+  itemId: string
 }
 
 export const fetchItems = async ({
@@ -34,10 +33,9 @@ export const fetchItems = async ({
   selectedCollection,
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
-  const catalog = selectedCollection ? getCatalog(selectedCollection) : null
-  const fetchUrl = `${catalog}/search`
-
+  const catalogUrl = selectedCollection ? getCatalog(selectedCollection) : null
   const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
+  const fetchUrl = `${catalogUrl}/search`
 
   const baseBody: StacQueryBodyParams = {
     catalog_paths: catalogPaths,
@@ -49,7 +47,7 @@ export const fetchItems = async ({
     baseBody.intersects = aoi.geometry
   } else if (mapBounds) {
     // Planet proxy doesn’t support search by bbox, so we are using intersects instead.
-    if (catalog === 'planet') {
+    if (catalogUrl?.includes('planet')) {
       baseBody.intersects = bboxToPolygon(mapBounds)
     } else {
       baseBody.bbox = mapBounds
@@ -74,13 +72,17 @@ export const fetchItems = async ({
   return data.features as Item[]
 }
 
-export const fetchItem = async ({ catalog, collection, item }: FetchItemParams): Promise<Item> => {
-  if (!item || !collection || !catalog) {
+export const fetchItemById = async ({ collection, itemId }: FetchItemByIdParams): Promise<Item> => {
+  if (!collection || !itemId) {
     throw new Error('Item is not valid')
   }
-  const url = `${catalog}/items/${item}`
+  const collectionLink = collection.links.find((link) => link.rel === 'self')?.href
+  if (!collectionLink) {
+    throw new Error("No 'self' link found in item.")
+  }
+  const itemLink = `${collectionLink}/items/${itemId}`
 
-  const response = await fetch(url, {
+  const response = await fetch(itemLink, {
     method: 'GET',
     headers: {
       Accept: 'application/json',
@@ -88,7 +90,7 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
   })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch Item')
+    throw new Error(`Failed to fetch Item from ${itemLink}`)
   }
 
   const data = await response.json()
