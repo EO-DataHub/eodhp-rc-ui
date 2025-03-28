@@ -13,7 +13,7 @@ import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -187,7 +187,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
     state.context.pinnedItems.some(
-      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === itemRender,
+      (pinnedItem) =>
+        collectionRender && pinnedItem.pinId === getPinnedItemId(item, collectionRender),
     ),
   )
 
@@ -288,6 +289,21 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="4" align="center">
+            {isQueryCard && itemRender && !isAlreadyPinned && (
+              <ActionButton
+                onClick={() =>
+                  dataFinderStore.send({
+                    type: 'addPinnedItem',
+                    item,
+                    collectionRender: itemRender,
+                  })
+                }
+              >
+                <Tooltip content="Pin Item">
+                  <DrawingPinIcon />
+                </Tooltip>
+              </ActionButton>
+            )}
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
