@@ -8,7 +8,7 @@ import { Collection, DocumentRadiometricOutput } from '@/types'
 import { CheckCircledIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, Heading, Link, Select, Table, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 function formatCustomDate(timestamp: string | undefined) {
   if (!timestamp) {
@@ -46,6 +46,7 @@ const renderStatusCell = (status: Status) => {
 }
 
 export const ProductValidationSection = ({ collection }: { collection: Collection }) => {
+  const prevCollectionId = useRef<string | undefined>()
   const qaDocumentExists =
     isValidCollectionId(collection.id) && collectionCategorization[collection.id].qa
 
@@ -91,10 +92,11 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
   })
 
   useEffect(() => {
-    if (status === 'success' && !qaOutputUrl) {
+    if ((status === 'success' && !qaOutputUrl) || prevCollectionId.current !== collection.id) {
       setQaOutputUrl(data?.features?.[0].assets?.['qa-outputs'].href)
+      prevCollectionId.current = collection.id
     }
-  }, [data?.features, qaOutputUrl, status])
+  }, [collection.id, data?.features, qaOutputUrl, status])
 
   if (!qaDocumentExists) {
     return 'Product validation metrics not available for this collection.'
