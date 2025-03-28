@@ -165,6 +165,52 @@
       }
     }
   },
+  "cordex": {
+    "eodhrc:time-variable-items": true,
+    "eodhrc:render-key-properties": ["instance_id"],
+    "renders": {
+      "CORDEX.output.EUR-11.MOHC.NCC-NorESM1-M.rcp85.r1i1p1.MOHC-HadREM3-GA7-05.v1.3hr.pr.v20201111": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[0.0, 0.0004852008656598633]],
+        "reference": true
+      },
+      "CORDEX.output.EUR-11.MOHC.NCC-NorESM1-M.rcp85.r1i1p1.MOHC-HadREM3-GA7-05.v1.3hr.tas.v20201111": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "plasma",
+        "rescale": [[257.3005908203125, 293.0361328125]],
+        "reference": true
+      },
+      "CORDEX.output.EUR-11.MOHC.NCC-NorESM1-M.rcp85.r1i1p1.MOHC-HadREM3-GA7-05.v1.day.tasmax.v20201111": {
+        "title": "Daily Maximum Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tasmax",
+        "colormap_name": "inferno",
+        "rescale": [[265.46349609375, 296.934326171875]],
+        "reference": true
+      },
+      "CORDEX.output.EUR-11.MOHC.NCC-NorESM1-M.rcp85.r1i1p1.MOHC-HadREM3-GA7-05.v1.day.tas.v20201111": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "plasma",
+        "rescale": [[261.1506884765625, 292.868046875]],
+        "reference": true
+      },
+      "CORDEX.output.EUR-11.MOHC.NCC-NorESM1-M.rcp85.r1i1p1.MOHC-HadREM3-GA7-05.v1.day.pr.v20201111": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[0.0, 0.00022641029238002383]],
+        "reference": true
+      }
+    }
+  },
   "PSScene": {
     "renders": {
       "preview": {
