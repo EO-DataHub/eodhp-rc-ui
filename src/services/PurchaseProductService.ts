@@ -1,6 +1,5 @@
+import { Item } from '@/types'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
-
-const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
 export interface RadarOptions {
   orbit?: string
@@ -11,32 +10,24 @@ export interface RadarOptions {
 export interface PurchaseRequest {
   workspace: string | undefined
   token: string | undefined
-  datasetUrl: string
   provider: 'airbus_optical' | 'airbus_sar' | 'planet'
   productBundle: string
   coordinates?: number[][][]
   radarOptions?: RadarOptions
   endUserCountry?: string
   licence?: string
-  parentCatalog: 'supported-datasets' | 'commercial'
-  catalog: string | undefined
-  collection: string
-  item: string
+  item: Item
 }
 
 export const purchaseProduct = async ({
   workspace,
   token,
-  datasetUrl,
   provider,
   productBundle,
   coordinates,
   radarOptions,
   endUserCountry,
   licence,
-  parentCatalog,
-  catalog,
-  collection,
   item,
 }: PurchaseRequest): Promise<unknown> => {
   if (!workspace) {
@@ -47,17 +38,18 @@ export const purchaseProduct = async ({
     throw new Error('No token found. You need to be logged in to place an order')
   }
 
-  if (!catalog) {
-    throw new Error('Catalog cannot be undefined')
-  }
-
   const { access } = await fetchWorkspaceTokens({ workspace, token })
 
-  const purchaseApiUrl = `${API_URL}/api/catalogue/stac/catalogs/${parentCatalog}/catalogs/${catalog}/collections/${collection}/items/${item}/quote`
+  const itemLink = item.links.find((link) => link.rel === 'self')?.href
+
+  if (!itemLink) {
+    throw new Error("No 'self' link found in item.")
+  }
+
+  const purchaseApiUrl = `${itemLink}/order`
 
   const requestBody: Record<string, unknown> = {
-    url: datasetUrl,
-    product_bundle: productBundle,
+    productBundle,
   }
 
   // Only add coordinates if applicable (Airbus Optical & Planet)

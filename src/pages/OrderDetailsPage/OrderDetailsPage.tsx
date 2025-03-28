@@ -8,7 +8,7 @@ import { OrderSelections } from './OrderSelections'
 import { TermsAndConditions } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
-import { getCatalog, getCatalogProvider } from '@/library/catalogUtils'
+import { getCatalog } from '@/library/catalogUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
 import { useSelector } from '@xstate/store/react'
@@ -62,7 +62,6 @@ export const OrderDetailsPage: React.FC = () => {
     }
   }, [])
 
-  const catalogProvider = selectedCollection ? getCatalogProvider(selectedCollection) : undefined
   const aoiData = !isFullScene ? rawAoi : null
   const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
@@ -76,11 +75,7 @@ export const OrderDetailsPage: React.FC = () => {
     const requestBody = {
       workspace: workspaceUserName,
       token,
-      parentCatalog: 'commercial' as 'supported-datasets' | 'commercial',
-      catalog: catalogProvider,
-      collection: selectedCollection?.id ?? '',
-      item: orderId ?? '',
-      datasetUrl: item.links[0].href,
+      item,
       provider: providerType,
       productBundle: orderSelections.productBundle,
       coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
@@ -89,7 +84,7 @@ export const OrderDetailsPage: React.FC = () => {
         providerType === 'airbus_sar'
           ? {
               orbit: orderSelections.orbit,
-              resolution_variant: orderSelections.resolutionVariant,
+              resolutionVariant: orderSelections.resolutionVariant,
               projection: orderSelections.projection,
             }
           : undefined,
@@ -140,10 +135,7 @@ export const OrderDetailsPage: React.FC = () => {
       fetchQuote({
         workspace: workspaceUserName,
         token,
-        parentCatalog: 'commercial',
-        catalog: catalogProvider as 'planet' | 'airbus',
-        collection: selectedCollection?.id ?? '',
-        item: orderId ?? '',
+        item: item,
         coordinates: coordinates,
         licence: orderSelections.licence,
       }),
