@@ -18,6 +18,10 @@ export interface PurchaseRequest {
   radarOptions?: RadarOptions
   endUserCountry?: string
   licence?: string
+  parentCatalog: 'supported-datasets' | 'commercial'
+  catalog: string | undefined
+  collection: string
+  item: string
 }
 
 export const purchaseProduct = async ({
@@ -30,6 +34,10 @@ export const purchaseProduct = async ({
   radarOptions,
   endUserCountry,
   licence,
+  parentCatalog,
+  catalog,
+  collection,
+  item,
 }: PurchaseRequest): Promise<unknown> => {
   if (!workspace) {
     throw new Error('Workspace is required for placing an order.')
@@ -39,9 +47,13 @@ export const purchaseProduct = async ({
     throw new Error('No token found. You need to be logged in to place an order')
   }
 
+  if (!catalog) {
+    throw new Error('Catalog cannot be undefined')
+  }
+
   const { access } = await fetchWorkspaceTokens({ workspace, token })
 
-  const purchaseApiUrl = `${API_URL}/api/catalogue/manage/catalogs/user-datasets/${workspace}/commercial-data`
+  const purchaseApiUrl = `${API_URL}/api/catalogue/stac/catalogs/${parentCatalog}/catalogs/${catalog}/collections/${collection}/items/${item}/quote`
 
   const requestBody: Record<string, unknown> = {
     url: datasetUrl,

@@ -8,7 +8,7 @@ import { OrderSelections } from './OrderSelections'
 import { TermsAndConditions } from './TermsAndConditions'
 import { ItemInfo } from './ItemInfo'
 import { ArrowLeftIcon } from '@radix-ui/react-icons'
-import { getCatalog } from '@/library/catalogUtils'
+import { getCatalog, getCatalogProvider } from '@/library/catalogUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { purchaseProduct } from '@/services/PurchaseProductService'
 import { useSelector } from '@xstate/store/react'
@@ -62,6 +62,7 @@ export const OrderDetailsPage: React.FC = () => {
     }
   }, [])
 
+  const catalogProvider = selectedCollection ? getCatalogProvider(selectedCollection) : undefined
   const aoiData = !isFullScene ? rawAoi : null
   const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
@@ -75,6 +76,10 @@ export const OrderDetailsPage: React.FC = () => {
     const requestBody = {
       workspace: workspaceUserName,
       token,
+      parentCatalog: 'commercial' as 'supported-datasets' | 'commercial',
+      catalog: catalogProvider,
+      collection: selectedCollection?.id ?? '',
+      item: orderId ?? '',
       datasetUrl: item.links[0].href,
       provider: providerType,
       productBundle: orderSelections.productBundle,
@@ -133,8 +138,10 @@ export const OrderDetailsPage: React.FC = () => {
     queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
     queryFn: () =>
       fetchQuote({
+        workspace: workspaceUserName,
+        token,
         parentCatalog: 'commercial',
-        catalog: catalog as 'planet' | 'airbus',
+        catalog: catalogProvider as 'planet' | 'airbus',
         collection: selectedCollection?.id ?? '',
         item: orderId ?? '',
         coordinates: coordinates,
