@@ -215,6 +215,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         item,
         collectionRender: itemRender,
       })
+      dataFinderStore.send({
+        type: 'zoomToItem',
+        item,
+      })
     } else {
       dataFinderStore.send({
         type: 'removePinnedItem',
