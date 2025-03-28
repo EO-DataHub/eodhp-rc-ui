@@ -75,7 +75,7 @@ export const OrderDetailsPage: React.FC = () => {
     const requestBody = {
       workspace: workspaceUserName,
       token,
-      datasetUrl: item.links[0].href,
+      item,
       provider: providerType,
       productBundle: orderSelections.productBundle,
       coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
@@ -84,7 +84,7 @@ export const OrderDetailsPage: React.FC = () => {
         providerType === 'airbus_sar'
           ? {
               orbit: orderSelections.orbit,
-              resolution_variant: orderSelections.resolutionVariant,
+              resolutionVariant: orderSelections.resolutionVariant,
               projection: orderSelections.projection,
             }
           : undefined,
@@ -133,10 +133,9 @@ export const OrderDetailsPage: React.FC = () => {
     queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
     queryFn: () =>
       fetchQuote({
-        parentCatalog: 'commercial',
-        catalog: catalog as 'planet' | 'airbus',
-        collection: selectedCollection?.id ?? '',
-        item: orderId ?? '',
+        workspace: workspaceUserName,
+        token,
+        item: item,
         coordinates: coordinates,
         licence: orderSelections.licence,
       }),

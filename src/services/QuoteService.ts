@@ -1,11 +1,10 @@
-const API_URL = import.meta.env.VITE_HUB_BASE_URL
-const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
+import { Item } from '@/types'
+import { fetchWorkspaceTokens } from './workspaceTokenService'
 
 export interface QuoteRequest {
-  parentCatalog: 'supported-datasets' | 'commercial'
-  catalog: 'planet' | 'airbus'
-  collection: string
-  item: string
+  workspace: string | undefined
+  token: string | undefined
+  item: Item | undefined
   coordinates?: number[][][]
   licence: string
 }
@@ -19,14 +18,29 @@ export interface QuoteResponse {
 }
 
 export const fetchQuote = async ({
-  parentCatalog,
-  catalog,
-  collection,
+  workspace,
+  token,
   item,
   coordinates,
   licence,
 }: QuoteRequest): Promise<QuoteResponse> => {
-  const quoteApiUrl = `${API_URL}/api/catalogue/stac/catalogs/${parentCatalog}/catalogs/${catalog}/collections/${collection}/items/${item}/quote`
+  if (!workspace) {
+    throw new Error('Workspace is required for retrieving a quote.')
+  }
+
+  if (!token) {
+    throw new Error('No token found. You need to be logged in to retrieve a quote')
+  }
+
+  const { access } = await fetchWorkspaceTokens(workspace, token)
+
+  const itemLink = item?.links.find((link) => link.rel === 'self')?.href
+
+  if (!itemLink) {
+    throw new Error("No 'self' link found in item.")
+  }
+
+  const quoteApiUrl = `${itemLink}/quote`
 
   const requestBody: Record<string, unknown> = {}
 
@@ -44,7 +58,7 @@ export const fetchQuote = async ({
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${API_TOKEN}`,
+        Authorization: `Bearer ${access}`,
       },
       body: JSON.stringify(requestBody),
     })
