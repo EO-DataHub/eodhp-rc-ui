@@ -78,7 +78,7 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
   if (!item || !collection || !catalog) {
     throw new Error('Item is not valid')
   }
-  const url = `${catalog}/items/${item}`
+  const url = `${catalog}/collections/${collection}/items/${item}`
 
   const response = await fetch(url, {
     method: 'GET',
