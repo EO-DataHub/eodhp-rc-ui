@@ -333,7 +333,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
             >
-              <Tooltip content="More Info">
+              <Tooltip content="View Metadata">
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
