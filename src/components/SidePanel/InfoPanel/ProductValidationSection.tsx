@@ -10,7 +10,6 @@ import { Badge, Flex, Heading, Link, Select, Table, Text } from '@radix-ui/theme
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
-// temporary because the date string in the data looks really weird
 function formatCustomDate(timestamp: string | undefined) {
   if (!timestamp) {
     return ''
