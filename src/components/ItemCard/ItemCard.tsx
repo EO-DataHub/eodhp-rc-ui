@@ -37,7 +37,7 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
     return null
   }
 
-  const metadataItems = extractStacMetadata(item, [])
+  const metadataItems = extractStacMetadata(item, ['providers'])
 
   const categorizationData = collectionCategorization[collectionId]
   const fields = [
