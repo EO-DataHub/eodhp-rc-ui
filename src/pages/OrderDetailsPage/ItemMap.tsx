@@ -3,6 +3,7 @@ import { Box } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
 import { ItemLayer } from '@/components/Map/layers/Item'
+import { AOILayer } from './AoiLayer'
 
 interface ItemMapProps {
   item: Item
@@ -16,7 +17,7 @@ const DEFAULT_MAP_VIEW = {
   zoom: 1,
 }
 
-export const ItemMap: React.FC<ItemMapProps> = ({ item }) => {
+export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson }) => {
   const mapRef = useRef<MapRef>(null)
 
   const showThumbnail = useCallback(() => {
@@ -42,6 +43,7 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item }) => {
         onLoad={showThumbnail}
       >
         <ItemLayer item={item} />
+        {aoiGeojson && <AOILayer geojson={aoiGeojson} />}
       </Maplibre>
     </Box>
   )
