@@ -4,6 +4,7 @@ import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
 import { ItemLayer } from '@/components/Map/layers/Item'
 import { AOILayer } from './AoiLayer'
+import { BoundingBoxLayer } from './BoundingBoxLayer'
 
 interface ItemMapProps {
   item: Item
@@ -25,14 +26,23 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
     const mapInstance = mapRef.current?.getMap()
     if (!mapInstance || !item?.bbox) return
 
-    const bbox = item.bbox
-    mapInstance.fitBounds(
-      [
-        [bbox[0], bbox[1]],
-        [bbox[2], bbox[3]],
-      ],
-      { padding: 20, duration: 0 },
-    )
+    // force layout recalculation
+    mapInstance.resize()
+
+    // defer to next event loop tick to allow resize/layout to settle
+    setTimeout(() => {
+      const bbox = item.bbox
+      mapInstance.fitBounds(
+        [
+          [bbox[0], bbox[1]],
+          [bbox[2], bbox[3]],
+        ],
+        {
+          padding: 20,
+          duration: 0,
+        },
+      )
+    }, 0)
   }, [item])
 
   return (
@@ -44,6 +54,7 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
         onLoad={showThumbnail}
       >
         <ItemLayer item={item} />
+        {!item.mapRender?.visible && item.bbox && <BoundingBoxLayer bbox={item.bbox} />}
         {aoiGeojson && providerType !== 'airbus_sar' && <AOILayer geojson={aoiGeojson} />}
       </Maplibre>
     </Box>
