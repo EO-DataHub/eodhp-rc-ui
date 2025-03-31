@@ -6,6 +6,8 @@ import { ItemLayer } from '@/components/Map/layers/Item'
 import { AOILayer } from './AoiLayer'
 import { BoundingBoxLayer } from './BoundingBoxLayer'
 import type { LngLatLike } from 'maplibre-gl'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface ItemMapProps {
   item: Item
@@ -22,6 +24,8 @@ const DEFAULT_MAP_VIEW = {
 
 export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType }) => {
   const mapRef = useRef<MapRef>(null)
+
+  const render = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
   // Set the initial view state based on the item's bounding box
   const initialViewState = item.bbox
@@ -66,7 +70,8 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
         onLoad={showThumbnail}
       >
         <ItemLayer item={item} />
-        {!item.mapRender?.visible && item.bbox && <BoundingBoxLayer bbox={item.bbox} />}
+        {!render?.quicklook_georeference && item.bbox && <BoundingBoxLayer bbox={item.bbox} />}
+
         {aoiGeojson && providerType !== 'airbus_sar' && <AOILayer geojson={aoiGeojson} />}
       </Maplibre>
     </Box>
