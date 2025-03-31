@@ -16,8 +16,8 @@ export interface Catalog {
 }
 
 export interface BaseStacRender {
-  assets: string | string[]
-  title?: string
+  title: string
+  assets: string[]
   rescale?: [number, number][]
   nodata?: number | string
   colormap_name?: string
@@ -36,6 +36,7 @@ export interface BaseStacRender {
   decode_times?: boolean
   consolidated?: boolean
   return_mask?: boolean
+  quicklook_georeference?: string
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
@@ -82,16 +83,21 @@ export interface Collection {
       roles?: string[]
     }
   }
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
   renders?: {
     [key: string]: BaseStacRender
   }
 }
+
+export type ItemCardType = 'query-item' | 'pinned-item'
 
 export interface Item {
   type: string
   stac_version: string
   stac_extensions: string[]
   id: string
+  pinId?: string
   collection: string
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
@@ -127,6 +133,10 @@ export interface Item {
   }
   tilesUrl: string | undefined
   render?: StacRender
+  mapRender?: {
+    visible: boolean
+    opacity: number
+  }
 }
 
 export interface CubeData {

@@ -1,39 +1,29 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useContext } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
-import { useQuery } from '@tanstack/react-query'
+import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
-import { useQueries } from '@tanstack/react-query'
-import { fetchCollections } from '@/services/collectionService'
-import { fetchItems } from '@/services/ItemService'
-import { Item } from '@/types'
+import { useQuery, useQueries } from '@tanstack/react-query'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
 
-export const MAX_TOTAL_ITEMS = 100
-export const PAGE_SIZE = 10
-
 export const DataFinderPage: React.FC = () => {
+  const { isAuthenticating, isAuthenticated, workspaceUserName, token } =
+    useContext(AuthenticationContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
-  const page = useSelector(dataFinderStore, (state) => state.context.page)
-  const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
-  const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  // This is a replacement for the isLoading flag from useQuery. Due to the usage of placeholder data
-  // in the useQuery hook, we need to keep track of the loading outside of it, because isLoading will
-  // be false after the first render.
-  const isLoading = useSelector(dataFinderStore, (state) => state.context.isLoading)
-
-  const queries = useQueries({
+  const collectionQueries = useQueries({
     queries: catalogs.map((catalog) => ({
       queryKey: ['Collections', catalog],
       queryFn: () => fetchCollections(catalog),
@@ -44,67 +34,89 @@ export const DataFinderPage: React.FC = () => {
     }),
   })
 
-  useEffect(() => {
-    if (queries.isFetched) {
-      const allCollections = queries.data
-      const foundCollection = allCollections.find((col) => col.id === collectionId)
-
-      if (foundCollection) {
-        dataFinderStore.send({ type: 'setCollection', collection: foundCollection })
-      } else {
-        navigate('/')
-      }
-    }
-  }, [collectionId, navigate, collection, queries])
-
-  const queryKey = JSON.stringify({ queryFilter, aoi: aoi?.geometry, mapBounds })
-  const fetchFunction = () =>
-    fetchItems({
-      limit: MAX_TOTAL_ITEMS,
-      mapBounds: mapBounds,
-      aoi: aoi,
-      selectedCollection: collection ?? undefined,
-      queryFilter: queryFilter,
-    })
-
-  const {
-    data: itemList = [],
-    isFetching,
-    isFetched,
-    error,
-  } = useQuery<Item[]>({
-    queryKey: ['Items', queryKey],
-    queryFn: fetchFunction,
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', workspaceUserName, token],
+    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!queryFilter || !!aoi || !!mapBounds,
-    placeholderData: (previousValue: Item[] | undefined): Item[] => previousValue ?? [],
+    enabled: !!workspaceUserName && !!token,
   })
 
-  // Reset page after refetch
-  useEffect(() => {
-    if (isFetched) {
-      dataFinderStore.send({ type: 'onFetched' })
-    }
-  }, [isFetched])
+  const userCollectionQuery = useQuery({
+    queryKey: ['UserCollections', workspaceUserName],
+    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
+    refetchOnWindowFocus: false,
+    enabled: !!workspaceUserName && !!workspaceTokensData,
+  })
 
-  // Slice the visible items based on the current page
-  const paginatedItems = itemList.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const findCollectionById = (
+    collections: Collection[] | undefined,
+    id: string | undefined,
+  ): Collection | undefined => {
+    return collections?.find((col) => col.id === id)
+  }
+
+  // Collection selection and redirection if not found
+  useEffect(() => {
+    if (!collectionId || isAuthenticating) return
+
+    const isUserCollectionId = collectionId.startsWith('my-')
+    const collectionIdWithoutPrefix = isUserCollectionId
+      ? collectionId.replace(/^my-/, '')
+      : collectionId
+
+    if (isUserCollectionId) {
+      // search only in user collections
+      if (isAuthenticated && userCollectionQuery.isFetched) {
+        const foundUser = findCollectionById(userCollectionQuery.data, collectionIdWithoutPrefix)
+        if (foundUser) {
+          dataFinderStore.send({ type: 'setCollection', collection: foundUser })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
+          return
+        }
+      }
+    } else {
+      // search only in public collections
+      if (collectionQueries.isFetched) {
+        const foundPublic = findCollectionById(collectionQueries.data, collectionIdWithoutPrefix)
+        if (foundPublic) {
+          dataFinderStore.send({ type: 'setCollection', collection: foundPublic })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
+          return
+        }
+      }
+    }
+
+    // redirect if collection not found
+    const allFetched = isUserCollectionId
+      ? userCollectionQuery.isFetched
+      : collectionQueries.isFetched
+
+    if (allFetched) {
+      navigate('/')
+    }
+  }, [
+    collectionId,
+    isAuthenticating,
+    isAuthenticated,
+    collectionQueries.data,
+    collectionQueries.isFetched,
+    userCollectionQuery.data,
+    userCollectionQuery.isFetched,
+    navigate,
+  ])
+
+  // Remove AOI from local storage on mount
+  useEffect(() => {
+    localStorage.removeItem('aoi')
+  }, [])
 
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
-        <SidePanel
-          items={itemList}
-          collection={collection ?? undefined}
-          isLoading={isLoading}
-          isFetching={isFetching}
-          error={!!error}
-          page={page}
-          setPage={(page) => dataFinderStore.send({ type: 'pageChange', page })}
-        />
+        <SidePanel collection={collection ?? undefined} />
       </Box>
       <Box height="100%">
-        <Map visibleItems={paginatedItems} />
+        <Map />
       </Box>
     </Box>
   )

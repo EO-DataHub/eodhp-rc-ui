@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
-import { Flex, Link, Text } from '@radix-ui/themes'
+import React, { useState, useContext } from 'react'
+import { Flex, Text } from '@radix-ui/themes'
 import { LoginButton } from './LoginButton'
 import MapsIcon from '@/assets/icons/maps-icon.svg?react'
+import FolderIcon from '@/assets/icons/folder-filled.svg?react'
 import AppsIcon from '@/assets/icons/apps-icon.svg?react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
@@ -12,23 +14,24 @@ export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
+  const { isAuthenticated } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
 
   return (
     <Flex px="5" py="3" align="center" justify="between" className={styles.container}>
-      <Link href="/" className={styles.logo}>
+      <Link to="/" className={styles.logo}>
         <EarthObservationDataHubLogo />
       </Link>
       <Flex gap="5" className={styles.navLinks}>
         <Flex gap="1" align="center">
-          <Link href="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
+          <Link to="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
             <Flex gap="3" align="center" px="4" py="2">
               <AppsIcon className={styles.icon} />
               <Text className={styles.text}>Catalogue</Text>
             </Flex>
           </Link>
           <Link
-            href="/finder/sentinel2_ard"
+            to="/finder/sentinel2_ard"
             className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
           >
             <Flex gap="3" align="center" px="4" py="2">
@@ -36,6 +39,14 @@ export const NavBar: React.FC = () => {
               <Text className={styles.text}>Maps</Text>
             </Flex>
           </Link>
+          {isAuthenticated && (
+            <Link to="/my-data/" className={styles.link}>
+              <Flex gap="3" align="center" px="4" py="2">
+                <FolderIcon className={styles.icon} />
+                <Text className={styles.text}>My Data</Text>
+              </Flex>
+            </Link>
+          )}
         </Flex>
 
         <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />

@@ -20,11 +20,13 @@
   align-items: left;
   margin: 3em 18em;
   padding-bottom: 3em;
+  min-height: 100vh;
 }
 
 .buttonsContainer {
   justify-content: right;
   margin-top: 2em;
+  padding-bottom: 6em;
 
   .cancelButton {
     border-radius: var(--Radius-2-max, 4px);
@@ -38,16 +40,30 @@
     border-radius: var(--Radius-2-max, 4px);
     background: var(--Colors-Accent-Accent-9, #4c72ba);
     cursor: pointer;
+
+    &:disabled {
+      background: var(--Colors-Neutral-Neutral-4, #eee);
+      color: var(--Colors-Neutral-Neutral-11, #888);
+      cursor: not-allowed;
+    }
   }
 }
 
 .bodyContainer {
+  flex-grow: 1;
   margin-top: 2em;
   margin-bottom: 2em;
   justify-content: space-between;
+  gap: 2em;
+
+  > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
 
   .selectionsContainer {
-    flex: 1;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
 
     .selection {
       align-items: center;
@@ -67,6 +83,7 @@
 
   .itemInfoContainer {
     flex: 1;
+    flex-direction: column;
     height: fit-content;
     border-radius: var(--Radius-2, 4px);
     border: 1px solid var(--Colors-Neutral-Neutral-Alpha-6, rgba(0, 0, 47, 0.15));
@@ -90,10 +107,6 @@
   }
 }
 
-.conditionsContainer {
-  margin-top: 2em;
-}
-
 .checkGroup {
   align-items: center;
   font-size: small;
@@ -105,4 +118,43 @@
   .linkText {
     cursor: pointer;
   }
+}
+
+.status {
+  justify-content: center;
+  align-items: center;
+  margin-top: 5em;
+}
+
+.cost {
+  justify-content: right;
+  margin-bottom: 1em;
+  display: flex;
+}
+
+.partialSceneText {
+  background-color: #0051f212;
+  padding: 1em;
+  margin-top: 1em;
+  justify-content: center;
+
+  .infoIcon {
+    margin-top: 0.2em;
+    margin-right: 0.5em;
+    width: 28px;
+  }
+}
+
+.sceneCheckbox {
+  align-items: center;
+  margin-top: 0.5em;
+}
+
+.labelText {
+  margin-left: 0.5em;
+}
+
+.asterisk {
+  color: red;
+  margin-left: 4px;
 }

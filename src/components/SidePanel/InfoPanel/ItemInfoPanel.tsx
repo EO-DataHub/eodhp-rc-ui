@@ -4,31 +4,34 @@ import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
-import { getCatalogByURL } from '@/library/catalogUtils'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItem } from '@/services/itemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
 interface ItemInfoPanelProps {
   item: Item | null
+  isUserItem?: boolean
   onClose: () => void
 }
 
-export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) => {
-  const rootCatalog = useMemo(() => {
+export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
+  const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url ? getCatalogByURL(url) : undefined
+    return url
   }, [item?.links])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () =>
-      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
     refetchOnWindowFocus: false,
-    enabled: !!item,
+    enabled: !!item && !isUserItem,
   })
+
+  const dataResult = isUserItem ? item : data
+  const isLoadingResult = isUserItem ? false : isLoading
+  const errorResult = isUserItem ? false : !!error
 
   return (
     <>
@@ -69,18 +72,26 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, onClose }) =
 
             <Box pt="6">
               <Tabs.Content value="metadata">
-                <MetadataSection stacElement={data} isLoading={isLoading} hasError={!!error} />
+                <MetadataSection
+                  stacElement={dataResult}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
+                />
               </Tabs.Content>
 
               <Tabs.Content value="assets">
-                <AssetSection item={data} isLoading={isLoading} hasError={!!error} />
+                <AssetSection
+                  item={dataResult}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
+                />
               </Tabs.Content>
 
               <Tabs.Content value="resources">
                 <AdditionalResourcesSection
-                  links={data?.links}
-                  isLoading={isLoading}
-                  hasError={!!error}
+                  links={dataResult?.links}
+                  isLoading={isLoadingResult}
+                  hasError={!!errorResult}
                 />
               </Tabs.Content>
             </Box>

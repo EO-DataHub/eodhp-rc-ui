@@ -3,12 +3,18 @@
   border-radius: 4px;
   overflow: hidden;
 
-  .button {
+  .poundSign {
     background-color: var(--app-background-dark-2);
     border: 2px solid white;
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
     :hover {
-      cursor: pointer;
+      cursor: default;
     }
   }
 

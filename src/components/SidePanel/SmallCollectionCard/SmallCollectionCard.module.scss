@@ -1,5 +1,6 @@
 .card {
   background-color: var(--app-background-dark-1);
+  flex-shrink: 0;
 
   .costButton {
     background-color: var(--app-background-dark-1);
@@ -22,6 +23,7 @@
   }
 
   .link {
+    cursor: pointer;
     color: var(--blue-contrast);
     text-decoration: none;
   

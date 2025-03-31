@@ -8,7 +8,16 @@
   "incidence_angle": {
     "ui:widget": "RangeWidget"
   },
+  "planet:clear_percent": {
+    "ui:widget": "RangeWidget"
+  },
+  "planet:cloud_percent": {
+    "ui:widget": "RangeWidget"
+  },
   "view:incidence_angle": {
+    "ui:widget": "RangeWidget"
+  },
+  "view:sun_azimuth": {
     "ui:widget": "RangeWidget"
   },
   "view:sun_elevation": {

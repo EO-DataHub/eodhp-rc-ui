@@ -15,15 +15,16 @@ import sat_v100_schema from '@/json-schema-forms/assets/schemas/sat/v1.0.0/form_
 import eo_v110_schema from '@/json-schema-forms/assets/schemas/eo/v1.1.0/form_schema.json'
 import eo_v200_schema from '@/json-schema-forms/assets/schemas/eo/v2.0.0/form_schema.json'
 import view_v100_schema from '@/json-schema-forms/assets/schemas/view/v1.0.0/form_schema.json'
+import cmip6_v100_schema from '@/json-schema-forms/assets/schemas/cmip6/v1.0.0/form_schema.json'
 import { CustomSelectWidget } from './widgets/CustomSelectWidget'
 import { CustomRangeWidget } from './widgets/CustomRangeWidget'
 import { CustomDateWidget } from './widgets/CustomDateWidget'
+import { CustomTextWidget } from './widgets/CustomTextWidget'
 
 interface QueryFormProps {
   schema: Record<string, unknown>
   onSubmit: (query: object) => void
   onReset?: boolean
-  boundingBox: [number, number, number, number]
 }
 
 interface InMemoryResolver {
@@ -41,6 +42,7 @@ const extensions: Record<string, JSONSchema> = {
   'https://test.eodatahub.org/schemas/eo/v1.1.0/form_schema.json': eo_v110_schema,
   'https://test.eodatahub.org/schemas/eo/v2.0.0/form_schema.json': eo_v200_schema,
   'https://test.eodatahub.org/schemas/view/v1.0.0/form_schema.json': view_v100_schema,
+  'https://test.eodatahub.org/schemas/cmip6/v1.0.0/form_schema.json': cmip6_v100_schema,
 }
 
 const inMemoryResolver: InMemoryResolver = {
@@ -60,55 +62,53 @@ export interface QueryFormRef {
   resetForm: () => void
 }
 
-export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(
-  ({ schema, onSubmit, boundingBox }, ref) => {
-    const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
-    const [formData, setFormData] = useState<Record<string, unknown>>({})
+export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(({ schema, onSubmit }, ref) => {
+  const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
+  const [formData, setFormData] = useState<Record<string, unknown>>({})
 
-    // Ensure that Buffer is available in the browser
-    if (!window.Buffer) {
-      window.Buffer = buffer.Buffer
-    }
+  // Ensure that Buffer is available in the browser
+  if (!window.Buffer) {
+    window.Buffer = buffer.Buffer
+  }
 
-    const widgets = {
-      SelectWidget: CustomSelectWidget,
-      RangeWidget: CustomRangeWidget,
-      DateWidget: CustomDateWidget,
-    }
+  const widgets = {
+    SelectWidget: CustomSelectWidget,
+    RangeWidget: CustomRangeWidget,
+    DateWidget: CustomDateWidget,
+    TextWidget: CustomTextWidget,
+  }
 
-    useEffect(() => {
-      buildSchema(schema)
-        .then((result) => {
-          setDereferencedSchema(result)
-        })
-        .catch(() => {
-          setDereferencedSchema({})
-        })
-    }, [schema])
+  useEffect(() => {
+    buildSchema(schema)
+      .then((result) => {
+        setDereferencedSchema(result)
+      })
+      .catch(() => {
+        setDereferencedSchema({})
+      })
+  }, [schema])
 
-    useImperativeHandle(ref, () => ({
-      resetForm: () => setFormData({}),
-    }))
+  useImperativeHandle(ref, () => ({
+    resetForm: () => setFormData({}),
+  }))
 
-    return (
-      <Form
-        className={styles.reactJsonSchemaForm}
-        schema={dereferencedSchema}
-        formData={formData}
-        uiSchema={uiSchema}
-        widgets={widgets}
-        validator={validator}
-        onChange={(e: IChangeEvent) => setFormData(e.formData)}
-        onSubmit={(d: IChangeEvent) => {
-          onSubmit(buildQuery(d.schema as JSONSchema, boundingBox, d.formData))
-        }}
-      >
-        <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
-          Apply
-        </Button>
-      </Form>
-    )
-  },
-)
+  return (
+    <Form
+      className={styles.reactJsonSchemaForm}
+      schema={dereferencedSchema}
+      formData={formData}
+      uiSchema={uiSchema}
+      widgets={widgets}
+      validator={validator}
+      onSubmit={(d: IChangeEvent) => {
+        onSubmit(buildQuery(d.schema as JSONSchema, d.formData))
+      }}
+    >
+      <Button type="submit" variant="solid" className={styles.reactJsonSchemaFormButton}>
+        Apply
+      </Button>
+    </Form>
+  )
+})
 
 QueryForm.displayName = 'QueryForm'

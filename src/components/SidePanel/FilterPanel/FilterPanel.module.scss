@@ -1,6 +1,7 @@
 .filterPanel {
-  width: 290px;
+  min-width: 290px;
   opacity: 0;
+  overflow: hidden;
   background-color: #fff;
   border-left: 1px solid #cdced6;
   color: #444;

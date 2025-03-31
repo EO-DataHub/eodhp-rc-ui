@@ -1,0 +1,28 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/planet_psscene.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PlanetScope Scene",
+  "type": "object",
+  "properties": {
+    "planet:start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "planet:end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "planet:clear_percent": {
+      "$ref": "#/$defs/clear_percent",
+      "title": "Percent clear"
+    }
+  },
+  "$defs": {
+    "clear_percent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "default": 20,
+      "operator": ">=",
+      "units": "%"
+    }
+  }
+}
