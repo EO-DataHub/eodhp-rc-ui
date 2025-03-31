@@ -262,7 +262,8 @@
     "renders": {
       "preview": {
         "title": "Preview (approximate location)",
-        "assets": ["thumbnail"]
+        "assets": ["thumbnail"],
+        "nodata": 0
       }
     }
   },
