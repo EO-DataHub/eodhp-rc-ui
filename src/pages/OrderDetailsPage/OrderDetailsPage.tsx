@@ -67,10 +67,17 @@ export const OrderDetailsPage: React.FC = () => {
   const aoiData = !isFullScene ? rawAoi : null
   const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
-  const isPlaceOrderDisabled =
-    !orderSelections.productBundle || mutation.isPending || !termsAccepted
+  const isPlaceOrderDisabled = useMemo(() => {
+    const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
-  const placeOrder = () => {
+    const isAirbusSarMissingSelections =
+      providerType === 'airbus_sar' &&
+      (!orderSelections.orbit || !orderSelections.resolutionVariant || !orderSelections.projection)
+
+    return Boolean(baseInvalid) || Boolean(isAirbusSarMissingSelections)
+  }, [orderSelections, mutation.isPending, termsAccepted, providerType])
+
+  function placeOrder() {
     if (!item) return
     const aoiCoordinates = aoiData?.geometry?.coordinates
 
