@@ -51,5 +51,7 @@ export const fetchUserCollections = async (
   }
 
   const data = await response.json()
-  return data.collections as Collection[]
+  const collections = data.collections as Collection[]
+
+  return collections
 }

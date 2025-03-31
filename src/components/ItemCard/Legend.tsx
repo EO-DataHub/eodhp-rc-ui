@@ -17,8 +17,19 @@ const Legend = ({ item }: LegendProps) => {
   const legendId = useId()
 
   const colormap_name = item?.render?.colormap_name
-  const rescale = item?.render?.rescale?.[0] ?? null
   const { data: colormap } = useColormap(colormap_name)
+  /**
+   * Extracts the rescale values from the item's render configuration.
+   * The rescale can be either:
+   * 1. A nested array like [[min, max], ...] where we take the first pair
+   * 2. A flat array like [min, max]
+   * Returns a tuple of [min, max] or null if not defined
+   */
+  const rescale = Array.isArray(item?.render?.rescale?.[0])
+    ? (item?.render?.rescale?.[0] as [number, number] | undefined)
+    : Array.isArray(item?.render?.rescale) && item?.render?.rescale.length === 2
+      ? (item?.render?.rescale as [number, number])
+      : null
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(1)
