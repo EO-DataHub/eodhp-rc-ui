@@ -1,5 +1,4 @@
-/* eslint-disable react/prop-types */
-// We're using TypeScript for prop validation, so PropTypes are not needed here.
+import React from 'react'
 import { Source, Layer } from 'react-map-gl/maplibre'
 interface AOILayerProps {
   geojson: GeoJSON.FeatureCollection
