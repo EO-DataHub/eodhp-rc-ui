@@ -5,6 +5,7 @@ import { Item } from '@/types'
 import { ItemLayer } from '@/components/Map/layers/Item'
 import { AOILayer } from './AoiLayer'
 import { BoundingBoxLayer } from './BoundingBoxLayer'
+import type { LngLatLike } from 'maplibre-gl'
 
 interface ItemMapProps {
   item: Item
@@ -21,6 +22,21 @@ const DEFAULT_MAP_VIEW = {
 
 export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType }) => {
   const mapRef = useRef<MapRef>(null)
+
+  // Set the initial view state based on the item's bounding box
+  const initialViewState = item.bbox
+    ? {
+        bounds: [
+          [item.bbox[0], item.bbox[1]],
+          [item.bbox[2], item.bbox[3]],
+        ] as [LngLatLike, LngLatLike],
+        fitBoundsOptions: { padding: 20 },
+      }
+    : {
+        latitude: DEFAULT_MAP_VIEW.latitude,
+        longitude: DEFAULT_MAP_VIEW.longitude,
+        zoom: DEFAULT_MAP_VIEW.zoom,
+      }
 
   const showThumbnail = useCallback(() => {
     const mapInstance = mapRef.current?.getMap()
@@ -44,7 +60,7 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
   return (
     <Box height="300px" width="100%">
       <Maplibre
-        initialViewState={DEFAULT_MAP_VIEW}
+        initialViewState={initialViewState}
         mapStyle={MAP_STYLE}
         ref={mapRef}
         onLoad={showThumbnail}
