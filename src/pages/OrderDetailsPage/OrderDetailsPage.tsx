@@ -197,6 +197,7 @@ export const OrderDetailsPage: React.FC = () => {
               item={item}
               isOptical={isOpticalData}
               aoiGeojson={aoiData ? { type: 'FeatureCollection', features: [aoiData] } : undefined}
+              providerType={providerType}
             />
           )}
           <Flex direction="column" gap="2">

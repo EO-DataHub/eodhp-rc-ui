@@ -8,6 +8,7 @@ import { AOILayer } from './AoiLayer'
 interface ItemMapProps {
   item: Item
   aoiGeojson?: GeoJSON.FeatureCollection
+  providerType: 'airbus_optical' | 'airbus_sar' | 'planet'
 }
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
@@ -17,7 +18,7 @@ const DEFAULT_MAP_VIEW = {
   zoom: 1,
 }
 
-export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson }) => {
+export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType }) => {
   const mapRef = useRef<MapRef>(null)
 
   const showThumbnail = useCallback(() => {
@@ -43,7 +44,7 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson }) => {
         onLoad={showThumbnail}
       >
         <ItemLayer item={item} />
-        {aoiGeojson && <AOILayer geojson={aoiGeojson} />}
+        {aoiGeojson && providerType !== 'airbus_sar' && <AOILayer geojson={aoiGeojson} />}
       </Maplibre>
     </Box>
   )

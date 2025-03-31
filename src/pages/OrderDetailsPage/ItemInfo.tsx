@@ -9,15 +9,21 @@ import {
   extractSAROrderItemDetails,
 } from '@/pages/OrderDetailsPage/extractOrderItemDetails'
 import parse from 'html-react-parser'
-import { ItemMap } from './ItemMap'
+import { ItemMap } from './ItemMap/ItemMap'
 
 interface ItemInfoProps {
   item: Item
   isOptical: boolean
   aoiGeojson?: GeoJSON.FeatureCollection
+  providerType: 'airbus_optical' | 'airbus_sar' | 'planet'
 }
 
-export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson }) => {
+export const ItemInfo: React.FC<ItemInfoProps> = ({
+  item,
+  isOptical,
+  aoiGeojson,
+  providerType,
+}) => {
   const metadata: MetadataItem[] = useMemo(() => {
     const ignoredFields = ['assets', 'providers', 'links']
     return item ? extractStacMetadata(item, ignoredFields) : []
@@ -42,7 +48,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson 
   return (
     <Flex gap="2" className={styles.itemInfoContainer}>
       <Flex>
-        <ItemMap item={item} aoiGeojson={aoiGeojson} />
+        <ItemMap item={item} aoiGeojson={aoiGeojson} providerType={providerType} />
       </Flex>
 
       <Flex direction="column" gap="0.5" className={styles.itemInfo}>
