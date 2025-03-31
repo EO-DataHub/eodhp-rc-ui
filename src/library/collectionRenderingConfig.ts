@@ -110,11 +110,7 @@ function translateServerConfigToCollectionConfig(
       for (const [renderId, renderConfig] of Object.entries(renders)) {
         const optionalProps = {
           bidx: renderConfig.bidx,
-          rescale: Array.isArray(renderConfig.rescale?.[0])
-            ? renderConfig.rescale
-            : renderConfig.rescale
-              ? [renderConfig.rescale]
-              : undefined,
+          rescale: renderConfig.rescale,
           colormap: renderConfig.colormap,
           variable: renderConfig.variable,
           colormap_name: renderConfig.colormap_name,
