@@ -441,7 +441,6 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
   location: locations,
   timePeriod: timePeriods,
   license: licenses,
-  keyword: keywords,
 }
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {

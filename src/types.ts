@@ -166,7 +166,6 @@ export interface QuickFilter {
   resolution?: string
   provider?: string
   location?: string
-  keyword?: string
   timePeriod?: string
   license?: string
 }
