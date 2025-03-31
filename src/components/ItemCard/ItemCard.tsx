@@ -6,6 +6,7 @@ import {
   Cross2Icon,
   DrawingPinIcon,
   EyeOpenIcon,
+  EyeClosedIcon,
   InfoCircledIcon,
   ZoomInIcon,
 } from '@radix-ui/react-icons'
@@ -337,7 +338,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
                 >
                   <Tooltip content="Toggle visibility">
-                    <EyeOpenIcon />
+                    {item.mapRender?.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
                   </Tooltip>
                 </ActionButton>
                 <ActionButton
