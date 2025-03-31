@@ -26,23 +26,19 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
     const mapInstance = mapRef.current?.getMap()
     if (!mapInstance || !item?.bbox) return
 
-    // force layout recalculation
     mapInstance.resize()
 
-    // defer to next event loop tick to allow resize/layout to settle
-    setTimeout(() => {
-      const bbox = item.bbox
-      mapInstance.fitBounds(
-        [
-          [bbox[0], bbox[1]],
-          [bbox[2], bbox[3]],
-        ],
-        {
-          padding: 20,
-          duration: 0,
-        },
-      )
-    }, 0)
+    const bbox = item.bbox
+    mapInstance.fitBounds(
+      [
+        [bbox[0], bbox[1]],
+        [bbox[2], bbox[3]],
+      ],
+      {
+        padding: 20,
+        duration: 0,
+      },
+    )
   }, [item])
 
   return (
