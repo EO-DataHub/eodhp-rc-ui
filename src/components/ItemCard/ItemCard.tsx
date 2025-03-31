@@ -215,10 +215,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         item,
         collectionRender: itemRender,
       })
-      dataFinderStore.send({
-        type: 'zoomToItem',
-        item,
-      })
     } else {
       dataFinderStore.send({
         type: 'removePinnedItem',
@@ -323,15 +319,15 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                     </Tooltip>
                   </ActionButton>
                 )}
-              </>
-            )}
-            {isPinnedCard && (
-              <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
                   <Tooltip content="Zoom to item">
                     <ZoomInIcon />
                   </Tooltip>
                 </ActionButton>
+              </>
+            )}
+            {isPinnedCard && (
+              <>
                 <ActionButton
                   active={item.mapRender?.visible}
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
@@ -346,6 +342,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 >
                   <Tooltip content="Change item opacity">
                     <BlendingModeIcon />
+                  </Tooltip>
+                </ActionButton>
+                <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
+                  <Tooltip content="Zoom to item">
+                    <ZoomInIcon />
                   </Tooltip>
                 </ActionButton>
               </>
