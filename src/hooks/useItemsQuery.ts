@@ -1,7 +1,7 @@
 import { useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { fetchItems, fetchUserItems } from '@/services/ItemService'
+import { fetchItems, fetchUserItems } from '@/services/itemService'
 import { Item } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'

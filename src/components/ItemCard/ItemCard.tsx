@@ -24,7 +24,7 @@ import {
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItem } from '@/services/itemService'
 import Legend from './Legend'
 
 interface ItemCardProps {

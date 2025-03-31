@@ -6,7 +6,7 @@ import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItem } from '@/services/itemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
