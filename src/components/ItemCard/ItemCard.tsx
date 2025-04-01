@@ -184,6 +184,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
     // For time variable items, check if we have the required data
     if (!data?.properties) {
+      setItemRender(undefined)
       return
     }
 
