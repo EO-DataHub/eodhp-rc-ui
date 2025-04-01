@@ -140,6 +140,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     ({ context }) => context.collectionRenderOptions,
   )
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+
   const [itemRender, setItemRender] = useState(collectionRender)
 
   useEffect(() => {
@@ -151,9 +152,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       setItemRender(collectionRender)
       return
     }
-
-    // by default, set the item render for time variable items to undefined
-    setItemRender(undefined)
 
     // For time variable items, check if we have the required data
     if (!data?.properties) {
@@ -208,29 +206,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     }
   }
 
-  const handlePinToggle = () => {
-    if (!itemRender) return
-    if (!isAlreadyPinned) {
-      dataFinderStore.send({
-        type: 'addPinnedItem',
-        item,
-        collectionRender: itemRender,
-      })
-      dataFinderStore.send({
-        type: 'zoomToItem',
-        item,
-      })
-    } else {
-      dataFinderStore.send({
-        type: 'removePinnedItem',
-        item: {
-          ...item,
-          pinId: getPinnedItemId(item, itemRender),
-        },
-      })
-    }
-  }
-
   const cardTitle = useMemo(() => {
     if (!data?.properties?.title) {
       return item.id
@@ -253,7 +228,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           flexShrink="0"
           p="4"
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={handlePinToggle}
+          onClick={() =>
+            itemRender &&
+            dataFinderStore.send({
+              type: 'addPinnedItem',
+              item,
+              collectionRender: itemRender,
+            })
+          }
         >
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
@@ -287,7 +269,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={handlePinToggle}
+                onClick={() =>
+                  dataFinderStore.send({
+                    type: 'removePinnedItem',
+                    item,
+                  })
+                }
               >
                 <Cross2Icon />
               </IconButton>
@@ -312,7 +299,15 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
-                  <ActionButton onClick={handlePinToggle}>
+                  <ActionButton
+                    onClick={() =>
+                      dataFinderStore.send({
+                        type: 'addPinnedItem',
+                        item,
+                        collectionRender: itemRender,
+                      })
+                    }
+                  >
                     <Tooltip content="Pin Item">
                       <DrawingPinIcon />
                     </Tooltip>
