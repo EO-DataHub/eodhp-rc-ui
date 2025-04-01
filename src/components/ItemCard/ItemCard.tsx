@@ -182,9 +182,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       return
     }
 
+    // by default, set the item render for time variable items to undefined
+    setItemRender(undefined)
+
     // For time variable items, check if we have the required data
     if (!data?.properties) {
-      setItemRender(undefined)
       return
     }
 
