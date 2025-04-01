@@ -1,5 +1,5 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
-import { Item, StacRender } from '@/types'
+import { Item } from '@/types'
 import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
@@ -142,7 +142,12 @@ function squareAndTransformBoundingBox(bbox: number[]): number[] {
   return [geoMinSquare[0], geoMinSquare[1], geoMaxSquare[0], geoMaxSquare[1]]
 }
 
-export const QuicklookItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+export const QuicklookItemLayer = ({ item }: { item: Item }) => {
+  // Confirm that the item has a quicklook asset and a georeference type
+  if (!item.render?.quicklook_georeference) return null
+
+  const { render } = item
+
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
   const quicklookUrl = getAssetUrl(item, render.assets[0])
 
