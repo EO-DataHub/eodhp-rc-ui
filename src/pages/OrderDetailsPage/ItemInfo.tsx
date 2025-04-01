@@ -45,6 +45,14 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({
       : extractSAROrderItemDetails(metadata)
   }, [metadata, isOptical, providerType, item])
 
+  if (Object.keys(orderItemDetails).length === 0) {
+    return (
+      <Flex gap="3" align="center">
+        <Text>No metadata available.</Text>
+      </Flex>
+    )
+  }
+
   return (
     <Flex gap="2" className={styles.itemInfoContainer}>
       <Flex>
