@@ -3,7 +3,6 @@ import { Flex, Select, Box } from '@radix-ui/themes'
 import styles from './QuickFilterMenu.module.scss'
 import {
   dataCategories,
-  keywords,
   licenses,
   locations,
   providers,
@@ -108,26 +107,6 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
           <Select.Content position="popper">
             <Select.Group>
               {locations.map((item) => (
-                <Select.Item value={item.value} key={item.value}>
-                  {item.label}
-                </Select.Item>
-              ))}
-            </Select.Group>
-          </Select.Content>
-        </Select.Root>
-      </Box>
-
-      <Box flexGrow="1" width={width} flexShrink="0">
-        <Select.Root
-          size={inputSize}
-          key={filters.keyword}
-          value={filters.keyword}
-          onValueChange={(value) => onFilterChange(value, 'keyword')}
-        >
-          <Select.Trigger style={{ width: '100%' }} placeholder="Keywords" />
-          <Select.Content position="popper">
-            <Select.Group>
-              {keywords.map((item) => (
                 <Select.Item value={item.value} key={item.value}>
                   {item.label}
                 </Select.Item>
