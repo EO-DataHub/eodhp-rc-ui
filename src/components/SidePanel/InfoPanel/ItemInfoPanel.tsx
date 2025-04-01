@@ -66,6 +66,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                   stacElement={dataResult}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
+                  ignoredFields={['providers']}
                 />
               </Tabs.Content>
 
