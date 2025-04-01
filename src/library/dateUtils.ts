@@ -20,3 +20,10 @@ export const getFormattedDateRange = (interval: (string | null)[]): string => {
 
   return `${startDate.toLocaleDateString('en-GB')} - ${endDateStr ? endDate.toLocaleDateString('en-GB') : 'present'}`
 }
+
+// this is consistent with the date format used in STAC metadata
+export const formatDateToMMDDYEAR = (value: string | number | Date): string => {
+  const date = new Date(value)
+  if (isNaN(date.getTime())) return 'Invalid Date'
+  return date.toLocaleDateString('en-US')
+}
