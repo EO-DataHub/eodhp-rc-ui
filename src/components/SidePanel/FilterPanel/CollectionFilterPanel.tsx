@@ -84,7 +84,6 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
                 <Select.Item value="resolution">Resolution</Select.Item>
                 <Select.Item value="provider">Provider</Select.Item>
                 <Select.Item value="location">Location</Select.Item>
-                <Select.Item value="keyword">Keywords</Select.Item>
                 <Select.Item value="license">License</Select.Item>
               </Select.Group>
             </Select.Content>

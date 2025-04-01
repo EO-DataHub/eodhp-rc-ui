@@ -18,7 +18,7 @@ export interface Catalog {
 export interface BaseStacRender {
   title: string
   assets: string[]
-  rescale?: [number, number][]
+  rescale?: [number, number][] | number[]
   nodata?: number | string
   colormap_name?: string
   colormap?: Record<string, string>
@@ -166,7 +166,6 @@ export interface QuickFilter {
   resolution?: string
   provider?: string
   location?: string
-  keyword?: string
   timePeriod?: string
   license?: string
 }

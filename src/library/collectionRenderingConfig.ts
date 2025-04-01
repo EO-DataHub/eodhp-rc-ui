@@ -22,6 +22,7 @@ interface ServerRenderConfig {
   assets: string[]
   bidx?: number[]
   rescale?: [number, number][]
+  nodata?: number | string
   colormap?: Record<string, string>
   colormap_name?: string
   color_formula?: string
@@ -71,7 +72,16 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
     queryParams = {
       ...queryParams,
       ...render,
-      rescale: render.rescale ? render.rescale.map((r) => r.join(',')) : undefined,
+      // Handles rescale parameter which can be either:
+      // 1. A nested array of [min,max] pairs: [[0,100], [0,255]]
+      // 2. A single [min,max] pair: [0,100]
+      // Converts to string array format required by tiler: ["0,100", "0,255"]
+      rescale: render.rescale
+        ? (Array.isArray(render.rescale[0])
+            ? (render.rescale as [number, number][])
+            : [render.rescale as [number, number]]
+          ).map(([min, max]) => `${min},${max}`)
+        : undefined,
       colormap: render.colormap ? JSON.stringify(render.colormap) : undefined,
     }
   }
@@ -102,6 +112,7 @@ function translateServerConfigToCollectionConfig(
         const optionalProps = {
           bidx: renderConfig.bidx,
           rescale: renderConfig.rescale,
+          nodata: renderConfig.nodata,
           colormap: renderConfig.colormap,
           variable: renderConfig.variable,
           colormap_name: renderConfig.colormap_name,
