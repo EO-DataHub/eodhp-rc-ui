@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState, useEffect } from 'react'
+import React, { useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
 import {
@@ -140,8 +140,37 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     ({ context }) => context.collectionRenderOptions,
   )
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // In order to determine if the item is already pinned, we need a unique ID
+  // for the pin to query the existing pinned items. If the item already has a
+  // pinId, we can use it. Otherwise, for query items, we need to generate a
+  // new one based on the item ID and the collection/item render.
+  const pinId =
+    item.pinId ??
+    (itemRender
+      ? getPinnedItemId(item, itemRender)
+      : collectionRender
+        ? getPinnedItemId(item, collectionRender)
+        : undefined)
+  const isAlreadyPinned = pinnedItems.some((pinnedItem) => pinnedItem.pinId === pinId)
+
+  const unpinItem = useCallback(
+    () => dataFinderStore.send({ type: 'removePinnedItem', item: { ...item, pinId } }),
+    [item, pinId],
+  )
+
+  const pinItem = useCallback(
+    () =>
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item,
+        collectionRender: (itemRender ?? collectionRender)!,
+      }),
+    [item, collectionRender, itemRender],
+  )
 
   useEffect(() => {
     // If not a time variable item, use collectionRender
@@ -184,13 +213,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
 
-  const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
-    state.context.pinnedItems.some(
-      (pinnedItem) =>
-        collectionRender && pinnedItem.pinId === getPinnedItemId(item, collectionRender),
-    ),
-  )
-
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -228,14 +250,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           flexShrink="0"
           p="4"
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={() =>
-            itemRender &&
-            dataFinderStore.send({
-              type: 'addPinnedItem',
-              item,
-              collectionRender: itemRender,
-            })
-          }
+          onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
         >
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
@@ -269,12 +284,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={() =>
-                  dataFinderStore.send({
-                    type: 'removePinnedItem',
-                    item,
-                  })
-                }
+                onClick={unpinItem}
               >
                 <Cross2Icon />
               </IconButton>
@@ -299,32 +309,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
-                  <ActionButton
-                    onClick={() =>
-                      dataFinderStore.send({
-                        type: 'addPinnedItem',
-                        item,
-                        collectionRender: itemRender,
-                      })
-                    }
-                  >
+                  <ActionButton onClick={pinItem}>
                     <Tooltip content="Pin Item">
                       <DrawingPinIcon />
                     </Tooltip>
                   </ActionButton>
                 ) : (
-                  <ActionButton
-                    onClick={() =>
-                      dataFinderStore.send({
-                        type: 'removePinnedItem',
-                        item: {
-                          ...item,
-                          pinId: item.pinId ?? getPinnedItemId(item, itemRender),
-                        },
-                      })
-                    }
-                    active={isAlreadyPinned}
-                  >
+                  <ActionButton onClick={unpinItem} active={isAlreadyPinned}>
                     <Tooltip content="Unpin Item">
                       <DrawingPinIcon />
                     </Tooltip>
