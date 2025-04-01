@@ -318,7 +318,18 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                     </Tooltip>
                   </ActionButton>
                 ) : (
-                  <ActionButton onClick={handlePinToggle} active={isAlreadyPinned}>
+                  <ActionButton
+                    onClick={() =>
+                      dataFinderStore.send({
+                        type: 'removePinnedItem',
+                        item: {
+                          ...item,
+                          pinId: item.pinId ?? getPinnedItemId(item, itemRender),
+                        },
+                      })
+                    }
+                    active={isAlreadyPinned}
+                  >
                     <Tooltip content="Unpin Item">
                       <DrawingPinIcon />
                     </Tooltip>
