@@ -22,6 +22,7 @@ interface ServerRenderConfig {
   assets: string[]
   bidx?: number[]
   rescale?: [number, number][]
+  nodata?: number | string
   colormap?: Record<string, string>
   colormap_name?: string
   color_formula?: string
@@ -102,6 +103,7 @@ function translateServerConfigToCollectionConfig(
         const optionalProps = {
           bidx: renderConfig.bidx,
           rescale: renderConfig.rescale,
+          nodata: renderConfig.nodata,
           colormap: renderConfig.colormap,
           variable: renderConfig.variable,
           colormap_name: renderConfig.colormap_name,
