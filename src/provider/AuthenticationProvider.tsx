@@ -29,9 +29,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
 
   const login = () => {
     if (isAuthenticated) return Promise.resolve()
-    return authenticationInstance.login({
-      redirectUri: `${location.origin}${BASE_PATH}/keycloak-redirect.html`,
-    })
+    return authenticationInstance.login()
   }
   const logout = () => {
     return authenticationInstance.logout()
