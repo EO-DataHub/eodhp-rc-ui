@@ -33,14 +33,6 @@ const routes = [
       },
     ],
   },
-  {
-    // Important:
-    // This prevents infinite redirect loops after Keycloak login when the hash URL
-    // contains state and code params (e.g. #/state=...&code=...).
-    // Using <Navigate /> here would cause Keycloak to re-initiate SSO over and over.
-    path: '*',
-    element: <DataDiscoveryPage />,
-  },
 ]
 
 const routesWithErrorFallback = routes.map((route) => ({

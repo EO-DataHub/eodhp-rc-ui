@@ -14,7 +14,7 @@ export const ProtectedRoute: React.FC = () => {
     }
   }, [isAuthenticating, isAuthenticated])
 
-  if (!hasStartedAuth) {
+  if (!hasStartedAuth || (isAuthenticating && !isAuthenticated)) {
     return <LoadingIndicator size="3" />
   }
 
