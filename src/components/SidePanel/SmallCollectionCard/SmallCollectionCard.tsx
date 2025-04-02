@@ -9,7 +9,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
-  onChangeCollection: (show: boolean) => void
+  onChangeCollection: () => void
   isLicenseProprietary: boolean
 }
 
@@ -45,7 +45,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
         <Text size="2" className={styles.text}>
           {getFormattedDateRange(dateInterval)}
         </Text>
-        <Link size="2" mt="2" className={styles.link} onClick={() => onChangeCollection(true)}>
+        <Link size="2" mt="2" className={styles.link} onClick={() => onChangeCollection()}>
           Change Collection
         </Link>
       </Flex>
