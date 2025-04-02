@@ -108,6 +108,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
   const handleChangeCollection = (collection: Collection) => {
     onCloseCollectionPanel()
     setSelectedCollectionInfo(null)
+    setIsFilterOpen(false)
 
     if (collection.isUserCollection) {
       navigate(`/finder/my-${collection.id}`)

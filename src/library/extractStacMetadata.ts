@@ -10,7 +10,11 @@ export const extractStacMetadata = (
   const metadataFieldsFilterFunc = (key: string) => !ignoredFields.includes(key)
 
   if (stacElement.type === 'Collection') {
-    return StacFields.formatCollection(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
+    const collectionCopy = { ...stacElement } as Collection
+    if (collectionCopy.providers === null) {
+      collectionCopy.providers = []
+    }
+    return StacFields.formatCollection(collectionCopy, metadataFieldsFilterFunc) as MetadataItem[]
   }
 
   return StacFields.formatItemProperties(stacElement, metadataFieldsFilterFunc) as MetadataItem[]

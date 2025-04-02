@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { filterMapping, keywords } from '@/constants/collectionCategorizations'
+import { filterMapping } from '@/constants/collectionCategorizations'
 import { Button, Flex } from '@radix-ui/themes'
 import { QuickFilter } from '@/types'
 import { CrossCircledIcon } from '@radix-ui/react-icons'
@@ -19,8 +19,8 @@ export const FilterTags: React.FC<FilterTagsProps> = ({
     () =>
       Object.entries(filters)
         .map(([filterKey, filterValue]) => {
-          const items = filterMapping[filterKey as keyof QuickFilter] || keywords
-          const filterItem = items.find((item) => item.value === filterValue)
+          const items = filterMapping[filterKey as keyof QuickFilter]
+          const filterItem = items?.find((item) => item.value === filterValue)
           return filterItem ? { key: filterKey, ...filterItem } : null
         })
         .filter(Boolean),

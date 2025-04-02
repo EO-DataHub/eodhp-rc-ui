@@ -6,6 +6,8 @@ import { getAuthenticatedAxios } from '../library/axios'
 import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 
+const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
+
 const initOptions = {
   url: import.meta.env.VITE_KEYCLOAK_URL as string,
   realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
@@ -74,7 +76,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
     authenticationInstance
       .init({
         onLoad: initOptions.onLoad as KeycloakOnLoad,
-        silentCheckSsoRedirectUri: `${location.origin}/silent-check-sso.html`,
+        silentCheckSsoRedirectUri: `${location.origin}${BASE_PATH}/silent-check-sso.html`,
       })
       .then((auth) => {
         setIsAuthenticated(auth)
