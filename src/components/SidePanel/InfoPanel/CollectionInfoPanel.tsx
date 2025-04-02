@@ -28,7 +28,9 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
           <Flex direction="column" gap="1">
             <Flex justify="between" align="center">
               <Text weight="medium" size="5" className={styles.title} title={selectedCollection.id}>
-                {selectedCollection.title ?? selectedCollection.id}
+                {selectedCollection.displayedTitle ??
+                  selectedCollection.title ??
+                  selectedCollection.id}
               </Text>
               <Flex direction="row" gap="5" align="center">
                 <IconButton variant="ghost" onClick={onClose}>

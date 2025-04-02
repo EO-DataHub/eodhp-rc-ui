@@ -87,20 +87,30 @@ export const useCollections = () => {
     }
 
     return sortedCollections.filter((collection) => {
+      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
+
       if (!isValidCollectionId(collection.id)) {
-        return false
+        return (
+          // check if user is filtering my-data
+          entries.length === 1 && entries[0][1] === 'lic:my-data' && collection.isUserCollection
+        )
       }
 
       const categorizationData = collectionCategorization[collection.id]
-      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
 
       // one collection must satisfy all selected filter options to be included
       for (const [filterKey, filterValue] of entries) {
         if (
           filterKey in categorizationData &&
           filterValue !== undefined &&
+          filterValue !== 'lic:my-data' &&
           !(categorizationData[filterKey] as string[]).includes(filterValue)
         ) {
+          return false
+        }
+
+        // Filter user collection
+        if (filterValue === 'lic:my-data' && !collection.isUserCollection) {
           return false
         }
       }
