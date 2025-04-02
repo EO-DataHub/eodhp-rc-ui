@@ -149,7 +149,7 @@ export const useCollections = () => {
     setFilters,
     groupBy,
     setGroupBy,
-    isLoading: isLoading,
+    isLoading,
     error,
     errorMessages,
     sortedCollections,
