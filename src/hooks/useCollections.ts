@@ -1,5 +1,5 @@
-import { useQueries } from '@tanstack/react-query'
-import { fetchCollections } from '@/services/collectionService'
+import { useQueries, useQuery } from '@tanstack/react-query'
+import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
 import type { Collection, QuickFilter } from '@/types'
 import { catalogs } from '@/constants/catalogs'
 import {
@@ -7,8 +7,10 @@ import {
   filterMapping,
   isValidCollectionId,
 } from '@/constants/collectionCategorizations'
-import { useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
 import { isCollectionMatchingSearch } from '@/library/collectionUtils'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 
 export const GROUP_BY_KEY = 'groupBy'
 
@@ -24,21 +26,59 @@ export const useCollections = () => {
     })),
   })
 
-  const isLoading = queries.some((query) => query.isLoading)
-  const error = queries.some((query) => query.isError)
+  const { workspaceUserName, token, isAuthenticating } = useContext(AuthenticationContext)
+
+  const { data: workspaceTokensData, isFetching: isTokenLoading } = useQuery({
+    queryKey: ['WorkspaceTokens', workspaceUserName, token],
+    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!workspaceUserName && !!token,
+  })
+
+  const {
+    data: userCollections,
+    // we want to show the loading screen even when this query is pending / has no data
+    // (i.e waiting for the token query to finish and be enabled)
+    isPending: isUserCollectionPending,
+    error: userCollectionError,
+  } = useQuery({
+    queryKey: ['UserCollections', workspaceUserName],
+    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
+    refetchOnWindowFocus: false,
+    enabled: !!workspaceUserName && !!workspaceTokensData,
+  })
+
+  const isLoading =
+    queries.some((query) => query.isLoading) ||
+    isAuthenticating ||
+    (workspaceUserName && (isUserCollectionPending || isTokenLoading))
+
+  const error = queries.some((query) => query.isError) || userCollectionError
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
-  const collectionCount = queries.reduce((total, query) => total + (query.data?.length ?? 0), 0)
+  const collectionCount =
+    queries.reduce((total, query) => total + (query.data?.length ?? 0), 0) + useCollections.length
 
   const sortedCollections = useMemo(() => {
-    const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
+    const mergedCollections: Collection[] = queries
+      .flatMap((query) => query.data ?? [])
+      .map((collection) => ({
+        ...collection,
+        displayedTitle: collection.title,
+      }))
+
+    const updatedUserCollections = userCollections?.map((collection) => ({
+      ...collection,
+      displayedTitle: `My ${collection.title}`,
+      isUserCollection: true,
+    }))
 
     // sort and filter base on search text
-    return [...mergedCollections]
+    return [...mergedCollections, ...(updatedUserCollections ?? [])]
       .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
       .filter((collection) => {
         return isCollectionMatchingSearch(collection, searchText)
       })
-  }, [queries, searchText])
+  }, [queries, searchText, userCollections])
 
   const filteredCollections = useMemo(() => {
     // no filter applied
@@ -99,7 +139,7 @@ export const useCollections = () => {
     setFilters,
     groupBy,
     setGroupBy,
-    isLoading,
+    isLoading: isLoading,
     error,
     errorMessages,
     sortedCollections,

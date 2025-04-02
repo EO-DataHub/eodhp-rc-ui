@@ -4,6 +4,7 @@ import { Collection } from '@/types'
 import { Flex, Text, Inset } from '@radix-ui/themes'
 import styles from './UserCollectionCard.module.scss'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { getFormattedDateRange } from '@/library/dateUtils'
 
 interface UserCollectionCardProps {
@@ -24,6 +25,8 @@ export const UserCollectionCard: React.FC<UserCollectionCardProps> = ({ collecti
   const navigate = useNavigate()
 
   const handleOpenCollection = () => {
+    // See: ItemPanel.tsx ~ln 50
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
     navigate(`/finder/my-${collection.id}`)
   }
 
