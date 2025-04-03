@@ -57,21 +57,16 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
       return null
     }
 
+    let formattedText: string | TrustedHTML = fieldProperty.formatted
+
     if (field === 'order_options') {
-      return (
-        <Text key={field} size="1" className={styles.text}>
-          <Text weight="medium">{fieldProperty.label}</Text>:{' '}
-          <Text
-            dangerouslySetInnerHTML={{ __html: (fieldProperty.value as CubeData).productBundle }}
-          ></Text>
-        </Text>
-      )
+      formattedText = (fieldProperty.value as CubeData).productBundle
     }
 
     return (
       <Text key={field} size="1" className={styles.text}>
         <Text weight="medium">{fieldProperty.label}</Text>:{' '}
-        <Text dangerouslySetInnerHTML={{ __html: fieldProperty.formatted }}></Text>
+        <Text dangerouslySetInnerHTML={{ __html: formattedText }}></Text>
       </Text>
     )
   })
