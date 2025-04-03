@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useContext } from 'react'
 import { Flex, Grid, Text, TextField, Tabs, Box } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchUserCollections } from '@/services/collectionService'
 import { UserCollectionCard } from '@/components/UserCollectionCard/UserCollectionCard'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
@@ -11,18 +12,25 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
-  const { workspaceUserName } = useContext(AuthenticationContext)
+  const { workspaceUserName, token } = useContext(AuthenticationContext)
   const [searchText, setSearchText] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value)
   }
 
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', workspaceUserName, token],
+    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!workspaceUserName && !!token,
+  })
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['UserCollections', workspaceUserName],
-    queryFn: () => fetchUserCollections(workspaceUserName!),
+    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName,
+    enabled: !!workspaceUserName && !!workspaceTokensData,
   })
 
   const sortedCollections = useMemo(() => {

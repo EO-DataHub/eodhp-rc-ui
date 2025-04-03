@@ -4,13 +4,13 @@
   "title": "PlanetScope Scene",
   "type": "object",
   "properties": {
-    "start_datetime": {
+    "planet:start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
-    "end_datetime": {
+    "planet:end_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
-    "clear_percent": {
+    "planet:clear_percent": {
       "$ref": "#/$defs/clear_percent",
       "title": "Percent clear"
     }
@@ -20,7 +20,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 100,
-      "default": 0,
+      "default": 20,
       "operator": ">=",
       "units": "%"
     }

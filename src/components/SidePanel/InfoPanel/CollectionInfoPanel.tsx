@@ -1,5 +1,5 @@
-import { Cross1Icon, Link1Icon, Share1Icon } from '@radix-ui/react-icons'
-import { Badge, Box, Flex, IconButton, Tabs, Text, Tooltip } from '@radix-ui/themes'
+import { Cross1Icon } from '@radix-ui/react-icons'
+import { Badge, Box, Flex, IconButton, Tabs, Text } from '@radix-ui/themes'
 import React from 'react'
 import styles from './InfoPanel.module.scss'
 import { TruncatedText } from './TruncatedText'
@@ -31,16 +31,6 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
                 {selectedCollection.title ?? selectedCollection.id}
               </Text>
               <Flex direction="row" gap="5" align="center">
-                <Tooltip content="Source Data">
-                  <IconButton variant="ghost">
-                    <Link1Icon width="20" height="20" color="#60646C" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip content="Share">
-                  <IconButton variant="ghost">
-                    <Share1Icon width="20" height="20" color="#60646C" />
-                  </IconButton>
-                </Tooltip>
                 <IconButton variant="ghost" onClick={onClose}>
                   <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
@@ -95,11 +85,11 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
               </Tabs.Content>
 
               <Tabs.Content value="document_qa">
-                <DataQualitySection />
+                <DataQualitySection collection={selectedCollection} />
               </Tabs.Content>
 
               <Tabs.Content value="product_validation">
-                <ProductValidationSection />
+                <ProductValidationSection collection={selectedCollection} />
               </Tabs.Content>
             </Box>
           </Tabs.Root>

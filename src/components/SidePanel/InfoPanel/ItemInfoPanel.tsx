@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react'
-import { Cross1Icon, Share1Icon, Link1Icon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
+import { Cross1Icon } from '@radix-ui/react-icons'
+import { Flex, Text, IconButton, Tabs, Box } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
-import { getCatalogByURL } from '@/library/catalogUtils'
 import { MetadataSection } from './MetadataSection'
 import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
+import { fetchItem } from '@/services/itemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 
@@ -18,15 +17,14 @@ interface ItemInfoPanelProps {
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
-  const rootCatalog = useMemo(() => {
+  const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url ? getCatalogByURL(url) : undefined
+    return url
   }, [item?.links])
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () =>
-      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item && !isUserItem,
   })
@@ -45,16 +43,6 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                 {item.id}
               </Text>
               <Flex direction="row" gap="5" justify="start">
-                <Tooltip content="Source Data">
-                  <IconButton variant="ghost">
-                    <Link1Icon width="20" height="20" color="#60646C" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip content="Share">
-                  <IconButton variant="ghost">
-                    <Share1Icon width="20" height="20" color="#60646C" />
-                  </IconButton>
-                </Tooltip>
                 <IconButton variant="ghost" onClick={onClose}>
                   <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
@@ -78,6 +66,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                   stacElement={dataResult}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
+                  ignoredFields={['providers']}
                 />
               </Tabs.Content>
 

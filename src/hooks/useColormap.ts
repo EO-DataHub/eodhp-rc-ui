@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 
-const API_URL = import.meta.env.VITE_TITILER_BASE_URL.replace('/core', '')
+const API_URL = import.meta.env.VITE_TITILER_BASE_URL
 
 type RBGA = [number, number, number, number]
 

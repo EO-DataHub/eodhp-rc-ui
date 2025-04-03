@@ -1,4 +1,4 @@
-import React, { useContext, useMemo, useState, useEffect } from 'react'
+import React, { useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Item, ItemCardType } from '@/types'
 import {
@@ -6,6 +6,7 @@ import {
   Cross2Icon,
   DrawingPinIcon,
   EyeOpenIcon,
+  EyeClosedIcon,
   InfoCircledIcon,
   ZoomInIcon,
 } from '@radix-ui/react-icons'
@@ -13,7 +14,7 @@ import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
 import {
@@ -24,8 +25,7 @@ import {
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchItem } from '@/services/ItemService'
-import { getCatalogByURL } from '@/library/catalogUtils'
+import { fetchItem } from '@/services/itemService'
 import Legend from './Legend'
 
 interface ItemCardProps {
@@ -38,7 +38,7 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
     return null
   }
 
-  const metadataItems = extractStacMetadata(item, [])
+  const metadataItems = extractStacMetadata(item, ['providers'])
 
   const categorizationData = collectionCategorization[collectionId]
   const fields = [
@@ -108,16 +108,15 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const rootCatalog = useMemo(() => {
+  const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
-    return url ? getCatalogByURL(url) : undefined
+    return url
   }, [item?.links])
 
   // temporarily fetching item details
   const { data } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () =>
-      fetchItem({ catalog: rootCatalog, collection: item?.collection, item: item?.id }),
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
     refetchOnWindowFocus: false,
     enabled: !!item,
   })
@@ -141,7 +140,37 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     ({ context }) => context.collectionRenderOptions,
   )
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
+
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // In order to determine if the item is already pinned, we need a unique ID
+  // for the pin to query the existing pinned items. If the item already has a
+  // pinId, we can use it. Otherwise, for query items, we need to generate a
+  // new one based on the item ID and the collection/item render.
+  const pinId =
+    item.pinId ??
+    (itemRender
+      ? getPinnedItemId(item, itemRender)
+      : collectionRender
+        ? getPinnedItemId(item, collectionRender)
+        : undefined)
+  const isAlreadyPinned = pinnedItems.some((pinnedItem) => pinnedItem.pinId === pinId)
+
+  const unpinItem = useCallback(
+    () => dataFinderStore.send({ type: 'removePinnedItem', item: { ...item, pinId } }),
+    [item, pinId],
+  )
+
+  const pinItem = useCallback(
+    () =>
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item,
+        collectionRender: (itemRender ?? collectionRender)!,
+      }),
+    [item, collectionRender, itemRender],
+  )
 
   useEffect(() => {
     // If not a time variable item, use collectionRender
@@ -187,12 +216,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
 
-  const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
-    state.context.pinnedItems.some(
-      (pinnedItem) => pinnedItem.id === item.id && pinnedItem.render === itemRender,
-    ),
-  )
-
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -230,11 +253,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           flexShrink="0"
           p="4"
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            if (!itemRender) return
-            dataFinderStore.send({ type: 'addPinnedItem', item, collectionRender: itemRender })
-          }}
+          onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
         >
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
@@ -242,7 +261,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             onError={handleImageError}
           />
           <div className={styles.overlay}>
-            <Tooltip content={isAlreadyPinned ? 'Already Pinned' : 'Pin Item'}>
+            <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
               <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
             </Tooltip>
           </div>
@@ -268,7 +287,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={() => dataFinderStore.send({ type: 'removePinnedItem', item })}
+                onClick={unpinItem}
               >
                 <Cross2Icon />
               </IconButton>
@@ -290,6 +309,23 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             </Flex>
           )}
           <Flex justify="end" gap="4" align="center">
+            {isQueryCard && itemRender && (
+              <>
+                {!isAlreadyPinned ? (
+                  <ActionButton onClick={pinItem}>
+                    <Tooltip content="Pin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                ) : (
+                  <ActionButton onClick={unpinItem} active={isAlreadyPinned}>
+                    <Tooltip content="Unpin Item">
+                      <DrawingPinIcon />
+                    </Tooltip>
+                  </ActionButton>
+                )}
+              </>
+            )}
             {isPinnedCard && (
               <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
@@ -302,7 +338,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
                 >
                   <Tooltip content="Toggle visibility">
-                    <EyeOpenIcon />
+                    {item.mapRender?.visible ? <EyeOpenIcon /> : <EyeClosedIcon />}
                   </Tooltip>
                 </ActionButton>
                 <ActionButton
@@ -319,7 +355,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
             >
-              <Tooltip content="More Info">
+              <Tooltip content="View Metadata">
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>

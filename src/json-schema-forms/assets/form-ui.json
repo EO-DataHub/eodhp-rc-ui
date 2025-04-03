@@ -8,10 +8,10 @@
   "incidence_angle": {
     "ui:widget": "RangeWidget"
   },
-  "clear_percent": {
+  "planet:clear_percent": {
     "ui:widget": "RangeWidget"
   },
-  "cloud_percent": {
+  "planet:cloud_percent": {
     "ui:widget": "RangeWidget"
   },
   "view:incidence_angle": {

@@ -43,6 +43,10 @@ interface AppContext {
   isUserCollection: boolean
 }
 
+// Build a unique id for pinned items
+export const getPinnedItemId = (item: Item, collectionRender: StacRender) =>
+  [item.id, collectionRender.id].join('-')
+
 const dataFinderStore = createStore({
   // Initial context
   context: {
@@ -213,7 +217,7 @@ const dataFinderStore = createStore({
       context,
       event: { item: Item; collectionRender: StacRender },
     ): typeof context => {
-      const pinnedItemId = [event.item.id, event.collectionRender.id].join('-')
+      const pinnedItemId = getPinnedItemId(event.item, event.collectionRender)
       const isAlreadyPinned = context.pinnedItems.some((i) => i.pinId === pinnedItemId)
 
       if (isAlreadyPinned) return context

@@ -24,7 +24,7 @@ export const UserCollectionCard: React.FC<UserCollectionCardProps> = ({ collecti
   const navigate = useNavigate()
 
   const handleOpenCollection = () => {
-    navigate(`/finder/${collection.id}`)
+    navigate(`/finder/my-${collection.id}`)
   }
 
   return (

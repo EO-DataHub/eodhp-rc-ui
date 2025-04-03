@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Flex, Text, Select } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
 import countries from '../../data/countries.json'
 
 interface FieldProps {
@@ -17,7 +16,6 @@ const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
         <Text weight="bold">{label}</Text>
         {required && <span className={styles.asterisk}>*</span>}
       </Flex>
-      <InfoCircledIcon />
     </Flex>
     <Flex>{children}</Flex>
   </Flex>
@@ -78,6 +76,17 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   const renderSelect = (field: keyof typeof options, label: string, isDisabled = false) => {
     let items: string[] | undefined
 
+    const isFieldRequired = (field: string) => {
+      if (['productBundle', 'licence'].includes(field)) return true
+      if (
+        provider === 'airbus_sar' &&
+        ['orbit', 'resolutionVariant', 'projection'].includes(field)
+      ) {
+        return true
+      }
+      return false
+    }
+
     if (field === 'productBundle') {
       items =
         provider === 'airbus_optical' || provider === 'planet'
@@ -98,7 +107,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
     if (!items) return null
 
     return (
-      <Field label={label} required={['productBundle', 'licence'].includes(field)}>
+      <Field label={label} required={isFieldRequired(field)}>
         <Select.Root
           size="3"
           value={selectedValues[field]}

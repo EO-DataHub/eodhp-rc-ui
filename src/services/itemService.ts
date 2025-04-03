@@ -3,10 +3,6 @@ import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 
-const API_URL = import.meta.env.VITE_HUB_BASE_URL
-const API_TOKEN = import.meta.env.VITE_WORKSPACE_API_TOKEN
-const HUB_ENV = import.meta.env.VITE_HUB_ENV
-
 interface FetchItemsParams {
   limit: number
   mapBounds?: MapBounds
@@ -24,9 +20,14 @@ interface StacQueryBodyParams {
 }
 
 interface FetchItemParams {
-  catalog?: string
-  collection?: string
-  item?: string
+  collectionUrl?: string
+  itemId?: string
+}
+
+interface FetchItemFromCollectionParams {
+  catalogUrl?: string
+  collectionId?: string
+  itemId?: string
 }
 
 export const fetchItems = async ({
@@ -37,10 +38,7 @@ export const fetchItems = async ({
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
   const catalog = selectedCollection ? getCatalog(selectedCollection) : null
-  const fetchUrl =
-    HUB_ENV === 'staging' && catalog
-      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/search`
-      : `${API_URL}/api/catalogue/stac/search`
+  const fetchUrl = `${catalog}/search`
 
   const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
 
@@ -78,16 +76,23 @@ export const fetchItems = async ({
   const data = await response.json()
   return data.features as Item[]
 }
-
-export const fetchItem = async ({ catalog, collection, item }: FetchItemParams): Promise<Item> => {
-  if (!item || !collection || !catalog) {
+export const fetchItemFromCollection = async ({
+  catalogUrl,
+  collectionId,
+  itemId,
+}: FetchItemFromCollectionParams): Promise<Item> => {
+  if (!itemId || !collectionId || !catalogUrl) {
     throw new Error('Item is not valid')
   }
+  const collectionUrl = `${catalogUrl}/collections/${collectionId}`
+  return fetchItem({ collectionUrl, itemId })
+}
 
-  const url =
-    HUB_ENV === 'staging'
-      ? `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/catalogs/${catalog}/collections/${collection}/items/${item}`
-      : `${API_URL}/api/catalogue/stac/catalogs/supported-datasets/${catalog}/collections/${collection}/items/${item}`
+export const fetchItem = async ({ collectionUrl, itemId }: FetchItemParams): Promise<Item> => {
+  if (!itemId || !collectionUrl) {
+    throw new Error('Item is not valid')
+  }
+  const url = `${collectionUrl}/items/${itemId}`
 
   const response = await fetch(url, {
     method: 'GET',
@@ -104,10 +109,16 @@ export const fetchItem = async ({ catalog, collection, item }: FetchItemParams):
   return data as Item
 }
 
-export const fetchUserItems = async (selectedCollection: Collection): Promise<Item[]> => {
+export const fetchUserItems = async (
+  selectedCollection: Collection,
+  workspace_token: string,
+): Promise<Item[]> => {
   const itemsLink = selectedCollection.links.find((link) => link.rel === 'items')?.href
   if (!itemsLink) {
     throw new Error("No 'items' link found in user collection.")
+  }
+  if (!workspace_token) {
+    throw new Error('Workspace_token is required for fetch user items.')
   }
 
   const response = await fetch(itemsLink, {
@@ -115,7 +126,7 @@ export const fetchUserItems = async (selectedCollection: Collection): Promise<It
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${API_TOKEN}`,
+      Authorization: `Bearer ${workspace_token}`,
     },
   })
 
