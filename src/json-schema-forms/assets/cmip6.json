@@ -1,0 +1,36 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/cmip6.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CMIP6",
+  "type": "object",
+  "properties": {
+    "start_datetime_range": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime_range": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "cmip6:variable_id": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variable_id",
+      "title": "Variable"
+    },
+    "cmip6:frequency": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:frequency"
+    },
+    "cmip6:source_id": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:source_id"
+    },
+    "cmip6:source_type": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:source_type"
+    },
+    "cmip6:experiment_id": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:experiment_id"
+    },
+    "cmip6:variant_label": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:variant_label"
+    },
+    "cmip6:nominal_resolution": {
+      "$ref": "schemas/cmip6/v1.0.0/form_schema.json#/properties/cmip6:nominal_resolution"
+    }
+  }
+}

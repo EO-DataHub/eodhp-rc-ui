@@ -3,36 +3,33 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Airbus Pléiades 1A and 1B",
   "type": "object",
-  "required": [
-    "collection_id"
-  ],
   "properties": {
-    "collection_id": {
-      "const": "airbus_phr_data"
-    },
-    "start_datetime": {
+     "start_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
     },
     "end_datetime": {
       "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
     },
     "eo:cloud_cover": {
-      "default": 90.0,
+      "default": 100.0,
       "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:cloud_cover",
-      "title": "Maximum cloud cover"
+      "title": "Cloud cover"
     },
     "eo:snow_cover": {
       "default": 100.0,
       "$ref": "schemas/eo/v2.0.0/form_schema.json#/properties/eo:snow_cover",
-      "title": "Maximum snow cover"
+      "title": "Snow cover"
     },
     "view:incidence_angle": {
+      "default": 90.0,
       "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:incidence_angle",
-      "title": "Maximum incidence angle"
+      "title": "Incidence angle"
     },
     "view:sun_elevation": {
+      "minimum": 0.0,
+      "default": 0.0,
       "$ref": "schemas/view/v1.0.0/form_schema.json#/properties/view:sun_elevation",
-      "title": "Maximum sun elevation angle"
+      "title": "Sun elevation angle"
     }
   }
 }

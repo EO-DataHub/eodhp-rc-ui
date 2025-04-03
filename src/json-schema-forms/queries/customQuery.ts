@@ -19,6 +19,24 @@ const dispatch: QueryDispatch = {
       ],
     }
   },
+  start_datetime_range: (_, obj) => {
+    return {
+      op: '>=',
+      args: [
+        { property: 'properties.end_datetime' },
+        obj['start_datetime_range'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
+  end_datetime_range: (_, obj) => {
+    return {
+      op: '<=',
+      args: [
+        { property: 'properties.start_datetime' },
+        obj['end_datetime_range'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
   incidence_angle: (schema, obj) => {
     // Used in Airbus SAR data
     return {
@@ -26,6 +44,16 @@ const dispatch: QueryDispatch = {
       args: [
         { property: 'properties.incidence_angle.minimum' },
         obj['incidence_angle'], // eslint-disable-line @typescript-eslint/dot-notation
+      ],
+    }
+  },
+  clear_percent: (schema, obj) => {
+    // Used in Planet data
+    return {
+      op: schema.properties?.['clear_percent']?.operator ?? '>=', // eslint-disable-line @typescript-eslint/dot-notation
+      args: [
+        { property: 'clear_percent' },
+        obj['clear_percent'], // eslint-disable-line @typescript-eslint/dot-notation
       ],
     }
   },

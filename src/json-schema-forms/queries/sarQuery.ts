@@ -8,7 +8,7 @@ import { buildArrayFilter } from './queryUtils.ts'
  * @param values A comma-separated string of values to search for.
  * @returns A QueryCondition representing the filter.
  */
-function buildPolarizationsFilter(key: string, values: string): QueryCondition {
+export function buildPolarizationsFilter(key: string, values: string): QueryCondition {
   const includedPolarizations: string[] = values.split(',')
   const excludedPolarizations: string[] = ['HH', 'VV', 'HV', 'VH']
 
@@ -41,6 +41,21 @@ const dispatch: QueryDispatch = {
       'properties.sar:polarizations',
       obj['sar:polarizations'] as string,
     )
+  },
+  'sar:instrument_mode': (_, obj) => {
+    return {
+      op: 'like',
+      args: [{ property: 'properties.sar:instrument_mode' }, obj['sar:instrument_mode']],
+    }
+  },
+  'sar:observation_direction': (_, obj) => {
+    return {
+      op: 'like',
+      args: [
+        { property: 'properties.sar:observation_direction' },
+        obj['sar:observation_direction'],
+      ],
+    }
   },
 }
 

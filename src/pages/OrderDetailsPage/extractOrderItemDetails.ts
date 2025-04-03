@@ -1,5 +1,24 @@
 import { MetadataItem } from '@/types'
+import { formatDateToMMDDYEAR } from '@/library/dateUtils'
 
+const PLANET_FIELDS = [
+  'datetime',
+  'provider',
+  'pixel_resolution',
+  'gsd',
+  'visible_percent',
+  'clear_percent',
+  'cloud_percent',
+  'heavy_haze_percent',
+  'light_haze_percent',
+  'shadow_percent',
+  'snow_ice_percent',
+  'sun_azimuth',
+  'sun_elevation',
+  'view_angle',
+  'satellite_azimuth',
+  'quality_category',
+]
 interface DateRange {
   Start: string
   End: string
@@ -43,8 +62,6 @@ interface SAROrderItem {
   Path: string
   Look: string
   Orbit: OrbitData
-  Resolution: string
-  Projection: string
 }
 
 interface IncidenceAngle {
@@ -87,7 +104,7 @@ export const extractSAROrderItemDetails = (metadata: MetadataItem[]): SAROrderIt
   const meta = Object.fromEntries(metadata.map((m) => [m.extension, m.properties ?? {}]))
 
   return {
-    'Area Calculation': null,
+    'Area Calculation': `N/A`, // 🚨 Not available
     'Date Range': {
       Start: meta['']?.start_datetime?.formatted ?? 'N/A',
       End: meta['']?.end_datetime?.formatted ?? 'N/A',
@@ -113,7 +130,26 @@ export const extractSAROrderItemDetails = (metadata: MetadataItem[]): SAROrderIt
       'Relative Orbit': meta.sat?.['sat:relative_orbit']?.formatted ?? 'N/A',
       'Absolute Orbit': meta.sat?.['sat:absolute_orbit']?.formatted ?? 'N/A',
     },
-    Resolution: meta['']?.gsd?.formatted ?? 'N/A',
-    Projection: meta['']?.format?.formatted ?? 'N/A',
   }
+}
+
+export const extractPlanetOrderItemDetails = (
+  properties: Record<string, string | number | boolean | null>,
+): Record<string, string | number> => {
+  const selected: Record<string, string | number> = {}
+
+  PLANET_FIELDS.forEach((key) => {
+    const value = properties?.[key]
+    if (value !== undefined && value !== null) {
+      const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+      if (key === 'datetime' && (typeof value === 'string' || typeof value === 'number')) {
+        selected[label] = formatDateToMMDDYEAR(value)
+      } else {
+        selected[label] = typeof value === 'boolean' ? String(value) : value
+      }
+    }
+  })
+
+  return selected
 }

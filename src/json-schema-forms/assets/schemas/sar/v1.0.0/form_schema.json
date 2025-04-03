@@ -10,7 +10,7 @@
       "title": "Instrument Mode",
       "anyOf": [
         {
-          "title": "All instrument modes",
+          "title": "Any instrument mode",
           "enum": ["%"]
         }
       ]
@@ -21,7 +21,7 @@
       "title": "Product Type",
       "anyOf": [
         {
-          "title": "All products",
+          "title": "Any product",
           "enum": ["%"]
         }
       ]
@@ -66,7 +66,7 @@
       "default": "%",
       "anyOf": [
         {
-          "title": "Both",
+          "title": "Any",
           "enum": ["%"]
         },
         {

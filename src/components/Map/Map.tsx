@@ -1,14 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
-import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
-import { useSelector } from '@xstate/store/react'
-import { Item } from '@/types'
-import ItemLayer from './ItemLayer'
+import PinnedItemsLayer from './layers/PinnedItems'
+import QueryItemsLayer from './layers/QueryItems'
+import HoveredItemLayer from './layers/HoveredItem'
+import useItemsQuery from '@/hooks/useItemsQuery'
 
 interface DrawConstants {
   classes: {
@@ -24,6 +27,9 @@ const DEFAULT_MAP_VIEW = {
   longitude: 0,
   zoom: 1,
 }
+
+const MAP_STORAGE_KEY = 'mapViewState'
+const AOI_STORAGE_KEY = 'aoiData'
 
 function DrawControl() {
   const drawInstance = useRef<MapboxDraw | null>(null)
@@ -48,32 +54,68 @@ function DrawControl() {
 
       return draw as unknown as IControl
     },
-    {
-      position: 'top-right',
-    },
+    { position: 'top-right' },
   )
+
+  // Restore AOI when the draw instance is available
+  useEffect(() => {
+    if (drawInstance.current) {
+      const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+      if (storedAoi) {
+        const parsedAoi = JSON.parse(storedAoi)
+        drawInstance.current.add(parsedAoi)
+      }
+    }
+  }, [])
+
   return null
 }
 
-export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
+export const Map = () => {
   const mapRef = useRef<MapRef>(null)
+  const { pageItems } = useItemsQuery()
 
-  const handleMapBoundsChange = () => dataFinderStore.send({ type: 'mapBoundsChange' })
+  // Load previous map state from local storage, or use default
+  const savedViewState =
+    JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
+  const [viewState, setViewState] = useState(savedViewState)
+
+  // Load AOI from local storage on mount
+  useEffect(() => {
+    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+    if (storedAoi) {
+      const parsedAoi = JSON.parse(storedAoi)
+      dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+    }
+  }, [])
+
+  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+
+  const handleMapBoundsChange = () => {
+    if (mapRef.current) {
+      const center = mapRef.current.getMap().getCenter()
+      const updatedState = {
+        latitude: center.lat,
+        longitude: center.lng,
+        zoom: mapRef.current.getMap().getZoom(),
+      }
+
+      localStorage.setItem(MAP_STORAGE_KEY, JSON.stringify(updatedState))
+      setViewState(updatedState)
+    }
+    dataFinderStore.send({ type: 'mapBoundsChange' })
+  }
 
   const isDrawing = useSelector(
     dataFinderStore,
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
 
-  const hoveredItemId = useSelector(dataFinderStore, (state) => state.context.hoveredItem?.id)
-
-  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
-
   // This is a workaround to move the draw layers to the top as they are added
   // on page load and should be on top of the other layers. Ideally we not need
   // to do this but there is no way to control the order of the layers in the
   // MapboxDraw control.
-  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+
   useEffect(() => {
     if (!mapInstance) return
 
@@ -85,19 +127,20 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
         }
       })
     }, 100)
-  }, [mapInstance, visibleItems])
+  }, [mapInstance, pageItems])
 
   return (
     <Maplibre
-      initialViewState={DEFAULT_MAP_VIEW}
+      initialViewState={viewState}
       mapStyle={MAP_STYLE}
       ref={mapRef}
       cursor={isDrawing ? 'crosshair' : 'grab'}
+      onMoveEnd={handleMapBoundsChange}
       onLoad={() => {
         const mapInstance = mapRef.current?.getMap()
-        if (!mapInstance) {
-          return
-        }
+
+        if (!mapInstance) return
+
         // Send the map instance to the store
         dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
@@ -121,18 +164,12 @@ export const Map = ({ visibleItems }: { visibleItems: Item[] }) => {
         // Update bounds on load
         handleMapBoundsChange()
       }}
-      onMoveEnd={handleMapBoundsChange}
     >
       <NavigationControl />
       <DrawControl />
-      {visibleItems.map((item, index) => (
-        <ItemLayer
-          key={`${item.id}-${index}`}
-          item={item}
-          isHovered={hoveredItemId === item.id}
-          showRasterTiles={pinnedItems.some((checkedItem) => checkedItem.id === item.id)}
-        />
-      ))}
+      <PinnedItemsLayer />
+      <QueryItemsLayer queryItems={pageItems} />
+      <HoveredItemLayer />
     </Maplibre>
   )
 }

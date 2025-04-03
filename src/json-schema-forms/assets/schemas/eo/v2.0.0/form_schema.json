@@ -6,7 +6,7 @@
     "eo:cloud_cover": {
       "type": "number",
       "title": "Cloud cover",
-      "default": 100.0,
+      "default": 0.0,
       "minimum": 0.0,
       "maximum": 100.0,
       "operator": "<="
@@ -14,7 +14,7 @@
     "eo:snow_cover": {
       "type": "number",
       "title": "Snow cover",
-      "default": 100.0,
+      "default": 0.0,
       "minimum": 0.0,
       "maximum": 100.0,
       "operator": "<="

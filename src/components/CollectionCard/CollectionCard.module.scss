@@ -1,9 +1,21 @@
 .card {
-  background-color: #1c2024;
+  background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
+  border-radius: 4px;
+  overflow: hidden;
 
-  .button {
+  .poundSign {
     background-color: var(--app-background-dark-2);
-    color: var(--blue-contrast);
+    border: 2px solid white;
+    border-radius: 100%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    :hover {
+      cursor: default;
+    }
   }
 
   .text {
@@ -16,11 +28,15 @@
   content: none;
   background: none;
 }
+.card:hover {
+  cursor: pointer;
+  outline: 2px solid var(--app-background-dark-2);
+}
 
 .thumbnail {
   display: block;
   object-fit: cover;
   width: 100%;
-  height: 140px;
+  height: 150px;
   background-color: var(--gray-5);
 }

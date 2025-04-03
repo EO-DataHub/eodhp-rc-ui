@@ -1,56 +1,18 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect } from 'react'
 
-import { Flex, Box, Text, Grid, Select, Badge } from '@radix-ui/themes'
-import { useQueries } from '@tanstack/react-query'
-import { fetchCollections } from '@/services/collectionService'
+import { Flex, Box, Text, Grid, Select, Badge, Container, Separator } from '@radix-ui/themes'
 import { QuickFilterMenu } from '@/components/QuickFilterMenu/QuickFilterMenu'
 import { ActionsBar } from '@/components/ActionsBar/ActionsBar'
 import { CollectionCard } from '@/components/CollectionCard/CollectionCard'
 import type { Collection, QuickFilter } from '@/types'
-import { catalogs } from '@/constants/catalogs'
-import { collectionCategorization, filterMapping } from '@/constants/collectionCategorizations'
 import { FilterTags } from '@/components/FilterTags/FilterTags'
 import styles from './DataDiscoveryPage.module.scss'
-import { flexibleSearch } from '@/library/stringUtils'
+import { useSearchParams } from 'react-router-dom'
+import { GROUP_BY_KEY, useCollections } from '@/hooks/useCollections'
 
 interface GroupByCollection {
   category: { label: string; value: string }
   collections: Collection[]
-}
-
-const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
-  return id in collectionCategorization
-}
-
-const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
-  const searchFields: (keyof Collection)[] = ['id', 'title', 'description', 'keywords', 'providers']
-
-  for (const field of searchFields) {
-    if (field in collection) {
-      const value = collection[field]
-
-      if (typeof value === 'string' && flexibleSearch(value, searchText) !== -1) {
-        return true
-      }
-
-      if (
-        Array.isArray(value) &&
-        value.some((item) => {
-          if (typeof item === 'string') {
-            return flexibleSearch(item, searchText) !== -1
-          }
-          if (typeof item === 'object' && 'name' in item) {
-            return flexibleSearch(item.name, searchText) !== -1
-          }
-          return false
-        })
-      ) {
-        return true
-      }
-    }
-  }
-
-  return false // No match found
 }
 
 const renderCollections = (collections: Collection[]) => {
@@ -59,7 +21,13 @@ const renderCollections = (collections: Collection[]) => {
   }
 
   return (
-    <Grid p="5" gap="5" columns="4" width="auto" className={styles.collectionGrid}>
+    <Grid
+      p="5"
+      gap="5"
+      columns={{ lg: '4', md: '3', sm: '2' }}
+      width="auto"
+      className={styles.collectionGrid}
+    >
       {collections.map((collection) => (
         <CollectionCard key={collection.id} collection={collection} />
       ))}
@@ -74,131 +42,93 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 
   return (
     <Flex direction="column" gap="5" p="5" className={styles.collectionGrid}>
-      {groupedByCollections.map((group) => (
-        <Flex gap="2" direction="column" key={group.category.value}>
-          <Flex gap="2" align="center">
-            <Text size="5" weight="bold">
-              {group.category.label}
-            </Text>
-            <Badge
-              radius="full"
-              highContrast
-              variant="solid"
-              className={styles.collectionCount}
-              style={{
-                width: 24,
-                height: 24,
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              {group.collections.length}
-            </Badge>
-          </Flex>
+      {groupedByCollections.map(
+        (group) =>
+          group.collections.length > 0 && (
+            <Flex gap="2" direction="column" key={group.category.value}>
+              <Flex gap="2" align="center">
+                <Text size="5" weight="bold">
+                  {group.category.label}
+                </Text>
+                <Badge
+                  radius="full"
+                  highContrast
+                  variant="solid"
+                  className={styles.collectionCount}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  {group.collections.length}
+                </Badge>
+              </Flex>
 
-          {group.collections.length > 0 ? (
-            <Grid gap="5" columns="4" width="auto">
-              {group.collections.map((collection) => (
-                <CollectionCard key={collection.id} collection={collection} />
-              ))}
-            </Grid>
-          ) : (
-            <Text>No collections available.</Text>
-          )}
-        </Flex>
-      ))}
+              <Grid gap="5" columns={{ lg: '4', md: '3' }}>
+                {group.collections.map((collection) => (
+                  <CollectionCard key={collection.id} collection={collection} />
+                ))}
+              </Grid>
+            </Flex>
+          ),
+      )}
     </Flex>
   )
 }
 
 export const DataDiscoveryPage: React.FC = () => {
-  const [filters, setFilters] = useState<QuickFilter>({})
-  const [groupBy, setGroupBy] = useState<keyof QuickFilter | 'none'>('none')
-  const [searchText, setSearchText] = useState('')
+  const {
+    searchText,
+    setSearchText,
+    filters,
+    setFilters,
+    groupBy,
+    setGroupBy,
+    isLoading,
+    error,
+    errorMessages,
+    filteredCollections,
+    groupedByCollections,
+  } = useCollections()
 
-  const queries = useQueries({
-    queries: catalogs.map((catalog, index) => ({
-      queryKey: ['Collections', index],
-      queryFn: () => fetchCollections(catalog),
-    })),
-  })
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const isLoading = queries.some((query) => query.isLoading)
-  const error = queries.some((query) => query.isError)
-  const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
+  useEffect(() => {
+    setFilters(Object.fromEntries(searchParams.entries()))
+    const groupBy = (searchParams.get(GROUP_BY_KEY) ?? 'none') as keyof QuickFilter | 'none'
+    setGroupBy(groupBy)
+  }, [searchParams, setFilters, setGroupBy])
 
-  const sortedCollections = useMemo(() => {
-    const mergedCollections: Collection[] = queries.flatMap((query) => query.data ?? [])
-
-    // sort and filter base on search text
-    return [...mergedCollections]
-      .sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
-      .filter((collection) => {
-        return isCollectionMatchingSearch(collection, searchText)
-      })
-  }, [queries, searchText])
-
-  const filteredCollections = useMemo(() => {
-    // no filter applied
-    if (Object.keys(filters).length === 0) {
-      return sortedCollections
+  const handleFilterChange = (value: string, key: keyof QuickFilter) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (newParams.get(key) === value) {
+      newParams.delete(key)
+    } else {
+      newParams.set(key, value)
     }
-
-    return sortedCollections.filter((collection) => {
-      if (!isValidCollectionId(collection.id)) {
-        return false
-      }
-
-      const categorizationData = collectionCategorization[collection.id]
-      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
-
-      // one collection must satisfy all selected filter options to be included
-      for (const [filterKey, filterValue] of entries) {
-        if (
-          filterKey in categorizationData &&
-          !(categorizationData[filterKey] as string[]).includes(filterValue)
-        ) {
-          return false
-        }
-      }
-
-      return true
-    })
-  }, [filters, sortedCollections])
-
-  const groupedByCollections = useMemo(() => {
-    if (groupBy === 'none') {
-      return []
-    }
-
-    const categories = filterMapping[groupBy]
-
-    return categories.map((category) => {
-      return {
-        category,
-        collections: filteredCollections.filter((collection) => {
-          if (!isValidCollectionId(collection.id)) {
-            return false
-          }
-
-          const categorizationData = collectionCategorization[collection.id]
-          return (categorizationData[groupBy][0] as string) === category.value
-        }),
-      }
-    })
-  }, [filteredCollections, groupBy])
-
-  const handleFilterChange = (value: string, forKey: keyof QuickFilter) => {
-    setFilters((prev) => ({ ...prev, [forKey]: value }))
+    setSearchParams(newParams)
+    setFilters((prev) => ({ ...prev, [key]: value }))
   }
 
   const handleRemoveFilter = (key: keyof QuickFilter) => {
-    setFilters((prev) => {
-      const newFilters = { ...prev }
-      delete newFilters[key]
-      return newFilters
-    })
+    const newParams = new URLSearchParams(searchParams)
+    newParams.delete(key)
+    setSearchParams(newParams)
+    setFilters((prev) => ({ ...prev, [key]: undefined }))
+  }
+
+  const handleGroupBy = (value: keyof QuickFilter | 'none') => {
+    const newParams = new URLSearchParams(searchParams)
+    if (value === 'none') {
+      newParams.delete(GROUP_BY_KEY)
+    } else {
+      newParams.set(GROUP_BY_KEY, value)
+    }
+    setSearchParams(newParams)
+    setGroupBy(value)
   }
 
   if (isLoading) {
@@ -222,43 +152,38 @@ export const DataDiscoveryPage: React.FC = () => {
   }
 
   return (
-    <Flex direction="column" height="100vh">
-      <Box flexGrow="1">
-        <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
-        <ActionsBar searchText={searchText} onSearch={setSearchText} />
-        <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
-
-        <Box px="5" flexGrow="1">
-          <Select.Root
-            size="3"
-            defaultValue="none"
-            value={groupBy}
-            onValueChange={(value: keyof QuickFilter | 'none') => setGroupBy(value)}
-          >
-            <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
-            <Select.Content position="popper">
-              <Select.Group>
-                <Select.Item value="none">None</Select.Item>
-                <Select.Item value="dataCategory">Data Category</Select.Item>
-                <Select.Item value="resolution">Resolution</Select.Item>
-                <Select.Item value="provider">Provider</Select.Item>
-                <Select.Item value="location">Location</Select.Item>
-                <Select.Item value="keyword">Keywords</Select.Item>
-                <Select.Item value="license">License</Select.Item>
-              </Select.Group>
-            </Select.Content>
-          </Select.Root>
+    <Container align="center" maxWidth="1640px">
+      <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
+      <Separator style={{ width: '100%' }} />
+      <ActionsBar searchText={searchText} onSearch={setSearchText} />
+      <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
+      <Flex px="5" flexGrow="1" direction="column" gap="1">
+        <Text weight="bold" size="2">
+          Group By
+        </Text>
+        <Select.Root size="3" defaultValue="none" value={groupBy} onValueChange={handleGroupBy}>
+          <Select.Trigger style={{ width: '290px' }} placeholder="Group By" />
+          <Select.Content position="popper">
+            <Select.Group>
+              <Select.Item value="none">None</Select.Item>
+              <Select.Item value="dataCategory">Data Category</Select.Item>
+              <Select.Item value="resolution">Resolution</Select.Item>
+              <Select.Item value="provider">Provider</Select.Item>
+              <Select.Item value="location">Location</Select.Item>
+              <Select.Item value="license">License</Select.Item>
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
+      </Flex>
+      {filteredCollections.length === 0 ? (
+        <Box p="5">
+          <Text>No matching collections, please refine your search.</Text>
         </Box>
-        {filteredCollections.length === 0 ? (
-          <Box p="5">
-            <Text>No collections available.</Text>
-          </Box>
-        ) : groupBy === 'none' ? (
-          renderCollections(filteredCollections)
-        ) : (
-          renderGroupedByCollections(groupedByCollections)
-        )}
-      </Box>
-    </Flex>
+      ) : groupBy === 'none' ? (
+        renderCollections(filteredCollections)
+      ) : (
+        renderGroupedByCollections(groupedByCollections)
+      )}
+    </Container>
   )
 }

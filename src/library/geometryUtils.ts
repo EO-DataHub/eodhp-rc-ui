@@ -40,20 +40,20 @@ export function sortFeatures(
       // const com = centerOfMass(item.geometry)
       // const dist = Math.max(1.0, distance(center, com, { units: 'kilometers' }))
       // A reciprocal distance weighting, favouring features closer to the provided point.
-      // @ts-expect-error feat is a generic Feature but is always going to be a polygon. pointToPolygonDistance() doesn't like this.
       const dist = Math.max(
         1.0,
+        // @ts-expect-error feat is a generic Feature but is always going to be a polygon. pointToPolygonDistance() doesn't like this.
         pointToPolygonDistance(center, feat, { units: 'kilometers', method: 'geodesic' }) / 100.0,
       )
       score += (1.0 / dist) * options.distanceBias
-      item.properties.scores = [(1.0 / dist) * options.distanceBias]
+      item.scores = [(1.0 / dist) * options.distanceBias]
 
       // The natural logarithm of the area of the feature, favouring larger polygons but allowing for a wide range of sizes.
       const featureArea = Math.log(
         Math.max(1.0, convertArea(area(item.geometry), 'meters', 'kilometers')),
       )
       score += featureArea * options.areaBias
-      item.properties.scores.push(featureArea * options.areaBias)
+      item.scores.push(featureArea * options.areaBias)
 
       // Calculates the aspect ratio of the feature's bounding box, favouring squarer features over thin slivers.
       const bounds = item.bbox
@@ -64,7 +64,7 @@ export function sortFeatures(
       const width = Math.max(1.0, distance(bl, br, { units: 'kilometers' }))
       const aspect = height > width ? width / height : height / width
       score += aspect * options.aspectBias
-      item.properties.scores.push(aspect * options.aspectBias)
+      item.scores.push(aspect * options.aspectBias)
 
       if (item.properties.datetime) {
         // If we have it, take the reciprocal of days since the data was captured.
@@ -73,10 +73,10 @@ export function sortFeatures(
           (Date.now() - Date.parse(item.properties.datetime)) / (1000 * 60 * 60 * 24),
         )
         score += (1.0 / interval) * options.temporalBias
-        item.properties.scores.push((1.0 / interval) * options.temporalBias)
+        item.scores.push((1.0 / interval) * options.temporalBias)
       }
 
-      item.properties.score = score
+      item.score = score
       return { score: score, feature: item }
     })
     .sort((a, b) => {

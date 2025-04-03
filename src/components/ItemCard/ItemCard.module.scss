@@ -2,6 +2,8 @@
   background-color: var(--blue-contrast);
   border: 1px solid transparent;
   padding: 0px;
+  display: flex;
+  flex-grow: 1;
 
   &:hover {
     border-color: var(--app-background-dark-2);
@@ -12,24 +14,30 @@
   }
 
   .iconButton {
-    background-color: var(--app-background-dark-2);
-    color: var(--blue-contrast);
-    width: 16px;
-    height: 16px;
+    width: var(--space-4, 16px);
+    height: var(--space-4, 16px);
+
+
+    &.active {
+      background-color: var(--blue-4);
+    }
   }
 
   .text {
     color: var(--app-background-dark-2);
-    max-width: 145px;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .thumbnailContainer {
     position: relative;
     border-radius: 8px 0 0 8px;
     margin: 0px;
-    min-width: 100px;
+    width: 100px;
 
     &:hover .overlay {
       opacity: 1;
@@ -60,6 +68,16 @@
       opacity: 1;
       background: rgba(0, 0, 0, 0.8);
     }
+
+    &.thumbnailContainerDisabled {
+      opacity: 0.5;
+      pointer-events: none;
+
+      .overlay {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.7);
+      }
+    }
   }
 
   .buttonGroup {
@@ -69,5 +87,9 @@
 
   .button {
     cursor: pointer;
+  }
+
+  .unpinButton {
+    background-color: var(--Colors-Neutral-Neutral-Alpha-6, rgba(0, 0, 51, 0.06));
   }
 }

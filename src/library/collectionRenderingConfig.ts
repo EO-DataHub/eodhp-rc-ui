@@ -1,91 +1,157 @@
-/**
- * Temporary rendering configuration for priority datasets.
- *
- * This is an interim solution to enable the UI to display a variety of data
- * from the catalog before a more robust implementation (e.g., STAC render
- * extension) is introduced. Instead of fetching rendering options dynamically
- * from catalog records, this configuration provides predefined asset mappings
- * and rendering parameters for key collections.
- *
- * Future improvements will involve fetching render options dynamically
- * and applying standardized rendering rules.
- */
+import qs from 'qs'
+import { Item, BaseStacRender, StacRender } from '@/types'
+import serverConfig from './configFromServer.json'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
-const TITILER_XARRAY_URL = import.meta.env.VITE_TITILER_XARRAY_BASE_URL
 
-export const DATASETS = {
-  SENTINEL_2: 'sentinel2_ard',
-  AIRBUS_SAR: 'airbus_sar_data',
-  LAND_COVER: 'land_cover',
-  EOCIS_SST_CLIM: 'eocis-sst-cdrv3-climatology',
-  EOCIS_SST: 'eocis-sst-cdrv3',
-  EOCIS_LST_S3A_DAY: 'eocis-lst-s3a-day',
-  EOCIS_LST_S3A_NIGHT: 'eocis-lst-s3a-night',
-  EOCIS_LST_S3B_DAY: 'eocis-lst-s3b-day',
-  EOCIS_LST_S3B_NIGHT: 'eocis-lst-s3b-night',
-  EOCIS_AEROSOL_S3A_DAILY: 'eocis-aerosol-slstr-daily-s3a',
-  EOCIS_AEROSOL_S3B_DAILY: 'eocis-aerosol-slstr-daily-s3b',
-  EOCIS_AEROSOL_S3A_MONTHLY: 'eocis-aerosol-slstr-monthly-s3a',
-  EOCIS_AEROSOL_S3B_MONTHLY: 'eocis-aerosol-slstr-monthly-s3b',
-} as const
+type TilerType = 'titiler' | 'titiler-multidim'
 
-export const collectionRenderingConfig: Record<
-  string,
-  { assetKey: string; tilesUrlTemplate: string }
-> = {
-  [DATASETS.SENTINEL_2]: {
-    assetKey: 'cog',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=3&bidx=2&bidx=1&rescale=0,200`,
-    // Example alternative render below.  Please leave in config - can be used in demo's by uncommenting this line in local deployment until we have UI for render changes
-    // tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&bidx=7&bidx=3&bidx=1&rescale=0,300`,
-  },
-  [DATASETS.AIRBUS_SAR]: {
-    assetKey: 'thumbnail',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}`,
-  },
-  [DATASETS.LAND_COVER]: {
-    assetKey: 'GeoTIFF',
-    tilesUrlTemplate: `${TITILER_URL}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?url={assetUrl}&colormap_name=tab20c`,
-  },
-  [DATASETS.EOCIS_SST_CLIM]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=blues&variable=sea_ice_fraction&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_SST]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,310.15&colormap_name=jet&variable=analysed_sst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3A_DAY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3A_NIGHT]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3B_DAY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_LST_S3B_NIGHT]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=263.15,318.15&colormap_name=jet&variable=lst&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_DAILY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_DAILY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3A_MONTHLY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
-  [DATASETS.EOCIS_AEROSOL_S3B_MONTHLY]: {
-    assetKey: 'reference_file',
-    tilesUrlTemplate: `${TITILER_XARRAY_URL}/tiles/{z}/{x}/{y}@1x?url={assetUrl}&rescale=0,1&colormap_name=plasma&variable=AOD550_mean&tileMatrixSetId=WebMercatorQuad&scale=1&multiscale=false&reference=true&decode_times=true&consolidated=false&return_mask=true`,
-  },
+const tilerUrls: Record<TilerType, string> = {
+  titiler: `${TITILER_URL}/core/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x`,
+  'titiler-multidim': `${TITILER_URL}/xarray/tiles/{z}/{x}/{y}@1x`,
 }
+
+interface CollectionConfig {
+  renders?: Record<string, BaseStacRender>
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
+}
+
+interface ServerRenderConfig {
+  title: string
+  assets: string[]
+  bidx?: number[]
+  rescale?: [number, number][]
+  nodata?: number | string
+  colormap?: Record<string, string>
+  colormap_name?: string
+  color_formula?: string
+  expression?: string
+  variable?: string
+  reference?: boolean
+  quicklook_georeference?: string
+}
+
+interface ServerCollectionConfig {
+  renders: Record<string, ServerRenderConfig>
+  'eodhrc:time-variable-items'?: boolean
+  'eodhrc:render-key-properties'?: string[]
+}
+
+export function getItemUrl(item: Item): string | undefined {
+  return item.links.find((link) => link.rel === 'self')?.href
+}
+
+export function getAssetUrl(item: Item, asset: string): string | undefined {
+  return item.assets?.[asset]?.href
+}
+
+export const resolveTilesUrl = (item: Item, render: StacRender | undefined): string | undefined => {
+  const collectionConfig = collectionRenderingConfig[item.collection]
+  if (!collectionConfig) return undefined
+  if (!render) return undefined
+
+  let tilerUrl = undefined
+  let urlParam = undefined
+
+  if (render.quicklook_georeference) {
+    return undefined
+  } else if (render.variable) {
+    tilerUrl = tilerUrls['titiler-multidim']
+    urlParam = getAssetUrl(item, render.assets[0])
+  } else {
+    tilerUrl = tilerUrls.titiler
+    urlParam = getItemUrl(item)
+  }
+
+  let queryParams = {
+    url: urlParam,
+  } as { url: string; rescale?: string[]; colormap?: string }
+
+  if (render) {
+    queryParams = {
+      ...queryParams,
+      ...render,
+      // Handles rescale parameter which can be either:
+      // 1. A nested array of [min,max] pairs: [[0,100], [0,255]]
+      // 2. A single [min,max] pair: [0,100]
+      // Converts to string array format required by tiler: ["0,100", "0,255"]
+      rescale: render.rescale
+        ? (Array.isArray(render.rescale[0])
+            ? (render.rescale as [number, number][])
+            : [render.rescale as [number, number]]
+          ).map(([min, max]) => `${min},${max}`)
+        : undefined,
+      colormap: render.colormap ? JSON.stringify(render.colormap) : undefined,
+    }
+  }
+
+  const queryString = qs.stringify(queryParams, {
+    indices: false,
+  })
+
+  return `${tilerUrl}?${queryString}`
+}
+
+function translateServerConfigToCollectionConfig(
+  serverConfig: Record<string, ServerCollectionConfig>,
+): Record<string, CollectionConfig> {
+  const result: Record<string, CollectionConfig> = {}
+
+  for (const [collectionId, config] of Object.entries(serverConfig)) {
+    const renders = config.renders
+
+    // Create base config
+    const baseConfig: CollectionConfig = {
+      renders: {},
+    }
+
+    // Translate renders
+    if (renders) {
+      for (const [renderId, renderConfig] of Object.entries(renders)) {
+        const optionalProps = {
+          bidx: renderConfig.bidx,
+          rescale: renderConfig.rescale,
+          nodata: renderConfig.nodata,
+          colormap: renderConfig.colormap,
+          variable: renderConfig.variable,
+          colormap_name: renderConfig.colormap_name,
+          color_formula: renderConfig.color_formula,
+          expression: renderConfig.expression,
+          reference: renderConfig.reference,
+          quicklook_georeference: renderConfig.quicklook_georeference,
+        }
+
+        const definedProps = Object.fromEntries(
+          Object.entries(optionalProps).filter((entry) => entry[1] !== undefined),
+        )
+
+        const translatedRender: BaseStacRender = {
+          title: renderConfig.title ?? renderId,
+          assets: renderConfig.assets,
+          ...definedProps,
+        }
+
+        baseConfig.renders![renderId] = translatedRender
+      }
+    }
+
+    if (config['eodhrc:time-variable-items']) {
+      baseConfig['eodhrc:time-variable-items'] = config['eodhrc:time-variable-items']
+    }
+
+    if (config['eodhrc:render-key-properties']) {
+      baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
+    }
+
+    // Add specific properties based on renderer type
+    result[collectionId] = baseConfig
+  }
+
+  return result
+}
+
+// Type assertion to ensure serverConfig matches ServerCollectionConfig
+const typedServerConfig = serverConfig as unknown as Record<string, ServerCollectionConfig>
+export const collectionRenderingConfig: Record<string, CollectionConfig> =
+  translateServerConfigToCollectionConfig(typedServerConfig)

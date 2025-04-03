@@ -11,7 +11,7 @@
       "title": "International Designator",
       "anyOf": [
         {
-          "title": "All platforms",
+          "title": "Any platform",
           "enum": ["%"]
         }
       ]
@@ -22,16 +22,16 @@
       "default": "%",
       "anyOf": [
         {
-          "title": "Both",
+          "title": "Any",
           "enum": ["%"]
         },
         {
           "title": "Ascending",
-          "enum": ["ascending"]
+          "enum": ["asc%"]
         },
         {
           "title": "Descending",
-          "enum": ["descending"]
+          "enum": ["desc%"]
         }
       ]
     }

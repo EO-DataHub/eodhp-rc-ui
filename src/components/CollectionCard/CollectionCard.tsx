@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Collection } from '@/types'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, Inset, IconButton } from '@radix-ui/themes'
+import { Flex, Text, Inset } from '@radix-ui/themes'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
@@ -28,34 +27,32 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
+  const handleOpenDetailsCard = () => {
+    setIsDetailsCardOpen(true)
+  }
+
   return (
     <>
-      <Card size="2" className={styles.card}>
+      <Flex className={styles.card} direction="column" onClick={handleOpenDetailsCard}>
         <Inset clip="padding-box" side="top" pb="current">
           <img src={thumbnailUrl} className={styles.thumbnail} onError={handleImageError} />
         </Inset>
-        <Flex justify="end" mt="-6" gap="2">
-          {isLicenseProprietary ? (
-            <IconButton radius="full" variant="solid" className={styles.button}>
-              <PoundSterlingSymbolIcon width="16" height="16" />
-            </IconButton>
-          ) : null}
-          <IconButton
-            radius="full"
-            variant="solid"
-            className={styles.button}
-            onClick={() => setIsDetailsCardOpen(true)}
-          >
-            <InfoCircledIcon width="25" height="25" />
-          </IconButton>
+        <Flex direction="column" p="4" justify="center" flexGrow="1" position="relative">
+          <Flex justify="end" gap="2" position="absolute" right="16px" top="-12px">
+            {isLicenseProprietary ? (
+              <div className={styles.poundSign}>
+                <PoundSterlingSymbolIcon width="12" height="12" />
+              </div>
+            ) : null}
+          </Flex>
+          <Text as="p" size="3" weight="medium" className={styles.text}>
+            {collection.title}
+          </Text>
+          <Text as="p" size="2" mt="2" className={styles.text}>
+            {getFormattedDateRange(dateInterval)}
+          </Text>
         </Flex>
-        <Text as="p" size="3" className={styles.text}>
-          {collection.title}
-        </Text>
-        <Text as="p" size="3" className={styles.text}>
-          {getFormattedDateRange(dateInterval)}
-        </Text>
-      </Card>
+      </Flex>
 
       <CollectionDetailsCard
         collection={collection}

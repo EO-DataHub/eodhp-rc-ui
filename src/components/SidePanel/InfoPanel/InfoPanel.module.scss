@@ -1,5 +1,5 @@
 .InfoPanel {
-  width: calc(100vw - 338px);
+  width: calc(100vw - 420px);
   opacity: 0;
   background-color: #fff;
   border-left: 1px solid #cdced6;
@@ -35,12 +35,6 @@
 
   .subtitle {
     color: var(--app-background-dark-2);
-  }
-
-  .closeButton {
-    position: absolute;
-    right: 12px;
-    top: 12px;
   }
 }
 

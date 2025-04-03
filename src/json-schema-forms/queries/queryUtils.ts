@@ -19,31 +19,3 @@ export function buildArrayFilter(key: string, values: unknown[], op: string): Qu
     args,
   }
 }
-
-/**
- * Constructs an s_intersects spatial subquery as a WKT Polygon from a bounding box.
- * @param boundingBox An array of longitude and latitude bounds in LBRT order.
- * @returns {object} The CQL2 spatial subquery.
- */
-export function buildPolygonFromBBox(
-  boundingBox: [number, number, number, number],
-): QueryCondition {
-  return {
-    op: 's_intersects',
-    args: [
-      { property: 'geometry' },
-      {
-        type: 'Polygon',
-        coordinates: [
-          [
-            [boundingBox[2], boundingBox[1]],
-            [boundingBox[2], boundingBox[3]],
-            [boundingBox[0], boundingBox[3]],
-            [boundingBox[0], boundingBox[1]],
-            [boundingBox[2], boundingBox[1]],
-          ],
-        ],
-      },
-    ],
-  }
-}

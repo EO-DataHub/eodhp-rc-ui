@@ -20,9 +20,14 @@ export const MetadataTable: React.FC<MetadataTableProps> = ({
 
   return (
     <Flex direction="column" gap="1" key={extension} className={styles.tableContainer} {...props}>
-      <Heading as="h3" size="4" weight="bold">
-        {label ? label : 'General'}
-      </Heading>
+      <Heading
+        as="h3"
+        size="4"
+        weight="bold"
+        dangerouslySetInnerHTML={{
+          __html: label ? label : 'General',
+        }}
+      ></Heading>
       <Table.Root size="3" variant={variant} layout="fixed">
         <Table.Body>
           {Object.keys(properties).map((key) => (
