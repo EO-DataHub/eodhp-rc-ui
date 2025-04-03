@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { Item, ItemCardType } from '@/types'
+import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
   Cross2Icon,
@@ -44,6 +44,10 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   const fields = [
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
     ...categorizationData.additionalFieldsToDisplay,
+    'order.status',
+    'order_options',
+    'order.id',
+    'order.date',
   ]
 
   return fields.map((field) => {
@@ -51,6 +55,17 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
 
     if (!fieldProperty) {
       return null
+    }
+
+    if (field === 'order_options') {
+      return (
+        <Text key={field} size="1" className={styles.text}>
+          <Text weight="medium">{fieldProperty.label}</Text>:{' '}
+          <Text
+            dangerouslySetInnerHTML={{ __html: (fieldProperty.value as CubeData).productBundle }}
+          ></Text>
+        </Text>
+      )
     }
 
     return (
