@@ -77,6 +77,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       .init({
         onLoad: initOptions.onLoad as KeycloakOnLoad,
         silentCheckSsoRedirectUri: `${location.origin}${BASE_PATH}/silent-check-sso.html`,
+        responseMode: 'query',
       })
       .then((auth) => {
         setIsAuthenticated(auth)
