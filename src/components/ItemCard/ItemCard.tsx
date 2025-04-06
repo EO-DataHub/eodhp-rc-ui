@@ -44,27 +44,29 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   const fields = [
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
     ...categorizationData.additionalFieldsToDisplay,
-    'order.status',
-    'order_options',
-    'order.id',
-    'order.date',
+    ['order.options', 'order:options', 'order_options'],
+    ['order.date', 'order:date', 'order_date'],
+    ['order.status', 'order:status', 'order_status'],
+    ['order.id', 'order:id', 'order_id'],
   ]
 
   return fields.map((field) => {
-    const fieldProperty = getMetadataItemProperty(field, metadataItems)
+    const fieldObject = getMetadataItemProperty(field, metadataItems)
 
-    if (!fieldProperty) {
+    if (!fieldObject) {
       return null
     }
 
+    const { rawFieldName, fieldProperty } = fieldObject
+
     let formattedText: string | TrustedHTML = fieldProperty.formatted
 
-    if (field === 'order_options') {
+    if (['order.options', 'order:options', 'order_options'].includes(rawFieldName)) {
       formattedText = (fieldProperty.value as CubeData).productBundle
     }
 
     return (
-      <Text key={field} size="1" className={styles.text}>
+      <Text key={rawFieldName} size="1" className={styles.text}>
         <Text weight="medium">{fieldProperty.label}</Text>:{' '}
         <Text dangerouslySetInnerHTML={{ __html: formattedText }}></Text>
       </Text>
