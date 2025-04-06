@@ -44,10 +44,10 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   const fields = [
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
     ...categorizationData.additionalFieldsToDisplay,
-    ['order.options', 'order:options', 'order_options'],
-    ['order.date', 'order:date', 'order_date'],
-    ['order.status', 'order:status', 'order_status'],
-    ['order.id', 'order:id', 'order_id'],
+    ['order:options', 'order.options', 'order_options'],
+    ['order:date', 'order.date', 'order_date'],
+    ['order:status', 'order.status', 'order_status'],
+    ['order:id', 'order.id', 'order_id'],
   ]
 
   return fields.map((field) => {
