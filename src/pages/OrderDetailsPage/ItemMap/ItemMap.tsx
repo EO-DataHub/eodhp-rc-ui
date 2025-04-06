@@ -2,12 +2,9 @@ import React, { useCallback, useRef } from 'react'
 import { Box } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
-import { ItemLayer } from '@/components/Map/layers/Item'
 import { AOILayer } from './AoiLayer'
-import { BoundingBoxLayer } from './BoundingBoxLayer'
 import type { LngLatLike } from 'maplibre-gl'
-import { useSelector } from '@xstate/store/react'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import DefaultItemLayer from '@/components/Map/layers/DefaultItemLayer'
 
 interface ItemMapProps {
   item: Item
@@ -24,8 +21,6 @@ const DEFAULT_MAP_VIEW = {
 
 export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType }) => {
   const mapRef = useRef<MapRef>(null)
-
-  const render = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
   // Set the initial view state based on the item's bounding box
   const initialViewState = item.bbox
@@ -69,8 +64,7 @@ export const ItemMap: React.FC<ItemMapProps> = ({ item, aoiGeojson, providerType
         ref={mapRef}
         onLoad={showThumbnail}
       >
-        <ItemLayer item={item} />
-        {!render?.quicklook_georeference && item.bbox && <BoundingBoxLayer bbox={item.bbox} />}
+        <DefaultItemLayer item={item} />
 
         {aoiGeojson && providerType !== 'airbus_sar' && <AOILayer geojson={aoiGeojson} />}
       </Maplibre>
