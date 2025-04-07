@@ -7,17 +7,24 @@ import { extractStacMetadata } from '@/library/extractStacMetadata'
 import {
   extractOpticalOrderItemDetails,
   extractSAROrderItemDetails,
+  extractPlanetOrderItemDetails,
 } from '@/pages/OrderDetailsPage/extractOrderItemDetails'
 import parse from 'html-react-parser'
-import { ItemMap } from './ItemMap'
+import { ItemMap } from './ItemMap/ItemMap'
 
 interface ItemInfoProps {
   item: Item
   isOptical: boolean
   aoiGeojson?: GeoJSON.FeatureCollection
+  providerType: 'airbus_optical' | 'airbus_sar' | 'planet'
 }
 
-export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson }) => {
+export const ItemInfo: React.FC<ItemInfoProps> = ({
+  item,
+  isOptical,
+  aoiGeojson,
+  providerType,
+}) => {
   const metadata: MetadataItem[] = useMemo(() => {
     const ignoredFields = ['assets', 'providers', 'links']
     return item ? extractStacMetadata(item, ignoredFields) : []
@@ -26,12 +33,19 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson 
   const orderItemDetails = useMemo(() => {
     if (!metadata.length) return {}
 
+    // planet's structure is already flat so we don't need to pass in metadata
+    if (providerType === 'planet') {
+      return extractPlanetOrderItemDetails(
+        item?.properties as Record<string, string | number | boolean | null>,
+      )
+    }
+
     return isOptical
       ? extractOpticalOrderItemDetails(metadata)
       : extractSAROrderItemDetails(metadata)
-  }, [metadata, isOptical])
+  }, [metadata, isOptical, providerType, item])
 
-  if (!orderItemDetails) {
+  if (Object.keys(orderItemDetails).length === 0) {
     return (
       <Flex gap="3" align="center">
         <Text>No metadata available.</Text>
@@ -42,7 +56,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({ item, isOptical, aoiGeojson 
   return (
     <Flex gap="2" className={styles.itemInfoContainer}>
       <Flex>
-        <ItemMap item={item} aoiGeojson={aoiGeojson} />
+        <ItemMap item={item} aoiGeojson={aoiGeojson} providerType={providerType} />
       </Flex>
 
       <Flex direction="column" gap="0.5" className={styles.itemInfo}>

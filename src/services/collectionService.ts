@@ -1,4 +1,4 @@
-import { Collection } from '@/types'
+import { Collection, DocumentQA } from '@/types'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const HUB_ENV = import.meta.env.VITE_HUB_ENV
@@ -52,4 +52,23 @@ export const fetchUserCollections = async (
 
   const data = await response.json()
   return data.collections as Collection[]
+}
+
+export const fetchDocumentQA = async (catalog: string | null, collection: string) => {
+  const url = `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/npl/catalogs/processing-results/catalogs/qa-workflow/catalogs/${catalog}/collections/${collection}/items`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch user Collections')
+  }
+
+  const data = await response.json()
+  return data as DocumentQA
 }

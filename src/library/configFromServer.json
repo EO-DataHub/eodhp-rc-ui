@@ -77,6 +77,14 @@
     "eodhrc:time-variable-items": true,
     "eodhrc:render-key-properties": ["cmip6:variable_id", "cmip6:frequency"],
     "renders": {
+      "pr--day": {
+        "title": "Precipitation (kg m-2 s-1)",
+        "assets": ["reference_file"],
+        "variable": "pr",
+        "colormap_name": "viridis",
+        "rescale": [[0.0, 0.0003565374086610976]],
+        "reference": true
+      },
       "pr--mon": {
         "title": "Precipitation (kg m-2 s-1)",
         "assets": ["reference_file"],
@@ -85,12 +93,12 @@
         "rescale": [[3.561188073319953e-8, 0.00015669361280743044]],
         "reference": true
       },
-      "pr--day": {
+      "pr--3hr": {
         "title": "Precipitation (kg m-2 s-1)",
         "assets": ["reference_file"],
         "variable": "pr",
         "colormap_name": "viridis",
-        "rescale": [[0, 0.0001]],
+        "rescale": [[0.0, 0.0003384547389578088]],
         "reference": true
       },
       "tas--mon": {
@@ -131,6 +139,30 @@
         "variable": "pr",
         "colormap_name": "viridis",
         "rescale": [[5.631761812452395e-9, 0.00015450975362909958]],
+        "reference": true
+      },
+      "tas--day": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "viridis",
+        "rescale": [[232.13118927001952, 306.0340832519531]],
+        "reference": true
+      },
+      "tasmax--day": {
+        "title": "Daily Maximum Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tasmax",
+        "colormap_name": "viridis",
+        "rescale": [[238.8539077758789, 305.9122802734375]],
+        "reference": true
+      },
+      "tas--3hrPt": {
+        "title": "Near-Surface Air Temperature (K)",
+        "assets": ["reference_file"],
+        "variable": "tas",
+        "colormap_name": "viridis",
+        "rescale": [[233.11844787597656, 302.24952392578126]],
         "reference": true
       }
     }
@@ -262,7 +294,8 @@
     "renders": {
       "preview": {
         "title": "Preview (approximate location)",
-        "assets": ["thumbnail"]
+        "assets": ["thumbnail"],
+        "nodata": 0
       }
     }
   },

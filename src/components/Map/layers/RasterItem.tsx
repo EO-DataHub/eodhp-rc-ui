@@ -1,10 +1,10 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
-import { Item, StacRender } from '@/types'
+import { Item } from '@/types'
 import { resolveTilesUrl } from '@/library/collectionRenderingConfig'
 
-export const RasterItemLayer = ({ item, render }: { item: Item; render: StacRender }) => {
+export const RasterItemLayer = ({ item }: { item: Item }) => {
   // When on assets tab, resolve the tiles url when rendering
-  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, render)
+  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render)
 
   if (!tilesUrl) return null
 
