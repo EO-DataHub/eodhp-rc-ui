@@ -25,6 +25,7 @@ const useItemsQuery = () => {
     aoi: aoi?.geometry,
     mapBounds,
     collectionId: collection?.id,
+    isUserCollection,
   })
 
   const { data: workspaceTokensData } = useQuery({

@@ -20,12 +20,31 @@ export const extractStacMetadata = (
   return StacFields.formatItemProperties(stacElement, metadataFieldsFilterFunc) as MetadataItem[]
 }
 
-export const getMetadataItemProperty = (rawFieldName: string, metadataItems: MetadataItem[]) => {
-  const parts = rawFieldName.split(':')
-  let extension = ''
-  if (parts.length === 2) {
-    extension = parts[0]
+export const getMetadataItemProperty = (
+  field: string | string[],
+  metadataItems: MetadataItem[],
+) => {
+  const fieldNames = []
+  if (typeof field === 'string') {
+    fieldNames.push(field)
+  } else {
+    fieldNames.push(...field)
   }
-  const metadataItem = metadataItems.find((item) => item.extension === extension)
-  return metadataItem?.properties[rawFieldName]
+
+  for (const fieldName of fieldNames) {
+    const parts = fieldName.split(':')
+    let extension = ''
+    if (parts.length === 2) {
+      extension = parts[0]
+    }
+    const metadataItem = metadataItems.find((item) => item.extension === extension)
+
+    const fieldProperty = metadataItem?.properties[fieldName]
+
+    if (fieldProperty) {
+      return { rawFieldName: fieldName, fieldProperty }
+    }
+  }
+
+  return null
 }

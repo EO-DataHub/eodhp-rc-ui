@@ -1,52 +1,24 @@
-import React from 'react'
+import type { Item } from '@/types'
 import { Source, Layer } from 'react-map-gl/maplibre'
-import type { BBox } from 'geojson'
 
-interface BoundingBoxLayerProps {
-  bbox: BBox
+const QUERY_ITEMS_LINE_PAINT_STYLE = {
+  'line-color': '#3a5bc7',
+  'line-width': 1,
 }
 
-export const BoundingBoxLayer: React.FC<BoundingBoxLayerProps> = ({ bbox }) => {
-  const polygon = {
-    type: 'FeatureCollection' as const,
-    features: [
-      {
-        type: 'Feature' as const,
-        geometry: {
-          type: 'Polygon' as const,
-          coordinates: [
-            [
-              [bbox[0], bbox[1]],
-              [bbox[0], bbox[3]],
-              [bbox[2], bbox[3]],
-              [bbox[2], bbox[1]],
-              [bbox[0], bbox[1]],
-            ],
-          ],
-        },
-        properties: {},
-      },
-    ],
-  }
-
+const BoundingBoxLayer = ({ item }: { item: Item }) => {
   return (
-    <Source id="bbox-layer" type="geojson" data={polygon}>
-      <Layer
-        id="bbox-fill"
-        type="fill"
-        paint={{
-          'fill-color': '#1E90FF',
-          'fill-opacity': 0.1,
-        }}
-      />
-      <Layer
-        id="bbox-outline"
-        type="line"
-        paint={{
-          'line-color': '#1E90FF',
-          'line-width': 2,
-        }}
-      />
-    </Source>
+    <>
+      <Source
+        key={`query-item-${item.id}`}
+        id={`source-${item.id}-bounds`}
+        type="geojson"
+        data={item.geometry}
+      >
+        <Layer type="line" paint={QUERY_ITEMS_LINE_PAINT_STYLE} />
+      </Source>
+    </>
   )
 }
+
+export default BoundingBoxLayer

@@ -88,6 +88,9 @@ export interface Collection {
   renders?: {
     [key: string]: BaseStacRender
   }
+  // unique key to differentiate between public collections and user collections
+  isUserCollection?: boolean
+  displayedTitle?: string
 }
 
 export type ItemCardType = 'query-item' | 'pinned-item'

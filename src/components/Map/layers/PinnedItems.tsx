@@ -1,6 +1,6 @@
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { ItemLayer } from './Item'
+import { ItemLayer } from './ItemLayer'
 
 const PinnedItemsLayer = () => {
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)

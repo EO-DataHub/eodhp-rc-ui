@@ -93,11 +93,13 @@ enum TimePeriodLabel {
 enum License {
   Commercial_Data = 'lic:commercial',
   Open_Data = 'lic:open',
+  My_Data = 'lic:my-data',
 }
 
 enum LicenseLabel {
   Commercial_Data = 'Commercial Data',
   Open_Data = 'Open Data',
+  My_Data = 'My Data',
 }
 
 const createOptions = <T extends Record<string, string>>(

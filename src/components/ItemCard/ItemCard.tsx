@@ -1,6 +1,6 @@
 import React, { useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { Item, ItemCardType } from '@/types'
+import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
   Cross2Icon,
@@ -44,19 +44,31 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   const fields = [
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
     ...categorizationData.additionalFieldsToDisplay,
+    ['order:options', 'order.options', 'order_options'],
+    ['order:date', 'order.date', 'order_date'],
+    ['order:status', 'order.status', 'order_status'],
+    ['order:id', 'order.id', 'order_id'],
   ]
 
   return fields.map((field) => {
-    const fieldProperty = getMetadataItemProperty(field, metadataItems)
+    const fieldObject = getMetadataItemProperty(field, metadataItems)
 
-    if (!fieldProperty) {
+    if (!fieldObject) {
       return null
     }
 
+    const { rawFieldName, fieldProperty } = fieldObject
+
+    let formattedText: string | TrustedHTML = fieldProperty.formatted
+
+    if (['order.options', 'order:options', 'order_options'].includes(rawFieldName)) {
+      formattedText = (fieldProperty.value as CubeData).productBundle
+    }
+
     return (
-      <Text key={field} size="1" className={styles.text}>
+      <Text key={rawFieldName} size="1" className={styles.text}>
         <Text weight="medium">{fieldProperty.label}</Text>:{' '}
-        <Text dangerouslySetInnerHTML={{ __html: fieldProperty.formatted }}></Text>
+        <Text dangerouslySetInnerHTML={{ __html: formattedText }}></Text>
       </Text>
     )
   })
@@ -113,14 +125,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return url
   }, [item?.links])
 
-  // temporarily fetching item details
-  const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
-    refetchOnWindowFocus: false,
-    enabled: !!item,
-  })
-
   const navigate = useNavigate()
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
@@ -132,8 +136,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     dataFinderStore,
     (state) => state.context.collection?.license === 'proprietary',
   )
-  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const collectionRenderOptions = useSelector(
     dataFinderStore,
@@ -143,6 +147,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // temporarily fetching item details
+  const { data } = useQuery({
+    queryKey: ['Items', item?.collection, item?.id],
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+    refetchOnWindowFocus: false,
+    enabled: !!item && !isUserCollection,
+  })
 
   // In order to determine if the item is already pinned, we need a unique ID
   // for the pin to query the existing pinned items. If the item already has a
@@ -278,7 +290,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             <Text size="1" className={styles.text}>
               {convertDateToUTCString(new Date(item.properties.datetime))}
             </Text>
-            {data && renderAdditionalFields(data, item.collection)}
+            {data
+              ? renderAdditionalFields(data, item.collection)
+              : renderAdditionalFields(item, item.collection)}
           </Flex>
           {isPinnedCard && (
             <Flex align="end" direction="column">

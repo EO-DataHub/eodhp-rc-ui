@@ -46,7 +46,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
             ) : null}
           </Flex>
           <Text as="p" size="3" weight="medium" className={styles.text}>
-            {collection.title}
+            {collection.displayedTitle}
           </Text>
           <Text as="p" size="2" mt="2" className={styles.text}>
             {getFormattedDateRange(dateInterval)}

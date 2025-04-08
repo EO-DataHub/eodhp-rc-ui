@@ -38,7 +38,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
         <Flex direction="column" p="2" justify="between" flexGrow="1" gap="5">
           <Flex direction="column">
             <Text as="p" size="3" weight="medium" className={styles.text}>
-              {collection.title}
+              {collection.displayedTitle}
             </Text>
             <Text as="p" size="1" className={styles.text}>
               {getFormattedDateRange(dateInterval)}
