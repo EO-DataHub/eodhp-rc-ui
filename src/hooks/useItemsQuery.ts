@@ -7,6 +7,7 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useEffect } from 'react'
+import { sortFeatures } from '@/library/geoUtils.ts'
 
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
@@ -36,15 +37,24 @@ const useItemsQuery = () => {
   })
 
   const fetchFunction = () => {
-    return isUserCollection && collection
-      ? fetchUserItems(collection, workspaceTokensData!.access)
-      : fetchItems({
-          limit: MAX_TOTAL_ITEMS,
-          mapBounds: mapBounds,
-          aoi: aoi,
-          selectedCollection: collection ?? undefined,
-          queryFilter: queryFilter,
-        })
+    const filteredItems =
+      isUserCollection && collection
+        ? fetchUserItems(collection, workspaceTokensData!.access)
+        : fetchItems({
+            limit: MAX_TOTAL_ITEMS,
+            mapBounds: mapBounds,
+            aoi: aoi,
+            selectedCollection: collection ?? undefined,
+            queryFilter: queryFilter,
+          })
+    return filteredItems.then((filteredItems) =>
+      sortFeatures(mapBounds, aoi, filteredItems, {
+        distanceBias: 1.0,
+        areaBias: 0.0,
+        aspectBias: 0.0,
+        temporalBias: 0.0,
+      }),
+    )
   }
 
   const {

@@ -104,6 +104,8 @@ export interface Item {
   collection: string
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
+  scores: number[]
+  score: number
   properties: {
     [key: string]: never
   }
