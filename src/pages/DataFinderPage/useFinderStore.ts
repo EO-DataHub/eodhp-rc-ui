@@ -220,6 +220,7 @@ const dataFinderStore = createStore({
         collectionRender: StacRender
         isLicenseProprietary: boolean
         isUserCollection: boolean
+        collectionName: string
       },
     ): typeof context => {
       const pinnedItemId = getPinnedItemId(event.item, event.collectionRender)
@@ -233,6 +234,7 @@ const dataFinderStore = createStore({
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         isLicenseProprietary: event.isLicenseProprietary,
         isUserCollection: event.isUserCollection,
+        collectionName: event.collectionName,
         render: event.collectionRender,
         mapRender: {
           visible: true,
