@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
+import { useItemsQuery } from '@/hooks/useItemsQuery'
+import { useRestoreAoi } from '@/hooks/useRestoreAoi'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
+import drawStylesConfig from '@/components/Map/drawStylesConfig'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
-import useItemsQuery from '@/hooks/useItemsQuery'
 
 interface DrawConstants {
   classes: {
@@ -47,6 +49,7 @@ function DrawControl() {
           polygon: true,
           trash: true,
         },
+        styles: drawStylesConfig,
       })
       drawInstance.current = draw
 
@@ -68,6 +71,26 @@ function DrawControl() {
     }
   }, [])
 
+  // Overwrite the native delete button of Mapbox
+  // which already has a listener, but only for selected drawings
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const deleteButton = document.querySelector('.mapbox-gl-draw_trash')
+      if (deleteButton) {
+        const customDeleteButton = deleteButton.cloneNode(true) as HTMLButtonElement
+        deleteButton.parentNode?.replaceChild(customDeleteButton, deleteButton)
+
+        // Add our own behavior to delete all drawings
+        customDeleteButton.addEventListener('click', () => {
+          dataFinderStore.send({ type: 'drawDelete' })
+        })
+        clearInterval(interval)
+      }
+    }, 300)
+
+    return () => clearInterval(interval)
+  }, [])
+
   return null
 }
 
@@ -81,13 +104,7 @@ export const Map = () => {
   const [viewState, setViewState] = useState(savedViewState)
 
   // Load AOI from local storage on mount
-  useEffect(() => {
-    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
-    if (storedAoi) {
-      const parsedAoi = JSON.parse(storedAoi)
-      dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-    }
-  }, [])
+  useRestoreAoi()
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
@@ -145,9 +162,9 @@ export const Map = () => {
         dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
         // Listen to draw mode changes
-        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) =>
-          dataFinderStore.send({ type: 'drawModeChange', mapEvent }),
-        )
+        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
+          dataFinderStore.send({ type: 'drawModeChange', mapEvent })
+        })
 
         // Listen to draw events
         mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
@@ -156,7 +173,6 @@ export const Map = () => {
         mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
           dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
         )
-
         mapInstance.on('draw.delete', () => {
           dataFinderStore.send({ type: 'drawDelete' })
         })

@@ -187,7 +187,9 @@ const dataFinderStore = createStore({
       }
     },
     drawDelete: (context) => {
+      const { drawInstance } = context
       localStorage.removeItem('aoiData')
+      drawInstance!.deleteAll()
 
       return {
         ...context,
@@ -195,17 +197,26 @@ const dataFinderStore = createStore({
       }
     },
     drawModeChange: (context, event: { mapEvent: DrawModeChangeEvent }) => {
-      const { drawMode: currentDrawMode, aoi: currentAoi, drawInstance } = context
+      const { aoi: currentAoi, drawInstance, mapInstance } = context
       const { mode: nextDrawMode } = event.mapEvent
 
       // Ensure draw instance exists to avoid type errors
       if (!drawInstance) return context
 
-      // User started drawing a new polygon, delete the current AOI if it exists
-      if (currentDrawMode === DrawModes.SIMPLE_SELECT && nextDrawMode === DrawModes.DRAW_POLYGON) {
+      if (nextDrawMode === DrawModes.DRAW_POLYGON) {
+        // User started drawing a new polygon, delete the current AOI if it exists
         if (currentAoi) {
           drawInstance.delete(currentAoi.id as string)
         }
+
+        const handleDblClick = () => {
+          // Wait a bit for draw to be register and then change selection
+          setTimeout(() => {
+            drawInstance.changeMode('simple_select')
+          }, 100)
+          mapInstance!.off('dblclick', handleDblClick)
+        }
+        mapInstance!.on('dblclick', handleDblClick)
       }
 
       return {

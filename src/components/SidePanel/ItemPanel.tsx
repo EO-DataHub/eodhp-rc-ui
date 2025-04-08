@@ -46,7 +46,6 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
           }
           isLicenseProprietary={isLicenseProprietary}
           onChangeCollection={() => {
-            // console.log('onChangeCollectionInfo', queryFilter)
             // For now, just clear the query filter every time we change collections.
             // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
             dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
