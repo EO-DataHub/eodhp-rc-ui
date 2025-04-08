@@ -132,10 +132,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isSelected = infoPanelItem?.id === item.id
 
-  // const isLicenseProprietary = useSelector(
-  //   dataFinderStore,
-  //   (state) => state.context.collection?.license === 'proprietary',
-  // )
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
