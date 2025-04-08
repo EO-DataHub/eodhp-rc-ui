@@ -193,17 +193,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         isLicenseProprietary: collection?.license === 'proprietary',
         isUserCollection: isUserCollection,
         collectionName: collection?.title ?? collection?.id ?? '',
+        collection,
         collectionRender: (itemRender ?? collectionRender)!,
       }),
-    [
-      item,
-      collection?.license,
-      collection?.title,
-      collection?.id,
-      isUserCollection,
-      itemRender,
-      collectionRender,
-    ],
+    [item, collection, isUserCollection, itemRender, collectionRender],
   )
 
   useEffect(() => {
@@ -259,7 +252,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
-      navigate(`/order-details/${item.id}`)
+      navigate(`/order-details/${item.id}`, { state: { item } })
     } else {
       await login()
     }

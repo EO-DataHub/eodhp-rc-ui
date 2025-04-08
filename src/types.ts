@@ -142,7 +142,8 @@ export interface Item {
   }
   isUserCollection?: boolean
   isLicenseProprietary?: boolean
-  collectionName: string
+  collectionName?: string
+  collectionRef?: Collection
 }
 
 export interface CubeData {

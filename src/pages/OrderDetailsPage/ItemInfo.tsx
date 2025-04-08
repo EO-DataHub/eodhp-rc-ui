@@ -65,10 +65,8 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({
         </Text>
 
         {Object.entries(orderItemDetails).map(([parentKey, parentValue]) => (
-          <Flex key={parentKey} direction="row" justify="between">
-            <Text className={styles.itemText} weight="bold">
-              {parentKey}:
-            </Text>
+          <Flex key={parentKey} direction="row" gap="1">
+            <Text className={styles.itemText}>{parentKey}:</Text>
             {typeof parentValue === 'object' && parentValue !== null ? (
               <Flex direction="column">
                 {Object.entries(parentValue).map(([childKey, childValue]) => (

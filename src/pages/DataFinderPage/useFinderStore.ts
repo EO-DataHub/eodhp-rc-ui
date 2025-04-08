@@ -221,6 +221,7 @@ const dataFinderStore = createStore({
         isLicenseProprietary: boolean
         isUserCollection: boolean
         collectionName: string
+        collection?: Collection
       },
     ): typeof context => {
       const pinnedItemId = getPinnedItemId(event.item, event.collectionRender)
@@ -235,6 +236,7 @@ const dataFinderStore = createStore({
         isLicenseProprietary: event.isLicenseProprietary,
         isUserCollection: event.isUserCollection,
         collectionName: event.collectionName,
+        collectionRef: event.collection,
         render: event.collectionRender,
         mapRender: {
           visible: true,
