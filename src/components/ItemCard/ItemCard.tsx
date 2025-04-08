@@ -132,10 +132,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isSelected = infoPanelItem?.id === item.id
 
-  const isLicenseProprietary = useSelector(
-    dataFinderStore,
-    (state) => state.context.collection?.license === 'proprietary',
-  )
+  // const isLicenseProprietary = useSelector(
+  //   dataFinderStore,
+  //   (state) => state.context.collection?.license === 'proprietary',
+  // )
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
@@ -143,6 +143,21 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     dataFinderStore,
     ({ context }) => context.collectionRenderOptions,
   )
+
+  const isLicenseProprietary = useMemo(() => {
+    if (item.isLicenseProprietary !== undefined) {
+      return item.isLicenseProprietary
+    }
+    return collection?.license === 'proprietary'
+  }, [collection?.license, item.isLicenseProprietary])
+
+  const itemBelongsToUserCollection = useMemo(() => {
+    if (item.isUserCollection !== undefined) {
+      return item.isUserCollection
+    }
+    return isUserCollection
+  }, [isUserCollection, item.isUserCollection])
+
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
@@ -179,9 +194,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       dataFinderStore.send({
         type: 'addPinnedItem',
         item,
+        isLicenseProprietary: collection?.license === 'proprietary',
+        isUserCollection: isUserCollection,
         collectionRender: (itemRender ?? collectionRender)!,
       }),
-    [item, collectionRender, itemRender],
+    [item, collection?.license, isUserCollection, itemRender, collectionRender],
   )
 
   useEffect(() => {
@@ -378,7 +395,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !isUserCollection && (
+            {isLicenseProprietary && !itemBelongsToUserCollection && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
                 Purchase
               </Button>
