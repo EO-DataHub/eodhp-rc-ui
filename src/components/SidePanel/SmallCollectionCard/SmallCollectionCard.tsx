@@ -11,19 +11,21 @@ interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
   onChangeCollection: () => void
   isLicenseProprietary: boolean
+  disabled?: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
   isLicenseProprietary,
   onChangeCollection,
+  disabled = false,
 }) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
   return (
-    <Card className={styles.card}>
+    <Card className={`${disabled ? styles.disabledCard : styles.card}`}>
       <Flex direction="column">
         <Flex justify="between" align="center">
           <Text weight="medium" size="4" className={styles.text}>

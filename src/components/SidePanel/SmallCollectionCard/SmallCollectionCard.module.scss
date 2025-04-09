@@ -17,24 +17,47 @@
     width: 20px;
     height: 20px;
   }
+}
 
-  .text {
+.disabledCard {
+  background-color: var(--app-background-disable-light);
+  flex-shrink: 0;
+
+  .costButton {
+    background-color: var(--app-background-disable-light);
     color: var(--blue-contrast);
+    border: 1.5px solid var(--blue-contrast);
+    width: 19px;
+    height: 19px;
   }
 
-  .link {
+  .infoButton {
     cursor: pointer;
+    background-color: var(--app-background-disable-light);
     color: var(--blue-contrast);
-    text-decoration: none;
-  
-    &:hover {
-      text-decoration: underline;
-    }
+    width: 20px;
+    height: 20px;
   }
 }
 
 .card::before,
-.card::after {
+.card::after,
+.disabledCard::before,
+.disabledCard::after {
   content: none;
   background: none;
+}
+
+.text {
+  color: var(--blue-contrast);
+}
+
+.link {
+  cursor: pointer;
+  color: var(--blue-contrast);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
