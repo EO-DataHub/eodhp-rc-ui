@@ -42,7 +42,10 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
       >
         <SmallCollectionCard
           onSelectCollectionInfo={() =>
-            dataFinderStore.send({ type: 'setSecondaryPanel', panel: 'collection-info' })
+            dataFinderStore.send({
+              type: 'setSecondaryPanel',
+              panel: secondaryPanel === 'collection-info' ? undefined : 'collection-info',
+            })
           }
           isLicenseProprietary={isLicenseProprietary}
           onChangeCollection={() => {
