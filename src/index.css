@@ -21,6 +21,7 @@ body {
   --app-background-dark-1: #33363A;
   --app-background-dark-2: #60646c;
   --app-background-light: #fff;
+  --app-background-disable-light: #CDCED6;
   --dark-text: var(--gray-12);
   --toastify-color-info: var(--indigo-9);
   --toastify-color-success: var(--green-11);

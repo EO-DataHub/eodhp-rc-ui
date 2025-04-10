@@ -1,5 +1,5 @@
-import React from 'react'
-import { Flex } from '@radix-ui/themes'
+import React, { useState } from 'react'
+import { Flex, Tooltip } from '@radix-ui/themes'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import styles from './SidePanel.module.scss'
 import { Collection } from '@/types'
@@ -20,13 +20,36 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
-  // const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const [activeTab, setActiveTab] = useState('query-items-tab')
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
   const isInfoPanelOpen = secondaryPanel === 'item-info' || secondaryPanel === 'collection-info'
+  const isSmallCollectionCardDisabled = activeTab === 'pinned-items-tab'
+
+  const smallCollectionCard = (
+    <div>
+      <SmallCollectionCard
+        onSelectCollectionInfo={() =>
+          dataFinderStore.send({
+            type: 'setSecondaryPanel',
+            panel: secondaryPanel === 'collection-info' ? undefined : 'collection-info',
+          })
+        }
+        isLicenseProprietary={isLicenseProprietary}
+        onChangeCollection={() => {
+          // For now, just clear the query filter every time we change collections.
+          // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
+          dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
+
+          setShowCollectionPanel(true)
+        }}
+        disabled={isSmallCollectionCardDisabled}
+      />
+    </div>
+  )
 
   return (
     <>
@@ -40,23 +63,14 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
           boxShadow: secondaryPanel ? 'none' : undefined,
         }}
       >
-        <SmallCollectionCard
-          onSelectCollectionInfo={() =>
-            dataFinderStore.send({
-              type: 'setSecondaryPanel',
-              panel: secondaryPanel === 'collection-info' ? undefined : 'collection-info',
-            })
-          }
-          isLicenseProprietary={isLicenseProprietary}
-          onChangeCollection={() => {
-            // For now, just clear the query filter every time we change collections.
-            // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
-            dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-
-            setShowCollectionPanel(true)
-          }}
-        />
-        <Tabs />
+        {isSmallCollectionCardDisabled ? (
+          <Tooltip content="Select the Items tab to access this collection">
+            {smallCollectionCard}
+          </Tooltip>
+        ) : (
+          smallCollectionCard
+        )}
+        <Tabs onTabChange={setActiveTab} />
       </Flex>
 
       <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />

@@ -103,7 +103,7 @@ function buildSort(isPlanet: boolean): { field: string; direction: 'asc' | 'desc
   // Super-simple hard-coded sort by date descending. In the future we'll need to make this more complex.
   return [
     {
-      field: isPlanet ? 'datetime' : 'properties.end_datetime',
+      field: isPlanet ? 'acquired' : 'properties.end_datetime',
       direction: 'desc',
     },
   ]
