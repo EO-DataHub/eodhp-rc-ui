@@ -18,6 +18,17 @@ export const TiffViewer: React.FC<TiffViewerProps> = ({ url, className }) => {
 
         UTIF.decodeImage(buffer, ifds[0])
         const rgba = UTIF.toRGBA8(ifds[0])
+
+        // Modify alpha for pixels where R=G=B=0
+        for (let i = 0; i < rgba.length; i += 4) {
+          const r = rgba[i]
+          const g = rgba[i + 1]
+          const b = rgba[i + 2]
+          if (r === 0 && g === 0 && b === 0) {
+            rgba[i + 3] = 0 // Set alpha to 0 (transparent)
+          }
+        }
+
         const canvas = canvasRef.current
         if (canvas && rgba) {
           canvas.width = ifds[0].width
