@@ -11,6 +11,7 @@ import {
   ZoomInIcon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
+import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -267,11 +268,16 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
           onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
         >
-          <img
-            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
-            className={styles.thumbnail}
-            onError={handleImageError}
-          />
+          {item.assets?.thumbnail?.href?.endsWith('.tif') ||
+          item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
+            <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+          ) : (
+            <img
+              src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+              className={styles.thumbnail}
+              onError={handleImageError}
+            />
+          )}
           <div className={styles.overlay}>
             <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
               <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
