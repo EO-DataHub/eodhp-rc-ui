@@ -76,6 +76,7 @@ export const fetchItems = async ({
   const data = await response.json()
   return data.features as Item[]
 }
+
 export const fetchItemFromCollection = async ({
   catalogUrl,
   collectionId,
