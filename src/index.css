@@ -21,6 +21,7 @@ body {
   --app-background-dark-1: #33363A;
   --app-background-dark-2: #60646c;
   --app-background-light: #fff;
+  --app-background-disable-light: #CDCED6;
   --dark-text: var(--gray-12);
   --toastify-color-info: var(--indigo-9);
   --toastify-color-success: var(--green-11);
@@ -107,4 +108,12 @@ body {
 
 .rt-BaseDialogOverlay::before {
   background-color: #000509E3;
+}
+
+/* custom maplibregl control panel styles (they need to be overridden globally)*/
+.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
+  background-image: url('/src/assets/icons/pencil.svg');
+}
+.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+  background-image: url('/src/assets/icons/trash.svg');
 }

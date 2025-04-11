@@ -9,6 +9,7 @@
   background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
   border-radius: 4px;
   overflow: hidden;
+  margin: 2px;
 
   .text {
     color: var(--blue-contrast);
@@ -23,6 +24,20 @@
       text-decoration: underline;
     }
   }
+
+  &.selected {
+    outline: 2px solid var(--accent-8);
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}
+.card:hover {
+  cursor: pointer;
+  outline: 2px solid var(--app-background-dark-2);
 }
 
 .costButton {

@@ -4,7 +4,7 @@ import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import useItemsQuery, { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
+import { useItemsQuery, MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 

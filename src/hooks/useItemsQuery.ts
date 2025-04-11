@@ -11,7 +11,7 @@ import { useEffect } from 'react'
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
-const useItemsQuery = () => {
+export const useItemsQuery = () => {
   const { workspaceUserName, token } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
@@ -81,5 +81,3 @@ const useItemsQuery = () => {
     pageItems: allItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
   }
 }
-
-export default useItemsQuery
