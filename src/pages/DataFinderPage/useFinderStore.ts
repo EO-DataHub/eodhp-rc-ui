@@ -226,7 +226,14 @@ const dataFinderStore = createStore({
     },
     addPinnedItem: (
       context,
-      event: { item: Item; collectionRender: StacRender },
+      event: {
+        item: Item
+        collectionRender: StacRender
+        isLicenseProprietary: boolean
+        isUserCollection: boolean
+        collectionName: string
+        collection?: Collection
+      },
     ): typeof context => {
       const pinnedItemId = getPinnedItemId(event.item, event.collectionRender)
       const isAlreadyPinned = context.pinnedItems.some((i) => i.pinId === pinnedItemId)
@@ -237,6 +244,10 @@ const dataFinderStore = createStore({
         ...event.item,
         pinId: pinnedItemId,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        isLicenseProprietary: event.isLicenseProprietary,
+        isUserCollection: event.isUserCollection,
+        collectionName: event.collectionName,
+        collectionRef: event.collection,
         render: event.collectionRender,
         mapRender: {
           visible: true,

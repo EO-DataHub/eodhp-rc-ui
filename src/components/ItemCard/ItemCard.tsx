@@ -133,10 +133,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isSelected = infoPanelItem?.id === item.id
 
-  const isLicenseProprietary = useSelector(
-    dataFinderStore,
-    (state) => state.context.collection?.license === 'proprietary',
-  )
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
@@ -144,6 +140,21 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     dataFinderStore,
     ({ context }) => context.collectionRenderOptions,
   )
+
+  const isLicenseProprietary = useMemo(() => {
+    if (item.isLicenseProprietary !== undefined) {
+      return item.isLicenseProprietary
+    }
+    return collection?.license === 'proprietary'
+  }, [collection?.license, item.isLicenseProprietary])
+
+  const itemBelongsToUserCollection = useMemo(() => {
+    if (item.isUserCollection !== undefined) {
+      return item.isUserCollection
+    }
+    return isUserCollection
+  }, [isUserCollection, item.isUserCollection])
+
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
@@ -180,9 +191,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       dataFinderStore.send({
         type: 'addPinnedItem',
         item,
+        isLicenseProprietary: collection?.license === 'proprietary',
+        isUserCollection: isUserCollection,
+        collectionName: collection?.title ?? collection?.id ?? '',
+        collection,
         collectionRender: (itemRender ?? collectionRender)!,
       }),
-    [item, collectionRender, itemRender],
+    [item, collection, isUserCollection, itemRender, collectionRender],
   )
 
   useEffect(() => {
@@ -238,7 +253,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
-      navigate(`/order-details/${item.id}`)
+      navigate(`/order-details/${item.id}`, { state: { item } })
     } else {
       await login()
     }
@@ -259,36 +274,37 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
     >
-      {isQueryCard && (
-        <Flex
-          align="center"
-          justify="center"
-          flexShrink="0"
-          p="4"
-          className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
-        >
-          {item.assets?.thumbnail?.href?.endsWith('.tif') ||
-          item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
-            <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
-          ) : (
-            <img
-              src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
-              className={styles.thumbnail}
-              onError={handleImageError}
-            />
-          )}
-          <div className={styles.overlay}>
-            <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
-              <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
-            </Tooltip>
-          </div>
-        </Flex>
-      )}
-      <Flex direction="column" p="2" flexGrow={'1'}>
+      <Flex
+        align="center"
+        justify="center"
+        flexShrink="0"
+        p="4"
+        className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
+        onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
+      >
+        {item.assets?.thumbnail?.href?.endsWith('.tif') ||
+        item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
+          <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+        ) : (
+          <img
+            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+            className={styles.thumbnail}
+            onError={handleImageError}
+          />
+        )}
+        <div className={styles.overlay}>
+          <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
+            <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
+          </Tooltip>
+        </div>
+      </Flex>
+      <Flex direction="column" p="2" flexGrow={'1'} justify="between">
         <Flex>
           <Flex direction="column" flexGrow={'1'}>
-            <Flex justify="between">
+            <Flex direction="column" justify="between">
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+                {item.collectionName}
+              </Text>
               <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
                 {cardTitle}
               </Text>
@@ -328,7 +344,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
           )}
-          <Flex justify="end" gap="4" align="center">
+          <Flex justify="end" gap="3" align="center">
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
@@ -384,7 +400,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !isUserCollection && (
+            {isLicenseProprietary && !itemBelongsToUserCollection && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
                 Purchase
               </Button>

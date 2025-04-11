@@ -140,6 +140,10 @@ export interface Item {
     visible: boolean
     opacity: number
   }
+  isUserCollection?: boolean
+  isLicenseProprietary?: boolean
+  collectionName?: string
+  collectionRef?: Collection
 }
 
 export interface CubeData {

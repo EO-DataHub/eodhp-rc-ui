@@ -1,5 +1,5 @@
 import React, { useContext, useState, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItemFromCollection } from '@/services/itemService'
 import { Flex, Text, Link, Badge } from '@radix-ui/themes'
@@ -18,12 +18,18 @@ import { PartialSceneSelect } from './PartialSceneSelect'
 import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
+import { Collection } from '@/types'
 
 export const OrderDetailsPage: React.FC = () => {
+  const { state } = useLocation()
+  const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
   const { workspaceUserName, token } = useContext(AuthenticationContext)
-  const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const selectedCollection = useMemo(() => {
+    return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
+  }, [navigatedItem.collectionRef, storedSelectedCollection])
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
 
@@ -202,7 +208,7 @@ export const OrderDetailsPage: React.FC = () => {
           )}
           <Flex direction="column" gap="2">
             <Badge className={styles.tag}>{providerType}</Badge>
-            <Text size="4" weight="bold">
+            <Text size="5" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
             <Text>Workspace: {workspaceUserName}</Text>
@@ -216,7 +222,7 @@ export const OrderDetailsPage: React.FC = () => {
 
             <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
 
-            <Text size="3" weight="bold" className={styles.cost}>
+            <Text size="4" weight="bold" className={styles.cost}>
               {providerType !== 'planet' && !orderSelections.licence
                 ? 'Select a licence type to get a quote.'
                 : isQuoteLoading
