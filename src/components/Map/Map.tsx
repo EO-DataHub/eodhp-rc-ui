@@ -132,7 +132,7 @@ export const Map = () => {
   // on page load and should be on top of the other layers. Ideally we not need
   // to do this but there is no way to control the order of the layers in the
   // MapboxDraw control.
-
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   useEffect(() => {
     if (!mapInstance) return
 
@@ -144,7 +144,7 @@ export const Map = () => {
         }
       })
     }, 100)
-  }, [mapInstance, pageItems])
+  }, [mapInstance, pageItems, pinnedItems])
 
   return (
     <Maplibre
