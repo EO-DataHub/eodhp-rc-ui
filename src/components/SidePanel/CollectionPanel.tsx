@@ -102,7 +102,11 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
   const handleSelectCollectionInfo = (collection: Collection) => {
     // Reset item info panel
     setIsFilterOpen(false)
-    setSelectedCollectionInfo(collection)
+    if (selectedCollectionInfo?.id === collection.id) {
+      setSelectedCollectionInfo(null)
+    } else {
+      setSelectedCollectionInfo(collection)
+    }
   }
 
   const handleChangeCollection = (collection: Collection) => {

@@ -1,7 +1,7 @@
 import React from 'react'
 import { useSelector } from '@xstate/store/react'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Link } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
@@ -39,9 +39,11 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
                 <PoundSterlingSymbolIcon width="6" height="9" />
               </IconButton>
             )}
-            <IconButton radius="full" variant="solid" className={styles.infoButton}>
-              <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
-            </IconButton>
+            <Tooltip content="View Metadata">
+              <IconButton radius="full" variant="solid" className={styles.infoButton}>
+                <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
+              </IconButton>
+            </Tooltip>
           </Flex>
         </Flex>
         <Text size="2" className={styles.text}>
