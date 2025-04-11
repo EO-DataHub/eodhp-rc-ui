@@ -56,7 +56,8 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
           />
           <Flex>
             <Text size="2">
-              {info.text}{' '}
+              {info.text}
+              <span className={styles.asterisk}>*</span>{' '}
               {info.link && (
                 <Link
                   className={styles.linkText}
@@ -68,7 +69,6 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
                 </Link>
               )}
             </Text>
-            {/* <span className={styles.asterisk}>*</span> */}
           </Flex>
         </Flex>
       ))}
