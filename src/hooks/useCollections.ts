@@ -87,31 +87,52 @@ export const useCollections = () => {
     }
 
     return sortedCollections.filter((collection) => {
-      const entries = Object.entries(filters) as [keyof QuickFilter, string][]
+      const filterEntries = Object.entries(filters) as [keyof QuickFilter, string][]
 
-      if (!isValidCollectionId(collection.id)) {
-        return (
-          // check if user is filtering my-data
-          entries.length === 1 && entries[0][1] === 'lic:my-data' && collection.isUserCollection
-        )
+      // if user is filtering my data collection, make sure those collections be included
+      // even if they don't have valid id in isValidCollectionId mapping
+      if (
+        !isValidCollectionId(collection.id) &&
+        filterEntries.length === 1 &&
+        filterEntries[0][1] === 'lic:my-data' &&
+        !collection.isUserCollection
+      ) {
+        return false
       }
 
-      const categorizationData = collectionCategorization[collection.id]
+      for (const [filterKey, filterValue] of filterEntries) {
+        if (!isValidCollectionId(collection.id)) {
+          // this is to handle the case where new collection is added, but not in collectionCategorization
+          // therefore, only filter those new collections out if the filterValue is not 'uncategorised'
+          if (filterValue !== 'uncategorised') {
+            return false
+          }
+        } else {
+          const categorizationData = collectionCategorization[collection.id]
 
-      // one collection must satisfy all selected filter options to be included
-      for (const [filterKey, filterValue] of entries) {
-        if (
-          filterKey in categorizationData &&
-          filterValue !== undefined &&
-          filterValue !== 'lic:my-data' &&
-          !(categorizationData[filterKey] as string[]).includes(filterValue)
-        ) {
-          return false
-        }
+          if (
+            filterKey in categorizationData &&
+            filterValue !== undefined &&
+            filterValue !== 'lic:my-data'
+          ) {
+            // also consider the collection to be uncategorised
+            // if the categorizationData for the current filterKey is empty
+            if (filterValue === 'uncategorised' && categorizationData[filterKey].length > 0) {
+              return false
+            }
 
-        // Filter user collection
-        if (filterValue === 'lic:my-data' && !collection.isUserCollection) {
-          return false
+            if (
+              filterValue !== 'uncategorised' &&
+              !(categorizationData[filterKey] as string[]).includes(filterValue)
+            ) {
+              return false
+            }
+          }
+
+          // Filter user collection
+          if (filterValue === 'lic:my-data' && !collection.isUserCollection) {
+            return false
+          }
         }
       }
 
@@ -131,11 +152,14 @@ export const useCollections = () => {
         category,
         collections: filteredCollections.filter((collection) => {
           if (!isValidCollectionId(collection.id)) {
-            return false
+            return category.value === 'uncategorised'
           }
 
           const categorizationData = collectionCategorization[collection.id]
-          return (categorizationData[groupBy][0] as string) === category.value
+          return (
+            (categorizationData[groupBy][0] as string) === category.value ||
+            (category.value === 'uncategorised' && categorizationData[groupBy].length === 0)
+          )
         }),
       }
     })
