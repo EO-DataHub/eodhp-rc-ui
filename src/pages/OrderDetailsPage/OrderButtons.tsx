@@ -1,5 +1,6 @@
 import { Button, Flex, Tooltip } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
+import { useNavigate } from 'react-router-dom'
 
 interface OrderButtonsProps {
   onPlaceOrder: () => void
@@ -8,9 +9,13 @@ interface OrderButtonsProps {
 }
 
 export const OrderButtons = ({ onPlaceOrder, isPlacingOrder, isDisabled }: OrderButtonsProps) => {
+  const navigate = useNavigate()
+
   return (
     <Flex className={styles.buttonsContainer} direction="row" gap="3">
-      <Button className={styles.cancelButton}>Cancel</Button>
+      <Button className={styles.cancelButton} onClick={() => navigate(-1)}>
+        Cancel
+      </Button>
 
       {isDisabled ? (
         <Tooltip content="Complete all required fields to place order">
