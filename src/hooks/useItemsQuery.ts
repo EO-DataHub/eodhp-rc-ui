@@ -12,7 +12,7 @@ export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
 export const useItemsQuery = () => {
-  const { workspaceUserName, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
@@ -29,10 +29,10 @@ export const useItemsQuery = () => {
   })
 
   const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', workspaceUserName, token],
-    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!token,
+    enabled: !!currentWorkspace && !!token,
   })
 
   const fetchFunction = () => {

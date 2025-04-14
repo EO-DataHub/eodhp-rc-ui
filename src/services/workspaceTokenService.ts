@@ -31,3 +31,30 @@ export const fetchWorkspaceTokens = async (
     throw new Error('Failed to request scoped tokens')
   }
 }
+
+interface Workspace {
+  id: string
+  name: string
+  account: string
+  member_group: string
+  status: string
+  last_updated: string
+  stores: object[]
+}
+
+export const fetchWorkspaces = async (token: string): Promise<Workspace[]> => {
+  const response = await fetch(`${HUB_BASE_URL}/api/workspaces`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch workspaces')
+  }
+
+  const workspaces = await response.json()
+
+  return workspaces as Workspace[]
+}

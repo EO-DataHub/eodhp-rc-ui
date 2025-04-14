@@ -26,13 +26,13 @@ export const useCollections = () => {
     })),
   })
 
-  const { workspaceUserName, token, isAuthenticating } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, isAuthenticating } = useContext(AuthenticationContext)
 
   const { data: workspaceTokensData, isFetching: isTokenLoading } = useQuery({
-    queryKey: ['WorkspaceTokens', workspaceUserName, token],
-    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!token,
+    enabled: !!currentWorkspace && !!token,
   })
 
   const {
@@ -42,16 +42,16 @@ export const useCollections = () => {
     isPending: isUserCollectionPending,
     error: userCollectionError,
   } = useQuery({
-    queryKey: ['UserCollections', workspaceUserName],
-    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
+    queryKey: ['UserCollections', currentWorkspace],
+    queryFn: () => fetchUserCollections(currentWorkspace!, workspaceTokensData!.access),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!workspaceTokensData,
+    enabled: !!currentWorkspace && !!workspaceTokensData,
   })
 
   const isLoading =
     queries.some((query) => query.isLoading) ||
     isAuthenticating ||
-    (workspaceUserName && (isUserCollectionPending || isTokenLoading))
+    (currentWorkspace && (isUserCollectionPending || isTokenLoading))
 
   const error = queries.some((query) => query.isError) || userCollectionError
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
