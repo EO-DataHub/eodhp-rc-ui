@@ -87,7 +87,7 @@ export const useCollections = () => {
     }
 
     return sortedCollections.filter((collection) => {
-      const filterEntries = Object.entries(filters) as [keyof QuickFilter, string][]
+      const filterEntries = Object.entries(filters) as [keyof QuickFilter | 'groupBy', string][]
 
       // if user is filtering my data collection, make sure those collections be included
       // even if they don't have valid id in isValidCollectionId mapping
@@ -101,6 +101,7 @@ export const useCollections = () => {
       }
 
       for (const [filterKey, filterValue] of filterEntries) {
+        if (filterKey === 'groupBy') continue
         if (!isValidCollectionId(collection.id)) {
           // this is to handle the case where new collection is added, but not in collectionCategorization
           // therefore, only filter those new collections out if the filterValue is not 'uncategorised'
