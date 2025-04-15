@@ -19,13 +19,14 @@ import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
+import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
 
 export const OrderDetailsPage: React.FC = () => {
   const { state } = useLocation()
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { workspaceUserName, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token } = useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -33,6 +34,7 @@ export const OrderDetailsPage: React.FC = () => {
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
 
+  const [isChangeWokspaceModalOpen, setIsChangeWokspaceModalOpen] = useState(false)
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -88,7 +90,7 @@ export const OrderDetailsPage: React.FC = () => {
     const aoiCoordinates = aoiData?.geometry?.coordinates
 
     const requestBody = {
-      workspace: workspaceUserName,
+      workspace: currentWorkspace,
       token,
       item,
       provider: providerType,
@@ -148,7 +150,7 @@ export const OrderDetailsPage: React.FC = () => {
     queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
     queryFn: () =>
       fetchQuote({
-        workspace: workspaceUserName,
+        workspace: currentWorkspace,
         token,
         item: item,
         coordinates: coordinates,
@@ -211,7 +213,23 @@ export const OrderDetailsPage: React.FC = () => {
             <Text size="5" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
-            <Text>Workspace: {workspaceUserName}</Text>
+            {/* <Text>Workspace: {currentWorkspace}</Text> */}
+            <Flex gap="4">
+              <Text size="3" weight="medium">
+                Workspace: {currentWorkspace}
+              </Text>
+              <Link
+                href="#"
+                underline="always"
+                weight="medium"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setIsChangeWokspaceModalOpen(true)
+                }}
+              >
+                Change Workspace
+              </Link>
+            </Flex>
 
             {hasInitialAoi && providerType !== 'airbus_sar' ? (
               <PartialSceneSelect
@@ -246,6 +264,10 @@ export const OrderDetailsPage: React.FC = () => {
           </Flex>
         </Flex>
       </Flex>
+      <ChangeWokspaceModal
+        isOpen={isChangeWokspaceModalOpen}
+        onClose={() => setIsChangeWokspaceModalOpen(false)}
+      />
     </>
   )
 }
