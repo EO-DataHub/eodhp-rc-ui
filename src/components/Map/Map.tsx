@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
-import { useRestoreAoi } from '@/hooks/useRestoreAoi'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
@@ -103,9 +102,6 @@ export const Map = () => {
   const savedViewState =
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
-
-  // Load AOI from local storage on mount
-  useRestoreAoi()
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
