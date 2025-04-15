@@ -1,4 +1,4 @@
-import React, { useRef, useContext, useState } from 'react'
+import React, { useRef, useContext, useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Dialog, Button, Flex, Text, Select } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
@@ -12,7 +12,7 @@ interface ChangeWokspaceModalProps {
 }
 
 export const ChangeWokspaceModal: React.FC<ChangeWokspaceModalProps> = ({ isOpen, onClose }) => {
-  const { updateCurrentWorkspace, token } = useContext(AuthenticationContext)
+  const { updateCurrentWorkspace, currentWorkspace, token } = useContext(AuthenticationContext)
   const containerRef = useRef<HTMLDivElement>(null)
 
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>()
@@ -23,6 +23,12 @@ export const ChangeWokspaceModal: React.FC<ChangeWokspaceModalProps> = ({ isOpen
     refetchOnWindowFocus: false,
     enabled: !!token,
   })
+
+  useEffect(() => {
+    if (isOpen && currentWorkspace) {
+      setSelectedWorkspace(currentWorkspace)
+    }
+  }, [isOpen, currentWorkspace])
 
   const handleChangeWorkspace = () => {
     if (selectedWorkspace) {
