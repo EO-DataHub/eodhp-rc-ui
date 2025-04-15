@@ -7,6 +7,7 @@ enum DataCategory {
   Optical_Multispectral = 'cat:optical_multispectral',
   Radar = 'cat:radar',
   Land_Cover = 'cat:land_cover',
+  Uncategorised = 'uncategorised',
 }
 
 enum DataCategoryLabel {
@@ -16,6 +17,7 @@ enum DataCategoryLabel {
   Optical_Multispectral = 'Optical & Multispectral',
   Radar = 'Radar',
   Land_Cover = 'Land Cover',
+  Uncategorised = 'Uncategorised Category',
 }
 
 enum Resolution {
@@ -26,6 +28,7 @@ enum Resolution {
   From_1km_To_10km = 'res:10km',
   From_10km_To_100km = 'res:100km',
   Greater_Than_100km = 'res:over_100km',
+  Uncategorised = 'uncategorised',
 }
 
 enum ResolutionLabel {
@@ -36,6 +39,7 @@ enum ResolutionLabel {
   From_1km_To_10km = '1km - <10km',
   From_10km_To_100km = '10km - <100km',
   Greater_Than_100km = 'Greater than 100km',
+  Uncategorised = 'Uncategorised Resolution',
 }
 
 enum Provider {
@@ -49,7 +53,7 @@ enum Provider {
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
-  Other = 'pro:other',
+  Uncategorised = 'uncategorised',
 }
 
 enum ProviderLabel {
@@ -63,43 +67,49 @@ enum ProviderLabel {
   Planet = 'Planet',
   UK_Met_Office = 'UK Met Office',
   UOL_LST = 'University of Leicester (LST)',
-  Other = 'Other',
+  Uncategorised = 'Uncategorised Provider',
 }
 
 enum Location {
   Global = 'loc:global',
   Continental = 'loc:continental',
   United_Kingdom = 'loc:uk',
+  Uncategorised = 'uncategorised',
 }
 
 enum LocationLabel {
   Global = 'Global',
   Continental = 'Continental',
   United_Kingdom = 'United Kingdom',
+  Uncategorised = 'Uncategorised Location',
 }
 
 enum TimePeriod {
   Historic = 'per:historic',
   Current = 'per:current',
   Forecast = 'per:forecast',
+  Uncategorised = 'uncategorised',
 }
 
 enum TimePeriodLabel {
   Historic = 'Historic',
   Current = 'Current',
   Forecast = 'Forecast',
+  Uncategorised = 'Uncategorised Time Period',
 }
 
 enum License {
   Commercial_Data = 'lic:commercial',
   Open_Data = 'lic:open',
   My_Data = 'lic:my-data',
+  Uncategorised = 'uncategorised',
 }
 
 enum LicenseLabel {
   Commercial_Data = 'Commercial Data',
   Open_Data = 'Open Data',
   My_Data = 'My Data',
+  Uncategorised = 'Uncategorised License',
 }
 
 const createOptions = <T extends Record<string, string>>(
@@ -470,6 +480,7 @@ const itemCardFieldsToDisplay = {
     'sar:observation_direction',
   ],
   [DataCategory.Land_Cover]: [],
+  [DataCategory.Uncategorised]: [],
 }
 
 export {
