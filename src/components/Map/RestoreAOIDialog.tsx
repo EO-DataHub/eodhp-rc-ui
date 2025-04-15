@@ -28,9 +28,9 @@ export const RestoreAOIDialog = () => {
   return (
     <Dialog.Root open={shouldShowRestoreAOIDialog}>
       <Dialog.Content maxWidth="450px">
-        <Dialog.Title>Edit profile</Dialog.Title>
+        <Dialog.Title>Restore Area of Interest</Dialog.Title>
         <Dialog.Description size="2" mb="4">
-          Make changes to your profile.
+          Would you like to reload the Area of Interest from your previous visit?
         </Dialog.Description>
 
         <Flex direction="column" gap="3"></Flex>
@@ -42,7 +42,7 @@ export const RestoreAOIDialog = () => {
             </Button>
           </Dialog.Close>
           <Dialog.Close>
-            <Button onClick={restoreAOI}>Save</Button>
+            <Button onClick={restoreAOI}>Restore</Button>
           </Dialog.Close>
         </Flex>
       </Dialog.Content>
