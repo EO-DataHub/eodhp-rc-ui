@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
-import { useRestoreAoi } from '@/hooks/useRestoreAoi'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
@@ -14,6 +13,7 @@ import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
+import { RestoreAOIDialog } from './RestoreAOIDialog'
 
 interface DrawConstants {
   classes: {
@@ -103,9 +103,6 @@ export const Map = () => {
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
 
-  // Load AOI from local storage on mount
-  useRestoreAoi()
-
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
   const handleMapBoundsChange = () => {
@@ -147,45 +144,48 @@ export const Map = () => {
   }, [mapInstance, pageItems, pinnedItems])
 
   return (
-    <Maplibre
-      initialViewState={viewState}
-      mapStyle={MAP_STYLE}
-      ref={mapRef}
-      cursor={isDrawing ? 'crosshair' : 'grab'}
-      onMoveEnd={handleMapBoundsChange}
-      onLoad={() => {
-        const mapInstance = mapRef.current?.getMap()
+    <>
+      <Maplibre
+        initialViewState={viewState}
+        mapStyle={MAP_STYLE}
+        ref={mapRef}
+        cursor={isDrawing ? 'crosshair' : 'grab'}
+        onMoveEnd={handleMapBoundsChange}
+        onLoad={() => {
+          const mapInstance = mapRef.current?.getMap()
 
-        if (!mapInstance) return
+          if (!mapInstance) return
 
-        // Send the map instance to the store
-        dataFinderStore.send({ type: 'mapLoad', mapInstance })
+          // Send the map instance to the store
+          dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
-        // Listen to draw mode changes
-        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
-          dataFinderStore.send({ type: 'drawModeChange', mapEvent })
-        })
+          // Listen to draw mode changes
+          mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
+            dataFinderStore.send({ type: 'drawModeChange', mapEvent })
+          })
 
-        // Listen to draw events
-        mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
-          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-        )
-        mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
-          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-        )
-        mapInstance.on('draw.delete', () => {
-          dataFinderStore.send({ type: 'drawDelete' })
-        })
+          // Listen to draw events
+          mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
+            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+          )
+          mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
+            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+          )
+          mapInstance.on('draw.delete', () => {
+            dataFinderStore.send({ type: 'drawDelete' })
+          })
 
-        // Update bounds on load
-        handleMapBoundsChange()
-      }}
-    >
-      <NavigationControl />
-      <DrawControl />
-      <PinnedItemsLayer />
-      <QueryItemsLayer queryItems={pageItems} />
-      <HoveredItemLayer />
-    </Maplibre>
+          // Update bounds on load
+          handleMapBoundsChange()
+        }}
+      >
+        <NavigationControl />
+        <DrawControl />
+        <PinnedItemsLayer />
+        <QueryItemsLayer queryItems={pageItems} />
+        <HoveredItemLayer />
+      </Maplibre>
+      <RestoreAOIDialog />
+    </>
   )
 }

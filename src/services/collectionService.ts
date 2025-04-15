@@ -17,7 +17,7 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
   })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch Collections')
+    return []
   }
 
   const data = await response.json()
