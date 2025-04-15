@@ -1,13 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useContext, useEffect } from 'react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { RestoreAOIContext } from '@/context/RestoreAOIContext'
 
 const AOI_STORAGE_KEY = 'aoiData'
 
 export function useRestoreAoi() {
-  const hasPromptedRef = useRef(false)
+  const { hasPromptedRef, shouldShowRestoreAOIDialog, setShouldShowRestoreAOIDialog } =
+    useContext(RestoreAOIContext)
 
   useEffect(() => {
-    if (hasPromptedRef.current) return
+    if (hasPromptedRef?.current) {
+      return
+    }
 
     const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
     const isNewTab = navEntries[0]?.type === 'navigate'
@@ -15,21 +19,16 @@ export function useRestoreAoi() {
 
     if (storedAoi) {
       if (isNewTab) {
-        const parsedAoi = JSON.parse(storedAoi)
-        const shouldRestore = window.confirm(
-          'Would you like to reload the Area of Interest from your previous visit?',
-        )
-        if (shouldRestore) {
-          dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-        } else {
-          localStorage.removeItem(AOI_STORAGE_KEY)
-        }
+        setShouldShowRestoreAOIDialog(true)
       } else {
         // tab already open, simply restore the AOI if it exists
         const parsedAoi = JSON.parse(storedAoi)
         dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
       }
     }
-    hasPromptedRef.current = true
-  }, [])
+
+    if (hasPromptedRef) {
+      hasPromptedRef.current = true
+    }
+  }, [hasPromptedRef, setShouldShowRestoreAOIDialog, shouldShowRestoreAOIDialog])
 }

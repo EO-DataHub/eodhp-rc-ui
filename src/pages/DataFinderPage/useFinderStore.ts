@@ -378,7 +378,7 @@ const dataFinderStore = createStore({
         isUserCollection: event.isUserCollection,
       }
     },
-    storeAoi: (context, event: { aoi: GeoJSON.Feature }) => {
+    storeAoi: (context, event: { aoi: GeoJSON.Feature | undefined }) => {
       localStorage.setItem('aoi', JSON.stringify(event.aoi))
       return { ...context, aoi: event.aoi }
     },
