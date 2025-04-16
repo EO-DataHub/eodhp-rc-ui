@@ -1,5 +1,5 @@
 .container {
-  background-color: var(--blue-9);
+  background-color: var(--blue-12);
   width: 100%;
   height: var(--nav-bar-height);
   display: flex;
@@ -15,7 +15,7 @@
 }
 
 .link {
-  color: var(--white);
+  color: var(--blue-contrast);
   font-size: 1rem;
   cursor: pointer;
   text-decoration: none;

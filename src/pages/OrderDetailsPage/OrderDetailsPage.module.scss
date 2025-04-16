@@ -30,15 +30,15 @@
 
   .cancelButton {
     border-radius: var(--Radius-2-max, 4px);
-    border: 1px solid var(--Colors-Accent-Accent-Alpha-8, rgba(0, 67, 189, 0.46));
+    border: 1px solid var(--blue-a8);
     background: #fff;
-    color: var(--Colors-Accent-Accent-9, #4c72ba);
+    color: var(--blue-9);
     cursor: pointer;
   }
 
   .purchaseButton {
     border-radius: var(--Radius-2-max, 4px);
-    background: var(--Colors-Accent-Accent-9, #4c72ba);
+    background: var(--blue-9);
     cursor: pointer;
 
     &:disabled {
