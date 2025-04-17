@@ -11,8 +11,8 @@ import { useEffect } from 'react'
 export const MAX_TOTAL_ITEMS = 100
 export const PAGE_SIZE = 10
 
-const useItemsQuery = () => {
-  const { workspaceUserName, token } = useContext(AuthenticationContext)
+export const useItemsQuery = () => {
+  const { currentWorkspace, token } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
@@ -25,13 +25,14 @@ const useItemsQuery = () => {
     aoi: aoi?.geometry,
     mapBounds,
     collectionId: collection?.id,
+    isUserCollection,
   })
 
   const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', workspaceUserName, token],
-    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!token,
+    enabled: !!currentWorkspace && !!token,
   })
 
   const fetchFunction = () => {
@@ -80,5 +81,3 @@ const useItemsQuery = () => {
     pageItems: allItems.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE),
   }
 }
-
-export default useItemsQuery

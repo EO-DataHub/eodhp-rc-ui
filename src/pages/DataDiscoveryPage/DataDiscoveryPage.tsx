@@ -29,7 +29,10 @@ const renderCollections = (collections: Collection[]) => {
       className={styles.collectionGrid}
     >
       {collections.map((collection) => (
-        <CollectionCard key={collection.id} collection={collection} />
+        <CollectionCard
+          key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
+          collection={collection}
+        />
       ))}
     </Grid>
   )
@@ -69,7 +72,10 @@ const renderGroupedByCollections = (groupedByCollections: GroupByCollection[]) =
 
               <Grid gap="5" columns={{ lg: '4', md: '3' }}>
                 {group.collections.map((collection) => (
-                  <CollectionCard key={collection.id} collection={collection} />
+                  <CollectionCard
+                    key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
+                    collection={collection}
+                  />
                 ))}
               </Grid>
             </Flex>
@@ -170,7 +176,6 @@ export const DataDiscoveryPage: React.FC = () => {
               <Select.Item value="resolution">Resolution</Select.Item>
               <Select.Item value="provider">Provider</Select.Item>
               <Select.Item value="location">Location</Select.Item>
-              <Select.Item value="keyword">Keywords</Select.Item>
               <Select.Item value="license">License</Select.Item>
             </Select.Group>
           </Select.Content>

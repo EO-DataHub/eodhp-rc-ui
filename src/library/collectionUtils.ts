@@ -2,7 +2,14 @@ import { Collection } from '@/types'
 import { flexibleSearch } from '@/library/stringUtils'
 
 export const isCollectionMatchingSearch = (collection: Collection, searchText: string) => {
-  const searchFields: (keyof Collection)[] = ['id', 'title', 'description', 'keywords', 'providers']
+  const searchFields: (keyof Collection)[] = [
+    'id',
+    'title',
+    'description',
+    'keywords',
+    'providers',
+    'displayedTitle',
+  ]
 
   for (const field of searchFields) {
     if (field in collection) {

@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
+import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
 
 import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
 import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 
+import drawStylesConfig from '@/components/Map/drawStylesConfig'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
-import useItemsQuery from '@/hooks/useItemsQuery'
+import { RestoreAOIDialog } from './RestoreAOIDialog'
 
 interface DrawConstants {
   classes: {
@@ -47,6 +49,7 @@ function DrawControl() {
           polygon: true,
           trash: true,
         },
+        styles: drawStylesConfig,
       })
       drawInstance.current = draw
 
@@ -68,6 +71,26 @@ function DrawControl() {
     }
   }, [])
 
+  // Overwrite the native delete button of Mapbox
+  // which already has a listener, but only for selected drawings
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const deleteButton = document.querySelector('.mapbox-gl-draw_trash')
+      if (deleteButton) {
+        const customDeleteButton = deleteButton.cloneNode(true) as HTMLButtonElement
+        deleteButton.parentNode?.replaceChild(customDeleteButton, deleteButton)
+
+        // Add our own behavior to delete all drawings
+        customDeleteButton.addEventListener('click', () => {
+          dataFinderStore.send({ type: 'drawDelete' })
+        })
+        clearInterval(interval)
+      }
+    }, 300)
+
+    return () => clearInterval(interval)
+  }, [])
+
   return null
 }
 
@@ -79,15 +102,6 @@ export const Map = () => {
   const savedViewState =
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
-
-  // Load AOI from local storage on mount
-  useEffect(() => {
-    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
-    if (storedAoi) {
-      const parsedAoi = JSON.parse(storedAoi)
-      dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-    }
-  }, [])
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
@@ -115,7 +129,7 @@ export const Map = () => {
   // on page load and should be on top of the other layers. Ideally we not need
   // to do this but there is no way to control the order of the layers in the
   // MapboxDraw control.
-
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   useEffect(() => {
     if (!mapInstance) return
 
@@ -127,49 +141,51 @@ export const Map = () => {
         }
       })
     }, 100)
-  }, [mapInstance, pageItems])
+  }, [mapInstance, pageItems, pinnedItems])
 
   return (
-    <Maplibre
-      initialViewState={viewState}
-      mapStyle={MAP_STYLE}
-      ref={mapRef}
-      cursor={isDrawing ? 'crosshair' : 'grab'}
-      onMoveEnd={handleMapBoundsChange}
-      onLoad={() => {
-        const mapInstance = mapRef.current?.getMap()
+    <>
+      <Maplibre
+        initialViewState={viewState}
+        mapStyle={MAP_STYLE}
+        ref={mapRef}
+        cursor={isDrawing ? 'crosshair' : 'grab'}
+        onMoveEnd={handleMapBoundsChange}
+        onLoad={() => {
+          const mapInstance = mapRef.current?.getMap()
 
-        if (!mapInstance) return
+          if (!mapInstance) return
 
-        // Send the map instance to the store
-        dataFinderStore.send({ type: 'mapLoad', mapInstance })
+          // Send the map instance to the store
+          dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
-        // Listen to draw mode changes
-        mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) =>
-          dataFinderStore.send({ type: 'drawModeChange', mapEvent }),
-        )
+          // Listen to draw mode changes
+          mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
+            dataFinderStore.send({ type: 'drawModeChange', mapEvent })
+          })
 
-        // Listen to draw events
-        mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
-          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-        )
-        mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
-          dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-        )
+          // Listen to draw events
+          mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
+            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+          )
+          mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
+            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
+          )
+          mapInstance.on('draw.delete', () => {
+            dataFinderStore.send({ type: 'drawDelete' })
+          })
 
-        mapInstance.on('draw.delete', () => {
-          dataFinderStore.send({ type: 'drawDelete' })
-        })
-
-        // Update bounds on load
-        handleMapBoundsChange()
-      }}
-    >
-      <NavigationControl />
-      <DrawControl />
-      <PinnedItemsLayer />
-      <QueryItemsLayer queryItems={pageItems} />
-      <HoveredItemLayer />
-    </Maplibre>
+          // Update bounds on load
+          handleMapBoundsChange()
+        }}
+      >
+        <NavigationControl />
+        <DrawControl />
+        <PinnedItemsLayer />
+        <QueryItemsLayer queryItems={pageItems} />
+        <HoveredItemLayer />
+      </Maplibre>
+      <RestoreAOIDialog />
+    </>
   )
 }

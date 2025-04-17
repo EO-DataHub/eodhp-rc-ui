@@ -1,6 +1,6 @@
-import React, { useContext, useMemo, useState, useEffect } from 'react'
+import React, { useContext, useMemo, useState, useEffect, useCallback } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { Item, ItemCardType } from '@/types'
+import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
   Cross2Icon,
@@ -11,6 +11,7 @@ import {
   ZoomInIcon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
+import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
 import styles from './ItemCard.module.scss'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -38,25 +39,37 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
     return null
   }
 
-  const metadataItems = extractStacMetadata(item, [])
+  const metadataItems = extractStacMetadata(item, ['providers'])
 
   const categorizationData = collectionCategorization[collectionId]
   const fields = [
     ...itemCardFieldsToDisplay[categorizationData.dataCategory[0]],
     ...categorizationData.additionalFieldsToDisplay,
+    ['order:options', 'order.options', 'order_options'],
+    ['order:date', 'order.date', 'order_date'],
+    ['order:status', 'order.status', 'order_status'],
+    ['order:id', 'order.id', 'order_id'],
   ]
 
   return fields.map((field) => {
-    const fieldProperty = getMetadataItemProperty(field, metadataItems)
+    const fieldObject = getMetadataItemProperty(field, metadataItems)
 
-    if (!fieldProperty) {
+    if (!fieldObject) {
       return null
     }
 
+    const { rawFieldName, fieldProperty } = fieldObject
+
+    let formattedText: string | TrustedHTML = fieldProperty.formatted
+
+    if (['order.options', 'order:options', 'order_options'].includes(rawFieldName)) {
+      formattedText = (fieldProperty.value as CubeData).productBundle
+    }
+
     return (
-      <Text key={field} size="1" className={styles.text}>
+      <Text key={rawFieldName} size="1" className={styles.text}>
         <Text weight="medium">{fieldProperty.label}</Text>:{' '}
-        <Text dangerouslySetInnerHTML={{ __html: fieldProperty.formatted }}></Text>
+        <Text dangerouslySetInnerHTML={{ __html: formattedText }}></Text>
       </Text>
     )
   })
@@ -113,14 +126,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return url
   }, [item?.links])
 
-  // temporarily fetching item details
-  const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
-    refetchOnWindowFocus: false,
-    enabled: !!item,
-  })
-
   const navigate = useNavigate()
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
@@ -128,19 +133,72 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const isSelected = infoPanelItem?.id === item.id
 
-  const isLicenseProprietary = useSelector(
-    dataFinderStore,
-    (state) => state.context.collection?.license === 'proprietary',
-  )
-  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const collectionRenderOptions = useSelector(
     dataFinderStore,
     ({ context }) => context.collectionRenderOptions,
   )
+
+  const isLicenseProprietary = useMemo(() => {
+    if (item.isLicenseProprietary !== undefined) {
+      return item.isLicenseProprietary
+    }
+    return collection?.license === 'proprietary'
+  }, [collection?.license, item.isLicenseProprietary])
+
+  const itemBelongsToUserCollection = useMemo(() => {
+    if (item.isUserCollection !== undefined) {
+      return item.isUserCollection
+    }
+    return isUserCollection
+  }, [isUserCollection, item.isUserCollection])
+
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
+
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // temporarily fetching item details
+  const { data } = useQuery({
+    queryKey: ['Items', item?.collection, item?.id],
+    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+    refetchOnWindowFocus: false,
+    enabled: !!item && !isUserCollection,
+  })
+
+  // In order to determine if the item is already pinned, we need a unique ID
+  // for the pin to query the existing pinned items. If the item already has a
+  // pinId, we can use it. Otherwise, for query items, we need to generate a
+  // new one based on the item ID and the collection/item render.
+  const pinId =
+    item.pinId ??
+    (itemRender
+      ? getPinnedItemId(item, itemRender)
+      : collectionRender
+        ? getPinnedItemId(item, collectionRender)
+        : undefined)
+  const isAlreadyPinned = pinnedItems.some((pinnedItem) => pinnedItem.pinId === pinId)
+
+  const unpinItem = useCallback(
+    () => dataFinderStore.send({ type: 'removePinnedItem', item: { ...item, pinId } }),
+    [item, pinId],
+  )
+
+  const pinItem = useCallback(
+    () =>
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item,
+        isLicenseProprietary: collection?.license === 'proprietary',
+        isUserCollection: isUserCollection,
+        collectionName: collection?.title ?? collection?.id ?? '',
+        collection,
+        collectionRender: (itemRender ?? collectionRender)!,
+      }),
+    [item, collection, isUserCollection, itemRender, collectionRender],
+  )
 
   useEffect(() => {
     // If not a time variable item, use collectionRender
@@ -186,13 +244,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isPinnedCard = type === 'pinned-item'
   const isQueryCard = type === 'query-item'
 
-  const isAlreadyPinned = useSelector(dataFinderStore, (state) =>
-    state.context.pinnedItems.some(
-      (pinnedItem) =>
-        collectionRender && pinnedItem.pinId === getPinnedItemId(item, collectionRender),
-    ),
-  )
-
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
@@ -202,32 +253,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
-      navigate(`/order-details/${item.id}`)
+      navigate(`/order-details/${item.id}`, { state: { item } })
     } else {
       await login()
-    }
-  }
-
-  const handlePinToggle = () => {
-    if (!itemRender) return
-    if (!isAlreadyPinned) {
-      dataFinderStore.send({
-        type: 'addPinnedItem',
-        item,
-        collectionRender: itemRender,
-      })
-      dataFinderStore.send({
-        type: 'zoomToItem',
-        item,
-      })
-    } else {
-      dataFinderStore.send({
-        type: 'removePinnedItem',
-        item: {
-          ...item,
-          pinId: getPinnedItemId(item, itemRender),
-        },
-      })
     }
   }
 
@@ -246,31 +274,37 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
     >
-      {isQueryCard && (
-        <Flex
-          align="center"
-          justify="center"
-          flexShrink="0"
-          p="4"
-          className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-          onClick={handlePinToggle}
-        >
+      <Flex
+        align="center"
+        justify="center"
+        flexShrink="0"
+        p="4"
+        className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
+        onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
+      >
+        {item.assets?.thumbnail?.href?.endsWith('.tif') ||
+        item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
+          <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+        ) : (
           <img
             src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
             className={styles.thumbnail}
             onError={handleImageError}
           />
-          <div className={styles.overlay}>
-            <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
-              <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
-            </Tooltip>
-          </div>
-        </Flex>
-      )}
-      <Flex direction="column" p="2" flexGrow={'1'}>
+        )}
+        <div className={styles.overlay}>
+          <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
+            <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
+          </Tooltip>
+        </div>
+      </Flex>
+      <Flex direction="column" p="2" flexGrow={'1'} justify="between">
         <Flex>
           <Flex direction="column" flexGrow={'1'}>
-            <Flex justify="between">
+            <Flex direction="column" justify="between">
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+                {item.collectionName}
+              </Text>
               <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
                 {cardTitle}
               </Text>
@@ -278,7 +312,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             <Text size="1" className={styles.text}>
               {convertDateToUTCString(new Date(item.properties.datetime))}
             </Text>
-            {data && renderAdditionalFields(data, item.collection)}
+            {data
+              ? renderAdditionalFields(data, item.collection)
+              : renderAdditionalFields(item, item.collection)}
           </Flex>
           {isPinnedCard && (
             <Flex align="end" direction="column">
@@ -287,7 +323,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 variant="soft"
                 radius="full"
                 className={styles.unpinButton}
-                onClick={handlePinToggle}
+                onClick={unpinItem}
               >
                 <Cross2Icon />
               </IconButton>
@@ -308,31 +344,31 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
           )}
-          <Flex justify="end" gap="4" align="center">
+          <Flex justify="end" gap="3" align="center">
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
-                  <ActionButton onClick={handlePinToggle}>
+                  <ActionButton onClick={pinItem}>
                     <Tooltip content="Pin Item">
                       <DrawingPinIcon />
                     </Tooltip>
                   </ActionButton>
                 ) : (
-                  <ActionButton onClick={handlePinToggle} active={isAlreadyPinned}>
+                  <ActionButton onClick={unpinItem} active={isAlreadyPinned}>
                     <Tooltip content="Unpin Item">
                       <DrawingPinIcon />
                     </Tooltip>
                   </ActionButton>
                 )}
-              </>
-            )}
-            {isPinnedCard && (
-              <>
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
                   <Tooltip content="Zoom to item">
                     <ZoomInIcon />
                   </Tooltip>
                 </ActionButton>
+              </>
+            )}
+            {isPinnedCard && (
+              <>
                 <ActionButton
                   active={item.mapRender?.visible}
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}
@@ -349,6 +385,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                     <BlendingModeIcon />
                   </Tooltip>
                 </ActionButton>
+                <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
+                  <Tooltip content="Zoom to item">
+                    <ZoomInIcon />
+                  </Tooltip>
+                </ActionButton>
               </>
             )}
             <ActionButton
@@ -359,7 +400,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !isUserCollection && (
+            {isLicenseProprietary && !itemBelongsToUserCollection && (
               <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
                 Purchase
               </Button>

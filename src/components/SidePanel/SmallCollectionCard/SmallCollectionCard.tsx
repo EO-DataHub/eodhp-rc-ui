@@ -1,7 +1,7 @@
 import React from 'react'
 import { useSelector } from '@xstate/store/react'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
-import { Flex, Text, Card, IconButton, Link } from '@radix-ui/themes'
+import { Flex, Text, Card, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
@@ -9,21 +9,23 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
-  onChangeCollection: (show: boolean) => void
+  onChangeCollection: () => void
   isLicenseProprietary: boolean
+  disabled?: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
   isLicenseProprietary,
   onChangeCollection,
+  disabled = false,
 }) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
   return (
-    <Card className={styles.card}>
+    <Card className={`${disabled ? styles.disabledCard : styles.card}`}>
       <Flex direction="column">
         <Flex justify="between" align="center">
           <Text weight="medium" size="4" className={styles.text}>
@@ -37,15 +39,17 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
                 <PoundSterlingSymbolIcon width="6" height="9" />
               </IconButton>
             )}
-            <IconButton radius="full" variant="solid" className={styles.infoButton}>
-              <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
-            </IconButton>
+            <Tooltip content="View Metadata">
+              <IconButton radius="full" variant="solid" className={styles.infoButton}>
+                <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
+              </IconButton>
+            </Tooltip>
           </Flex>
         </Flex>
         <Text size="2" className={styles.text}>
           {getFormattedDateRange(dateInterval)}
         </Text>
-        <Link size="2" mt="2" className={styles.link} onClick={() => onChangeCollection(true)}>
+        <Link size="2" mt="2" className={styles.link} onClick={() => onChangeCollection()}>
           Change Collection
         </Link>
       </Flex>

@@ -13,7 +13,9 @@ const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
   <Flex direction="column" gap="1">
     <Flex className={styles.selection} direction="row" gap="3">
       <Flex>
-        <Text weight="bold">{label}</Text>
+        <Text weight="bold" size="2">
+          {label}
+        </Text>
         {required && <span className={styles.asterisk}>*</span>}
       </Flex>
     </Flex>
@@ -109,7 +111,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
     return (
       <Field label={label} required={isFieldRequired(field)}>
         <Select.Root
-          size="3"
+          size="2"
           value={selectedValues[field]}
           onValueChange={(value) => handleChange(field, value)}
           disabled={isDisabled}
@@ -147,7 +149,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
       {(provider === 'airbus_optical' || provider === 'airbus_sar') && (
         <Field label="End User Country" required>
           <Select.Root
-            size="3"
+            size="2"
             value={selectedValues.endUserCountry}
             onValueChange={(value) => handleChange('endUserCountry', value)}
           >

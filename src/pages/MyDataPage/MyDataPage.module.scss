@@ -1,6 +1,9 @@
 .mainContainer {
   align-items: left;
-  margin: 3em 18em;
+  margin: 3em auto;
+  width: 100%;
+  max-width: 1200px;
   padding-bottom: 3em;
+  padding: 0 1em 3em 1em;
   min-height: 100vh;
 }

@@ -38,7 +38,12 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     dataFinderStore.send({ type: 'setCollection', collection: collection })
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-    navigate(`/finder/${collection.id}`)
+
+    if (collection.isUserCollection) {
+      navigate(`/finder/my-${collection.id}`)
+    } else {
+      navigate(`/finder/${collection.id}`)
+    }
   }
 
   return (
@@ -66,7 +71,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             onError={handleImageError}
           />
           <Flex direction="column" className={styles.details}>
-            <Dialog.Title className={styles.dialogTitle}>{collection.title}</Dialog.Title>
+            <Dialog.Title className={styles.dialogTitle}>{collection.displayedTitle}</Dialog.Title>
             <Text size="2" color="gray" mb="2">
               {getFormattedDateRange(dateInterval)}
             </Text>

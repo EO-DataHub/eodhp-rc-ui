@@ -21,6 +21,9 @@ interface AuthenticationContextValue {
   token: string | undefined
   userInfo?: KeycloakUserInfo
   workspaceUserName?: string
+  currentWorkspace?: string
+  updateCurrentWorkspace?: (workspace: string) => void
+  clearCurrentWorkspace?: () => void
 }
 
 export const AuthenticationContext = createContext<AuthenticationContextValue>({

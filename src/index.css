@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 
 body {
   margin: 0;
@@ -21,6 +21,7 @@ body {
   --app-background-dark-1: #33363A;
   --app-background-dark-2: #60646c;
   --app-background-light: #fff;
+  --app-background-disable-light: #CDCED6;
   --dark-text: var(--gray-12);
   --toastify-color-info: var(--indigo-9);
   --toastify-color-success: var(--green-11);
@@ -28,42 +29,42 @@ body {
 }
 
 .radix-themes {
-  --default-font-family: 'Roboto', sans-serif;
+  --default-font-family: 'Fira Sans', sans-serif;
 }
 
 :root,
 .light,
 .light-theme {
   --blue-1: #fcfdff;
-  --blue-2: #f7f9fe;
-  --blue-3: #edf2fe;
-  --blue-4: #e2e9fe;
-  --blue-5: #d4defb;
-  --blue-6: #c4d0f7;
-  --blue-7: #afbeed;
-  --blue-8: #92a5e1;
-  --blue-9: #2b3559;
-  --blue-10: #3c476d;
-  --blue-11: #54649c;
-  --blue-12: #293357;
+  --blue-2: #f6f9fe;
+  --blue-3: #ecf2fe;
+  --blue-4: #dfeafe;
+  --blue-5: #d0e0fb;
+  --blue-6: #bfd2f6;
+  --blue-7: #a8c0ec;
+  --blue-8: #89a8e0;
+  --blue-9: #4c72ba;
+  --blue-10: #3f64ab;
+  --blue-11: #4166ad;
+  --blue-12: #243657;
 
   --blue-a1: #0055ff03;
-  --blue-a2: #0040e008;
-  --blue-a3: #0047f112;
-  --blue-a4: #003ef71d;
-  --blue-a5: #013ce82b;
-  --blue-a6: #0134dd3b;
-  --blue-a7: #0030c650;
-  --blue-a8: #002db96d;
-  --blue-a9: #000c37d4;
-  --blue-a10: #000f40c3;
-  --blue-a11: #00186cab;
-  --blue-a12: #000c37d6;
+  --blue-a2: #0055e309;
+  --blue-a3: #0051f213;
+  --blue-a4: #0058f820;
+  --blue-a5: #0057ea2f;
+  --blue-a6: #004cdc40;
+  --blue-a7: #0047c857;
+  --blue-a8: #0043bd76;
+  --blue-a9: #00369db3;
+  --blue-a10: #003190c0;
+  --blue-a11: #003291be;
+  --blue-a12: #00153bdb;
 
   --blue-contrast: #fff;
-  --blue-surface: #f5f8fecc;
-  --blue-indicator: #2b3559;
-  --blue-track: #2b3559;
+  --blue-surface: #f4f8fecc;
+  --blue-indicator: #4c72ba;
+  --blue-track: #4c72ba;
 }
 
 @supports (color: color(display-p3 1 1 1)) {
@@ -107,4 +108,12 @@ body {
 
 .rt-BaseDialogOverlay::before {
   background-color: #000509E3;
+}
+
+/* custom maplibregl control panel styles (they need to be overridden globally)*/
+.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
+  background-image: url('/src/assets/icons/pencil.svg');
+}
+.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
+  background-image: url('/src/assets/icons/trash.svg');
 }

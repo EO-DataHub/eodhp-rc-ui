@@ -12,7 +12,7 @@ export function PartialSceneSelect({ onChange, checked = false }: PartialSceneSe
     <>
       <Flex className={styles.partialSceneText}>
         <InfoCircledIcon className={styles.infoIcon} />
-        <Text>
+        <Text size="2">
           You&apos;re purchasing a partial scene. Select below if you&apos;d like to buy the full
           scene.
         </Text>

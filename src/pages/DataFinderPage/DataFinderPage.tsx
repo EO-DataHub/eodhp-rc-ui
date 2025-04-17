@@ -16,7 +16,7 @@ import dataFinderStore from './useFinderStore'
 import styles from './DataFinderPage.module.scss'
 
 export const DataFinderPage: React.FC = () => {
-  const { isAuthenticating, isAuthenticated, workspaceUserName, token } =
+  const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
@@ -35,17 +35,17 @@ export const DataFinderPage: React.FC = () => {
   })
 
   const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', workspaceUserName, token],
-    queryFn: () => fetchWorkspaceTokens(workspaceUserName!, token!),
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!token,
+    enabled: !!currentWorkspace && !!token,
   })
 
   const userCollectionQuery = useQuery({
-    queryKey: ['UserCollections', workspaceUserName],
-    queryFn: () => fetchUserCollections(workspaceUserName!, workspaceTokensData!.access),
+    queryKey: ['UserCollections', currentWorkspace],
+    queryFn: () => fetchUserCollections(currentWorkspace!, workspaceTokensData!.access),
     refetchOnWindowFocus: false,
-    enabled: !!workspaceUserName && !!workspaceTokensData,
+    enabled: !!currentWorkspace && !!workspaceTokensData,
   })
 
   const findCollectionById = (

@@ -1,6 +1,6 @@
 .loginButton {
   border-radius: var(--Radius-3-max, 6px);
-  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  background: var(--blue-9);
   border: none;
   color: white;
   padding: 0.65em 1em;
@@ -17,7 +17,7 @@
 }
 
 .logoutButton:hover {
-  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  background: var(--blue-9);
   color: white;
 }
 
@@ -36,7 +36,7 @@
 }
 
 .userMenuButton {
-  background: #4c72ba;
+  background: var(--blue-9);
   color: white;
   padding: 0.8em;
   border-radius: 20px;
@@ -52,6 +52,6 @@
 }
 
 .dropdownContent:hover {
-  background: var(--Colors-Accent-Accent-9, #4c72ba);
+  background: var(--blue-9);
   color: white;
 }

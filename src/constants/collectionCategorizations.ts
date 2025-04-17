@@ -7,6 +7,7 @@ enum DataCategory {
   Optical_Multispectral = 'cat:optical_multispectral',
   Radar = 'cat:radar',
   Land_Cover = 'cat:land_cover',
+  Uncategorised = 'uncategorised',
 }
 
 enum DataCategoryLabel {
@@ -16,6 +17,7 @@ enum DataCategoryLabel {
   Optical_Multispectral = 'Optical & Multispectral',
   Radar = 'Radar',
   Land_Cover = 'Land Cover',
+  Uncategorised = 'Uncategorised Category',
 }
 
 enum Resolution {
@@ -26,6 +28,7 @@ enum Resolution {
   From_1km_To_10km = 'res:10km',
   From_10km_To_100km = 'res:100km',
   Greater_Than_100km = 'res:over_100km',
+  Uncategorised = 'uncategorised',
 }
 
 enum ResolutionLabel {
@@ -36,6 +39,7 @@ enum ResolutionLabel {
   From_1km_To_10km = '1km - <10km',
   From_10km_To_100km = '10km - <100km',
   Greater_Than_100km = 'Greater than 100km',
+  Uncategorised = 'Uncategorised Resolution',
 }
 
 enum Provider {
@@ -49,77 +53,63 @@ enum Provider {
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
-  Other = 'pro:other',
+  Uncategorised = 'uncategorised',
 }
 
 enum ProviderLabel {
   Airbus = 'Airbus',
   CEDA = 'Centre for Environmental Data Analysis',
   DEFRA = 'Department for Environment, Food & Rural Affairs',
-  ESA = 'Earth Observation Climate Information Service',
-  EOCS = 'European Space Agency',
+  ESA = 'European Space Agency',
+  EOCS = 'Earth Observation Climate Information Service',
   JNCC = 'Joint Nature Conservation Committee',
   Multiple_Contributors = 'Multiple Contributors',
   Planet = 'Planet',
   UK_Met_Office = 'UK Met Office',
   UOL_LST = 'University of Leicester (LST)',
-  Other = 'Other',
+  Uncategorised = 'Uncategorised Provider',
 }
 
 enum Location {
   Global = 'loc:global',
   Continental = 'loc:continental',
   United_Kingdom = 'loc:uk',
+  Uncategorised = 'uncategorised',
 }
 
 enum LocationLabel {
   Global = 'Global',
   Continental = 'Continental',
   United_Kingdom = 'United Kingdom',
-}
-
-enum Keyword {
-  Agriculture_Forestry = 'key:agriculture',
-  Climate_Environment = 'key:climate',
-  Disaster_Management = 'key:disaster',
-  Gas_Emissions_Monitoring = 'key:emissions',
-  Habitat_Ecosystem_Mapping = 'key:ecosystem',
-  Infrastructure_Urban_Development = 'key:infrastructure',
-  Land_Water_Management = 'key:management',
-  Marine_Ocean_Science = 'key:ocean',
-}
-
-enum KeywordLabel {
-  Agriculture_Forestry = 'Agriculture & Forestry',
-  Climate_Environment = 'Climate & Environment',
-  Disaster_Management = 'Disaster Management',
-  Gas_Emissions_Monitoring = 'Gas & Emissions Monitoring',
-  Habitat_Ecosystem_Mapping = 'Habitat & Ecosystem Mapping',
-  Infrastructure_Urban_Development = 'Infrastructure & Urban Development',
-  Land_Water_Management = 'Land & Water Management',
-  Marine_Ocean_Science = 'Marine & Ocean Science',
+  Uncategorised = 'Uncategorised Location',
 }
 
 enum TimePeriod {
   Historic = 'per:historic',
   Current = 'per:current',
   Forecast = 'per:forecast',
+  Uncategorised = 'uncategorised',
 }
 
 enum TimePeriodLabel {
   Historic = 'Historic',
   Current = 'Current',
   Forecast = 'Forecast',
+  Uncategorised = 'Uncategorised Time Period',
 }
 
 enum License {
   Commercial_Data = 'lic:commercial',
   Open_Data = 'lic:open',
+  My_Data = 'lic:my-data',
+  Uncategorised = 'uncategorised',
 }
 
 enum LicenseLabel {
   Commercial_Data = 'Commercial Data',
   Open_Data = 'Open Data',
+  My_Data = 'My Data',
+  Uncategorised = 'Uncategorised License',
 }
 
 const createOptions = <T extends Record<string, string>>(
@@ -131,7 +121,6 @@ const dataCategories = createOptions(DataCategory, DataCategoryLabel)
 const resolutions = createOptions(Resolution, ResolutionLabel)
 const providers = createOptions(Provider, ProviderLabel)
 const locations = createOptions(Location, LocationLabel)
-const keywords = createOptions(Keyword, KeywordLabel)
 const timePeriods = createOptions(TimePeriod, TimePeriodLabel)
 const licenses = createOptions(License, LicenseLabel)
 
@@ -141,9 +130,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Airbus],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_sar_data: {
@@ -151,9 +140,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Airbus],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_pneo_data: {
@@ -161,9 +150,9 @@ const collectionCategorization = {
     resolution: [Resolution.Less_Than_1m],
     provider: [Provider.Airbus],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_phr_data: {
@@ -171,9 +160,9 @@ const collectionCategorization = {
     resolution: [Resolution.Less_Than_1m],
     provider: [Provider.Airbus],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: 'airbus_phr_qa',
     additionalFieldsToDisplay: [],
   },
   airbus_data_example: {
@@ -181,9 +170,9 @@ const collectionCategorization = {
     resolution: [],
     provider: [],
     location: [],
-    keyword: [],
     timePeriod: [],
     license: [],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   ukcp: {
@@ -191,9 +180,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_10km_To_100km],
     provider: [Provider.UK_Met_Office, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   sentinel2_ard: {
@@ -201,9 +190,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.DEFRA, Provider.CEDA, Provider.JNCC, Provider.ESA],
     location: [Location.United_Kingdom],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: 'sentinel-2_l1c_qa',
     additionalFieldsToDisplay: [],
   },
   sentinel1: {
@@ -211,9 +200,19 @@ const collectionCategorization = {
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  sentinel1_ard: {
+    dataCategory: [DataCategory.Radar],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.ESA, Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   land_cover: {
@@ -221,9 +220,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_100m_To_1km],
     provider: [Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3': {
@@ -231,9 +230,19 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-arctic-sea-ice-thickness-monthly': {
+    dataCategory: [DataCategory.Climate_Data],
+    resolution: [Resolution.From_1km_To_10km],
+    provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
+    location: [Location.Continental],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-night': {
@@ -241,9 +250,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-day': {
@@ -251,9 +260,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-night': {
@@ -261,9 +270,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-day': {
@@ -271,9 +280,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3a': {
@@ -281,9 +290,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3b': {
@@ -291,9 +300,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3a': {
@@ -301,9 +310,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3n': {
@@ -311,9 +320,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3-climatology': {
@@ -321,9 +330,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerScene: {
@@ -331,9 +340,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerMethane: {
@@ -341,9 +350,9 @@ const collectionCategorization = {
     resolution: [],
     provider: [],
     location: [],
-    keyword: [],
     timePeriod: [],
     license: [],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatVideo: {
@@ -351,9 +360,9 @@ const collectionCategorization = {
     resolution: [Resolution.Less_Than_1m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatScene: {
@@ -361,19 +370,19 @@ const collectionCategorization = {
     resolution: [Resolution.Less_Than_1m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatCollect: {
     dataCategory: [DataCategory.Optical_Multispectral],
-    resolution: [Resolution.From_1m_To_10m],
+    resolution: [Resolution.Less_Than_1m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   REScene: {
@@ -381,9 +390,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   REOrthoTile: {
@@ -391,9 +400,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   PSScene: {
@@ -401,9 +410,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Planet],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
+    qa: 'planet_psscene_qa',
     additionalFieldsToDisplay: [],
   },
   cordex: {
@@ -411,9 +420,9 @@ const collectionCategorization = {
     resolution: [Resolution.From_10km_To_100km],
     provider: [Provider.Multiple_Contributors, Provider.CEDA],
     location: [Location.Continental],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [],
   },
   cmip6: {
@@ -421,9 +430,9 @@ const collectionCategorization = {
     resolution: [Resolution.Greater_Than_100km],
     provider: [Provider.Multiple_Contributors, Provider.CEDA],
     location: [Location.Global],
-    keyword: [],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
+    qa: null,
     additionalFieldsToDisplay: [
       'cmip6:variable_long_name',
       'cmip6:frequency',
@@ -441,7 +450,6 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
   location: locations,
   timePeriod: timePeriods,
   license: licenses,
-  keyword: keywords,
 }
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
@@ -472,6 +480,7 @@ const itemCardFieldsToDisplay = {
     'sar:observation_direction',
   ],
   [DataCategory.Land_Cover]: [],
+  [DataCategory.Uncategorised]: [],
 }
 
 export {
@@ -479,7 +488,6 @@ export {
   resolutions,
   providers,
   locations,
-  keywords,
   timePeriods,
   licenses,
   collectionCategorization,

@@ -66,7 +66,7 @@ const renderGroupedByCollections = (
               <Flex gap="5" direction="column">
                 {group.collections.map((collection) => (
                   <SidePanelCollectionCard
-                    key={collection.id}
+                    key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
                     collection={collection}
                     onSelectCollectionInfo={() => onSelectCollectionInfo(collection)}
                     onChangeCollection={() => onChangeCollection(collection)}
@@ -102,14 +102,23 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
   const handleSelectCollectionInfo = (collection: Collection) => {
     // Reset item info panel
     setIsFilterOpen(false)
-    setSelectedCollectionInfo(collection)
+    if (selectedCollectionInfo?.id === collection.id) {
+      setSelectedCollectionInfo(null)
+    } else {
+      setSelectedCollectionInfo(collection)
+    }
   }
 
   const handleChangeCollection = (collection: Collection) => {
     onCloseCollectionPanel()
     setSelectedCollectionInfo(null)
-    localStorage.setItem('selectedCollection', JSON.stringify(collection))
-    navigate(`/finder/${collection.id}`)
+    setIsFilterOpen(false)
+
+    if (collection.isUserCollection) {
+      navigate(`/finder/my-${collection.id}`)
+    } else {
+      navigate(`/finder/${collection.id}`)
+    }
   }
 
   const handleOpenFilterPanel = () => {
@@ -164,10 +173,10 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
           <ItemList
             items={filteredCollections}
             cardType="query-item"
-            error={error}
+            error={!!error}
             renderItem={(collection) => (
               <SidePanelCollectionCard
-                key={collection.id}
+                key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
                 collection={collection}
                 onSelectCollectionInfo={() => handleSelectCollectionInfo(collection)}
                 onChangeCollection={() => handleChangeCollection(collection)}

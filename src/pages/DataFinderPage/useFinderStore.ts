@@ -187,7 +187,9 @@ const dataFinderStore = createStore({
       }
     },
     drawDelete: (context) => {
+      const { drawInstance } = context
       localStorage.removeItem('aoiData')
+      drawInstance!.deleteAll()
 
       return {
         ...context,
@@ -195,17 +197,26 @@ const dataFinderStore = createStore({
       }
     },
     drawModeChange: (context, event: { mapEvent: DrawModeChangeEvent }) => {
-      const { drawMode: currentDrawMode, aoi: currentAoi, drawInstance } = context
+      const { aoi: currentAoi, drawInstance, mapInstance } = context
       const { mode: nextDrawMode } = event.mapEvent
 
       // Ensure draw instance exists to avoid type errors
       if (!drawInstance) return context
 
-      // User started drawing a new polygon, delete the current AOI if it exists
-      if (currentDrawMode === DrawModes.SIMPLE_SELECT && nextDrawMode === DrawModes.DRAW_POLYGON) {
+      if (nextDrawMode === DrawModes.DRAW_POLYGON) {
+        // User started drawing a new polygon, delete the current AOI if it exists
         if (currentAoi) {
           drawInstance.delete(currentAoi.id as string)
         }
+
+        const handleDblClick = () => {
+          // Wait a bit for draw to be register and then change selection
+          setTimeout(() => {
+            drawInstance.changeMode('simple_select')
+          }, 100)
+          mapInstance!.off('dblclick', handleDblClick)
+        }
+        mapInstance!.on('dblclick', handleDblClick)
       }
 
       return {
@@ -215,7 +226,14 @@ const dataFinderStore = createStore({
     },
     addPinnedItem: (
       context,
-      event: { item: Item; collectionRender: StacRender },
+      event: {
+        item: Item
+        collectionRender: StacRender
+        isLicenseProprietary: boolean
+        isUserCollection: boolean
+        collectionName: string
+        collection?: Collection
+      },
     ): typeof context => {
       const pinnedItemId = getPinnedItemId(event.item, event.collectionRender)
       const isAlreadyPinned = context.pinnedItems.some((i) => i.pinId === pinnedItemId)
@@ -226,6 +244,10 @@ const dataFinderStore = createStore({
         ...event.item,
         pinId: pinnedItemId,
         tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        isLicenseProprietary: event.isLicenseProprietary,
+        isUserCollection: event.isUserCollection,
+        collectionName: event.collectionName,
+        collectionRef: event.collection,
         render: event.collectionRender,
         mapRender: {
           visible: true,
@@ -356,7 +378,7 @@ const dataFinderStore = createStore({
         isUserCollection: event.isUserCollection,
       }
     },
-    storeAoi: (context, event: { aoi: GeoJSON.Feature }) => {
+    storeAoi: (context, event: { aoi: GeoJSON.Feature | undefined }) => {
       localStorage.setItem('aoi', JSON.stringify(event.aoi))
       return { ...context, aoi: event.aoi }
     },

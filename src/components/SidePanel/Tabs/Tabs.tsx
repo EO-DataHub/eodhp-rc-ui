@@ -12,7 +12,7 @@ const TabsContent = ({ children, value }: { children: React.ReactNode; value: st
   </T.Content>
 )
 
-const Tabs = () => {
+const Tabs = ({ onTabChange }: { onTabChange: (tab: string) => void }) => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
   let pinnedItemsLabel = 'Pinned Items'
@@ -24,11 +24,10 @@ const Tabs = () => {
     <T.Root
       className={styles.TabsRoot}
       defaultValue="query-items-tab"
-      onValueChange={() =>
-        dataFinderStore.send({
-          type: 'closeSecondaryPanel',
-        })
-      }
+      onValueChange={(value) => {
+        onTabChange(value)
+        dataFinderStore.send({ type: 'closeSecondaryPanel' })
+      }}
     >
       <T.List className={styles.TabsList}>
         <T.Trigger className={styles.TabsTrigger} value="query-items-tab">

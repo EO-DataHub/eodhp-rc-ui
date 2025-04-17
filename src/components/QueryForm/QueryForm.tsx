@@ -1,5 +1,5 @@
 import * as buffer from 'buffer'
-import { useEffect, useState, useImperativeHandle, forwardRef } from 'react'
+import { useRef, useEffect, useState, useImperativeHandle, forwardRef } from 'react'
 import Form, { IChangeEvent } from '@rjsf/core'
 import validator from '@rjsf/validator-ajv8'
 import { buildQuery } from '@/json-schema-forms/queries/cql2.ts'
@@ -65,6 +65,7 @@ export interface QueryFormRef {
 export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(({ schema, onSubmit }, ref) => {
   const [dereferencedSchema, setDereferencedSchema] = useState<JSONSchema>({})
   const [formData, setFormData] = useState<Record<string, unknown>>({})
+  const formRef = useRef<Form<Record<string, unknown>>>(null)
 
   // Ensure that Buffer is available in the browser
   if (!window.Buffer) {
@@ -89,11 +90,15 @@ export const QueryForm = forwardRef<QueryFormRef, QueryFormProps>(({ schema, onS
   }, [schema])
 
   useImperativeHandle(ref, () => ({
-    resetForm: () => setFormData({}),
+    resetForm: () => {
+      setFormData({})
+      formRef.current?.reset()
+    },
   }))
 
   return (
     <Form
+      ref={formRef}
       className={styles.reactJsonSchemaForm}
       schema={dereferencedSchema}
       formData={formData}
