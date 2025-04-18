@@ -51,6 +51,7 @@ const labelMapping: Record<string, string> = {
   radiometric_calibration_algorithm: 'Calibration Algorithm',
   geometric_processing: 'Geometric Processing',
   retrieval_algorithm: 'Retrieval Algorithm',
+  calibration_algorithm: 'Calibration Algorithm',
   mission_specific_processing: 'Mission-Specific Processing',
 }
 
