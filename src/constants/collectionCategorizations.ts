@@ -112,6 +112,16 @@ enum LicenseLabel {
   Uncategorised = 'Uncategorised License',
 }
 
+enum qa {
+  Available = 'qa:available',
+  Unavailable = 'qa:unavailable',
+}
+
+enum QualityAssessmentLabel {
+  Available = 'Available QA',
+  Unavailable = 'Unavailable QA',
+}
+
 const createOptions = <T extends Record<string, string>>(
   enumObj: T,
   labels: Record<keyof T, string>,
@@ -123,6 +133,7 @@ const providers = createOptions(Provider, ProviderLabel)
 const locations = createOptions(Location, LocationLabel)
 const timePeriods = createOptions(TimePeriod, TimePeriodLabel)
 const licenses = createOptions(License, LicenseLabel)
+const qualityAssessments = createOptions(qa, QualityAssessmentLabel)
 
 const collectionCategorization = {
   airbus_spot_data: {
@@ -450,6 +461,7 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
   location: locations,
   timePeriod: timePeriods,
   license: licenses,
+  qa: qualityAssessments,
 }
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
@@ -490,6 +502,7 @@ export {
   locations,
   timePeriods,
   licenses,
+  qualityAssessments,
   collectionCategorization,
   itemCardFieldsToDisplay,
   filterMapping,

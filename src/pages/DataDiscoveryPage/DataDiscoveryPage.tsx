@@ -177,6 +177,7 @@ export const DataDiscoveryPage: React.FC = () => {
               <Select.Item value="provider">Provider</Select.Item>
               <Select.Item value="location">Location</Select.Item>
               <Select.Item value="license">License</Select.Item>
+              <Select.Item value="qa">QA</Select.Item>
             </Select.Group>
           </Select.Content>
         </Select.Root>
