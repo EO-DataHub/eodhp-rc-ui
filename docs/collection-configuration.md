@@ -100,7 +100,11 @@ For example, for CMIP6, we needed renders to be specific to the `variable_id` (f
 
 ## Item filtering with CQL2
 
-Items on the item finder can be filtered by CQL2 queries. The queries are defined in the `cql2` constant, which depends on a bunch of other files.
+Items on the item finder can be filtered by CQL2 queries.
+
+Since the properties by which to filter differ between collections, these are defined as JSON Schema forms folder.
+
+By default, all collections can be filtered on `datetime` and `geometry`, so you only need to add collection-specific filters if other properties should be available for filtering.
 
 - [`/src/json-schema-forms/queries/cql2.ts`](`../src/json-schema-forms/queries/cql2.ts`)
 - [`/src/json-schema-forms/queries/<collection-id>Query.ts`](../src/json-schema-forms/queries/)
