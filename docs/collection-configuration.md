@@ -1,4 +1,4 @@
-# Configuring STAC Collections for Visualisation
+# Configuring STAC Collections for Categorisation, Visualisation, and Filtering
 
 To surface a STAC collection in the application and make it available for visualisation, a the application needs a few hints about that collection.
 
