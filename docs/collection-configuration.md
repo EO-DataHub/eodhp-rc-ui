@@ -16,7 +16,7 @@ The file contains enums for the categories and a mapping of collection IDs to ca
 ![Collection Catalog with Categorisation](./collection-catalog-categorisation.png)
 
 
-## Item visualisation configuration
+## Item visualisation
 
 To visualise items on the map in the item finder page, the application needs to know how to render them. This is done by defining `render` parameters for each collection in the `configFromServer` file.
 
