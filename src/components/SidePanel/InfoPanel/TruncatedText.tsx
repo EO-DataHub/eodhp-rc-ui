@@ -22,6 +22,11 @@ export const TruncatedText: React.FC<TruncatedTextProps> = ({ text, maxLength = 
     [text, shouldTruncate, maxLength],
   )
 
+  const toggleText = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    setShouldTruncate(!shouldTruncate)
+  }
+
   return (
     <Flex
       direction="column"
@@ -34,7 +39,7 @@ export const TruncatedText: React.FC<TruncatedTextProps> = ({ text, maxLength = 
         <Link
           href="#"
           size="2"
-          onClick={() => setShouldTruncate(!shouldTruncate)}
+          onClick={toggleText}
           underline="always"
           highContrast
           weight="medium"
