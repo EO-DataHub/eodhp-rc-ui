@@ -175,6 +175,7 @@ export interface QuickFilter {
   location?: string
   timePeriod?: string
   license?: string
+  qa?: string
 }
 
 export interface DocumentQA {

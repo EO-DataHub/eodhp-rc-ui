@@ -70,26 +70,30 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
             className={styles.thumbnail}
             onError={handleImageError}
           />
-          <Flex direction="column" className={styles.details}>
-            <Dialog.Title className={styles.dialogTitle}>{collection.displayedTitle}</Dialog.Title>
-            <Text size="2" color="gray" mb="2">
-              {getFormattedDateRange(dateInterval)}
-            </Text>
-            <Dialog.Description size="2" mb="4">
-              {collection.description}
-            </Dialog.Description>
-            <Flex direction="row" gap="3" className={styles.keywords} wrap="wrap">
-              {collection.keywords?.map((keyword) => (
-                <Badge
-                  key={keyword}
-                  size="2"
-                  color="gray"
-                  className={styles.keyword}
-                  variant="soft"
-                >
-                  {keyword}
-                </Badge>
-              ))}
+          <Flex direction="column" width="100%" justify="between">
+            <Flex direction="column">
+              <Dialog.Title className={styles.dialogTitle}>
+                {collection.displayedTitle}
+              </Dialog.Title>
+              <Text size="2" color="gray" mb="2">
+                {getFormattedDateRange(dateInterval)}
+              </Text>
+              <Dialog.Description size="2" mb="4">
+                {collection.description}
+              </Dialog.Description>
+              <Flex direction="row" gap="3" className={styles.keywords} wrap="wrap">
+                {collection.keywords?.map((keyword) => (
+                  <Badge
+                    key={keyword}
+                    size="2"
+                    color="gray"
+                    className={styles.keyword}
+                    variant="soft"
+                  >
+                    {keyword}
+                  </Badge>
+                ))}
+              </Flex>
             </Flex>
             <Flex justify="end" mt="4">
               <Button onClick={handleOpenCollection} className={styles.button}>

@@ -36,6 +36,14 @@ cp .env.sample .env
 
 Make sure the `.env` file is not committed to the repository, as it contains sensitive configuration data.
 
+
+### Configure the STAC Collections
+
+There are a couple of configuration files that need to be set up to make the application work with your STAC collections.
+
+Please see the [Collection Configuration Documentation](docs/collection-configuration.md) for details.
+
+
 ### Starting the App
 
 To start the application, run:

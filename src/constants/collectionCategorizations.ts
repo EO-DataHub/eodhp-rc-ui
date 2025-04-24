@@ -112,6 +112,16 @@ enum LicenseLabel {
   Uncategorised = 'Uncategorised License',
 }
 
+enum qa {
+  Available = 'qa:available',
+  Unavailable = 'qa:unavailable',
+}
+
+enum QualityAssessmentLabel {
+  Available = 'Available QA',
+  Unavailable = 'Unavailable QA',
+}
+
 const createOptions = <T extends Record<string, string>>(
   enumObj: T,
   labels: Record<keyof T, string>,
@@ -123,6 +133,7 @@ const providers = createOptions(Provider, ProviderLabel)
 const locations = createOptions(Location, LocationLabel)
 const timePeriods = createOptions(TimePeriod, TimePeriodLabel)
 const licenses = createOptions(License, LicenseLabel)
+const qualityAssessments = createOptions(qa, QualityAssessmentLabel)
 
 const collectionCategorization = {
   airbus_spot_data: {
@@ -315,7 +326,7 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
-  'eocis-aerosol-slstr-monthly-s3n': {
+  'eocis-aerosol-slstr-monthly-s3b': {
     dataCategory: [DataCategory.Climate_Data],
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
@@ -441,6 +452,36 @@ const collectionCategorization = {
       'cmip6:nominal_resolution',
     ],
   },
+  cci: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: [Resolution.From_10km_To_100km],
+    provider: [Provider.ESA, Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  DYAMOND3_N2560: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: [Resolution.Uncategorised],
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },  
+  wcrp: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: [Resolution.Uncategorised],
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
 }
 
 const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[]> = {
@@ -450,6 +491,7 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
   location: locations,
   timePeriod: timePeriods,
   license: licenses,
+  qa: qualityAssessments,
 }
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
@@ -490,6 +532,7 @@ export {
   locations,
   timePeriods,
   licenses,
+  qualityAssessments,
   collectionCategorization,
   itemCardFieldsToDisplay,
   filterMapping,
