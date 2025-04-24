@@ -464,7 +464,7 @@ const collectionCategorization = {
   },
   DYAMOND3_N2560: {
     dataCategory: [DataCategory.Climate_Projections],
-    resolution: null,
+    resolution: [Resolution.Uncategorised],
     provider: [Provider.CEDA],
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
@@ -474,7 +474,7 @@ const collectionCategorization = {
   },  
   wcrp: {
     dataCategory: [DataCategory.Climate_Projections],
-    resolution: null,
+    resolution: [Resolution.Uncategorised],
     provider: [Provider.CEDA],
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
