@@ -6,6 +6,7 @@ import {
   licenses,
   locations,
   providers,
+  qualityAssessments,
   resolutions,
   timePeriods,
 } from '@/constants/collectionCategorizations'
@@ -147,6 +148,26 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
           <Select.Content position="popper">
             <Select.Group>
               {licenses.map((item) => (
+                <Select.Item value={item.value} key={item.value}>
+                  {item.label}
+                </Select.Item>
+              ))}
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
+      </Box>
+
+      <Box flexGrow="1" width={width} flexShrink="0">
+        <Select.Root
+          size={inputSize}
+          key={filters.qa}
+          value={filters.qa}
+          onValueChange={(value) => onFilterChange(value, 'qa')}
+        >
+          <Select.Trigger style={{ width: '100%' }} placeholder="Quality Assessment" />
+          <Select.Content position="popper">
+            <Select.Group>
+              {qualityAssessments.map((item) => (
                 <Select.Item value={item.value} key={item.value}>
                   {item.label}
                 </Select.Item>

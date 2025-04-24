@@ -118,11 +118,25 @@ export const useCollections = () => {
           ) {
             // also consider the collection to be uncategorised
             // if the categorizationData for the current filterKey is empty
-            if (filterValue === 'uncategorised' && categorizationData[filterKey].length > 0) {
+            if (
+              filterKey !== 'qa' &&
+              filterValue === 'uncategorised' &&
+              categorizationData[filterKey].length > 0
+            ) {
               return false
             }
 
+            if (filterKey === 'qa') {
+              if (filterValue === 'qa:available' && !categorizationData[filterKey]) {
+                return false
+              }
+              if (filterValue === 'qa:unavailable' && categorizationData[filterKey]) {
+                return false
+              }
+            }
+
             if (
+              filterKey !== 'qa' &&
               filterValue !== 'uncategorised' &&
               !(categorizationData[filterKey] as string[]).includes(filterValue)
             ) {
@@ -157,6 +171,14 @@ export const useCollections = () => {
           }
 
           const categorizationData = collectionCategorization[collection.id]
+
+          if (groupBy === 'qa') {
+            return (
+              (category.value === 'qa:available' && categorizationData[groupBy] !== null) ||
+              (category.value === 'qa:unavailable' && categorizationData[groupBy] === null)
+            )
+          }
+
           return (
             (categorizationData[groupBy][0] as string) === category.value ||
             (category.value === 'uncategorised' && categorizationData[groupBy].length === 0)
