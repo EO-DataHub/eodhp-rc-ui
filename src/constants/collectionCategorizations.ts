@@ -326,7 +326,7 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
-  'eocis-aerosol-slstr-monthly-s3n': {
+  'eocis-aerosol-slstr-monthly-s3b': {
     dataCategory: [DataCategory.Climate_Data],
     resolution: [Resolution.From_1km_To_10km],
     provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
@@ -451,6 +451,26 @@ const collectionCategorization = {
       'cmip6:experiment_id',
       'cmip6:nominal_resolution',
     ],
+  },
+  cci: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: [Resolution.From_10km_To_100km],
+    provider: [Provider.ESA, Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  DYAMOND3_N2560: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: null,
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
   },
 }
 
