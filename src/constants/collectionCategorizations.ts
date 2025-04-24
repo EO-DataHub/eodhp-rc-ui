@@ -471,6 +471,16 @@ const collectionCategorization = {
     license: [License.Open_Data],
     qa: null,
     additionalFieldsToDisplay: [],
+  },  
+  wcrp: {
+    dataCategory: [DataCategory.Climate_Projections],
+    resolution: null,
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
   },
 }
 
