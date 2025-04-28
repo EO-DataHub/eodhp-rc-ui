@@ -85,8 +85,8 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('about')}
           renderMenuItem={() => (
             <>
-              <a href="https://staging.eodatahub.org.uk/about/hub">Earth Observation Data Hub</a>
-              <a href="https://staging.eodatahub.org.uk/about/applications">Access Points</a>
+              <a href="https://prod.eodatahub.org.uk/about/hub">Earth Observation Data Hub</a>
+              <a href="https://prod.eodatahub.org.uk/about/applications">Access Points</a>
             </>
           )}
         />
@@ -97,9 +97,9 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('data')}
           renderMenuItem={() => (
             <>
-              <a href="https://staging.eodatahub.org.uk/data/open-access">Open Access</a>
-              <a href="https://staging.eodatahub.org.uk/data/commercial">Commercial</a>
-              <a href="https://staging.eodatahub.org.uk/data/quality-assurance">
+              <a href="https://prod.eodatahub.org.uk/data/open-access">Open Access</a>
+              <a href="https://prod.eodatahub.org.uk/data/commercial">Commercial</a>
+              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">
                 Quality Assurance
               </a>
             </>
@@ -112,10 +112,10 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('getting-started')}
           renderMenuItem={() => (
             <>
-              <a href="https://staging.eodatahub.org.uk/case-studies">Case Studies</a>
-              <a href="https://staging.eodatahub.org.uk/docs/account-setup">Account Setup</a>
-              <a href="https://staging.eodatahub.org.uk/docs/faqs">FAQs</a>
-              <a href="https://staging.eodatahub.org.uk/docs/documentation">Documentation</a>
+              <a href="https://prod.eodatahub.org.uk/case-studies">Case Studies</a>
+              <a href="https://prod.eodatahub.org.uk/docs/account-setup">Account Setup</a>
+              <a href="https://prod.eodatahub.org.uk/docs/faqs">FAQs</a>
+              <a href="https://prod.eodatahub.org.uk/docs/documentation">Documentation</a>
             </>
           )}
         />
