@@ -99,9 +99,7 @@ export const NavBar: React.FC = () => {
             <>
               <a href="https://prod.eodatahub.org.uk/data/open-access">Open Access</a>
               <a href="https://prod.eodatahub.org.uk/data/commercial">Commercial</a>
-              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">
-                Quality Assurance
-              </a>
+              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">Quality Assurance</a>
             </>
           )}
         />
