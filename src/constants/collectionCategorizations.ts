@@ -239,7 +239,7 @@ const collectionCategorization = {
   'eocis-sst-cdrv3': {
     dataCategory: [DataCategory.Climate_Data],
     resolution: [Resolution.From_1km_To_10km],
-    provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
+    provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
@@ -249,7 +249,7 @@ const collectionCategorization = {
   'eocis-arctic-sea-ice-thickness-monthly': {
     dataCategory: [DataCategory.Climate_Data],
     resolution: [Resolution.From_1km_To_10km],
-    provider: [Provider.EOCS, Provider.ESA, Provider.UOL_LST, Provider.CEDA],
+    provider: [Provider.EOCS, Provider.ESA, Provider.CEDA],
     location: [Location.Continental],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
