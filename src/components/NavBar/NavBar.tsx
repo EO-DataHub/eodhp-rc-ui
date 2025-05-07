@@ -75,7 +75,7 @@ export const NavBar: React.FC = () => {
   return (
     <Flex px="6" py="2" align="center" justify="between" className={styles.container}>
       <Flex className={styles.navLinks} width="50%">
-        <Link to="/" className={styles.logo}>
+        <Link to="https://prod.eodatahub.org.uk/" className={styles.logo}>
           <EarthObservationDataHubLogo style={{ width: '162px', height: '60px' }} />
         </Link>
 
@@ -99,9 +99,7 @@ export const NavBar: React.FC = () => {
             <>
               <a href="https://prod.eodatahub.org.uk/data/open-access">Open Access</a>
               <a href="https://prod.eodatahub.org.uk/data/commercial">Commercial</a>
-              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">
-                Quality Assurance
-              </a>
+              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">Quality Assurance</a>
             </>
           )}
         />
