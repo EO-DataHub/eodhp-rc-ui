@@ -99,9 +99,7 @@ export const NavBar: React.FC = () => {
             <>
               <a href="https://prod.eodatahub.org.uk/data/open-access">Open Access</a>
               <a href="https://prod.eodatahub.org.uk/data/commercial">Commercial</a>
-              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">
-                Quality Assurance
-              </a>
+              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">Quality Assurance</a>
             </>
           )}
         />
@@ -122,7 +120,7 @@ export const NavBar: React.FC = () => {
       </Flex>
       <Flex gap="5" className={styles.navLinks}>
         <a href="https://prod.eodatahub-workspaces.org.uk/notebooks/" className={styles.parentLink}>
-          Notebooks
+          Notebooks 📓
         </a>
         <DropdownMenu
           label="Catalogue"
