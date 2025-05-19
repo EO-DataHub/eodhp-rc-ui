@@ -120,7 +120,7 @@ export const NavBar: React.FC = () => {
       </Flex>
       <Flex gap="5" className={styles.navLinks}>
         <a href="https://prod.eodatahub-workspaces.org.uk/notebooks/" className={styles.parentLink}>
-          Notebooks
+          Notebooks 📓
         </a>
         <DropdownMenu
           label="Catalogue"
