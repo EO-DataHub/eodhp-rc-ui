@@ -471,7 +471,7 @@ const collectionCategorization = {
     license: [License.Open_Data],
     qa: null,
     additionalFieldsToDisplay: [],
-  },  
+  },
   wcrp: {
     dataCategory: [DataCategory.Climate_Projections],
     resolution: [Resolution.Uncategorised],

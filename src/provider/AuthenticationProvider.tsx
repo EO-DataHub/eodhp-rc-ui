@@ -25,7 +25,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [authenticatedAxios, setAuthenticatedAxios] = useState<AxiosInstance | undefined>()
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
-  const workspaceUserName = userInfo?.preferred_username?.replace('-', '_')
+  const workspaceUserName = userInfo?.preferred_username
   const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(() => {
     return localStorage.getItem('selectedWorkspace') ?? workspaceUserName
   })
@@ -104,10 +104,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       })
       .then((userInfo) => {
         setUserInfo(userInfo as KeycloakUserInfo)
-        const defaultWorkspace = (userInfo as KeycloakUserInfo)?.preferred_username?.replace(
-          '-',
-          '_',
-        )
+        const defaultWorkspace = (userInfo as KeycloakUserInfo)?.preferred_username
         if (!localStorage.getItem('selectedWorkspace')) {
           setCurrentWorkspace(defaultWorkspace)
         }
