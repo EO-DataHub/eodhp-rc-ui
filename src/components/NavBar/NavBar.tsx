@@ -149,7 +149,7 @@ export const NavBar: React.FC = () => {
           )}
         />
 
-        <a href="https://prod.eodatahub.org.uk/workspaces/" className={styles.parentLink}>
+        <a href="/workspaces/" className={styles.parentLink}>
           Workspaces
         </a>
         <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
