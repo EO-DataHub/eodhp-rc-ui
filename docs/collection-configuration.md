@@ -22,7 +22,7 @@ To visualise items on the map in the item finder page, the application needs to 
 
 The render configuration is a JSON object that follows the [STAC Rendering Extension Specification](https://github.com/stac-extensions/render). Most properties are passed on to the [UK EO Data Hub TiTiler Application](https://staging.eodatahub.org.uk/titiler/api.html), which is used to render the items. To understand what the parameters mean, please refer to STAC Rendering Extension Specification but more importantly the TiTiler documentation for the UK EO Data Hub TiTiler service.
 
-- [`/src/library/configFromServer.json`](../library/configFromServer.json)
+- [`/src/library/configFromServer.json`](../src/library/configFromServer.json)
 
 ![Item Visualisation with different rendering options](./item-visualisation-renders.png)
 
