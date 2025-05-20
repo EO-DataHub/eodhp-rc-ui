@@ -85,8 +85,8 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('about')}
           renderMenuItem={() => (
             <>
-              <a href="https://prod.eodatahub.org.uk/about/hub">Earth Observation Data Hub</a>
-              <a href="https://prod.eodatahub.org.uk/about/applications">Access Points</a>
+              <a href="/about/hub">Earth Observation Data Hub</a>
+              <a href="/about/applications">Access Points</a>
             </>
           )}
         />
@@ -97,9 +97,9 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('data')}
           renderMenuItem={() => (
             <>
-              <a href="https://prod.eodatahub.org.uk/data/open-access">Open Access</a>
-              <a href="https://prod.eodatahub.org.uk/data/commercial">Commercial</a>
-              <a href="https://prod.eodatahub.org.uk/data/quality-assurance">Quality Assurance</a>
+              <a href="/data/open-access">Open Access</a>
+              <a href="/data/commercial">Commercial</a>
+              <a href="/data/quality-assurance">Quality Assurance</a>
             </>
           )}
         />
@@ -110,16 +110,16 @@ export const NavBar: React.FC = () => {
           onClick={() => toggleMenu('getting-started')}
           renderMenuItem={() => (
             <>
-              <a href="https://prod.eodatahub.org.uk/case-studies">Case Studies</a>
-              <a href="https://prod.eodatahub.org.uk/docs/account-setup">Account Setup</a>
-              <a href="https://prod.eodatahub.org.uk/docs/faqs">FAQs</a>
-              <a href="https://prod.eodatahub.org.uk/docs/documentation">Documentation</a>
+              <a href="/case-studies">Case Studies</a>
+              <a href="/docs/account-setup">Account Setup</a>
+              <a href="/docs/faqs">FAQs</a>
+              <a href="/docs/documentation">Documentation</a>
             </>
           )}
         />
       </Flex>
       <Flex gap="5" className={styles.navLinks}>
-        <a href="https://prod.eodatahub-workspaces.org.uk/notebooks/" className={styles.parentLink}>
+        <a href="/notebooks/" className={styles.parentLink}>
           Notebooks
         </a>
         <DropdownMenu
@@ -149,7 +149,7 @@ export const NavBar: React.FC = () => {
           )}
         />
 
-        <a href="https://prod.eodatahub.org.uk/workspaces/" className={styles.parentLink}>
+        <a href="/workspaces/" className={styles.parentLink}>
           Workspaces
         </a>
         <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
