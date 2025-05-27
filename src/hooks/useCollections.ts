@@ -40,7 +40,6 @@ export const useCollections = () => {
     // we want to show the loading screen even when this query is pending / has no data
     // (i.e waiting for the token query to finish and be enabled)
     isPending: isUserCollectionPending,
-    error: userCollectionError,
   } = useQuery({
     queryKey: ['UserCollections', currentWorkspace],
     queryFn: () => fetchUserCollections(currentWorkspace!, workspaceTokensData!.access),
@@ -53,10 +52,12 @@ export const useCollections = () => {
     isAuthenticating ||
     (currentWorkspace && (isUserCollectionPending || isTokenLoading))
 
-  const error = queries.some((query) => query.isError) || userCollectionError
+  // Only consider errors from public collection queries, not user collection errors
+  const error = queries.some((query) => query.isError)
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
   const collectionCount =
-    queries.reduce((total, query) => total + (query.data?.length ?? 0), 0) + useCollections.length
+    queries.reduce((total, query) => total + (query.data?.length ?? 0), 0) +
+    (userCollections?.length ?? 0)
 
   const sortedCollections = useMemo(() => {
     const mergedCollections: Collection[] = queries

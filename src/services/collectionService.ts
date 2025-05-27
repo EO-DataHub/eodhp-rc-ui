@@ -43,7 +43,7 @@ export const fetchUserCollections = async (
   })
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user Collections')
+    return []
   }
 
   const data = await response.json()
