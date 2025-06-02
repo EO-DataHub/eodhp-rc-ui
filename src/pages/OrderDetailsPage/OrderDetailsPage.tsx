@@ -246,7 +246,9 @@ export const OrderDetailsPage: React.FC = () => {
                 : isQuoteLoading
                   ? 'Fetching cost...'
                   : quoteError
-                    ? 'Error fetching cost.'
+                    ? quoteError instanceof Error
+                      ? quoteError.message
+                      : 'Error fetching cost.'
                     : quote?.data
                       ? providerType === 'planet'
                         ? `Total credits: ${quote.data.value} ${quote.data.units}`
