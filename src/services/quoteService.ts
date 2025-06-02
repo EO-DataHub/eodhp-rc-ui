@@ -64,13 +64,19 @@ export const fetchQuote = async ({
     })
 
     if (!response.ok) {
-      throw new Error(`Quote request failed: ${response.status} ${response.statusText}`)
+      const errorData = await response.json()
+      throw new Error(
+        errorData.detail || `Quote request failed: ${response.status} ${response.statusText}`,
+      )
     }
 
     const responseData = await response.json()
 
     return { success: true, data: responseData }
   } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
     throw new Error('Failed to fetch quote.')
   }
 }
