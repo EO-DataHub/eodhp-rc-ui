@@ -116,7 +116,7 @@ export const OrderDetailsPage: React.FC = () => {
           }
         : undefined
 
-    const requestBody = {
+     const requestBody = {
       workspace: currentWorkspace,
       token,
       item,
@@ -125,7 +125,7 @@ export const OrderDetailsPage: React.FC = () => {
       coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
       licence: orderSelections.licence,
       radarOptions,
-      endUserCountry: orderSelections.country,
+      endUserCountry: orderSelections.endUserCountry,
     }
 
     mutation.mutate(requestBody)
