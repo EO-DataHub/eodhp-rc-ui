@@ -78,9 +78,18 @@ export const OrderDetailsPage: React.FC = () => {
   const isPlaceOrderDisabled = useMemo(() => {
     const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
+    const isResolutionVariantDisabled =
+      providerType === 'airbus_sar' && orderSelections.productBundle === 'SCC'
+
+    const isProjectionDisabled =
+      providerType === 'airbus_sar' &&
+      (orderSelections.productBundle === 'SCC' || orderSelections.productBundle === 'MGD')
+
     const isAirbusSarMissingSelections =
       providerType === 'airbus_sar' &&
-      (!orderSelections.orbit || !orderSelections.resolutionVariant || !orderSelections.projection)
+      (!orderSelections.orbit ||
+        (!isResolutionVariantDisabled && !orderSelections.resolutionVariant) ||
+        (!isProjectionDisabled && !orderSelections.projection))
 
     return Boolean(baseInvalid) || Boolean(isAirbusSarMissingSelections)
   }, [orderSelections, mutation.isPending, termsAccepted, providerType])
@@ -89,7 +98,25 @@ export const OrderDetailsPage: React.FC = () => {
     if (!item) return
     const aoiCoordinates = aoiData?.geometry?.coordinates
 
-    const requestBody = {
+    const isResolutionVariantDisabled =
+      providerType === 'airbus_sar' && orderSelections.productBundle === 'SCC'
+
+    const isProjectionDisabled =
+      providerType === 'airbus_sar' &&
+      (orderSelections.productBundle === 'SCC' || orderSelections.productBundle === 'MGD')
+
+    const radarOptions =
+      providerType === 'airbus_sar'
+        ? {
+            orbit: orderSelections.orbit,
+            ...(isResolutionVariantDisabled
+              ? {}
+              : { resolutionVariant: orderSelections.resolutionVariant }),
+            ...(isProjectionDisabled ? {} : { projection: orderSelections.projection }),
+          }
+        : undefined
+
+     const requestBody = {
       workspace: currentWorkspace,
       token,
       item,
@@ -97,14 +124,7 @@ export const OrderDetailsPage: React.FC = () => {
       productBundle: orderSelections.productBundle,
       coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
       licence: orderSelections.licence,
-      radarOptions:
-        providerType === 'airbus_sar'
-          ? {
-              orbit: orderSelections.orbit,
-              resolutionVariant: orderSelections.resolutionVariant,
-              projection: orderSelections.projection,
-            }
-          : undefined,
+      radarOptions,
       endUserCountry: orderSelections.endUserCountry,
     }
 
