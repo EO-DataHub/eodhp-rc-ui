@@ -105,7 +105,7 @@ export const OrderDetailsPage: React.FC = () => {
               projection: orderSelections.projection,
             }
           : undefined,
-      endUserCountry: orderSelections.country,
+      endUserCountry: orderSelections.endUserCountry,
     }
 
     mutation.mutate(requestBody)

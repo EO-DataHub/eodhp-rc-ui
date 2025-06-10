@@ -57,8 +57,13 @@ export const purchaseProduct = async ({
     requestBody.coordinates = coordinates
   }
 
-  // Only add endUserCountry if applicable (Airbus Optical & Airbus SAR)
-  if ((provider === 'airbus_optical' || provider === 'airbus_sar') && endUserCountry) {
+  // Add endUserCountry for PNEO orders or Airbus Optical/SAR providers
+  if (
+    (item.collection === 'airbus_pneo_data' ||
+      provider === 'airbus_optical' ||
+      provider === 'airbus_sar') &&
+    endUserCountry
+  ) {
     requestBody.endUserCountry = endUserCountry
   }
 
