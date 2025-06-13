@@ -50,7 +50,7 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   const options = {
     productBundle: {
       shared: ['Visual', 'General Use', 'Basic', 'Analytic'],
-      airbus_sar: ['SCC', 'MGD', 'GEC', 'EEC'],
+      airbus_sar: ['SSC', 'MGD', 'GEC', 'EEC'],
     },
     licence: {
       airbus_optical: [
@@ -132,11 +132,11 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   }
 
   const isResolutionVariantDisabled =
-    provider === 'airbus_sar' && selectedValues.productBundle === 'SCC'
+    provider === 'airbus_sar' && selectedValues.productBundle === 'SSC'
 
   const isProjectionDisabled =
     provider === 'airbus_sar' &&
-    (selectedValues.productBundle === 'SCC' || selectedValues.productBundle === 'MGD')
+    (selectedValues.productBundle === 'SSC' || selectedValues.productBundle === 'MGD')
 
   return (
     <Flex direction="column" gap="4" className={styles.selectionsContainer}>
