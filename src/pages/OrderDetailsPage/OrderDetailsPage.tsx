@@ -79,11 +79,11 @@ export const OrderDetailsPage: React.FC = () => {
     const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
 
     const isResolutionVariantDisabled =
-      providerType === 'airbus_sar' && orderSelections.productBundle === 'SCC'
+      providerType === 'airbus_sar' && orderSelections.productBundle === 'SSC'
 
     const isProjectionDisabled =
       providerType === 'airbus_sar' &&
-      (orderSelections.productBundle === 'SCC' || orderSelections.productBundle === 'MGD')
+      (orderSelections.productBundle === 'SSC' || orderSelections.productBundle === 'MGD')
 
     const isAirbusSarMissingSelections =
       providerType === 'airbus_sar' &&
@@ -99,11 +99,11 @@ export const OrderDetailsPage: React.FC = () => {
     const aoiCoordinates = aoiData?.geometry?.coordinates
 
     const isResolutionVariantDisabled =
-      providerType === 'airbus_sar' && orderSelections.productBundle === 'SCC'
+      providerType === 'airbus_sar' && orderSelections.productBundle === 'SSC'
 
     const isProjectionDisabled =
       providerType === 'airbus_sar' &&
-      (orderSelections.productBundle === 'SCC' || orderSelections.productBundle === 'MGD')
+      (orderSelections.productBundle === 'SSC' || orderSelections.productBundle === 'MGD')
 
     const radarOptions =
       providerType === 'airbus_sar'
