@@ -116,7 +116,7 @@ export const OrderDetailsPage: React.FC = () => {
           }
         : undefined
 
-     const requestBody = {
+    const requestBody = {
       workspace: currentWorkspace,
       token,
       item,

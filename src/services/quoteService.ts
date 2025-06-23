@@ -64,9 +64,16 @@ export const fetchQuote = async ({
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
+      let errorData: { detail?: string }
+      try {
+        errorData = await response.json()
+      } catch (jsonError) {
+        // If response is not valid JSON, use default error message
+        throw new Error('Failed to fetch quote.')
+      }
+
       throw new Error(
-        errorData.detail || `Quote request failed: ${response.status} ${response.statusText}`,
+        errorData.detail ?? `Quote request failed: ${response.status} ${response.statusText}`,
       )
     }
 
