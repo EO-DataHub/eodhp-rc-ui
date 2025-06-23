@@ -32,7 +32,7 @@ export const useCollections = () => {
     queryKey: ['WorkspaceTokens', currentWorkspace, token],
     queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token,
+    enabled: !!(currentWorkspace ?? null) && !!(token ?? null),
   })
 
   const {
@@ -44,13 +44,16 @@ export const useCollections = () => {
     queryKey: ['UserCollections', currentWorkspace],
     queryFn: () => fetchUserCollections(currentWorkspace!, workspaceTokensData!.access),
     refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!workspaceTokensData,
+    enabled: !!(currentWorkspace ?? null) && !!(workspaceTokensData ?? null),
   })
 
   const isLoading =
-    queries.some((query) => query.isLoading) ||
-    isAuthenticating ||
-    (currentWorkspace && (isUserCollectionPending || isTokenLoading))
+    Boolean(queries.some((query) => query.isLoading)) ||
+    Boolean(isAuthenticating) ||
+    Boolean(
+      (currentWorkspace ?? null) && !!(workspaceTokensData ?? null) && isUserCollectionPending,
+    ) ||
+    Boolean((currentWorkspace ?? null) && isTokenLoading)
 
   // Only consider errors from public collection queries, not user collection errors
   const error = queries.some((query) => query.isError)
