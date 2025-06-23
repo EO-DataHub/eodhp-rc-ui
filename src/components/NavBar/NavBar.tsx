@@ -75,9 +75,9 @@ export const NavBar: React.FC = () => {
   return (
     <Flex px="6" py="2" align="center" justify="between" className={styles.container}>
       <Flex className={styles.navLinks} width="50%">
-        <Link to="https://eodatahub.org.uk/" className={styles.logo}>
+        <a href="https://eodatahub.org.uk/" className={styles.logo}>
           <EarthObservationDataHubLogo style={{ width: '162px', height: '60px' }} />
-        </Link>
+        </a>
 
         <DropdownMenu
           label="About"
