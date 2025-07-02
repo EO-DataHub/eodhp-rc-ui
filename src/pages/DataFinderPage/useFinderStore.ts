@@ -15,7 +15,12 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'query-filters' | 'item-info' | 'collection-info' | undefined
+export type SecondaryPanel =
+  | 'query-filters'
+  | 'item-info'
+  | 'collection-info'
+  | 'ellipsis-menu'
+  | undefined
 
 const PlaceholderRender: StacRender = {
   id: 'default',
@@ -28,6 +33,7 @@ interface AppContext {
   isLoading: boolean
   secondaryPanel: SecondaryPanel
   infoPanelItem?: Item
+  ellipsisMenuItem?: Item
   mapInstance?: MapInstance
   drawInstance?: MapboxDraw
   drawMode?: DrawMode
@@ -54,6 +60,7 @@ const dataFinderStore = createStore({
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined,
     infoPanelItem: undefined,
+    ellipsisMenuItem: undefined,
     mapInstance: undefined,
     drawInstance: undefined,
     drawMode: undefined,
@@ -120,11 +127,27 @@ const dataFinderStore = createStore({
         infoPanelItem: event.item,
       }
     },
+    toggleEllipsisMenu: (context, event: { item: Item }): typeof context => {
+      // Panel is already open with the same item, close it
+      if (context.ellipsisMenuItem?.id === event.item.id) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+          ellipsisMenuItem: undefined,
+        }
+      }
+      return {
+        ...context,
+        secondaryPanel: 'ellipsis-menu',
+        ellipsisMenuItem: event.item,
+      }
+    },
     closeSecondaryPanel: (context) => {
       return {
         ...context,
         secondaryPanel: undefined,
         infoPanelItem: undefined,
+        ellipsisMenuItem: undefined,
       }
     },
     pageChange: (context, event: { page: number }) => {

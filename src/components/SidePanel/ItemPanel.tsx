@@ -11,6 +11,7 @@ import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import Tabs from './Tabs/Tabs'
+import { EllipsisMenuPanel } from './InfoPanel/EllipsisMenuPanel'
 
 interface ItemPanelProps {
   collection?: Collection
@@ -19,6 +20,7 @@ interface ItemPanelProps {
 export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollectionPanel }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
+  const ellipsisMenuItem = useSelector(dataFinderStore, (state) => state.context.ellipsisMenuItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const [activeTab, setActiveTab] = useState('query-items-tab')
 
@@ -26,7 +28,10 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
-  const isInfoPanelOpen = secondaryPanel === 'item-info' || secondaryPanel === 'collection-info'
+  const isInfoPanelOpen =
+    secondaryPanel === 'item-info' ||
+    secondaryPanel === 'collection-info' ||
+    secondaryPanel === 'ellipsis-menu'
   const isSmallCollectionCardDisabled = activeTab === 'pinned-items-tab'
 
   const smallCollectionCard = (
@@ -75,7 +80,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
 
       <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />
 
-      {/* Show either item or collection info panel, and close the other one if needed */}
+      {/* Show either item, collection, or ellipsis menu info panel */}
       <InfoPanelWrapper isOpen={isInfoPanelOpen}>
         {secondaryPanel === 'item-info' && infoPanelItem && (
           <ItemInfoPanel
@@ -86,6 +91,9 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         )}
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel selectedCollection={collection} onClose={closeSecondaryPanel} />
+        )}
+        {secondaryPanel === 'ellipsis-menu' && ellipsisMenuItem && (
+          <EllipsisMenuPanel item={ellipsisMenuItem} onClose={closeSecondaryPanel} />
         )}
       </InfoPanelWrapper>
     </>

@@ -9,6 +9,7 @@ import {
   EyeClosedIcon,
   InfoCircledIcon,
   ZoomInIcon,
+  DotsHorizontalIcon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
@@ -246,6 +247,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
+  const ellipsisMenuItem = useSelector(dataFinderStore, (state) => state.context.ellipsisMenuItem)
+  const isEllipsisMenuOpen = ellipsisMenuItem?.id === item.id
+
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     e.currentTarget.onerror = null
     e.currentTarget.src = DefaultItemThumbnail
@@ -398,6 +402,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             >
               <Tooltip content="View Metadata">
                 <InfoCircledIcon />
+              </Tooltip>
+            </ActionButton>
+            <ActionButton
+              active={isEllipsisMenuOpen}
+              onClick={() => dataFinderStore.send({ type: 'toggleEllipsisMenu', item })}
+            >
+              <Tooltip content="More options">
+                <DotsHorizontalIcon />
               </Tooltip>
             </ActionButton>
             {isLicenseProprietary && !itemBelongsToUserCollection && (
