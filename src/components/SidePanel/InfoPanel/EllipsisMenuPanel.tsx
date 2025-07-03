@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
@@ -9,7 +9,23 @@ interface EllipsisMenuPanelProps {
   onClose: () => void
 }
 
+interface NotebookConfig {
+  id: string
+  file: string
+  label: string
+  description?: string
+}
+
 export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onClose }) => {
+  const [notebooks, setNotebooks] = useState<NotebookConfig[]>([])
+
+  useEffect(() => {
+    fetch('https://raw.githubusercontent.com/geodowd/notebook_config/refs/heads/main/config.json')
+      .then((res) => res.json())
+      .then((data) => setNotebooks(data.notebooks ?? []))
+      .catch(() => setNotebooks([]))
+  }, [])
+
   return (
     <>
       {item && (
@@ -42,32 +58,27 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
                 {(() => {
                   const [minLon, minLat] = item.bbox
                   const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
-                  const baseNotebookUrl = `http://localhost:8000/run-notebook?cog_url=${encodeURIComponent(item.assets.cog.href)}&bbox=${small_bbox.join(',')}`
-                  const ndviNotebookUrl = `${baseNotebookUrl}&notebook=ndvi_calculation.ipynb`
-                  const cogPreviewNotebookUrl = `${baseNotebookUrl}&notebook=cog_preview.ipynb`
+                  const cogUrl = encodeURIComponent(item.assets.cog.href)
+                  const bboxStr = small_bbox.join(',')
                   return (
                     <>
-                      <a
-                        href={ndviNotebookUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ marginTop: '1rem', color: '#0070f3', textDecoration: 'underline' }}
-                      >
-                        Open NDVI calculation notebook
-                      </a>
-                      <a
-                        href={cogPreviewNotebookUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          marginTop: '1rem',
-                          color: '#0070f3',
-                          textDecoration: 'underline',
-                          display: 'block',
-                        }}
-                      >
-                        Open COG preview notebook
-                      </a>
+                      {notebooks.map((nb) => (
+                        <a
+                          key={nb.id}
+                          href={`http://localhost:8000/run/notebook/${nb.id}?cog_url=${cogUrl}&bbox=${bboxStr}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            marginTop: '1rem',
+                            color: '#0070f3',
+                            textDecoration: 'underline',
+                            display: 'block',
+                          }}
+                          title={nb.description ?? nb.label}
+                        >
+                          {nb.label}
+                        </a>
+                      ))}
                     </>
                   )
                 })()}
