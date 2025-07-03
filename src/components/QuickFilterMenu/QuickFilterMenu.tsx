@@ -1,5 +1,5 @@
 import React from 'react'
-import { Flex, Select, Box } from '@radix-ui/themes'
+import { Flex, Select, Box, Button } from '@radix-ui/themes'
 import styles from './QuickFilterMenu.module.scss'
 import {
   dataCategories,
@@ -17,6 +17,7 @@ interface QuickFilterMenuProps {
   onFilterChange: (value: string, forKey: keyof QuickFilter) => void
   flexDirection?: 'column' | 'row'
   inputSize?: '1' | '2' | '3'
+  onClearAll?: () => void
 }
 
 export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
@@ -24,6 +25,7 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
   onFilterChange,
   flexDirection = 'row',
   inputSize = '3',
+  onClearAll,
 }) => {
   const width = flexDirection === 'row' ? '160px' : '100%'
 
@@ -176,6 +178,20 @@ export const QuickFilterMenu: React.FC<QuickFilterMenuProps> = ({
           </Select.Content>
         </Select.Root>
       </Box>
+
+      {onClearAll && (
+        <Box flexGrow="0" flexShrink="0">
+          <Button
+            size={inputSize}
+            variant="soft"
+            color="gray"
+            onClick={onClearAll}
+            style={{ minWidth: width }}
+          >
+            Clear All
+          </Button>
+        </Box>
+      )}
     </Flex>
   )
 }

@@ -137,6 +137,12 @@ export const DataDiscoveryPage: React.FC = () => {
     setGroupBy(value)
   }
 
+  const handleClearAll = () => {
+    setFilters({})
+    setGroupBy('none')
+    setSearchParams(new URLSearchParams())
+  }
+
   if (isLoading) {
     return (
       <Flex justify="center" align="center">
@@ -159,7 +165,11 @@ export const DataDiscoveryPage: React.FC = () => {
 
   return (
     <Container align="center" maxWidth="1640px">
-      <QuickFilterMenu filters={filters} onFilterChange={handleFilterChange} />
+      <QuickFilterMenu
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearAll}
+      />
       <Separator style={{ width: '100%' }} />
       <ActionsBar searchText={searchText} onSearch={setSearchText} />
       <FilterTags filters={filters} onRemoveFilter={handleRemoveFilter} />
