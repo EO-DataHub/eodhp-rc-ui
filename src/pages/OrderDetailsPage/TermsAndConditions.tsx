@@ -19,6 +19,10 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
       text: 'I give consent for the Earth Observation Data Hub to place the order on my behalf.',
       link: '',
     },
+    {
+      text: 'I understand this order cannot be cancelled once it has been placed.',
+      link: '',
+    },
   ]
 
   if (provider !== 'planet') {
