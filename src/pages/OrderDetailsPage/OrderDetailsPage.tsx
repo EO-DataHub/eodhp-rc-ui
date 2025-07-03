@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo } from 'react'
+import React, { useContext, useState, useMemo, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItemFromCollection } from '@/services/itemService'
@@ -20,13 +20,14 @@ import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
 import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
+import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
 export const OrderDetailsPage: React.FC = () => {
   const { state } = useLocation()
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, updateCurrentWorkspace, token } = useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -75,24 +76,36 @@ export const OrderDetailsPage: React.FC = () => {
   const aoiData = !isFullScene ? rawAoi : null
   const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(undefined)
+
+  const { data: workspacesData, isLoading: isWorkspacesLoading } = useQuery({
+    queryKey: ['Workspaces', token],
+    queryFn: () => fetchWorkspaces(token!),
+    enabled: !!token,
+    refetchOnWindowFocus: false,
+  })
+
+  useEffect(() => {
+    if (selectedWorkspace && selectedWorkspace !== currentWorkspace) {
+      updateCurrentWorkspace?.(selectedWorkspace)
+    }
+  }, [selectedWorkspace, currentWorkspace, updateCurrentWorkspace])
+
   const isPlaceOrderDisabled = useMemo(() => {
     const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
-
     const isResolutionVariantDisabled =
       providerType === 'airbus_sar' && orderSelections.productBundle === 'SSC'
-
     const isProjectionDisabled =
       providerType === 'airbus_sar' &&
       (orderSelections.productBundle === 'SSC' || orderSelections.productBundle === 'MGD')
-
     const isAirbusSarMissingSelections =
       providerType === 'airbus_sar' &&
       (!orderSelections.orbit ||
         (!isResolutionVariantDisabled && !orderSelections.resolutionVariant) ||
         (!isProjectionDisabled && !orderSelections.projection))
-
-    return Boolean(baseInvalid) || Boolean(isAirbusSarMissingSelections)
-  }, [orderSelections, mutation.isPending, termsAccepted, providerType])
+    const isWorkspaceMissing = !selectedWorkspace
+    return Boolean(baseInvalid) || Boolean(isAirbusSarMissingSelections) || isWorkspaceMissing
+  }, [orderSelections, mutation.isPending, termsAccepted, providerType, selectedWorkspace])
 
   function placeOrder() {
     if (!item) return
@@ -117,7 +130,7 @@ export const OrderDetailsPage: React.FC = () => {
         : undefined
 
     const requestBody = {
-      workspace: currentWorkspace,
+      workspace: selectedWorkspace,
       token,
       item,
       provider: providerType,
@@ -167,17 +180,25 @@ export const OrderDetailsPage: React.FC = () => {
     isLoading: isQuoteLoading,
     error: quoteError,
   } = useQuery({
-    queryKey: ['Quote', catalog, selectedCollection?.id, orderId, orderSelections.licence, aoiData],
+    queryKey: [
+      'Quote',
+      catalog,
+      selectedCollection?.id,
+      orderId,
+      orderSelections.licence,
+      aoiData,
+      selectedWorkspace,
+    ],
     queryFn: () =>
       fetchQuote({
-        workspace: currentWorkspace,
+        workspace: selectedWorkspace,
         token,
         item: item,
         coordinates: coordinates,
         licence: orderSelections.licence,
       }),
-    enabled: !!item && (providerType === 'planet' || !!orderSelections.licence),
-
+    enabled:
+      !!item && (providerType === 'planet' || !!orderSelections.licence) && !!selectedWorkspace,
     refetchOnWindowFocus: false,
   })
 
@@ -233,33 +254,23 @@ export const OrderDetailsPage: React.FC = () => {
             <Text size="5" weight="bold">
               {item?.collection}: {item?.id}
             </Text>
-            {/* <Text>Workspace: {currentWorkspace}</Text> */}
-            <Flex gap="4">
-              <Text size="3" weight="medium">
-                Workspace: {currentWorkspace}
-              </Text>
-              <Link
-                href="#"
-                underline="always"
-                weight="medium"
-                onClick={(e) => {
-                  e.preventDefault()
-                  setIsChangeWokspaceModalOpen(true)
-                }}
-              >
-                Change Workspace
-              </Link>
+            <Flex direction="column" gap="2" style={{ maxWidth: 400 }}>
+              {/* Workspace selector moved to OrderSelections */}
             </Flex>
-
             {hasInitialAoi && providerType !== 'airbus_sar' ? (
               <PartialSceneSelect
                 checked={isFullScene}
                 onChange={(checked) => setIsFullScene(checked)}
               />
             ) : null}
-
-            <OrderSelections provider={providerType} onSelectionChange={handleSelectionsChange} />
-
+            <OrderSelections
+              provider={providerType}
+              onSelectionChange={handleSelectionsChange}
+              workspaces={workspacesData ?? []}
+              selectedWorkspace={selectedWorkspace}
+              onWorkspaceChange={setSelectedWorkspace}
+              isWorkspacesLoading={isWorkspacesLoading}
+            />
             <Text size="4" weight="bold" className={styles.cost}>
               {providerType !== 'planet' && !orderSelections.licence
                 ? 'Select a licence type to get a quote.'
@@ -275,9 +286,7 @@ export const OrderDetailsPage: React.FC = () => {
                         : `Total cost: ${formatCurrency(quote.data.value, quote.data.units || 'USD')}`
                       : null}
             </Text>
-
             <TermsAndConditions provider={providerType} onTermsChange={setTermsAccepted} />
-
             <OrderButtons
               onPlaceOrder={placeOrder}
               isPlacingOrder={mutation.isPending}

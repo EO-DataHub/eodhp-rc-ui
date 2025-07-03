@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Flex, Text, Select } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 import countries from '../../data/countries.json'
+import type { Workspace } from '@/services/workspaceTokenService'
 
 interface FieldProps {
   label: string
@@ -26,11 +27,19 @@ const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
 interface OrderSelectionsProps {
   provider: 'planet' | 'airbus_optical' | 'airbus_sar'
   onSelectionChange: (selectedValues: Record<string, string>) => void
+  workspaces: Workspace[]
+  selectedWorkspace: string | undefined
+  onWorkspaceChange: (workspace: string) => void
+  isWorkspacesLoading: boolean
 }
 
 export const OrderSelections: React.FC<OrderSelectionsProps> = ({
   provider,
   onSelectionChange,
+  workspaces,
+  selectedWorkspace,
+  onWorkspaceChange,
+  isWorkspacesLoading,
 }) => {
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({
     productBundle: '',
@@ -140,6 +149,29 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
 
   return (
     <Flex direction="column" gap="4" className={styles.selectionsContainer}>
+      {/* Workspace - Required for all providers */}
+      <Field label="Workspace" required>
+        <Select.Root
+          size="2"
+          value={selectedWorkspace}
+          onValueChange={onWorkspaceChange}
+          disabled={isWorkspacesLoading}
+        >
+          <Select.Trigger
+            className={styles.selectTrigger}
+            placeholder={isWorkspacesLoading ? 'Loading workspaces...' : 'Select'}
+          />
+          <Select.Content className={styles.selectContent}>
+            <Select.Group>
+              {workspaces?.map((workspace) => (
+                <Select.Item key={workspace.id} value={workspace.name}>
+                  {workspace.name ?? workspace.id}
+                </Select.Item>
+              ))}
+            </Select.Group>
+          </Select.Content>
+        </Select.Root>
+      </Field>
       {/* Product Bundle - Required for all providers */}
       {renderSelect('productBundle', 'Product Bundle')}
 
