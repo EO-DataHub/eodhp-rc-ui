@@ -1,34 +1,29 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { getCogAssetHref } from '@/library/assetUtils'
+import { useNotebookConfigs } from '@/hooks/useNotebookConfigs'
+import { getNotebookLinks } from '@/library/notebookUtils'
+import { filterNotebooksForItems } from '@/library/notebookUtils'
+import NotebookLinksWithInfo from './NotebookLinksWithInfo'
 
 interface EllipsisMenuPanelProps {
   item: Item | null
   onClose: () => void
 }
 
-interface NotebookConfig {
-  id: string
-  file: string
-  label: string
-  description?: string
-}
-
 export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onClose }) => {
-  const [notebooks, setNotebooks] = useState<NotebookConfig[]>([])
-
-  useEffect(() => {
-    fetch('https://raw.githubusercontent.com/geodowd/notebook_config/refs/heads/main/config.json')
-      .then((res) => res.json())
-      .then((data) => setNotebooks(data.notebooks ?? []))
-      .catch(() => setNotebooks([]))
-  }, [])
+  const { notebooks, error } = useNotebookConfigs()
 
   return (
     <>
+      {error && (
+        <Text color="red" style={{ marginBottom: '1rem' }}>
+          {error}
+        </Text>
+      )}
       {item && (
         <>
           <Flex direction="column" gap="1">
@@ -49,10 +44,8 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
             {(() => {
               const cogAssetHref = getCogAssetHref(item)
               if (cogAssetHref) {
-                const [minLon, minLat] = item.bbox
-                const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
-                const cogUrl = encodeURIComponent(cogAssetHref)
-                const bboxStr = small_bbox.join(',')
+                const filteredNotebooks = filterNotebooksForItems([item], notebooks)
+                const notebookLinks = getNotebookLinks(item, filteredNotebooks)
                 return (
                   <>
                     <a
@@ -63,23 +56,10 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
                     >
                       Open COG Asset
                     </a>
-                    {notebooks.map((nb) => (
-                      <a
-                        key={nb.id}
-                        href={`http://localhost:8000/run/notebook/${nb.id}?cog_url=${cogUrl}&bbox=${bboxStr}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          marginTop: '1rem',
-                          color: '#0070f3',
-                          textDecoration: 'underline',
-                          display: 'block',
-                        }}
-                        title={nb.description ?? nb.label}
-                      >
-                        {nb.label}
-                      </a>
-                    ))}
+                    <NotebookLinksWithInfo
+                      notebookLinks={notebookLinks}
+                      notebookConfigs={filteredNotebooks}
+                    />
                   </>
                 )
               }
