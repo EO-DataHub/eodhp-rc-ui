@@ -11,6 +11,13 @@ export interface NotebookConfig {
   minItems?: number
   maxItems?: number
   markdown_file?: string
+  /**
+   * Describes the expected input parameters for the notebook.
+   * Example: { cog_url: 'singleUrl', bbox: 'bbox' }
+   */
+  inputSpec?: {
+    [param: string]: 'singleUrl' | 'urlList' | 'bbox' | 'custom'
+  }
 }
 
 export function useNotebookConfigs() {

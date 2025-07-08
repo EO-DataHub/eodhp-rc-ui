@@ -5,7 +5,7 @@ import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { getCogAssetHref } from '@/library/assetUtils'
 import { useNotebookConfigs } from '@/hooks/useNotebookConfigs'
-import { getNotebookLinks } from '@/library/notebookUtils'
+import { getNotebookLinksForItems } from '@/library/notebookUtils'
 import { filterNotebooksForItems } from '@/library/notebookUtils'
 import NotebookLinksWithInfo from './NotebookLinksWithInfo'
 
@@ -45,7 +45,7 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
               const cogAssetHref = getCogAssetHref(item)
               if (cogAssetHref) {
                 const filteredNotebooks = filterNotebooksForItems([item], notebooks)
-                const notebookLinks = getNotebookLinks(item, filteredNotebooks)
+                const notebookLinks = getNotebookLinksForItems([item], filteredNotebooks)
                 return (
                   <>
                     <a

@@ -4,7 +4,7 @@ import { Cross1Icon } from '@radix-ui/react-icons'
 import type { Item } from '@/types'
 import { getCogAssetHref } from '@/library/assetUtils'
 import { useNotebookConfigs } from '@/hooks/useNotebookConfigs'
-import { getBatchNotebookLinks, filterNotebooksForItems } from '@/library/notebookUtils'
+import { getNotebookLinksForItems, filterNotebooksForItems } from '@/library/notebookUtils'
 import NotebookLinksWithInfo from '../InfoPanel/NotebookLinksWithInfo'
 
 interface PinnedItemsMenuPanelProps {
@@ -36,7 +36,7 @@ const panelStyle: React.CSSProperties = {
 const PinnedItemsMenuPanel: React.FC<PinnedItemsMenuPanelProps> = ({ items, onClose }) => {
   const { notebooks, error } = useNotebookConfigs()
   const filteredNotebooks = filterNotebooksForItems(items, notebooks)
-  const batchNotebookLinks = getBatchNotebookLinks(items, filteredNotebooks)
+  const batchNotebookLinks = getNotebookLinksForItems(items, filteredNotebooks)
 
   return (
     <div style={overlayStyle}>

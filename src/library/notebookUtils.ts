@@ -11,30 +11,46 @@ export interface NotebookLink {
   url: string
 }
 
-export function getNotebookLinks(item: Item, notebooks: NotebookConfig[]): NotebookLink[] {
-  const cogAssetHref = getCogAssetHref(item)
-  if (!cogAssetHref) return []
-  const [minLon, minLat] = item.bbox
-  const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
-  const cogUrl = encodeURIComponent(cogAssetHref)
-  const bboxStr = small_bbox.join(',')
-  return notebooks.map((nb) => ({
-    id: nb.id,
-    label: nb.label,
-    description: nb.description,
-    url: `${NOTEBOOK_BASE_URL}/${nb.id}?cog_url=${cogUrl}&bbox=${bboxStr}`,
-  }))
+/**
+ * Dynamically builds a notebook URL based on the inputSpec of the notebook config.
+ * Supports 'singleUrl', 'urlList', 'bbox', and 'custom' types.
+ */
+function buildNotebookUrl(nb: NotebookConfig, items: Item[]): string {
+  const params: Record<string, string> = {}
+  if (nb.inputSpec) {
+    for (const [param, type] of Object.entries(nb.inputSpec)) {
+      if (type === 'singleUrl') {
+        const cog = getCogAssetHref(items[0])
+        if (cog) params[param] = encodeURIComponent(cog)
+      } else if (type === 'urlList') {
+        const cogs = items.map(getCogAssetHref).filter(Boolean)
+        if (cogs.length) params[param] = encodeURIComponent(cogs.join(','))
+      } else if (type === 'bbox') {
+        const [minLon, minLat] = items[0].bbox
+        const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
+        params[param] = small_bbox.join(',')
+      }
+      // 'custom' type can be handled here if needed
+    }
+  }
+  const query = Object.entries(params)
+    .map(([k, v]) => `${k}=${v}`)
+    .join('&')
+  return `${NOTEBOOK_BASE_URL}/${nb.id}${query ? `?${query}` : ''}`
 }
 
-export function getBatchNotebookLinks(items: Item[], notebooks: NotebookConfig[]): NotebookLink[] {
-  const cogAssetHrefs = items.map(getCogAssetHref).filter((href): href is string => !!href)
-  if (cogAssetHrefs.length === 0) return []
-  const cogUrlList = encodeURIComponent(cogAssetHrefs.join(','))
+/**
+ * Returns notebook links for the given items and notebook configs, using inputSpec for parameterization.
+ */
+export function getNotebookLinksForItems(
+  items: Item[],
+  notebooks: NotebookConfig[],
+): NotebookLink[] {
   return notebooks.map((nb) => ({
     id: nb.id,
     label: nb.label,
     description: nb.description,
-    url: `${NOTEBOOK_BASE_URL}/${nb.id}?cog_url=${cogUrlList}`,
+    url: buildNotebookUrl(nb, items),
   }))
 }
 
