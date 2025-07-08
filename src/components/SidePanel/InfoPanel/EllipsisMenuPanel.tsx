@@ -3,6 +3,7 @@ import { Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
+import { getCogAssetHref } from '@/library/assetUtils'
 
 interface EllipsisMenuPanelProps {
   item: Item | null
@@ -45,45 +46,45 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
 
           <Flex direction="column" gap="4" pt="6">
             {/* Add COG asset link if available */}
-            {item.assets?.cog?.href && (
-              <>
-                <a
-                  href={item.assets.cog.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ marginTop: '1rem', color: '#0070f3', textDecoration: 'underline' }}
-                >
-                  Open COG Asset
-                </a>
-                {(() => {
-                  const [minLon, minLat] = item.bbox
-                  const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
-                  const cogUrl = encodeURIComponent(item.assets.cog.href)
-                  const bboxStr = small_bbox.join(',')
-                  return (
-                    <>
-                      {notebooks.map((nb) => (
-                        <a
-                          key={nb.id}
-                          href={`http://localhost:8000/run/notebook/${nb.id}?cog_url=${cogUrl}&bbox=${bboxStr}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            marginTop: '1rem',
-                            color: '#0070f3',
-                            textDecoration: 'underline',
-                            display: 'block',
-                          }}
-                          title={nb.description ?? nb.label}
-                        >
-                          {nb.label}
-                        </a>
-                      ))}
-                    </>
-                  )
-                })()}
-              </>
-            )}
+            {(() => {
+              const cogAssetHref = getCogAssetHref(item)
+              if (cogAssetHref) {
+                const [minLon, minLat] = item.bbox
+                const small_bbox = [minLon, minLat, minLon + 0.008, minLat + 0.008]
+                const cogUrl = encodeURIComponent(cogAssetHref)
+                const bboxStr = small_bbox.join(',')
+                return (
+                  <>
+                    <a
+                      href={cogAssetHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ marginTop: '1rem', color: '#0070f3', textDecoration: 'underline' }}
+                    >
+                      Open COG Asset
+                    </a>
+                    {notebooks.map((nb) => (
+                      <a
+                        key={nb.id}
+                        href={`http://localhost:8000/run/notebook/${nb.id}?cog_url=${cogUrl}&bbox=${bboxStr}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          marginTop: '1rem',
+                          color: '#0070f3',
+                          textDecoration: 'underline',
+                          display: 'block',
+                        }}
+                        title={nb.description ?? nb.label}
+                      >
+                        {nb.label}
+                      </a>
+                    ))}
+                  </>
+                )
+              }
+              return null
+            })()}
             {/* Display bbox if available */}
           </Flex>
         </>
