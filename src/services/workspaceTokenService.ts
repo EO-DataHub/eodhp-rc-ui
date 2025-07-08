@@ -32,7 +32,7 @@ export const fetchWorkspaceTokens = async (
   }
 }
 
-interface Workspace {
+export interface Workspace {
   id: string
   name: string
   account: string
@@ -42,7 +42,8 @@ interface Workspace {
   stores: object[]
 }
 
-export const fetchWorkspaces = async (token: string): Promise<Workspace[]> => {
+export const fetchWorkspaces = async (token?: string | null): Promise<Workspace[]> => {
+  if (!token) return []
   const response = await fetch(`${HUB_BASE_URL}/api/workspaces`, {
     method: 'GET',
     headers: {
