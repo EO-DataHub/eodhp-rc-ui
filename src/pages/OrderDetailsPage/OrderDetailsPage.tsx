@@ -80,7 +80,7 @@ export const OrderDetailsPage: React.FC = () => {
 
   const { data: workspacesData, isLoading: isWorkspacesLoading } = useQuery({
     queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token!),
+    queryFn: () => fetchWorkspaces(token),
     enabled: !!token,
     refetchOnWindowFocus: false,
   })

@@ -19,7 +19,7 @@ export const ChangeWokspaceModal: React.FC<ChangeWokspaceModalProps> = ({ isOpen
 
   const { data: workspacesData } = useQuery({
     queryKey: ['Workspaces'],
-    queryFn: () => fetchWorkspaces(token!),
+    queryFn: () => fetchWorkspaces(token),
     refetchOnWindowFocus: false,
     enabled: !!token,
   })
