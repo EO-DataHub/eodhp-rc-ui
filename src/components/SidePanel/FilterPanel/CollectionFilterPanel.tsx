@@ -68,6 +68,7 @@ export const CollectionFilterPanel: React.FC<CollectionFilterPanelProps> = ({
             onFilterChange={handleFilterChange}
             flexDirection="column"
             inputSize="2"
+            onClearAll={handleReset}
           />
         </Flex>
 

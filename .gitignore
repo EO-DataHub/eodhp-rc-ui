@@ -28,4 +28,5 @@ dist-ssr
 !.yarn/cache
 .yarnrc.yml
 
+# Environment variables
 .env
