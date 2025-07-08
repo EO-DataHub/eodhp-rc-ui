@@ -87,7 +87,7 @@ export const OrderDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (selectedWorkspace && selectedWorkspace !== currentWorkspace) {
-      updateCurrentWorkspace?.(selectedWorkspace)
+      updateCurrentWorkspace(selectedWorkspace)
     }
   }, [selectedWorkspace, currentWorkspace, updateCurrentWorkspace])
 

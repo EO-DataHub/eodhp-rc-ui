@@ -22,8 +22,8 @@ interface AuthenticationContextValue {
   userInfo?: KeycloakUserInfo
   workspaceUserName?: string
   currentWorkspace?: string
-  updateCurrentWorkspace?: (workspace: string) => void
-  clearCurrentWorkspace?: () => void
+  updateCurrentWorkspace: (workspace: string) => void
+  clearCurrentWorkspace: () => void
 }
 
 export const AuthenticationContext = createContext<AuthenticationContextValue>({
@@ -33,4 +33,8 @@ export const AuthenticationContext = createContext<AuthenticationContextValue>({
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   token: undefined,
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  updateCurrentWorkspace: () => {},
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  clearCurrentWorkspace: () => {},
 })
