@@ -4,6 +4,8 @@ import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
 import proj4 from 'proj4'
+import { useEffect, useState, useContext } from 'react'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -143,21 +145,48 @@ function squareAndTransformBoundingBox(bbox: number[]): number[] {
 }
 
 export const QuicklookItemLayer = ({ item }: { item: Item }) => {
-  // Confirm that the item has a quicklook asset and a georeference type
-  if (!item.render?.quicklook_georeference) return null
-
   const { render } = item
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined)
+  const { token } = useContext(AuthenticationContext)
 
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
-  const quicklookUrl = getAssetUrl(item, render.assets[0])
+  const quicklookUrl = render ? getAssetUrl(item, render.assets[0]) : undefined
 
-  if (!quicklookUrl) return null
+  useEffect(() => {
+    let revokeUrl: string | undefined
+    if (render && render.auth && quicklookUrl && token) {
+      fetch(quicklookUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error('Failed to fetch image')
+          return response.blob()
+        })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob)
+          setImageUrl(url)
+          revokeUrl = url
+        })
+        .catch(() => {
+          setImageUrl(undefined)
+        })
+      return () => {
+        if (revokeUrl) URL.revokeObjectURL(revokeUrl)
+      }
+    } else {
+      setImageUrl(quicklookUrl)
+    }
+  }, [render, quicklookUrl, token])
+
+  // Early return if not a quicklook item or no imageUrl
+  if (!render?.quicklook_georeference) return null
+  if (!imageUrl) return null
 
   let coordinates: Coordinates
 
   if (render.quicklook_georeference === 'bbox') {
-    // item.bbox is in the format [minx, miny, maxx, maxy]
-    // wind the coordinates in clockwise order starting from the top left
     coordinates = [
       [item.bbox[0], item.bbox[3]],
       [item.bbox[2], item.bbox[3]],
@@ -166,8 +195,6 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
     ] as Coordinates
   } else if (render.quicklook_georeference === 'bbox-squared') {
     const bbox = squareAndTransformBoundingBox(item.bbox)
-    // item.bbox is in the format [minx, miny, maxx, maxy]
-    // wind the coordinates in clockwise order starting from the top left
     coordinates = [
       [bbox[0], bbox[3]],
       [bbox[2], bbox[3]],
@@ -182,7 +209,7 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
 
   return (
     <>
-      <Source type="image" url={quicklookUrl} coordinates={coordinates}>
+      <Source type="image" url={imageUrl} coordinates={coordinates}>
         <Layer
           type="raster"
           paint={{
