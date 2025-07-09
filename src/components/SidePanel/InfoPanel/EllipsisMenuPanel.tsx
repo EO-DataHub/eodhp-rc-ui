@@ -1,9 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
-import { getCogAssetHref } from '@/library/assetUtils'
+import { getCogAssetHref, downloadQlrForItem } from '@/library/assetUtils'
 import { useNotebookConfigs } from '@/hooks/useNotebookConfigs'
 import { getNotebookLinksForItems } from '@/library/notebookUtils'
 import { filterNotebooksForItems } from '@/library/notebookUtils'
@@ -16,12 +16,37 @@ interface EllipsisMenuPanelProps {
 
 export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onClose }) => {
   const { notebooks, error } = useNotebookConfigs()
+  const [qlrError, setQlrError] = useState<string | null>(null)
+  const [downloading, setDownloading] = useState(false)
+
+  // Function to fetch and download QLR file
+  const handleDownloadQlr = async () => {
+    if (!item) return
+    setQlrError(null)
+    setDownloading(true)
+    try {
+      await downloadQlrForItem(item)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setQlrError(err.message)
+      } else {
+        setQlrError('An error occurred while downloading the QLR file.')
+      }
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <>
       {error && (
         <Text color="red" style={{ marginBottom: '1rem' }}>
           {error}
+        </Text>
+      )}
+      {qlrError && (
+        <Text color="red" style={{ marginBottom: '1rem' }}>
+          {qlrError}
         </Text>
       )}
       {item && (
@@ -54,8 +79,30 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
                       rel="noopener noreferrer"
                       style={{ marginTop: '1rem', color: '#0070f3', textDecoration: 'underline' }}
                     >
-                      Open COG Asset
+                      Download COG Asset
                     </a>
+                    {/* QLR Download Button */}
+                    {item.collection && (
+                      <a
+                        href="#"
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          void handleDownloadQlr()
+                        }}
+                        style={{
+                          marginTop: '0.5rem',
+                          color: '#0070f3',
+                          textDecoration: 'underline',
+                          cursor: downloading ? 'not-allowed' : 'pointer',
+                          opacity: downloading ? 0.6 : 1,
+                        }}
+                        aria-disabled={downloading}
+                      >
+                        {downloading ? 'Downloading QLR...' : 'Download Layer File for QGIS'}
+                      </a>
+                    )}
                     <NotebookLinksWithInfo
                       notebookLinks={notebookLinks}
                       notebookConfigs={filteredNotebooks}
