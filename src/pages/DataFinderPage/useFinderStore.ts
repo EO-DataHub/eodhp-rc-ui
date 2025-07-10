@@ -390,6 +390,8 @@ const dataFinderStore = createStore({
         collection: mergedCollection,
         collectionRenderOptions,
         collectionRender: collectionRenderOptions[0] ?? undefined,
+        secondaryPanel: undefined,
+        infoPanelItem: undefined,
       }
     },
     setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({
