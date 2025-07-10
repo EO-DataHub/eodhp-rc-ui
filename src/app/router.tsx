@@ -5,6 +5,7 @@ import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
 import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
+import { ProcessCataloguePage } from '../pages/ProcessCataloguePage/ProcessCataloguePage'
 
 const routes = [
   {
@@ -32,6 +33,10 @@ const routes = [
         element: <MyDataPage />,
       },
     ],
+  },
+  {
+    path: '/process-catalogue',
+    element: <ProcessCataloguePage />,
   },
 ]
 

@@ -3,6 +3,7 @@ import { IconButton } from '@radix-ui/themes'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import type { NotebookConfig } from '@/hooks/useNotebookConfigs'
 import MarkdownModal from './MarkdownModal'
+import NotebookCollectionDatasetModal from './NotebookCollectionDatasetModal'
 
 interface NotebookLink {
   id: string
@@ -23,6 +24,9 @@ const NotebookLinksWithInfo: React.FC<NotebookLinksWithInfoProps> = ({
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
   const [modalMarkdown, setModalMarkdown] = useState('')
+  // New state for the notebook/collection/dataset modal
+  const [notebookModalOpen, setNotebookModalOpen] = useState(false)
+  const [selectedNotebook, setSelectedNotebook] = useState<NotebookConfig | null>(null)
 
   const handleInfoClick = useCallback(async (notebook: NotebookConfig) => {
     if (notebook.markdown_file) {
@@ -40,25 +44,35 @@ const NotebookLinksWithInfo: React.FC<NotebookLinksWithInfoProps> = ({
     }
   }, [])
 
+  // New handler for notebook click
+  const handleNotebookClick = (notebook: NotebookConfig) => {
+    setSelectedNotebook(notebook)
+    setNotebookModalOpen(true)
+  }
+
   return (
     <>
       {notebookLinks.map((nbLink, i) => {
         const nbConfig = notebookConfigs[i]
         return (
           <div key={nbLink.id} style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
-            <a
-              href={nbLink.url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <span
               style={{
                 color: '#0070f3',
                 textDecoration: 'underline',
                 display: 'block',
+                cursor: 'pointer',
               }}
               title={nbLink.description ?? nbLink.label}
+              onClick={() => handleNotebookClick(nbConfig)}
+              tabIndex={0}
+              role="button"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') handleNotebookClick(nbConfig)
+              }}
             >
               {nbLink.label}
-            </a>
+            </span>
             {nbConfig?.markdown_file && (
               <IconButton
                 variant="ghost"
@@ -77,6 +91,12 @@ const NotebookLinksWithInfo: React.FC<NotebookLinksWithInfoProps> = ({
         onClose={() => setModalOpen(false)}
         title={modalTitle}
         markdown={modalMarkdown}
+      />
+      {/* New modal for notebook/collection/dataset selection */}
+      <NotebookCollectionDatasetModal
+        open={notebookModalOpen}
+        onClose={() => setNotebookModalOpen(false)}
+        notebook={selectedNotebook}
       />
     </>
   )

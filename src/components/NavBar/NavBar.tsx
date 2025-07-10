@@ -137,6 +137,9 @@ export const NavBar: React.FC = () => {
               >
                 Maps
               </Link>
+              <Link to="/process-catalogue" className={styles.link}>
+                Process Catalogue
+              </Link>
               {isAuthenticated && (
                 <Link
                   to="/my-data"
