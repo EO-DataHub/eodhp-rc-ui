@@ -25,7 +25,11 @@ export const ProcessCataloguePage: React.FC = () => {
             {notebooks.length === 0 ? (
               <div>Loading notebooks...</div>
             ) : (
-              <NotebookLinksWithInfo notebookLinks={notebookLinks} notebookConfigs={notebooks} />
+              <NotebookLinksWithInfo
+                notebookLinks={notebookLinks}
+                notebookConfigs={notebooks}
+                openWithModal
+              />
             )}
           </>
         )}

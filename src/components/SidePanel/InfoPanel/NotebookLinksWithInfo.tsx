@@ -15,11 +15,13 @@ interface NotebookLink {
 interface NotebookLinksWithInfoProps {
   notebookLinks: NotebookLink[]
   notebookConfigs: NotebookConfig[]
+  openWithModal?: boolean // <-- new
 }
 
 const NotebookLinksWithInfo: React.FC<NotebookLinksWithInfoProps> = ({
   notebookLinks,
   notebookConfigs,
+  openWithModal = false, // default to false
 }) => {
   const [modalOpen, setModalOpen] = useState(false)
   const [modalTitle, setModalTitle] = useState('')
@@ -56,23 +58,41 @@ const NotebookLinksWithInfo: React.FC<NotebookLinksWithInfoProps> = ({
         const nbConfig = notebookConfigs[i]
         return (
           <div key={nbLink.id} style={{ display: 'flex', alignItems: 'center', marginTop: '1rem' }}>
-            <span
-              style={{
-                color: '#0070f3',
-                textDecoration: 'underline',
-                display: 'block',
-                cursor: 'pointer',
-              }}
-              title={nbLink.description ?? nbLink.label}
-              onClick={() => handleNotebookClick(nbConfig)}
-              tabIndex={0}
-              role="button"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') handleNotebookClick(nbConfig)
-              }}
-            >
-              {nbLink.label}
-            </span>
+            {openWithModal ? (
+              <span
+                style={{
+                  color: '#0070f3',
+                  textDecoration: 'underline',
+                  display: 'block',
+                  cursor: 'pointer',
+                }}
+                title={nbLink.description ?? nbLink.label}
+                onClick={() => handleNotebookClick(nbConfig)}
+                tabIndex={0}
+                role="button"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') handleNotebookClick(nbConfig)
+                }}
+              >
+                {nbLink.label}
+              </span>
+            ) : (
+              <a
+                href={nbLink.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: '#0070f3',
+                  textDecoration: 'underline',
+                  display: 'block',
+                  cursor: 'pointer',
+                }}
+                title={nbLink.description ?? nbLink.label}
+                tabIndex={0}
+              >
+                {nbLink.label}
+              </a>
+            )}
             {nbConfig?.markdown_file && (
               <IconButton
                 variant="ghost"

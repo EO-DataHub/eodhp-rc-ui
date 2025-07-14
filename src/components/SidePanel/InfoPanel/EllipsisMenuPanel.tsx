@@ -106,6 +106,7 @@ export const EllipsisMenuPanel: React.FC<EllipsisMenuPanelProps> = ({ item, onCl
                     <NotebookLinksWithInfo
                       notebookLinks={notebookLinks}
                       notebookConfigs={filteredNotebooks}
+                      openWithModal={false}
                     />
                   </>
                 )
