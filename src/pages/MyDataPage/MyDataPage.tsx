@@ -11,6 +11,7 @@ import { isCollectionMatchingSearch } from '@/library/collectionUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import styles from './MyDataPage.module.scss'
+import { WorkflowOutputsBrowser } from '@/components/WorkflowOutputsBrowser/WorkflowOutputsBrowser'
 
 export const MyDataPage: React.FC = () => {
   const { currentWorkspace, token } = useContext(AuthenticationContext)
@@ -115,7 +116,7 @@ export const MyDataPage: React.FC = () => {
             </Tabs.Content>
 
             <Tabs.Content value="workflow_outputs">
-              <Callout type="info" message="Workflows are not currently supported." />
+              <WorkflowOutputsBrowser workspace={currentWorkspace} token={token} />
             </Tabs.Content>
           </Box>
         </Tabs.Root>

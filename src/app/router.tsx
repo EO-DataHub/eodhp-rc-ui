@@ -6,6 +6,7 @@ import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { ProcessCataloguePage } from '../pages/ProcessCataloguePage/ProcessCataloguePage'
+import { WorkflowOutputsItemsPage } from '@/pages/WorkflowOutputsItemsPage/WorkflowOutputsItemsPage'
 
 const routes = [
   {
@@ -37,6 +38,10 @@ const routes = [
   {
     path: '/process-catalogue',
     element: <ProcessCataloguePage />,
+  },
+  {
+    path: '/workflow-outputs/items/:encodedItemsEndpoint',
+    element: <WorkflowOutputsItemsPage />,
   },
 ]
 

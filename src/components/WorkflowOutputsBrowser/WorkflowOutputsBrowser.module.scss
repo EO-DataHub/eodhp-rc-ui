@@ -1,0 +1,27 @@
+.card {
+  background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
+  border-radius: 4px;
+  overflow: hidden;
+
+  .text {
+    color: var(--blue-contrast);
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}
+.card:hover {
+  cursor: pointer;
+  outline: 2px solid var(--app-background-dark-2);
+}
+
+.thumbnail {
+  display: block;
+  object-fit: cover;
+  width: 100%;
+  height: 150px;
+  background-color: var(--gray-5);
+} 
