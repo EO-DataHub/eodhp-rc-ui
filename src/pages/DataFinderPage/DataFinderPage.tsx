@@ -9,6 +9,7 @@ import { useQuery, useQueries } from '@tanstack/react-query'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { RestoreAOIContext } from '@/context/RestoreAOIContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
@@ -18,6 +19,7 @@ import styles from './DataFinderPage.module.scss'
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
+  const { hasPromptedRef } = useContext(RestoreAOIContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
@@ -105,10 +107,12 @@ export const DataFinderPage: React.FC = () => {
     navigate,
   ])
 
-  // Remove AOI from local storage on mount
+  // Reset the hasPromptedRef when navigating to DataFinderPage to allow AOI restoration
   useEffect(() => {
-    localStorage.removeItem('aoi')
-  }, [])
+    if (hasPromptedRef) {
+      hasPromptedRef.current = false
+    }
+  }, [hasPromptedRef])
 
   return (
     <Box height="var(--content-height)" position="relative">

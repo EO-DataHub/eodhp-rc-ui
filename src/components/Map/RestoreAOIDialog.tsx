@@ -11,27 +11,35 @@ export const RestoreAOIDialog = () => {
     useContext(RestoreAOIContext)
 
   useEffect(() => {
-    // make sure only prompt once even if the component is remounted
-    if (hasPromptedRef?.current) {
-      return
-    }
-
-    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
-    const isNewTab = navEntries[0]?.type === 'navigate'
     const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
 
     if (storedAoi) {
-      if (isNewTab) {
-        setShouldShowRestoreAOIDialog(true)
-      } else {
-        // tab already open, simply restore the AOI if it exists
+      try {
         const parsedAoi = JSON.parse(storedAoi)
-        dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-      }
-    }
 
-    if (hasPromptedRef) {
-      hasPromptedRef.current = true
+        // Check if this is a page refresh or new navigation
+        const navEntries = performance.getEntriesByType(
+          'navigation',
+        ) as PerformanceNavigationTiming[]
+        const isPageRefresh = navEntries[0]?.type === 'reload'
+        const isNewNavigation = navEntries[0]?.type === 'navigate'
+
+        if (isPageRefresh || isNewNavigation) {
+          // For page refresh or new navigation, show the dialog
+          if (!hasPromptedRef?.current) {
+            setShouldShowRestoreAOIDialog(true)
+            if (hasPromptedRef) {
+              hasPromptedRef.current = true
+            }
+          }
+        } else {
+          // For existing tab or navigation between pages, simply restore the AOI
+          dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+        }
+      } catch (error) {
+        // If parsing fails, remove the corrupted data
+        localStorage.removeItem(AOI_STORAGE_KEY)
+      }
     }
   }, [hasPromptedRef, setShouldShowRestoreAOIDialog])
 
@@ -47,7 +55,7 @@ export const RestoreAOIDialog = () => {
   const removeAOI = () => {
     localStorage.removeItem(AOI_STORAGE_KEY)
     dataFinderStore.send({ type: 'storeAoi', aoi: undefined })
-    dataFinderStore.send({ type: 'drawDelete' })
+    dataFinderStore.send({ type: 'terradrawFeatureDelete' })
     setShouldShowRestoreAOIDialog(false)
   }
 

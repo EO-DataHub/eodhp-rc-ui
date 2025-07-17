@@ -1,28 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
-import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
-
-import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
-import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
-
-import drawStylesConfig from '@/components/Map/drawStylesConfig'
+import Maplibre, { MapRef, NavigationControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
-
+import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
+import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw'
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
 import { RestoreAOIDialog } from './RestoreAOIDialog'
-
-interface DrawConstants {
-  classes: {
-    CONTROL_BASE: string
-    CONTROL_PREFIX: string
-    CONTROL_GROUP: string
-  }
-}
-
+import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import { setupLayerOrdering } from '@/library/mapLayerUtils'
+/* eslint-disable @typescript-eslint/no-floating-promises */
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 const DEFAULT_MAP_VIEW = {
   latitude: 0,
@@ -31,67 +20,19 @@ const DEFAULT_MAP_VIEW = {
 }
 
 const MAP_STORAGE_KEY = 'mapViewState'
-const AOI_STORAGE_KEY = 'aoiData'
 
-function DrawControl() {
-  const drawInstance = useRef<MapboxDraw | null>(null)
+// Define types for better type safety
+interface TerraDrawFeature {
+  id: string
+  geometry: {
+    type: string
+    coordinates: number[][][]
+  }
+  properties?: Record<string, unknown>
+}
 
-  useControl(
-    () => {
-      const mapboxDrawConstants = MapboxDraw.constants as unknown as DrawConstants
-      mapboxDrawConstants.classes.CONTROL_BASE = 'maplibregl-ctrl'
-      mapboxDrawConstants.classes.CONTROL_PREFIX = 'maplibregl-ctrl-'
-      mapboxDrawConstants.classes.CONTROL_GROUP = 'maplibregl-ctrl-group'
-
-      const draw = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-          polygon: true,
-          trash: true,
-        },
-        styles: drawStylesConfig,
-      })
-      drawInstance.current = draw
-
-      dataFinderStore.send({ type: 'drawControlLoad', drawInstance: draw })
-
-      return draw as unknown as IControl
-    },
-    { position: 'top-right' },
-  )
-
-  // Restore AOI when the draw instance is available
-  useEffect(() => {
-    if (drawInstance.current) {
-      const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
-      if (storedAoi) {
-        const parsedAoi = JSON.parse(storedAoi)
-        drawInstance.current.add(parsedAoi)
-      }
-    }
-  }, [])
-
-  // Overwrite the native delete button of Mapbox
-  // which already has a listener, but only for selected drawings
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const deleteButton = document.querySelector('.mapbox-gl-draw_trash')
-      if (deleteButton) {
-        const customDeleteButton = deleteButton.cloneNode(true) as HTMLButtonElement
-        deleteButton.parentNode?.replaceChild(customDeleteButton, deleteButton)
-
-        // Add our own behavior to delete all drawings
-        customDeleteButton.addEventListener('click', () => {
-          dataFinderStore.send({ type: 'drawDelete' })
-        })
-        clearInterval(interval)
-      }
-    }, 300)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  return null
+interface TerraDrawEvent {
+  mode?: string
 }
 
 export const Map = () => {
@@ -104,6 +45,100 @@ export const Map = () => {
   const [viewState, setViewState] = useState(savedViewState)
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  const terradrawInstance = useSelector(dataFinderStore, (state) => state.context.terradrawInstance)
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // Function to restore AOI to TerraDraw
+  const restoreAOIToTerraDraw = useCallback(
+    (aoiFeature: GeoJSON.Feature) => {
+      if (!terradrawInstance || !aoiFeature) return
+
+      try {
+        // Set a flag to prevent deletion detection during restoration
+        isRestoringRef.current = true
+
+        // Check if there are already features in TerraDraw
+        const currentSnapshot = terradrawInstance.getSnapshot()
+        const hasExistingFeatures = currentSnapshot && currentSnapshot.length > 0
+
+        if (hasExistingFeatures) {
+          // Clear existing features - try different method names
+          if (typeof terradrawInstance.deleteAll === 'function') {
+            terradrawInstance.deleteAll()
+          } else if (typeof terradrawInstance.clear === 'function') {
+            terradrawInstance.clear()
+          } else if (typeof terradrawInstance.removeAll === 'function') {
+            terradrawInstance.removeAll()
+          }
+        }
+
+        // Add a small delay to ensure TerraDraw is ready
+        void setTimeout(() => {
+          try {
+            // Add the restored AOI
+            if (typeof terradrawInstance.addFeatures === 'function') {
+              terradrawInstance.addFeatures([aoiFeature])
+            } else if (typeof terradrawInstance.add === 'function') {
+              terradrawInstance.add([aoiFeature])
+            }
+
+            // Reset the restoration flag after a longer delay to ensure all operations complete
+            void setTimeout(() => {
+              isRestoringRef.current = false
+            }, 1000)
+          } catch (error) {
+            // Silently handle error adding restored AOI
+            isRestoringRef.current = false
+          }
+        }, 100)
+      } catch (error) {
+        // Silently handle error restoring AOI
+        isRestoringRef.current = false
+      }
+    },
+    [terradrawInstance],
+  )
+
+  // Restore AOI when it's available in the store
+  useEffect(() => {
+    if (aoi && terradrawInstance) {
+      restoreAOIToTerraDraw(aoi)
+    }
+  }, [aoi, terradrawInstance, restoreAOIToTerraDraw])
+
+  // Fallback AOI restoration - check localStorage after a delay if no AOI is in store
+  useEffect(() => {
+    if (!aoi && terradrawInstance) {
+      const timeoutId = setTimeout(() => {
+        const storedAoi = localStorage.getItem('aoiData')
+        if (storedAoi) {
+          try {
+            const parsedAoi = JSON.parse(storedAoi)
+            dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+          } catch (error) {
+            // Silently handle error parsing stored AOI
+          }
+        }
+      }, 1000)
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [aoi, terradrawInstance])
+
+  // Additional restoration check when terradrawInstance becomes available
+  useEffect(() => {
+    if (terradrawInstance && !aoi) {
+      const storedAoi = localStorage.getItem('aoiData')
+      if (storedAoi) {
+        try {
+          const parsedAoi = JSON.parse(storedAoi)
+          dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+        } catch (error) {
+          // Silently handle error parsing stored AOI
+        }
+      }
+    }
+  }, [terradrawInstance, aoi])
 
   const handleMapBoundsChange = () => {
     if (mapRef.current) {
@@ -125,23 +160,162 @@ export const Map = () => {
     (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
   )
 
-  // This is a workaround to move the draw layers to the top as they are added
-  // on page load and should be on top of the other layers. Ideally we not need
-  // to do this but there is no way to control the order of the layers in the
-  // MapboxDraw control.
-  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
+  // Set up layer ordering when map instance is available
   useEffect(() => {
     if (!mapInstance) return
 
-    // Wait a bit for the layers to be added
-    setTimeout(() => {
-      mapInstance.getStyle().layers.forEach((layer) => {
-        if (layer.id.startsWith('gl-draw')) {
-          mapInstance.moveLayer(layer.id)
-        }
+    const cleanup = setupLayerOrdering(mapInstance)
+    return cleanup
+  }, [mapInstance])
+
+  // Add TerraDraw control once on map load
+  const terradrawControlAdded = useRef(false)
+  const isRestoringRef = useRef(false)
+
+  const handleMapLoad = () => {
+    const map = mapRef.current?.getMap()
+    if (!map || terradrawControlAdded.current) return
+
+    // Send the map instance to the store
+    dataFinderStore.send({ type: 'mapLoad', mapInstance: map })
+
+    const initializeTerraDraw = () => {
+      const drawControl = new MaplibreTerradrawControl({
+        modes: ['polygon', 'rectangle', 'delete', 'download'],
+        open: true,
       })
-    }, 100)
-  }, [mapInstance, pageItems, pinnedItems])
+
+      map.addControl(drawControl, 'top-right')
+
+      // Wait for map to be fully loaded before setting up TerraDraw
+      const setupTerraDraw = () => {
+        const terraDrawInstance = drawControl.getTerraDrawInstance()
+
+        if (terraDrawInstance) {
+          // Store the TerraDraw instance in the store
+          dataFinderStore.send({
+            type: 'terradrawControlLoad',
+            terradrawInstance: terraDrawInstance,
+          })
+
+          // Listen to TerraDraw events
+          try {
+            // Store the current snapshot to detect changes
+            let expectedFeatureCount = 0
+
+            terraDrawInstance.on('finish', (id: string) => {
+              const snapshot = terraDrawInstance.getSnapshot()
+              const feature = snapshot?.find((f: TerraDrawFeature) => f.id === id)
+
+              if (feature?.geometry && feature.geometry.type === 'Polygon') {
+                const aoiFeature: GeoJSON.Feature = {
+                  type: 'Feature',
+                  geometry: feature.geometry,
+                  properties: feature.properties || {},
+                  id: feature.id || `aoi-${Date.now()}`,
+                }
+                dataFinderStore.send({
+                  type: 'terradrawFeatureCreate',
+                  feature: aoiFeature,
+                })
+                expectedFeatureCount = 1
+              }
+            })
+
+            // Monitor for changes in the snapshot to detect deletions
+            const checkForDeletions = () => {
+              // Skip deletion detection if we're in the middle of restoration
+              if (isRestoringRef.current) {
+                return
+              }
+
+              const currentSnapshot = terraDrawInstance.getSnapshot()
+              const currentFeatureCount = currentSnapshot?.length || 0
+
+              // Only detect deletion if we expected to have features but now have fewer
+              if (expectedFeatureCount > 0 && currentFeatureCount < expectedFeatureCount) {
+                dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+                expectedFeatureCount = 0
+              } else if (currentFeatureCount > 0) {
+                expectedFeatureCount = currentFeatureCount
+              }
+            }
+
+            // Set up periodic checking for deletions
+            const deletionCheckInterval = setInterval(checkForDeletions, 500)
+
+            // Also try to listen for delete events if available
+            try {
+              terraDrawInstance.on('delete', () => {
+                // Skip delete events if we're in the middle of restoration
+                if (isRestoringRef.current) {
+                  return
+                }
+                dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+              })
+            } catch (deleteError) {
+              // Delete event listener not available, using snapshot monitoring
+            }
+
+            // Listen for mode changes
+            try {
+              terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
+                const mode = event.mode ?? String(event)
+                dataFinderStore.send({
+                  type: 'terradrawModeChange',
+                  mode: mode,
+                })
+              })
+            } catch (modeError) {
+              // Mode change event listener not available
+            }
+
+            // Clean up interval on component unmount
+            return () => {
+              clearInterval(deletionCheckInterval)
+            }
+          } catch (error) {
+            // Silently handle error setting up TerraDraw event listeners
+          }
+        } else {
+          // Try alternative methods to access TerraDraw
+          const altInstance =
+            (drawControl as unknown as Record<string, unknown>).terraDraw ||
+            (drawControl as unknown as Record<string, unknown>).draw ||
+            (drawControl as unknown as Record<string, unknown>)._terraDraw
+
+          if (altInstance) {
+            dataFinderStore.send({
+              type: 'terradrawControlLoad',
+              terradrawInstance: altInstance as typeof terraDrawInstance,
+            })
+          }
+        }
+
+        terradrawControlAdded.current = true
+        handleMapBoundsChange()
+      }
+
+      // Wait for map to be fully loaded
+      if (map.isStyleLoaded()) {
+        // Add a small delay to ensure the control is added
+        void setTimeout(setupTerraDraw, 100)
+      } else {
+        map.once('load', () => {
+          void setTimeout(setupTerraDraw, 100)
+        })
+      }
+    }
+
+    // Check if map is already loaded
+    if (map.isStyleLoaded()) {
+      void initializeTerraDraw()
+    } else {
+      map.once('load', () => {
+        void initializeTerraDraw()
+      })
+    }
+  }
 
   return (
     <>
@@ -151,36 +325,9 @@ export const Map = () => {
         ref={mapRef}
         cursor={isDrawing ? 'crosshair' : 'grab'}
         onMoveEnd={handleMapBoundsChange}
-        onLoad={() => {
-          const mapInstance = mapRef.current?.getMap()
-
-          if (!mapInstance) return
-
-          // Send the map instance to the store
-          dataFinderStore.send({ type: 'mapLoad', mapInstance })
-
-          // Listen to draw mode changes
-          mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
-            dataFinderStore.send({ type: 'drawModeChange', mapEvent })
-          })
-
-          // Listen to draw events
-          mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
-            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-          )
-          mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
-            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-          )
-          mapInstance.on('draw.delete', () => {
-            dataFinderStore.send({ type: 'drawDelete' })
-          })
-
-          // Update bounds on load
-          handleMapBoundsChange()
-        }}
+        onLoad={handleMapLoad}
       >
         <NavigationControl />
-        <DrawControl />
         <PinnedItemsLayer />
         <QueryItemsLayer queryItems={pageItems} />
         <HoveredItemLayer />

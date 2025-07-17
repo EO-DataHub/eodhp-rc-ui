@@ -51,7 +51,7 @@ export const fetchItems = async ({
   if (aoi) {
     baseBody.intersects = aoi.geometry
   } else if (mapBounds) {
-    // Planet proxy doesn’t support search by bbox, so we are using intersects instead.
+    // Planet proxy doesn't support search by bbox, so we are using intersects instead.
     if (catalog === 'planet') {
       baseBody.intersects = bboxToPolygon(mapBounds)
     } else {
@@ -60,6 +60,7 @@ export const fetchItems = async ({
   }
 
   const body = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+
   const response = await fetch(fetchUrl, {
     method: 'POST',
     headers: {
