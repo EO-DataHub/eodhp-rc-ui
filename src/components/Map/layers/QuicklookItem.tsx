@@ -4,8 +4,10 @@ import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
 import proj4 from 'proj4'
-import { useEffect, useState, useContext } from 'react'
+import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { useQuery } from '@tanstack/react-query'
+import { fetchQuicklookImage } from '../../../library/fetchQuicklookImage'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -146,43 +148,30 @@ function squareAndTransformBoundingBox(bbox: number[]): number[] {
 
 export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   const { render } = item
-  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined)
   const { token } = useContext(AuthenticationContext)
 
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
   const quicklookUrl = render ? getAssetUrl(item, render.assets[0]) : undefined
 
+  const { data: imageUrl } = useQuery<string | undefined>({
+    queryKey: ['quicklook', quicklookUrl, token],
+    queryFn: () =>
+      quicklookUrl && token
+        ? fetchQuicklookImage({ url: quicklookUrl, token })
+        : Promise.resolve(undefined),
+    enabled: !!(render && render.auth && quicklookUrl && token),
+  })
+
+  // Revoke object URL when imageUrl changes or component unmounts
   useEffect(() => {
-    let revokeUrl: string | undefined
-    if (render && render.auth && quicklookUrl && token) {
-      fetch(quicklookUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) throw new Error('Failed to fetch image')
-          return response.blob()
-        })
-        .then((blob) => {
-          const url = URL.createObjectURL(blob)
-          setImageUrl(url)
-          revokeUrl = url
-        })
-        .catch(() => {
-          setImageUrl(undefined)
-        })
-      return () => {
-        if (revokeUrl) URL.revokeObjectURL(revokeUrl)
-      }
-    } else {
-      setImageUrl(quicklookUrl)
+    return () => {
+      if (imageUrl) URL.revokeObjectURL(imageUrl)
     }
-  }, [render, quicklookUrl, token])
+  }, [imageUrl])
 
   // Early return if not a quicklook item or no imageUrl
   if (!render?.quicklook_georeference) return null
-  if (!imageUrl) return null
+  if (typeof imageUrl !== 'string') return null
 
   let coordinates: Coordinates
 
