@@ -37,12 +37,14 @@ export interface BaseStacRender {
   consolidated?: boolean
   return_mask?: boolean
   quicklook_georeference?: string
+  auth?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
 // it easier to use render options in forms and other elements.
 export interface StacRender extends BaseStacRender {
   id: string
+  auth?: boolean
 }
 
 export interface Collection {
