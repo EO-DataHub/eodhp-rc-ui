@@ -4,12 +4,12 @@ import { useItemsQuery } from '@/hooks/useItemsQuery'
 import Maplibre, { MapRef, NavigationControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
-import { MaplibreTerradrawControl } from '@watergis/maplibre-gl-terradraw'
+import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw'
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
 import { RestoreAOIDialog } from './RestoreAOIDialog'
-import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { setupLayerOrdering } from '@/library/mapLayerUtils'
 /* eslint-disable @typescript-eslint/no-floating-promises */
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
@@ -148,19 +148,12 @@ export const Map = () => {
         longitude: center.lng,
         zoom: mapRef.current.getMap().getZoom(),
       }
-
       localStorage.setItem(MAP_STORAGE_KEY, JSON.stringify(updatedState))
       setViewState(updatedState)
     }
     dataFinderStore.send({ type: 'mapBoundsChange' })
   }
 
-  const isDrawing = useSelector(
-    dataFinderStore,
-    (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
-  )
-
-  // Set up layer ordering when map instance is available
   useEffect(() => {
     if (!mapInstance) return
 
@@ -180,11 +173,11 @@ export const Map = () => {
     dataFinderStore.send({ type: 'mapLoad', mapInstance: map })
 
     const initializeTerraDraw = () => {
-      const drawControl = new MaplibreTerradrawControl({
+      const drawControl = new MaplibreMeasureControl({
         modes: ['polygon', 'rectangle', 'delete', 'download'],
         open: true,
+        computeElevation: true,
       })
-
       map.addControl(drawControl, 'top-right')
 
       // Wait for map to be fully loaded before setting up TerraDraw
@@ -200,9 +193,6 @@ export const Map = () => {
 
           // Listen to TerraDraw events
           try {
-            // Store the current snapshot to detect changes
-            let expectedFeatureCount = 0
-
             terraDrawInstance.on('finish', (id: string) => {
               const snapshot = terraDrawInstance.getSnapshot()
               const feature = snapshot?.find((f: TerraDrawFeature) => f.id === id)
@@ -218,80 +208,25 @@ export const Map = () => {
                   type: 'terradrawFeatureCreate',
                   feature: aoiFeature,
                 })
-                expectedFeatureCount = 1
               }
             })
-
-            // Monitor for changes in the snapshot to detect deletions
-            const checkForDeletions = () => {
-              // Skip deletion detection if we're in the middle of restoration
+            terraDrawInstance.on('delete', () => {
               if (isRestoringRef.current) {
                 return
               }
-
-              const currentSnapshot = terraDrawInstance.getSnapshot()
-              const currentFeatureCount = currentSnapshot?.length || 0
-
-              // Only detect deletion if we expected to have features but now have fewer
-              if (expectedFeatureCount > 0 && currentFeatureCount < expectedFeatureCount) {
-                dataFinderStore.send({ type: 'terradrawFeatureDelete' })
-                expectedFeatureCount = 0
-              } else if (currentFeatureCount > 0) {
-                expectedFeatureCount = currentFeatureCount
-              }
-            }
-
-            // Set up periodic checking for deletions
-            const deletionCheckInterval = setInterval(checkForDeletions, 500)
-
-            // Also try to listen for delete events if available
-            try {
-              terraDrawInstance.on('delete', () => {
-                // Skip delete events if we're in the middle of restoration
-                if (isRestoringRef.current) {
-                  return
-                }
-                dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+              dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+            })
+            terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
+              const mode = event.mode ?? String(event)
+              dataFinderStore.send({
+                type: 'terradrawModeChange',
+                mode: mode,
               })
-            } catch (deleteError) {
-              // Delete event listener not available, using snapshot monitoring
-            }
-
-            // Listen for mode changes
-            try {
-              terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
-                const mode = event.mode ?? String(event)
-                dataFinderStore.send({
-                  type: 'terradrawModeChange',
-                  mode: mode,
-                })
-              })
-            } catch (modeError) {
-              // Mode change event listener not available
-            }
-
-            // Clean up interval on component unmount
-            return () => {
-              clearInterval(deletionCheckInterval)
-            }
+            })
           } catch (error) {
             // Silently handle error setting up TerraDraw event listeners
           }
-        } else {
-          // Try alternative methods to access TerraDraw
-          const altInstance =
-            (drawControl as unknown as Record<string, unknown>).terraDraw ||
-            (drawControl as unknown as Record<string, unknown>).draw ||
-            (drawControl as unknown as Record<string, unknown>)._terraDraw
-
-          if (altInstance) {
-            dataFinderStore.send({
-              type: 'terradrawControlLoad',
-              terradrawInstance: altInstance as typeof terraDrawInstance,
-            })
-          }
         }
-
         terradrawControlAdded.current = true
         handleMapBoundsChange()
       }
@@ -323,7 +258,6 @@ export const Map = () => {
         initialViewState={viewState}
         mapStyle={MAP_STYLE}
         ref={mapRef}
-        cursor={isDrawing ? 'crosshair' : 'grab'}
         onMoveEnd={handleMapBoundsChange}
         onLoad={handleMapLoad}
       >
