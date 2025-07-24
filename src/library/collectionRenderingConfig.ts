@@ -30,6 +30,7 @@ interface ServerRenderConfig {
   variable?: string
   reference?: boolean
   quicklook_georeference?: string
+  auth?: boolean
 }
 
 interface ServerCollectionConfig {
@@ -120,6 +121,7 @@ function translateServerConfigToCollectionConfig(
           expression: renderConfig.expression,
           reference: renderConfig.reference,
           quicklook_georeference: renderConfig.quicklook_georeference,
+          auth: renderConfig.auth, // <-- Added to include auth property
         }
 
         const definedProps = Object.fromEntries(
