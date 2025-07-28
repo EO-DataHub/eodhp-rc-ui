@@ -12,8 +12,8 @@ import {
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
+import AuthenticatedThumbnail from './AuthenticatedThumbnail'
 import styles from './ItemCard.module.scss'
-import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
@@ -246,11 +246,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
 
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    e.currentTarget.onerror = null
-    e.currentTarget.src = DefaultItemThumbnail
-  }
-
   const handlePurchase = async () => {
     if (isAuthenticated) {
       navigate(`/order-details/${item.id}`, { state: { item } })
@@ -286,10 +281,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
           <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
         ) : (
-          <img
-            src={item.assets?.thumbnail?.href || DefaultItemThumbnail}
+          <AuthenticatedThumbnail
+            thumbnailUrl={item.assets?.thumbnail?.href || ''}
             className={styles.thumbnail}
-            onError={handleImageError}
           />
         )}
         <div className={styles.overlay}>
