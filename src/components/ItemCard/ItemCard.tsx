@@ -24,6 +24,7 @@ import {
   itemCardFieldsToDisplay,
 } from '@/constants/collectionCategorizations'
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
+import { collectionRenderingConfig } from '@/library/collectionRenderingConfig'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
@@ -160,6 +161,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [itemRender, setItemRender] = useState(collectionRender)
 
+  // Check if the collection requires authentication for thumbnails
+  const requiresThumbnailAuth = useMemo(() => {
+    const collectionConfig = collectionRenderingConfig[item.collection]
+    return collectionConfig?.renders?.preview?.auth === true
+  }, [item.collection])
+
   // temporarily fetching item details
   const { data } = useQuery({
     queryKey: ['Items', item?.collection, item?.id],
@@ -284,6 +291,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           <AuthenticatedThumbnail
             thumbnailUrl={item.assets?.thumbnail?.href || ''}
             className={styles.thumbnail}
+            requiresAuth={requiresThumbnailAuth}
           />
         )}
         <div className={styles.overlay}>

@@ -7,11 +7,13 @@ import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 interface AuthenticatedThumbnailProps {
   thumbnailUrl: string
   className?: string
+  requiresAuth?: boolean
 }
 
 const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
   thumbnailUrl,
   className,
+  requiresAuth = false,
 }) => {
   const { token } = useContext(AuthenticationContext)
 
@@ -21,7 +23,7 @@ const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
       thumbnailUrl && token
         ? fetchThumbnailImage({ url: thumbnailUrl, token })
         : Promise.resolve(undefined),
-    enabled: !!(thumbnailUrl && token),
+    enabled: !!(thumbnailUrl && token && requiresAuth),
   })
 
   // Revoke object URL when imageUrl changes or component unmounts
@@ -39,6 +41,17 @@ const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
   // If no thumbnail URL provided, show default
   if (!thumbnailUrl) {
     return <img src={DefaultItemThumbnail} className={className} />
+  }
+
+  // If authentication is not required, load directly
+  if (!requiresAuth) {
+    return (
+      <img
+        src={thumbnailUrl || DefaultItemThumbnail}
+        className={className}
+        onError={handleImageError}
+      />
+    )
   }
 
   // If no token or error, fall back to direct image loading (which will use default on error)
