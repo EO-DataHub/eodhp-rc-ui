@@ -2,28 +2,8 @@ import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import { TerraDrawInstance } from '@/library/terraDrawUtils'
 import * as turf from '@turf/turf'
-
-// TerraDraw instance interface based on the methods used in the codebase
-interface TerraDrawInstance {
-  deleteAll(): void
-  getSnapshot(): TerraDrawFeature[] | undefined
-  addFeatures(features: GeoJSON.Feature[]): void
-  add(features: GeoJSON.Feature[]): void
-  clear(): void
-  removeAll(): void
-  on(event: string, callback: (data?: unknown) => void): void
-}
-
-// Define TerraDraw feature type
-interface TerraDrawFeature {
-  id: string
-  geometry: {
-    type: string
-    coordinates: number[][][]
-  }
-  properties?: Record<string, unknown>
-}
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
 const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
@@ -104,8 +84,7 @@ const dataFinderStore = createStore({
             }
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to load context from local storage:', error)
+          // Error loading context from local storage, continuing with default context
         }
       }
       return context
@@ -201,15 +180,7 @@ const dataFinderStore = createStore({
         aoi,
       }
     },
-    terradrawFeatureUpdate: (context, event: { feature: GeoJSON.Feature }) => {
-      const aoi = event.feature
-      localStorage.setItem('aoiData', JSON.stringify(aoi))
 
-      return {
-        ...context,
-        aoi,
-      }
-    },
     terradrawFeatureDelete: (context) => {
       // Always clear the AOI from context and localStorage when a feature is deleted
       // The restoration logic in Map.tsx will handle preventing false deletions during restoration
@@ -229,7 +200,14 @@ const dataFinderStore = createStore({
       if (nextDrawMode === 'polygon') {
         // User started drawing a new polygon, delete the current AOI if it exists
         if (currentAoi) {
-          terradrawInstance.deleteAll()
+          terradrawInstance.clear()
+          // Also clear the AOI from state and localStorage
+          localStorage.removeItem('aoiData')
+          return {
+            ...context,
+            aoi: undefined,
+            drawMode: nextDrawMode,
+          }
         }
       }
 

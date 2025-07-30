@@ -115,14 +115,6 @@ body {
   background-color: #000509e3;
 }
 
-/* custom maplibregl control panel styles (they need to be overridden globally)*/
-.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
-  background-image: url('/src/assets/icons/pencil.svg');
-}
-.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
-  background-image: url('/src/assets/icons/trash.svg');
-}
-
 /* Ensure TerraDraw controls are visible above side panel */
 .maplibregl-ctrl-top-right {
   z-index: 20 !important;

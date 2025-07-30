@@ -253,7 +253,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
-      navigate(`/order-details/${item.id}`, { state: { item } })
+      void navigate(`/order-details/${item.id}`, { state: { item } })
     } else {
       await login()
     }
@@ -401,7 +401,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Tooltip>
             </ActionButton>
             {isLicenseProprietary && !itemBelongsToUserCollection && (
-              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+              <Button
+                variant="ghost"
+                className={styles.button}
+                onClick={() => void handlePurchase()}
+              >
                 Purchase
               </Button>
             )}
