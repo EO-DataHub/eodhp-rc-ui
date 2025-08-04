@@ -9,17 +9,17 @@ import { useQuery, useQueries } from '@tanstack/react-query'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { RestoreAOIContext } from '@/context/RestoreAOIContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
 
+const AOI_STORAGE_KEY = 'aoiData'
+
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
-  const { hasPromptedRef } = useContext(RestoreAOIContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
 
@@ -56,6 +56,20 @@ export const DataFinderPage: React.FC = () => {
   ): Collection | undefined => {
     return collections?.find((col) => col.id === id)
   }
+
+  // Auto-restore AOI from localStorage
+  useEffect(() => {
+    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+    if (storedAoi) {
+      try {
+        const parsedAoi = JSON.parse(storedAoi)
+        dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+      } catch (error) {
+        // If parsing fails, remove the corrupted data
+        localStorage.removeItem(AOI_STORAGE_KEY)
+      }
+    }
+  }, [])
 
   // Collection selection and redirection if not found
   useEffect(() => {
@@ -106,13 +120,6 @@ export const DataFinderPage: React.FC = () => {
     userCollectionQuery.isFetched,
     navigate,
   ])
-
-  // Reset the hasPromptedRef when navigating to DataFinderPage to allow AOI restoration
-  useEffect(() => {
-    if (hasPromptedRef) {
-      hasPromptedRef.current = false
-    }
-  }, [hasPromptedRef])
 
   return (
     <Box height="var(--content-height)" position="relative">

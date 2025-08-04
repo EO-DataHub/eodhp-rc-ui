@@ -10,6 +10,7 @@ import {
   TerraDrawEvent,
   createAOIFeature,
   isValidPolygonFeature,
+  removeAreaLabelLayers,
 } from '@/library/terraDrawUtils'
 
 export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
@@ -42,10 +43,11 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
         // Add the AOI feature
         terradrawInstance.addFeatures([aoiFeature])
       } catch (error) {
-        // If TerraDraw isn't ready, try again after a short delay
+        // If TerraDraw isn't ready, use the ready event to add features when it becomes available
         const errorMessage = error instanceof Error ? error.message : String(error)
         if (errorMessage.includes('not enabled') || errorMessage.includes('already exists')) {
-          setTimeout(() => {
+          // Listen for the ready event to add features when TerraDraw is fully initialized
+          const onReady = () => {
             try {
               if (terradrawInstance.enabled) {
                 terradrawInstance.clear()
@@ -54,7 +56,10 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
             } catch (retryError) {
               // Retry failed, ignore
             }
-          }, 200)
+          }
+
+          // Add the ready event listener
+          terradrawInstance.on('ready', onReady)
         }
       } finally {
         isRestoringRef.current = false
@@ -80,10 +85,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
               layer.source.startsWith('td-'),
           )
           terraDrawLayers.forEach((layer: LayerSpecification) => {
-            try {
+            if (mapInstance.getLayer(layer.id)) {
               mapInstance.removeLayer(layer.id)
-            } catch (e) {
-              // Layer might not exist
             }
           })
         }
@@ -94,10 +97,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
           const terraDrawSources = existingSources.filter((source) => source.startsWith('td-'))
 
           terraDrawSources.forEach((source) => {
-            try {
+            if (mapInstance.getSource(source)) {
               mapInstance.removeSource(source)
-            } catch (e) {
-              // Source might not exist or already removed
             }
           })
         }
@@ -154,6 +155,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                 // Clear any existing features before adding the new one
                 if (snapshot && snapshot.length > 1) {
                   terraDrawInstance.clear()
+                  // Remove area labels when replacing existing AOI
+                  removeAreaLabelLayers(mapInstance)
                   terraDrawInstance.addFeatures([feature])
                 }
 
@@ -162,16 +165,35 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                   type: 'terradrawFeatureCreate',
                   feature: aoiFeature,
                 })
+
+                // Switch to render mode to allow map panning
+                terraDrawInstance.setMode('render')
               }
             })
 
             terraDrawInstance.on('delete', () => {
               if (isRestoringRef.current) return
+              // Remove area labels when AOI is deleted
+              removeAreaLabelLayers(mapInstance)
               dataFinderStore.send({ type: 'terradrawFeatureDelete' })
             })
 
             terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
               const mode = event.mode ?? String(event)
+
+              // When switching to drawing mode, clear existing features
+              if (mode === 'polygon' || mode === 'rectangle') {
+                const currentSnapshot = terraDrawInstance.getSnapshot()
+                if (currentSnapshot && currentSnapshot.length > 0) {
+                  terraDrawInstance.clear()
+                  // Remove area labels when clearing existing AOI
+                  removeAreaLabelLayers(mapInstance)
+                  // Also clear the AOI from state and localStorage
+                  localStorage.removeItem('aoiData')
+                  dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+                }
+              }
+
               dataFinderStore.send({
                 type: 'terradrawModeChange',
                 mode: mode,
@@ -191,6 +213,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                   if (feature && isValidPolygonFeature(feature)) {
                     if (snapshot && snapshot.length > 1) {
                       terraDrawInstance.clear()
+                      // Remove area labels when replacing existing AOI
+                      removeAreaLabelLayers(mapInstance)
                       terraDrawInstance.addFeatures([feature])
                     }
 
@@ -199,16 +223,35 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                       type: 'terradrawFeatureCreate',
                       feature: aoiFeature,
                     })
+
+                    // Switch to render mode to allow map panning
+                    terraDrawInstance.setMode('render')
                   }
                 })
 
                 terraDrawInstance.on('delete', () => {
                   if (isRestoringRef.current) return
+                  // Remove area labels when AOI is deleted
+                  removeAreaLabelLayers(mapInstance)
                   dataFinderStore.send({ type: 'terradrawFeatureDelete' })
                 })
 
                 terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
                   const mode = event.mode ?? String(event)
+
+                  // When switching to drawing mode, clear existing features
+                  if (mode === 'polygon' || mode === 'rectangle') {
+                    const currentSnapshot = terraDrawInstance.getSnapshot()
+                    if (currentSnapshot && currentSnapshot.length > 0) {
+                      terraDrawInstance.clear()
+                      // Remove area labels when clearing existing AOI
+                      removeAreaLabelLayers(mapInstance)
+                      // Also clear the AOI from state and localStorage
+                      localStorage.removeItem('aoiData')
+                      dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+                    }
+                  }
+
                   dataFinderStore.send({
                     type: 'terradrawModeChange',
                     mode: mode,
@@ -224,23 +267,29 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
       terradrawControlAdded.current = true
     }
 
-    // More robust wait for map readiness
-    const waitForMapReady = () => {
-      try {
-        if (mapInstance.isStyleLoaded() && mapInstance.getStyle()?.sources) {
-          // Add a small delay to ensure TerraDraw control is fully initialized
-          setTimeout(setupTerraDraw, 50)
-        } else {
-          // Wait a bit and try again
-          setTimeout(waitForMapReady, 150)
-        }
-      } catch (e) {
-        // Map might not be ready, try again
-        setTimeout(waitForMapReady, 150)
+    // Event-driven approach to wait for map readiness
+    const setupWhenReady = () => {
+      if (mapInstance.isStyleLoaded() && mapInstance.getStyle()?.sources) {
+        setupTerraDraw()
       }
     }
 
-    waitForMapReady()
+    // Listen for map load event
+    mapInstance.on('load', setupWhenReady)
+
+    // Also listen for style data events as backup
+    mapInstance.on('styledata', setupWhenReady)
+
+    // Check if already ready
+    if (mapInstance.isStyleLoaded()) {
+      setupWhenReady()
+    }
+
+    // Return cleanup function for event listeners
+    return () => {
+      mapInstance.off('load', setupWhenReady)
+      mapInstance.off('styledata', setupWhenReady)
+    }
   }, [mapInstance])
 
   // Cleanup function to reset when component unmounts or map changes
@@ -261,10 +310,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                   layer.source.startsWith('td-'),
               )
               terraDrawLayers.forEach((layer: LayerSpecification) => {
-                try {
+                if (mapInstance.getLayer(layer.id)) {
                   mapInstance.removeLayer(layer.id)
-                } catch (e) {
-                  // Layer might not exist
                 }
               })
             }
@@ -275,10 +322,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
               const terraDrawSources = existingSources.filter((source) => source.startsWith('td-'))
 
               terraDrawSources.forEach((source) => {
-                try {
+                if (mapInstance.getSource(source)) {
                   mapInstance.removeSource(source)
-                } catch (e) {
-                  // Source might not exist
                 }
               })
             }
@@ -298,7 +343,8 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
   // Initialize TerraDraw when map instance is available
   useEffect(() => {
     if (mapInstance) {
-      initializeTerraDraw()
+      const cleanup = initializeTerraDraw()
+      return cleanup
     }
   }, [mapInstance, initializeTerraDraw])
 

@@ -8,7 +8,6 @@ import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider
 import { router } from './router'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
-import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 
 function App() {
   useEffect(() => {
@@ -20,11 +19,9 @@ function App() {
   return (
     <ErrorBoundary fallback={<div>We&apos;re sorry. Something is broken.</div>}>
       <AuthenticationContextProvider>
-        <RestoreAOIContextProvider>
-          <Theme accentColor="blue">
-            <RouterProvider router={router} />
-          </Theme>
-        </RestoreAOIContextProvider>
+        <Theme accentColor="blue">
+          <RouterProvider router={router} />
+        </Theme>
       </AuthenticationContextProvider>
     </ErrorBoundary>
   )

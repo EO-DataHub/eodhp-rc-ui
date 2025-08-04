@@ -1,4 +1,5 @@
 import { TerraDrawFeature } from '@/types'
+import { MapInstance } from 'react-map-gl/maplibre'
 
 // TerraDraw event interface
 export interface TerraDrawEvent {
@@ -7,9 +8,11 @@ export interface TerraDrawEvent {
 
 // TerraDraw configuration
 export const TERRA_DRAW_CONFIG = {
-  modes: ['polygon', 'rectangle', 'delete', 'download'] as (
+  modes: ['render', 'polygon', 'rectangle', 'select', 'delete', 'download'] as (
+    | 'render'
     | 'polygon'
     | 'rectangle'
+    | 'select'
     | 'delete'
     | 'download'
   )[],
@@ -26,6 +29,29 @@ export interface TerraDrawInstance {
   enabled: boolean
   start(): void
   stop(): void
+}
+
+// Helper function to remove area label layers created by MaplibreMeasureControl
+export const removeAreaLabelLayers = (mapInstance: MapInstance) => {
+  try {
+    const style = mapInstance.getStyle()
+    if (!style?.layers) return
+
+    // Remove the specific area label layer
+    const areaLabelLayerId = 'terradraw-measure-polygon-label'
+    if (mapInstance.getLayer(areaLabelLayerId)) {
+      mapInstance.removeLayer(areaLabelLayerId)
+    }
+
+    // Also remove the associated source if it exists
+    const areaLabelSourceId = 'terradraw-measure-polygon-source'
+    if (mapInstance.getSource(areaLabelSourceId)) {
+      mapInstance.removeSource(areaLabelSourceId)
+    }
+  } catch (error) {
+    // Silently handle any errors during cleanup to avoid breaking functionality
+    // Error is intentionally ignored to prevent breaking existing functionality
+  }
 }
 
 // Helper function to create AOI feature from TerraDraw feature
