@@ -3,7 +3,8 @@ import { useSelector } from '@xstate/store/react'
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw'
 import { MapInstance } from 'react-map-gl/maplibre'
 import type { LayerSpecification } from 'maplibre-gl'
-import { TerraDrawFeature } from '@/types'
+import { TerraDrawRectangleMode } from 'terra-draw'
+import type { GeoJSONStoreFeatures } from 'terra-draw'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import {
   TERRA_DRAW_CONFIG,
@@ -116,7 +117,19 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
       }
     }
 
-    const drawControl = new MaplibreMeasureControl(TERRA_DRAW_CONFIG)
+    const drawControl = new MaplibreMeasureControl({
+      ...TERRA_DRAW_CONFIG,
+      modeOptions: {
+        rectangle: new TerraDrawRectangleMode({
+          styles: {
+            fillColor: '#FF0000', // Red fill
+            fillOpacity: 0, // 60% opacity
+            outlineColor: '#FF0000', // Purple outline
+            outlineWidth: 2, // 2px outline width
+          },
+        }),
+      },
+    })
     drawControlRef.current = drawControl
 
     try {
@@ -147,9 +160,9 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
               return
             }
 
-            terraDrawInstance.on('finish', (id: string) => {
+            terraDrawInstance.on('finish', (id: string | number) => {
               const snapshot = terraDrawInstance.getSnapshot()
-              const feature = snapshot?.find((f: TerraDrawFeature) => f.id === id)
+              const feature = snapshot?.find((f: GeoJSONStoreFeatures) => f.id === id)
 
               if (feature && isValidPolygonFeature(feature)) {
                 // Clear any existing features before adding the new one
@@ -171,14 +184,17 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
               }
             })
 
-            terraDrawInstance.on('delete', () => {
-              if (isRestoringRef.current) return
-              // Remove area labels when AOI is deleted
-              removeAreaLabelLayers(mapInstance)
-              dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+            terraDrawInstance.on('change', (_ids: (string | number)[], type: string) => {
+              if (type === 'delete') {
+                if (isRestoringRef.current) return
+                // Remove area labels when AOI is deleted
+                removeAreaLabelLayers(mapInstance)
+                dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+              }
             })
 
-            terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
+            // Listen for mode changes through the control events
+            drawControl.on('mode-changed', (event: TerraDrawEvent) => {
               const mode = event.mode ?? String(event)
 
               // When switching to drawing mode, clear existing features
@@ -206,9 +222,9 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
             if (terradrawControlAdded.current) return // Don't retry if already set up
             try {
               if (terraDrawInstance.on && typeof terraDrawInstance.on === 'function') {
-                terraDrawInstance.on('finish', (id: string) => {
+                terraDrawInstance.on('finish', (id: string | number) => {
                   const snapshot = terraDrawInstance.getSnapshot()
-                  const feature = snapshot?.find((f: TerraDrawFeature) => f.id === id)
+                  const feature = snapshot?.find((f: GeoJSONStoreFeatures) => f.id === id)
 
                   if (feature && isValidPolygonFeature(feature)) {
                     if (snapshot && snapshot.length > 1) {
@@ -229,14 +245,17 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                   }
                 })
 
-                terraDrawInstance.on('delete', () => {
-                  if (isRestoringRef.current) return
-                  // Remove area labels when AOI is deleted
-                  removeAreaLabelLayers(mapInstance)
-                  dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+                terraDrawInstance.on('change', (_ids: (string | number)[], type: string) => {
+                  if (type === 'delete') {
+                    if (isRestoringRef.current) return
+                    // Remove area labels when AOI is deleted
+                    removeAreaLabelLayers(mapInstance)
+                    dataFinderStore.send({ type: 'terradrawFeatureDelete' })
+                  }
                 })
 
-                terraDrawInstance.on('modechange', (event: TerraDrawEvent) => {
+                // Listen for mode changes through the control events
+                drawControl.on('mode-changed', (event: TerraDrawEvent) => {
                   const mode = event.mode ?? String(event)
 
                   // When switching to drawing mode, clear existing features

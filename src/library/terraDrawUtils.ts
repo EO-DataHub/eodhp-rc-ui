@@ -1,5 +1,5 @@
-import { TerraDrawFeature } from '@/types'
 import { MapInstance } from 'react-map-gl/maplibre'
+import type { GeoJSONStoreFeatures } from 'terra-draw'
 
 // TerraDraw event interface
 export interface TerraDrawEvent {
@@ -20,13 +20,14 @@ export const TERRA_DRAW_CONFIG = {
 
 // TerraDraw instance interface based on the actual methods available
 export interface TerraDrawInstance {
-  getSnapshot(): TerraDrawFeature[] | undefined
+  getSnapshot(): GeoJSONStoreFeatures[] | undefined
   addFeatures(features: GeoJSON.Feature[]): void
   clear(): void
   on(event: string, callback: (data?: unknown) => void): void
   enabled: boolean
   start(): void
   stop(): void
+  setMode(mode: string): void
 }
 
 // Helper function to remove area label layers created by MaplibreMeasureControl
@@ -53,7 +54,7 @@ export const removeAreaLabelLayers = (mapInstance: MapInstance) => {
 }
 
 // Helper function to create AOI feature from TerraDraw feature
-export const createAOIFeature = (feature: TerraDrawFeature): GeoJSON.Feature => {
+export const createAOIFeature = (feature: GeoJSONStoreFeatures): GeoJSON.Feature => {
   return {
     type: 'Feature',
     geometry: feature.geometry as GeoJSON.Geometry,
@@ -63,6 +64,6 @@ export const createAOIFeature = (feature: TerraDrawFeature): GeoJSON.Feature => 
 }
 
 // Helper function to check if feature is a valid polygon
-export const isValidPolygonFeature = (feature: TerraDrawFeature): boolean => {
+export const isValidPolygonFeature = (feature: GeoJSONStoreFeatures): boolean => {
   return feature?.geometry && feature.geometry.type === 'Polygon'
 }
