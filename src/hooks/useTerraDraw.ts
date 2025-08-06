@@ -3,7 +3,7 @@ import { useSelector } from '@xstate/store/react'
 import { MaplibreMeasureControl } from '@watergis/maplibre-gl-terradraw'
 import { MapInstance } from 'react-map-gl/maplibre'
 import type { LayerSpecification } from 'maplibre-gl'
-import { TerraDrawRectangleMode } from 'terra-draw'
+import { TerraDrawRectangleMode, TerraDrawPolygonMode } from 'terra-draw'
 import type { GeoJSONStoreFeatures } from 'terra-draw'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import {
@@ -122,10 +122,18 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
       modeOptions: {
         rectangle: new TerraDrawRectangleMode({
           styles: {
-            fillColor: '#FF0000', // Red fill
-            fillOpacity: 0, // 60% opacity
-            outlineColor: '#FF0000', // Purple outline
-            outlineWidth: 2, // 2px outline width
+            fillColor: '#FF0000',
+            fillOpacity: 0,
+            outlineColor: '#FF0000',
+            outlineWidth: 2,
+          },
+        }),
+        polygon: new TerraDrawPolygonMode({
+          styles: {
+            fillColor: '#FF0000',
+            fillOpacity: 0,
+            outlineColor: '#FF0000',
+            outlineWidth: 2,
           },
         }),
       },
