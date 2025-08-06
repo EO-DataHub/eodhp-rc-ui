@@ -8,8 +8,7 @@ export interface TerraDrawEvent {
 
 // TerraDraw configuration
 export const TERRA_DRAW_CONFIG = {
-  modes: ['render', 'polygon', 'rectangle', 'select', 'delete', 'download'] as (
-    | 'render'
+  modes: ['polygon', 'rectangle', 'select', 'delete', 'download'] as (
     | 'polygon'
     | 'rectangle'
     | 'select'
@@ -17,7 +16,6 @@ export const TERRA_DRAW_CONFIG = {
     | 'download'
   )[],
   open: true,
-  computeElevation: true,
 }
 
 // TerraDraw instance interface based on the actual methods available
