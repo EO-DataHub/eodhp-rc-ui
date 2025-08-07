@@ -11,7 +11,6 @@ import {
   TerraDrawEvent,
   createAOIFeature,
   isValidPolygonFeature,
-  removeAreaLabelLayers,
 } from '@/library/terraDrawUtils'
 
 export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
@@ -21,6 +20,31 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
   const terradrawControlAdded = useRef(false)
   const isRestoringRef = useRef(false)
   const drawControlRef = useRef<MaplibreMeasureControl | null>(null)
+
+  // Function to clear all area labels
+  const clearAllAreaLabels = useCallback(() => {
+    if (!mapInstance) return
+
+    try {
+      const style = mapInstance.getStyle()
+      if (!style?.sources) return
+
+      // Clear the polygon area label source
+      const polygonSourceId = 'terradraw-measure-polygon-source'
+      const polygonSource = mapInstance.getSource(polygonSourceId)
+
+      if (polygonSource && 'setData' in polygonSource) {
+        // Clear all features from the source
+        ;(polygonSource as maplibregl.GeoJSONSource).setData({
+          type: 'FeatureCollection',
+          features: [],
+        })
+      }
+    } catch (error) {
+      // Silently handle any errors during cleanup
+      // Error is intentionally ignored to prevent breaking existing functionality
+    }
+  }, [mapInstance])
 
   const restoreAOIToTerraDraw = useCallback(
     (aoiFeature: GeoJSON.Feature) => {
@@ -41,8 +65,22 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
           terradrawInstance.start()
         }
 
-        // Add the AOI feature
-        terradrawInstance.addFeatures([aoiFeature])
+        // Add the AOI feature with proper timing to avoid race conditions
+        // Use a small delay to ensure clear operation completes before adding
+        setTimeout(() => {
+          try {
+            terradrawInstance.addFeatures([aoiFeature])
+          } catch (retryError) {
+            // If addFeatures fails, try again after a longer delay
+            setTimeout(() => {
+              try {
+                terradrawInstance.addFeatures([aoiFeature])
+              } catch (finalError) {
+                // Final retry failed, ignore
+              }
+            }, 200)
+          }
+        }, 50)
       } catch (error) {
         // If TerraDraw isn't ready, use the ready event to add features when it becomes available
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -52,7 +90,10 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
             try {
               if (terradrawInstance.enabled) {
                 terradrawInstance.clear()
-                terradrawInstance.addFeatures([aoiFeature])
+                // Add delay for clear operation
+                setTimeout(() => {
+                  terradrawInstance.addFeatures([aoiFeature])
+                }, 50)
               }
             } catch (retryError) {
               // Retry failed, ignore
@@ -63,7 +104,10 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
           terradrawInstance.on('ready', onReady)
         }
       } finally {
-        isRestoringRef.current = false
+        // Reset the restoring flag after a delay to ensure all operations complete
+        setTimeout(() => {
+          isRestoringRef.current = false
+        }, 100)
       }
     },
     [terradrawInstance],
@@ -207,12 +251,30 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
               const feature = snapshot?.find((f: GeoJSONStoreFeatures) => f.id === id)
 
               if (feature && isValidPolygonFeature(feature)) {
-                // Clear any existing features before adding the new one
+                // Check if we need to clear existing features
                 if (snapshot && snapshot.length > 1) {
+                  // Use proper sequencing to avoid race conditions
+                  // Clear existing features and let TerraDraw handle its own cleanup
                   terraDrawInstance.clear()
-                  // Remove area labels when replacing existing AOI
-                  removeAreaLabelLayers(mapInstance)
-                  terraDrawInstance.addFeatures([feature])
+
+                  // Clear all area labels when replacing existing AOI
+                  clearAllAreaLabels()
+
+                  // Add the new feature after a small delay to ensure clear completes
+                  setTimeout(() => {
+                    try {
+                      terraDrawInstance.addFeatures([feature])
+                    } catch (error) {
+                      // If addFeatures fails, try again
+                      setTimeout(() => {
+                        try {
+                          terraDrawInstance.addFeatures([feature])
+                        } catch (retryError) {
+                          // Final retry failed, ignore
+                        }
+                      }, 100)
+                    }
+                  }, 50)
                 }
 
                 const aoiFeature = createAOIFeature(feature)
@@ -252,8 +314,9 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
             terraDrawInstance.on('change', (_ids: (string | number)[], type: string) => {
               if (type === 'delete') {
                 if (isRestoringRef.current) return
-                // Remove area labels when AOI is deleted
-                removeAreaLabelLayers(mapInstance)
+                // Clear all area labels when features are deleted
+                clearAllAreaLabels()
+                // Let TerraDraw handle its own cleanup when features are deleted
                 dataFinderStore.send({ type: 'terradrawFeatureDelete' })
               }
             })
@@ -262,17 +325,19 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
             drawControl.on('mode-changed', (event: TerraDrawEvent) => {
               const mode = event.mode ?? String(event)
 
-              // When switching to drawing mode, clear existing features
+              // When switching to drawing mode, clear existing features and all area labels
               if (mode === 'polygon' || mode === 'rectangle') {
                 const currentSnapshot = terraDrawInstance.getSnapshot()
                 if (currentSnapshot && currentSnapshot.length > 0) {
+                  // Let TerraDraw handle its own cleanup when clearing features
                   terraDrawInstance.clear()
-                  // Remove area labels when clearing existing AOI
-                  removeAreaLabelLayers(mapInstance)
                   // Also clear the AOI from state and localStorage
                   localStorage.removeItem('aoiData')
                   dataFinderStore.send({ type: 'terradrawFeatureDelete' })
                 }
+
+                // Clear all area labels when switching to drawing mode
+                clearAllAreaLabels()
               }
 
               dataFinderStore.send({
@@ -292,11 +357,30 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                   const feature = snapshot?.find((f: GeoJSONStoreFeatures) => f.id === id)
 
                   if (feature && isValidPolygonFeature(feature)) {
+                    // Check if we need to clear existing features
                     if (snapshot && snapshot.length > 1) {
+                      // Use proper sequencing to avoid race conditions
+                      // Clear existing features and let TerraDraw handle its own cleanup
                       terraDrawInstance.clear()
-                      // Remove area labels when replacing existing AOI
-                      removeAreaLabelLayers(mapInstance)
-                      terraDrawInstance.addFeatures([feature])
+
+                      // Clear all area labels when replacing existing AOI
+                      clearAllAreaLabels()
+
+                      // Add the new feature after a small delay to ensure clear completes
+                      setTimeout(() => {
+                        try {
+                          terraDrawInstance.addFeatures([feature])
+                        } catch (error) {
+                          // If addFeatures fails, try again
+                          setTimeout(() => {
+                            try {
+                              terraDrawInstance.addFeatures([feature])
+                            } catch (retryError) {
+                              // Final retry failed, ignore
+                            }
+                          }, 100)
+                        }
+                      }, 50)
                     }
 
                     const aoiFeature = createAOIFeature(feature)
@@ -336,8 +420,9 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                 terraDrawInstance.on('change', (_ids: (string | number)[], type: string) => {
                   if (type === 'delete') {
                     if (isRestoringRef.current) return
-                    // Remove area labels when AOI is deleted
-                    removeAreaLabelLayers(mapInstance)
+                    // Clear all area labels when features are deleted
+                    clearAllAreaLabels()
+                    // Let TerraDraw handle its own cleanup when features are deleted
                     dataFinderStore.send({ type: 'terradrawFeatureDelete' })
                   }
                 })
@@ -346,17 +431,19 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                 drawControl.on('mode-changed', (event: TerraDrawEvent) => {
                   const mode = event.mode ?? String(event)
 
-                  // When switching to drawing mode, clear existing features
+                  // When switching to drawing mode, clear existing features and all area labels
                   if (mode === 'polygon' || mode === 'rectangle') {
                     const currentSnapshot = terraDrawInstance.getSnapshot()
                     if (currentSnapshot && currentSnapshot.length > 0) {
+                      // Let TerraDraw handle its own cleanup when clearing features
                       terraDrawInstance.clear()
-                      // Remove area labels when clearing existing AOI
-                      removeAreaLabelLayers(mapInstance)
                       // Also clear the AOI from state and localStorage
                       localStorage.removeItem('aoiData')
                       dataFinderStore.send({ type: 'terradrawFeatureDelete' })
                     }
+
+                    // Clear all area labels when switching to drawing mode
+                    clearAllAreaLabels()
                   }
 
                   dataFinderStore.send({
@@ -397,7 +484,7 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
       mapInstance.off('load', setupWhenReady)
       mapInstance.off('styledata', setupWhenReady)
     }
-  }, [mapInstance])
+  }, [mapInstance, clearAllAreaLabels])
 
   // Cleanup function to reset when component unmounts or map changes
   useEffect(() => {
