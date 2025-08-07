@@ -151,6 +151,40 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
 
       const terraDrawInstance = drawControl.getTerraDrawInstance()
 
+      // Customize tooltips after plugin initialization
+      const customizeTooltips = () => {
+        const customTooltips = {
+          polygon: 'Draw Area of Interest (Polygon)',
+          rectangle: 'Draw Area of Interest (Rectangle)',
+          select: 'Select and Edit Features',
+          delete: 'Delete All Features',
+          download: 'Download Features as GeoJSON',
+        }
+
+        // Override tooltips after a short delay to ensure buttons are created
+        setTimeout(() => {
+          Object.entries(customTooltips).forEach(([mode, tooltip]) => {
+            // Different button classes for different modes
+            let button: HTMLButtonElement | null = null
+
+            if (mode === 'delete' || mode === 'download') {
+              // Delete and download buttons don't have the 'add' prefix
+              button = document.querySelector(`.maplibregl-terradraw-${mode}-button`)!
+            } else {
+              // Regular drawing buttons have the 'add' prefix
+              button = document.querySelector(`.maplibregl-terradraw-add-${mode}-button`)!
+            }
+
+            if (button) {
+              button.title = tooltip
+            }
+          })
+        }, 100)
+      }
+
+      // Call tooltip customization
+      customizeTooltips()
+
       if (terraDrawInstance) {
         dataFinderStore.send({
           type: 'terradrawControlLoad',
