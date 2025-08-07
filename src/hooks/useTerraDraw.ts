@@ -188,7 +188,30 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                 })
 
                 // Switch to render mode to allow map panning
-                terraDrawInstance.setMode('render')
+                try {
+                  terraDrawInstance.setMode('render')
+                } catch (error) {
+                  // Fallback to default mode if render mode is not available
+                  try {
+                    terraDrawInstance.setMode('default')
+                  } catch (error2) {
+                    // If both fail, continue without changing mode
+                  }
+                }
+
+                // Reset the active button states in the toolbar
+                if (drawControlRef.current) {
+                  // Remove active class from all drawing buttons using the same selector as the plugin
+                  const drawingButtons = document.getElementsByClassName(
+                    'maplibregl-terradraw-add-control',
+                  )
+                  for (let i = 0; i < drawingButtons.length; i++) {
+                    const button = drawingButtons.item(i)
+                    if (button) {
+                      button.classList.remove('active')
+                    }
+                  }
+                }
               }
             })
 
@@ -249,7 +272,30 @@ export const useTerraDraw = (mapInstance: MapInstance | undefined) => {
                     })
 
                     // Switch to render mode to allow map panning
-                    terraDrawInstance.setMode('render')
+                    try {
+                      terraDrawInstance.setMode('render')
+                    } catch (error) {
+                      // Fallback to default mode if render mode is not available
+                      try {
+                        terraDrawInstance.setMode('default')
+                      } catch (error2) {
+                        // If both fail, continue without changing mode
+                      }
+                    }
+
+                    // Reset the active button states in the toolbar
+                    if (drawControlRef.current) {
+                      // Remove active class from all drawing buttons using the same selector as the plugin
+                      const drawingButtons = document.getElementsByClassName(
+                        'maplibregl-terradraw-add-control',
+                      )
+                      for (let i = 0; i < drawingButtons.length; i++) {
+                        const button = drawingButtons.item(i)
+                        if (button) {
+                          button.classList.remove('active')
+                        }
+                      }
+                    }
                   }
                 })
 

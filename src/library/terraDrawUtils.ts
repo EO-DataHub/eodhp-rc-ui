@@ -9,6 +9,7 @@ export interface TerraDrawEvent {
 // TerraDraw configuration
 export const TERRA_DRAW_CONFIG = {
   modes: ['polygon', 'rectangle', 'select', 'delete', 'download'] as (
+    | 'render'
     | 'polygon'
     | 'rectangle'
     | 'select'
