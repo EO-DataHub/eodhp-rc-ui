@@ -1,0 +1,20 @@
+.dialogContent {
+  :global(.rt-DialogContent) {
+    max-width: 450px;
+  }
+}
+
+.button {
+  background-color: var(--blue-9);
+  color: white;
+  
+  &:hover {
+    background-color: var(--blue-10);
+  }
+}
+
+.cancelButton {
+  &:hover {
+    background-color: var(--gray-4);
+  }
+}

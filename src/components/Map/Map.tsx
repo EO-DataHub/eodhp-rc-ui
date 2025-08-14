@@ -7,6 +7,7 @@ import '@watergis/maplibre-gl-terradraw/dist/maplibre-gl-terradraw.css'
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
+import { RestoreAOIDialog } from './RestoreAOIDialog'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { setupLayerOrdering } from '@/library/mapLayerUtils'
 import { useTerraDraw } from '@/hooks/useTerraDraw'
@@ -78,6 +79,7 @@ export const Map = () => {
         <QueryItemsLayer queryItems={pageItems} />
         <HoveredItemLayer />
       </Maplibre>
+      <RestoreAOIDialog />
     </>
   )
 }

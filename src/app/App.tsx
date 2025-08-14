@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
 import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider'
+import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 import { router } from './router'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
@@ -19,9 +20,11 @@ function App() {
   return (
     <ErrorBoundary fallback={<div>We&apos;re sorry. Something is broken.</div>}>
       <AuthenticationContextProvider>
-        <Theme accentColor="blue">
-          <RouterProvider router={router} />
-        </Theme>
+        <RestoreAOIContextProvider>
+          <Theme accentColor="blue">
+            <RouterProvider router={router} />
+          </Theme>
+        </RestoreAOIContextProvider>
       </AuthenticationContextProvider>
     </ErrorBoundary>
   )
