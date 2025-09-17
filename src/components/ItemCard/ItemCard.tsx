@@ -9,6 +9,7 @@ import {
   EyeClosedIcon,
   InfoCircledIcon,
   ZoomInIcon,
+  HamburgerMenuIcon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
@@ -29,6 +30,7 @@ import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
 import Legend from './Legend'
+import { supportsIntegrationTools } from '@/library/integrationTools'
 
 interface ItemCardProps {
   item: Item
@@ -131,8 +133,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const { isAuthenticated, login } = useContext(AuthenticationContext)
 
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
+  const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
 
-  const isSelected = infoPanelItem?.id === item.id
+  const isSelected = infoPanelItem?.id === item.id && secondaryPanel === 'item-info'
+  const isIntegrationToolsSelected =
+    infoPanelItem?.id === item.id && secondaryPanel === 'integration-tools'
+  const isAnyPanelSelected = infoPanelItem?.id === item.id
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
@@ -272,7 +278,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   return (
     <Card
       key={item.id}
-      className={`${styles.card} ${isSelected ? styles.selected : ''}`}
+      className={`${styles.card} ${isAnyPanelSelected ? styles.selected : ''}`}
       onMouseEnter={() => dataFinderStore.send({ type: 'hoveredItemChange', item })}
       onMouseLeave={() => dataFinderStore.send({ type: 'hoveredItemChange', item: undefined })}
     >
@@ -393,6 +399,16 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                   </Tooltip>
                 </ActionButton>
               </>
+            )}
+            {supportsIntegrationTools(item) && (
+              <ActionButton
+                active={isIntegrationToolsSelected}
+                onClick={() => dataFinderStore.send({ type: 'toggleIntegrationToolsPanel', item })}
+              >
+                <Tooltip content="Integration Tools">
+                  <HamburgerMenuIcon />
+                </Tooltip>
+              </ActionButton>
             )}
             <ActionButton
               active={isSelected}
