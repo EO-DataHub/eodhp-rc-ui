@@ -1,5 +1,11 @@
 import { Item } from '@/types'
 import { collectionRenderingConfig } from './collectionRenderingConfig'
+import integrationConfig from './integrationConfig.json'
+
+// Type definition for integration config
+export interface IntegrationConfig {
+  [collectionId: string]: Record<string, unknown>
+}
 
 /**
  * Gets the COG asset href from an item
@@ -117,27 +123,24 @@ export function getTitilerXyzUrl(
  * Downloads a QLR file for the given item
  */
 export async function downloadQlrForItem(item: Item): Promise<void> {
-  const titilerUrl = getTitilerXyzUrl(item)
-  const collection = item.collection
-  if (!titilerUrl || !collection) {
-    throw new Error('Missing Titiler URL or collection name.')
+  if (!item) {
+    throw new Error('Item is required.')
   }
 
-  // URL encode the special characters in the Titiler URL for API transmission
-  const encodedTitilerUrl = titilerUrl
-    .replace(/\{/g, '%7B')
-    .replace(/\}/g, '%7D')
-    .replace(/&/g, '%26')
-    .replace(/=/g, '%3D')
-
   const apiUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000/qlr'
-  const response = await fetch(
-    `${apiUrl}?url=${encodeURIComponent(encodedTitilerUrl)}&collection=${encodeURIComponent(collection)}`,
-  )
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(item),
+  })
+
   if (!response.ok) {
     const text = await response.text()
     throw new Error(text || 'Failed to generate QLR file.')
   }
+
   const blob = await response.blob()
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -153,5 +156,5 @@ export async function downloadQlrForItem(item: Item): Promise<void> {
  * Checks if an item supports integration tools (QGIS/XYZ)
  */
 export function supportsIntegrationTools(item: Item): boolean {
-  return !!getCogAssetHref(item)
+  return item.collection in integrationConfig
 }
