@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Cross1Icon, DownloadIcon, CopyIcon, CheckIcon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Button, Box, Card, Tabs } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
@@ -19,15 +19,9 @@ interface IntegrationToolsPanelProps {
 // QGIS Tab Component
 const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
   const [isDownloading, setIsDownloading] = useState(false)
-  const [xyzUrl, setXyzUrl] = useState<string | null>(null)
   const [isCopied, setIsCopied] = useState(false)
-
-  // Generate XYZ URL when component mounts
-  React.useEffect(() => {
-    if (item) {
-      const url = getTitilerXyzUrl(item)
-      setXyzUrl(url)
-    }
+  const xyzUrl = useMemo(() => {
+    return item ? getTitilerXyzUrl(item) : null
   }, [item])
 
   const handleDownloadQlr = async () => {
