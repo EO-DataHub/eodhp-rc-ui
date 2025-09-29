@@ -58,6 +58,7 @@ jobs:
           VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
           VITE_SPARKGEO_BASE_URL: ${{ vars.VITE_SPARKGEO_BASE_URL }}
           VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
+          VITE_QLR_API_URL: ${{ vars.VITE_QLR_API_URL }}
 
       - name: Stage build files for upload to s3
         uses: actions/upload-artifact@v4
