@@ -15,7 +15,12 @@ export const DrawModes = {
 
 export type MapBounds = [number, number, number, number]
 
-export type SecondaryPanel = 'query-filters' | 'item-info' | 'collection-info' | undefined
+export type SecondaryPanel =
+  | 'query-filters'
+  | 'item-info'
+  | 'collection-info'
+  | 'integration-tools'
+  | undefined
 
 const PlaceholderRender: StacRender = {
   id: 'default',
@@ -117,6 +122,25 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'item-info',
+        infoPanelItem: event.item,
+      }
+    },
+    toggleIntegrationToolsPanel: (context, event: { item: Item }): typeof context => {
+      // Panel is already open with the same item, close it
+      if (
+        context.infoPanelItem?.id === event.item.id &&
+        context.secondaryPanel === 'integration-tools'
+      ) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+          infoPanelItem: undefined,
+        }
+      }
+
+      return {
+        ...context,
+        secondaryPanel: 'integration-tools',
         infoPanelItem: event.item,
       }
     },

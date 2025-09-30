@@ -9,6 +9,7 @@ import { useSelector } from '@xstate/store/react'
 import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import { ItemInfoPanel } from './InfoPanel/ItemInfoPanel'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
+import { IntegrationToolsPanel } from './InfoPanel/IntegrationToolsPanel'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import Tabs from './Tabs/Tabs'
 
@@ -26,7 +27,10 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
-  const isInfoPanelOpen = secondaryPanel === 'item-info' || secondaryPanel === 'collection-info'
+  const isInfoPanelOpen =
+    secondaryPanel === 'item-info' ||
+    secondaryPanel === 'collection-info' ||
+    secondaryPanel === 'integration-tools'
   const isSmallCollectionCardDisabled = activeTab === 'pinned-items-tab'
 
   const smallCollectionCard = (
@@ -86,6 +90,9 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         )}
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel selectedCollection={collection} onClose={closeSecondaryPanel} />
+        )}
+        {secondaryPanel === 'integration-tools' && infoPanelItem && (
+          <IntegrationToolsPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
         )}
       </InfoPanelWrapper>
     </>
