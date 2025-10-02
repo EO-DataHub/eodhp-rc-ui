@@ -10,6 +10,8 @@ import {
   supportsIntegrationTools,
 } from '@/library/integrationTools'
 import { toast } from 'react-toastify'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 
 interface IntegrationToolsPanelProps {
   item: Item | null
@@ -20,15 +22,39 @@ interface IntegrationToolsPanelProps {
 const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
   const [isDownloading, setIsDownloading] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+
+  // Get the selected render from the store
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const collectionRenderOptions = useSelector(
+    dataFinderStore,
+    ({ context }) => context.collectionRenderOptions,
+  )
+
   const xyzUrl = useMemo(() => {
-    return item ? getTitilerXyzUrl(item) : null
-  }, [item])
+    if (!item) return null
+
+    // Check if there are any renders available
+    if (!collectionRenderOptions || collectionRenderOptions.length === 0) {
+      return null
+    }
+
+    // Use the selected render or default to the first one
+    const renderId = collectionRender?.id ?? collectionRenderOptions[0]?.id
+    return getTitilerXyzUrl(item, renderId)
+  }, [item, collectionRender, collectionRenderOptions])
 
   const handleDownloadQlr = async () => {
     if (!item) return
 
+    // Check if there are any renders available
+    if (!collectionRenderOptions || collectionRenderOptions.length === 0) {
+      toast.error('No render configurations available for this collection')
+      return
+    }
+
     // Check if Titiler URL is available before attempting download
-    const titilerUrl = getTitilerXyzUrl(item)
+    const renderId = collectionRender?.id ?? collectionRenderOptions[0]?.id
+    const titilerUrl = getTitilerXyzUrl(item, renderId)
     if (!titilerUrl) {
       toast.error('Titiler URL not available for this item')
       return
@@ -36,7 +62,7 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
 
     setIsDownloading(true)
     try {
-      await downloadQlrForItem(item)
+      await downloadQlrForItem(item, renderId)
       toast.success('QGIS layer file downloaded successfully')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to download QGIS layer file')
@@ -63,8 +89,43 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
     }
   }
 
+  // Check if renders are available
+  const hasRenders = collectionRenderOptions && collectionRenderOptions.length > 0
+  const currentRenderTitle =
+    collectionRender?.title ?? collectionRenderOptions?.[0]?.title ?? 'Default'
+
+  if (!hasRenders) {
+    return (
+      <Flex direction="column" gap="4">
+        <Card>
+          <Flex direction="column" gap="3" p="4">
+            <Text weight="medium" size="3" color="red">
+              No Render Configuration Available
+            </Text>
+            <Text size="2" color="gray">
+              This collection does not have any render configurations available for integration
+              tools. Please contact the data provider for more information.
+            </Text>
+          </Flex>
+        </Card>
+      </Flex>
+    )
+  }
+
   return (
     <Flex direction="column" gap="4">
+      {/* Current Render Display */}
+      <Card>
+        <Flex direction="column" gap="2" p="4">
+          <Text weight="medium" size="3">
+            Current Render
+          </Text>
+          <Text size="2" color="gray">
+            Using: <Text weight="medium">{currentRenderTitle}</Text>
+          </Text>
+        </Flex>
+      </Card>
+
       {/* QGIS Layer Download */}
       <Card>
         <Flex direction="column" gap="3" p="4">
