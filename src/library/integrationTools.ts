@@ -1,11 +1,5 @@
 import { Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
-import integrationConfig from './integrationConfig.json'
-
-// Type definition for integration config
-export interface IntegrationConfig {
-  [collectionId: string]: Record<string, unknown>
-}
 
 /**
  * Gets the COG asset href from an item
@@ -190,7 +184,24 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
 
 /**
  * Checks if an item supports integration tools (QGIS/XYZ)
+ * Returns true if the collection has at least one render that isn't just a preview
  */
 export function supportsIntegrationTools(item: Item): boolean {
-  return item.collection in integrationConfig
+  const collectionConfig = collectionRenderingConfig[item.collection]
+  if (!collectionConfig?.renders) return false
+
+  const renders = collectionConfig.renders
+
+  // Check if there's at least one render that isn't a preview
+  return Object.values(renders).some((render) => {
+    // A render is considered a "preview" if it:
+    // 1. Has "preview" in the title (case insensitive)
+    // 2. Uses only "thumbnail" assets
+    // 3. Has quicklook_georeference property
+    const isPreviewTitle = render.title.toLowerCase().includes('preview')
+    const isThumbnailOnly = render.assets.length === 1 && render.assets[0] === 'thumbnail'
+    const hasQuicklookGeoreference = 'quicklook_georeference' in render
+
+    return !(isPreviewTitle || isThumbnailOnly || hasQuicklookGeoreference)
+  })
 }
