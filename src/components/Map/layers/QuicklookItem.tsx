@@ -156,10 +156,8 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   const { data: imageUrl } = useQuery<string | undefined>({
     queryKey: ['quicklook', quicklookUrl, token],
     queryFn: () =>
-      quicklookUrl && token
-        ? fetchQuicklookImage({ url: quicklookUrl, token })
-        : Promise.resolve(undefined),
-    enabled: !!(render && render.auth && quicklookUrl && token),
+      quicklookUrl ? fetchQuicklookImage({ url: quicklookUrl, token }) : Promise.resolve(undefined),
+    enabled: !!(render && quicklookUrl && (!render.auth || token)),
   })
 
   // Revoke object URL when imageUrl changes or component unmounts
