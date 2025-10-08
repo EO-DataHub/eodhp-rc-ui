@@ -1,11 +1,5 @@
 import { Item } from '@/types'
-import { collectionRenderingConfig } from './collectionRenderingConfig'
-import integrationConfig from './integrationConfig.json'
-
-// Type definition for integration config
-export interface IntegrationConfig {
-  [collectionId: string]: Record<string, unknown>
-}
+import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
 
 /**
  * Gets the COG asset href from an item
@@ -73,6 +67,7 @@ export function buildQueryString(params: Record<string, unknown>): string {
 
 /**
  * Constructs a titiler XYZ tile service URL for a given item and render.
+ * Uses the same logic as resolveTilesUrl to ensure all render parameters are included.
  * @param item The item object containing the COG asset.
  * @param renderId Optional render id to use from config.
  * @param options Optional override for titiler parameters (takes precedence over config).
@@ -91,15 +86,15 @@ export function getTitilerXyzUrl(
     rescale?: string | string[] | [number, number][]
   },
 ): string | null {
-  const baseUrl = import.meta.env.VITE_TITILER_BASE_URL
-  if (!baseUrl) return null
-
-  const stacUrl = getSelfLinkHref(item) ?? item.assets?.cog?.href
-  if (!stacUrl) return null
-  const encodedStacUrl = encodeURIComponent(stacUrl)
-
-  // If options are provided, build query from them
+  // If options are provided, build query from them (legacy support)
   if (options) {
+    const baseUrl = import.meta.env.VITE_TITILER_BASE_URL
+    if (!baseUrl) return null
+
+    const stacUrl = getSelfLinkHref(item) ?? item.assets?.cog?.href
+    if (!stacUrl) return null
+    const encodedStacUrl = encodeURIComponent(stacUrl)
+
     const params = {
       url: encodedStacUrl,
       title: options.title ?? 'Natural Color',
@@ -114,7 +109,7 @@ export function getTitilerXyzUrl(
     return `${baseUrl.replace(/\/$/, '')}/core/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?${query}`
   }
 
-  // Otherwise, use config-driven render
+  // Use config-driven render with resolveTilesUrl logic
   const renderKeys = Object.keys(collectionRenderingConfig[item.collection]?.renders ?? {})
   if (renderKeys.length === 0) return null
 
@@ -123,25 +118,43 @@ export function getTitilerXyzUrl(
   const render = config.renders?.[selectedRenderId]
   if (!render) return null
 
-  const params = {
-    url: encodedStacUrl,
-    title: render.title,
-    assets: render.assets[0],
-    bidx: render.bidx,
-    nodata: render.nodata,
-    color_formula: render.color_formula,
-    rescale: render.rescale,
+  // Create a StacRender object with the id property for resolveTilesUrl
+  const stacRender = {
+    ...render,
+    id: selectedRenderId,
   }
-  const query = buildQueryString(params)
-  return `${baseUrl.replace(/\/$/, '')}/core/stac/tiles/WebMercatorQuad/{z}/{x}/{y}@1x?${query}`
+
+  // Use resolveTilesUrl to get the properly formatted URL with all parameters
+  const tilesUrl = resolveTilesUrl(item, stacRender)
+  if (!tilesUrl) return null
+
+  // Convert the tiles URL to XYZ format by replacing the tile coordinates with {z}/{x}/{y} placeholders
+  // The resolveTilesUrl returns URLs like: https://titiler/.../10/512/338@1x?params
+  // We need to convert this to: https://titiler/.../{z}/{x}/{y}@1x?params
+  const xyzUrl = tilesUrl.replace(/\/\d+\/\d+\/\d+@1x/, '/{z}/{x}/{y}@1x')
+
+  return xyzUrl
 }
 
 /**
- * Downloads a QLR file for the given item
+ * Downloads a QLR file for the given item with optional render configuration
  */
-export async function downloadQlrForItem(item: Item): Promise<void> {
+export async function downloadQlrForItem(item: Item, renderId?: string): Promise<void> {
   if (!item) {
     throw new Error('Item is required.')
+  }
+
+  // Get the XYZ URL with the specified render
+  const xyzUrl = getTitilerXyzUrl(item, renderId)
+  if (!xyzUrl) {
+    throw new Error('Unable to generate XYZ URL for this item.')
+  }
+
+  // Create payload with item and XYZ URL
+  const payload = {
+    item,
+    xyzUrl,
+    renderId,
   }
 
   const apiUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000/qlr'
@@ -150,7 +163,7 @@ export async function downloadQlrForItem(item: Item): Promise<void> {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(item),
+    body: JSON.stringify(payload),
   })
 
   if (!response.ok) {
@@ -171,7 +184,24 @@ export async function downloadQlrForItem(item: Item): Promise<void> {
 
 /**
  * Checks if an item supports integration tools (QGIS/XYZ)
+ * Returns true if the collection has at least one render that isn't just a preview
  */
 export function supportsIntegrationTools(item: Item): boolean {
-  return item.collection in integrationConfig
+  const collectionConfig = collectionRenderingConfig[item.collection]
+  if (!collectionConfig?.renders) return false
+
+  const renders = collectionConfig.renders
+
+  // Check if there's at least one render that isn't a preview
+  return Object.values(renders).some((render) => {
+    // A render is considered a "preview" if it:
+    // 1. Has "preview" in the title (case insensitive)
+    // 2. Uses only "thumbnail" assets
+    // 3. Has quicklook_georeference property
+    const isPreviewTitle = render.title.toLowerCase().includes('preview')
+    const isThumbnailOnly = render.assets.length === 1 && render.assets[0] === 'thumbnail'
+    const hasQuicklookGeoreference = 'quicklook_georeference' in render
+
+    return !(isPreviewTitle || isThumbnailOnly || hasQuicklookGeoreference)
+  })
 }
