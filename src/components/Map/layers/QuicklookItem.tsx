@@ -156,7 +156,9 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   const { data: imageUrl } = useQuery<string | undefined>({
     queryKey: ['quicklook', quicklookUrl, token],
     queryFn: () =>
-      quicklookUrl ? fetchQuicklookImage({ url: quicklookUrl, token }) : Promise.resolve(undefined),
+      quicklookUrl
+        ? fetchQuicklookImage({ url: quicklookUrl, token: render?.auth ? token : undefined })
+        : Promise.resolve(undefined),
     enabled: !!(render && quicklookUrl && (!render.auth || token)),
   })
 
