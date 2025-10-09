@@ -30,30 +30,31 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
     ({ context }) => context.collectionRenderOptions,
   )
 
+  // Prioritize the item's attached render (for time-variable items or pinned items)
+  // Fall back to collection render if no item render is available
+  const effectiveRender = item.render ?? collectionRender
+
   const xyzUrl = useMemo(() => {
     if (!item) return null
 
-    // Check if there are any renders available
-    if (!collectionRenderOptions || collectionRenderOptions.length === 0) {
-      return null
-    }
+    // Use the item's render if available, otherwise fall back to collection render
+    const renderId = effectiveRender?.id ?? collectionRenderOptions?.[0]?.id
+    if (!renderId) return null
 
-    // Use the selected render or default to the first one
-    const renderId = collectionRender?.id ?? collectionRenderOptions[0]?.id
     return getTitilerXyzUrl(item, renderId)
-  }, [item, collectionRender, collectionRenderOptions])
+  }, [item, effectiveRender, collectionRenderOptions])
 
   const handleDownloadQlr = async () => {
     if (!item) return
 
-    // Check if there are any renders available
-    if (!collectionRenderOptions || collectionRenderOptions.length === 0) {
-      toast.error('No render configurations available for this collection')
+    // Use the effective render ID
+    const renderId = effectiveRender?.id
+    if (!renderId) {
+      toast.error('No render configuration available for this item')
       return
     }
 
     // Check if Titiler URL is available before attempting download
-    const renderId = collectionRender?.id ?? collectionRenderOptions[0]?.id
     const titilerUrl = getTitilerXyzUrl(item, renderId)
     if (!titilerUrl) {
       toast.error('Titiler URL not available for this item')
@@ -89,12 +90,11 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
     }
   }
 
-  // Check if renders are available
-  const hasRenders = collectionRenderOptions && collectionRenderOptions.length > 0
-  const currentRenderTitle =
-    collectionRender?.title ?? collectionRenderOptions?.[0]?.title ?? 'Default'
+  // Check if a valid render is available
+  const hasValidRender = effectiveRender !== undefined
+  const currentRenderTitle = effectiveRender?.title ?? 'Default'
 
-  if (!hasRenders) {
+  if (!hasValidRender) {
     return (
       <Flex direction="column" gap="4">
         <Card>
@@ -103,8 +103,8 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
               No Render Configuration Available
             </Text>
             <Text size="2" color="gray">
-              This collection does not have any render configurations available for integration
-              tools. Please contact the data provider for more information.
+              This item does not have a valid render configuration available for integration tools.
+              Please contact the data provider for more information.
             </Text>
           </Flex>
         </Card>
@@ -246,8 +246,12 @@ const JupyterTab: React.FC = () => {
 
 // Main IntegrationToolsPanel Component
 export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ item, onClose }) => {
+  // Get the item's render if it exists (for pinned items or items with attached render)
+  const itemRender = item?.render
+
   // Don't render if item doesn't support integration tools
-  if (!item || !supportsIntegrationTools(item)) {
+  // For time-variable items, this will check if itemRender is valid
+  if (!item || !supportsIntegrationTools(item, itemRender)) {
     return null
   }
 
