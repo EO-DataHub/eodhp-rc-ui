@@ -400,10 +400,15 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 </ActionButton>
               </>
             )}
-            {supportsIntegrationTools(item) && (
+            {supportsIntegrationTools(item, itemRender) && (
               <ActionButton
                 active={isIntegrationToolsSelected}
-                onClick={() => dataFinderStore.send({ type: 'toggleIntegrationToolsPanel', item })}
+                onClick={() =>
+                  dataFinderStore.send({
+                    type: 'toggleIntegrationToolsPanel',
+                    item: { ...item, render: itemRender },
+                  })
+                }
               >
                 <Tooltip content="Integration Tools">
                   <HamburgerMenuIcon />

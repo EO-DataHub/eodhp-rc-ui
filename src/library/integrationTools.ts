@@ -1,4 +1,4 @@
-import { Item } from '@/types'
+import { Item, StacRender } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
 
 /**
@@ -185,10 +185,18 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
 /**
  * Checks if an item supports integration tools (QGIS/XYZ)
  * Returns true if the collection has at least one render that isn't just a preview
+ * For time-variable items, validates that a specific render is available
+ * @param item The item to check
+ * @param itemRender Optional item-specific render. If provided and undefined, returns false
+ * @returns true if integration tools are supported for this item
  */
-export function supportsIntegrationTools(item: Item): boolean {
+export function supportsIntegrationTools(item: Item, itemRender?: StacRender | undefined): boolean {
   const collectionConfig = collectionRenderingConfig[item.collection]
   if (!collectionConfig?.renders) return false
+
+  // If itemRender is explicitly passed as undefined (for time-variable items without matching properties),
+  // then this item doesn't support integration tools
+  if (arguments.length > 1 && itemRender === undefined) return false
 
   const renders = collectionConfig.renders
 
