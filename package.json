@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:device": "vite --mode device",
+    "dev:remote": "vite --mode remote",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit && eslint . --ext js,ts,tsx --report-unused-disable-directives --max-warnings 0",
     "prettier": "prettier --write './src/**/*.{js,ts,tsx}'",
