@@ -10,6 +10,8 @@ import {
   supportsIntegrationTools,
 } from '@/library/integrationTools'
 import { toast } from 'react-toastify'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 
 interface IntegrationToolsPanelProps {
   item: Item | null
@@ -20,15 +22,40 @@ interface IntegrationToolsPanelProps {
 const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
   const [isDownloading, setIsDownloading] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
+
+  // Get the selected render from the store
+  const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const collectionRenderOptions = useSelector(
+    dataFinderStore,
+    ({ context }) => context.collectionRenderOptions,
+  )
+
+  // Prioritize the item's attached render (for time-variable items or pinned items)
+  // Fall back to collection render if no item render is available
+  const effectiveRender = item.render ?? collectionRender
+
   const xyzUrl = useMemo(() => {
-    return item ? getTitilerXyzUrl(item) : null
-  }, [item])
+    if (!item) return null
+
+    // Use the item's render if available, otherwise fall back to collection render
+    const renderId = effectiveRender?.id ?? collectionRenderOptions?.[0]?.id
+    if (!renderId) return null
+
+    return getTitilerXyzUrl(item, renderId)
+  }, [item, effectiveRender, collectionRenderOptions])
 
   const handleDownloadQlr = async () => {
     if (!item) return
 
+    // Use the effective render ID
+    const renderId = effectiveRender?.id
+    if (!renderId) {
+      toast.error('No render configuration available for this item')
+      return
+    }
+
     // Check if Titiler URL is available before attempting download
-    const titilerUrl = getTitilerXyzUrl(item)
+    const titilerUrl = getTitilerXyzUrl(item, renderId)
     if (!titilerUrl) {
       toast.error('Titiler URL not available for this item')
       return
@@ -36,7 +63,7 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
 
     setIsDownloading(true)
     try {
-      await downloadQlrForItem(item)
+      await downloadQlrForItem(item, renderId)
       toast.success('QGIS layer file downloaded successfully')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to download QGIS layer file')
@@ -63,8 +90,42 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
     }
   }
 
+  // Check if a valid render is available
+  const hasValidRender = effectiveRender !== undefined
+  const currentRenderTitle = effectiveRender?.title ?? 'Default'
+
+  if (!hasValidRender) {
+    return (
+      <Flex direction="column" gap="4">
+        <Card>
+          <Flex direction="column" gap="3" p="4">
+            <Text weight="medium" size="3" color="red">
+              No Render Configuration Available
+            </Text>
+            <Text size="2" color="gray">
+              This item does not have a valid render configuration available for integration tools.
+              Please contact the data provider for more information.
+            </Text>
+          </Flex>
+        </Card>
+      </Flex>
+    )
+  }
+
   return (
     <Flex direction="column" gap="4">
+      {/* Current Render Display */}
+      <Card>
+        <Flex direction="column" gap="2" p="4">
+          <Text weight="medium" size="3">
+            Current Render
+          </Text>
+          <Text size="2" color="gray">
+            Using: <Text weight="medium">{currentRenderTitle}</Text>
+          </Text>
+        </Flex>
+      </Card>
+
       {/* QGIS Layer Download */}
       <Card>
         <Flex direction="column" gap="3" p="4">
@@ -185,8 +246,12 @@ const JupyterTab: React.FC = () => {
 
 // Main IntegrationToolsPanel Component
 export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ item, onClose }) => {
+  // Get the item's render if it exists (for pinned items or items with attached render)
+  const itemRender = item?.render
+
   // Don't render if item doesn't support integration tools
-  if (!item || !supportsIntegrationTools(item)) {
+  // For time-variable items, this will check if itemRender is valid
+  if (!item || !supportsIntegrationTools(item, itemRender)) {
     return null
   }
 
