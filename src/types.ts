@@ -1,3 +1,13 @@
+// TerraDraw feature type for AOI management
+export interface TerraDrawFeature {
+  id: string
+  geometry: {
+    type: string
+    coordinates: number[][][]
+  }
+  properties?: Record<string, unknown>
+}
+
 export interface Catalog {
   type: string
   stac_version: string

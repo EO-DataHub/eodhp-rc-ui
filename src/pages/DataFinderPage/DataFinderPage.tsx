@@ -15,6 +15,8 @@ import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
 
+const AOI_STORAGE_KEY = 'aoiData'
+
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
@@ -55,6 +57,20 @@ export const DataFinderPage: React.FC = () => {
     return collections?.find((col) => col.id === id)
   }
 
+  // Auto-restore AOI from localStorage
+  useEffect(() => {
+    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
+    if (storedAoi) {
+      try {
+        const parsedAoi = JSON.parse(storedAoi)
+        dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
+      } catch (error) {
+        // If parsing fails, remove the corrupted data
+        localStorage.removeItem(AOI_STORAGE_KEY)
+      }
+    }
+  }, [])
+
   // Collection selection and redirection if not found
   useEffect(() => {
     if (!collectionId || isAuthenticating) return
@@ -92,7 +108,7 @@ export const DataFinderPage: React.FC = () => {
       : collectionQueries.isFetched
 
     if (allFetched) {
-      navigate('/')
+      void navigate('/')
     }
   }, [
     collectionId,
@@ -104,11 +120,6 @@ export const DataFinderPage: React.FC = () => {
     userCollectionQuery.isFetched,
     navigate,
   ])
-
-  // Remove AOI from local storage on mount
-  useEffect(() => {
-    localStorage.removeItem('aoi')
-  }, [])
 
   return (
     <Box height="var(--content-height)" position="relative">

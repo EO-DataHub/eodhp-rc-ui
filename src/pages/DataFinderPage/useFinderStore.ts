@@ -1,8 +1,8 @@
-import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import { TerraDrawInstance } from '@/library/terraDrawUtils'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -34,8 +34,8 @@ interface AppContext {
   secondaryPanel: SecondaryPanel
   infoPanelItem?: Item
   mapInstance?: MapInstance
-  drawInstance?: MapboxDraw
-  drawMode?: DrawMode
+  terradrawInstance?: TerraDrawInstance
+  drawMode?: string
   aoi?: GeoJSON.Feature
   mapBounds?: MapBounds
   queryFilter?: object
@@ -60,7 +60,7 @@ const dataFinderStore = createStore({
     secondaryPanel: undefined,
     infoPanelItem: undefined,
     mapInstance: undefined,
-    drawInstance: undefined,
+    terradrawInstance: undefined,
     drawMode: undefined,
     aoi: undefined,
     mapBounds: undefined,
@@ -89,8 +89,7 @@ const dataFinderStore = createStore({
             }
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('Failed to load context from local storage:', error)
+          // Error loading context from local storage, continuing with default context
         }
       }
       return context
@@ -190,19 +189,14 @@ const dataFinderStore = createStore({
       }
     },
 
-    drawControlLoad: (context, event: { drawInstance: MapboxDraw | undefined }) => {
+    terradrawControlLoad: (context, event: { terradrawInstance: TerraDrawInstance }) => {
       return {
         ...context,
-        drawInstance: event.drawInstance,
+        terradrawInstance: event.terradrawInstance,
       }
     },
-    drawCreateOrUpdate: (context, event: { mapEvent: DrawCreateEvent }) => {
-      // If draw instance is not loaded, do nothing
-      if (!context.drawInstance) return context
-
-      const { features } = event.mapEvent
-      const aoi = features[0]
-
+    terradrawFeatureCreate: (context, event: { feature: GeoJSON.Feature }) => {
+      const aoi = event.feature
       localStorage.setItem('aoiData', JSON.stringify(aoi))
 
       return {
@@ -210,37 +204,35 @@ const dataFinderStore = createStore({
         aoi,
       }
     },
-    drawDelete: (context) => {
-      const { drawInstance } = context
-      localStorage.removeItem('aoiData')
-      drawInstance!.deleteAll()
 
+    terradrawFeatureDelete: (context) => {
+      // Always clear the AOI from context and localStorage when a feature is deleted
+      // The restoration logic in Map.tsx will handle preventing false deletions during restoration
+      localStorage.removeItem('aoiData')
       return {
         ...context,
         aoi: undefined,
       }
     },
-    drawModeChange: (context, event: { mapEvent: DrawModeChangeEvent }) => {
-      const { aoi: currentAoi, drawInstance, mapInstance } = context
-      const { mode: nextDrawMode } = event.mapEvent
+    terradrawModeChange: (context, event: { mode: string }) => {
+      const { aoi: currentAoi, terradrawInstance } = context
+      const nextDrawMode = event.mode
 
-      // Ensure draw instance exists to avoid type errors
-      if (!drawInstance) return context
+      // Ensure terradraw instance exists to avoid type errors
+      if (!terradrawInstance) return context
 
-      if (nextDrawMode === DrawModes.DRAW_POLYGON) {
+      if (nextDrawMode === 'polygon') {
         // User started drawing a new polygon, delete the current AOI if it exists
         if (currentAoi) {
-          drawInstance.delete(currentAoi.id as string)
+          terradrawInstance.clear()
+          // Also clear the AOI from state and localStorage
+          localStorage.removeItem('aoiData')
+          return {
+            ...context,
+            aoi: undefined,
+            drawMode: nextDrawMode,
+          }
         }
-
-        const handleDblClick = () => {
-          // Wait a bit for draw to be register and then change selection
-          setTimeout(() => {
-            drawInstance.changeMode('simple_select')
-          }, 100)
-          mapInstance!.off('dblclick', handleDblClick)
-        }
-        mapInstance!.on('dblclick', handleDblClick)
       }
 
       return {
@@ -406,7 +398,7 @@ const dataFinderStore = createStore({
       }
     },
     storeAoi: (context, event: { aoi: GeoJSON.Feature | undefined }) => {
-      localStorage.setItem('aoi', JSON.stringify(event.aoi))
+      localStorage.setItem('aoiData', JSON.stringify(event.aoi))
       return { ...context, aoi: event.aoi }
     },
   },
