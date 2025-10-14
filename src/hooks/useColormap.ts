@@ -2,6 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 
 const API_URL = import.meta.env.VITE_TITILER_BASE_URL
 
+if (!API_URL) {
+  throw new Error(
+    'Missing required environment variable: VITE_TITILER_BASE_URL. ' +
+      'Please ensure this is set in your GitHub environment configuration or .env file.',
+  )
+}
+
 type RBGA = [number, number, number, number]
 
 function rgbaToHex([r, g, b, a]: RBGA): string {

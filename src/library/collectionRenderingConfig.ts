@@ -4,6 +4,13 @@ import serverConfig from './configFromServer.json'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
 
+if (!TITILER_URL) {
+  throw new Error(
+    'Missing required environment variable: VITE_TITILER_BASE_URL. ' +
+      'Please ensure this is set in your GitHub environment configuration or .env file.',
+  )
+}
+
 type TilerType = 'titiler' | 'titiler-multidim'
 
 const tilerUrls: Record<TilerType, string> = {

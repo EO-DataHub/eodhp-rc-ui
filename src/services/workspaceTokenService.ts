@@ -1,5 +1,12 @@
 const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 
+if (!HUB_BASE_URL) {
+  throw new Error(
+    'Missing required environment variable: VITE_HUB_BASE_URL. ' +
+      'Please ensure this is set in your GitHub environment configuration or .env file.',
+  )
+}
+
 interface WorkspaceScopedTokenResponse {
   access: string
   accessExpiry: string
