@@ -57,7 +57,7 @@ export const useItemsQuery = () => {
     queryFn: fetchFunction,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    enabled: !!collection && (!!queryFilter || !!aoi || !!mapBounds),
+    enabled: !!collection,
     placeholderData: (previousValue: Item[] | undefined): Item[] => previousValue ?? [],
   })
 

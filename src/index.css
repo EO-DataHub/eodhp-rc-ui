@@ -115,10 +115,25 @@ body {
   background-color: #000509e3;
 }
 
-/* custom maplibregl control panel styles (they need to be overridden globally)*/
-.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_polygon {
-  background-image: url('/src/assets/icons/pencil.svg');
+/* Ensure TerraDraw controls are visible above side panel */
+.maplibregl-ctrl-top-right {
+  z-index: 20 !important;
 }
-.maplibregl-ctrl-group .mapbox-gl-draw_ctrl-draw-btn.mapbox-gl-draw_trash {
-  background-image: url('/src/assets/icons/trash.svg');
+
+/* Custom TerraDraw polygon button - irregular pentagon outline */
+.maplibregl-terradraw-add-polygon-button {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 -960 960 960' width='24px' fill='none' stroke='%235f6368' stroke-width='80'%3E%3Cpath d='M480-200L300-360l100-200 160-60 160 60 100 200-160 160Z'/%3E%3C/svg%3E") !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% !important;
+}
+
+/* Hover state - light grey background */
+.maplibregl-terradraw-add-polygon-button:hover {
+  background-color: #f0f0f0 !important;
+}
+
+/* Active/selected state - yellow background */
+.maplibregl-terradraw-add-polygon-button.active {
+  background-color: #fbc412 !important;
 }

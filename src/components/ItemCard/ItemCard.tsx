@@ -261,7 +261,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
-      navigate(`/order-details/${item.id}`, { state: { item } })
+      void navigate(`/order-details/${item.id}`, { state: { item } })
     } else {
       await login()
     }

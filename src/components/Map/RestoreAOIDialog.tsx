@@ -5,6 +5,7 @@ import { useContext, useEffect } from 'react'
 import styles from './RestoreAOIDialog.module.scss'
 
 const AOI_STORAGE_KEY = 'aoiData'
+const PROMPT_SESSION_KEY = 'aoiPromptShown'
 
 export const RestoreAOIDialog = () => {
   const { shouldShowRestoreAOIDialog, setShouldShowRestoreAOIDialog, hasPromptedRef } =
@@ -16,18 +17,16 @@ export const RestoreAOIDialog = () => {
       return
     }
 
-    const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
-    const isNewTab = navEntries[0]?.type === 'navigate'
+    // Check if we've already shown the prompt this session
+    const hasBeenPrompted = sessionStorage.getItem(PROMPT_SESSION_KEY)
     const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
 
-    if (storedAoi) {
-      if (isNewTab) {
-        setShouldShowRestoreAOIDialog(true)
-      } else {
-        // tab already open, simply restore the AOI if it exists
-        const parsedAoi = JSON.parse(storedAoi)
-        dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-      }
+    if (storedAoi && !hasBeenPrompted) {
+      // New session with stored AOI - show the prompt
+      setShouldShowRestoreAOIDialog(true)
+    } else if (storedAoi && hasBeenPrompted) {
+      // Session already prompted, let automatic restoration handle it
+      // The existing useTerraDraw logic will restore the AOI automatically
     }
 
     if (hasPromptedRef) {
@@ -36,18 +35,27 @@ export const RestoreAOIDialog = () => {
   }, [hasPromptedRef, setShouldShowRestoreAOIDialog])
 
   const restoreAOI = () => {
-    const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
-    if (storedAoi) {
-      const parsedAoi = JSON.parse(storedAoi)
-      dataFinderStore.send({ type: 'storeAoi', aoi: parsedAoi })
-    }
+    // Mark that we've shown the prompt this session
+    sessionStorage.setItem(PROMPT_SESSION_KEY, 'true')
+
+    // Close the dialog - the existing automatic restoration logic will handle the rest
     setShouldShowRestoreAOIDialog(false)
   }
 
   const removeAOI = () => {
+    // Mark that we've shown the prompt this session
+    sessionStorage.setItem(PROMPT_SESSION_KEY, 'true')
+
+    // Remove AOI from both localStorage and store
     localStorage.removeItem(AOI_STORAGE_KEY)
     dataFinderStore.send({ type: 'storeAoi', aoi: undefined })
-    dataFinderStore.send({ type: 'drawDelete' })
+
+    // Clear any existing TerraDraw features
+    const terradrawInstance = dataFinderStore.getSnapshot().context.terradrawInstance
+    if (terradrawInstance) {
+      terradrawInstance.clear()
+    }
+
     setShouldShowRestoreAOIDialog(false)
   }
 
