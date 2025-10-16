@@ -8,6 +8,24 @@ import { toast } from 'react-toastify'
 
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
 
+// Validate required environment variables
+const requiredEnvVars = {
+  VITE_KEYCLOAK_URL: import.meta.env.VITE_KEYCLOAK_URL,
+  VITE_KEYCLOAK_REALM: import.meta.env.VITE_KEYCLOAK_REALM,
+  VITE_KEYCLOAK_CLIENT_ID: import.meta.env.VITE_KEYCLOAK_CLIENT_ID,
+}
+
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([, value]) => !value)
+  .map(([key]) => key)
+
+if (missingVars.length > 0) {
+  throw new Error(
+    `Missing required environment variables: ${missingVars.join(', ')}. ` +
+      'Please ensure these are set in your GitHub environment configuration or .env file.',
+  )
+}
+
 const initOptions = {
   url: import.meta.env.VITE_KEYCLOAK_URL as string,
   realm: import.meta.env.VITE_KEYCLOAK_REALM as string,

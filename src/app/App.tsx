@@ -5,10 +5,10 @@ import 'react-toastify/dist/ReactToastify.css'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
 import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider'
+import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 import { router } from './router'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
-import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 
 function App() {
   useEffect(() => {
