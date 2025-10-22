@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Flex, Tooltip } from '@radix-ui/themes'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import styles from './SidePanel.module.scss'
@@ -22,6 +22,15 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const [activeTab, setActiveTab] = useState('query-items-tab')
+
+  // Check for localStorage flag when component mounts or collection changes
+  useEffect(() => {
+    const shouldOpenPinned = localStorage.getItem('openPinnedItemsTab')
+    if (shouldOpenPinned) {
+      localStorage.removeItem('openPinnedItemsTab')
+      setActiveTab('pinned-items-tab')
+    }
+  }, [collection])
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
@@ -74,7 +83,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         ) : (
           smallCollectionCard
         )}
-        <Tabs onTabChange={setActiveTab} />
+        <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       </Flex>
 
       <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />

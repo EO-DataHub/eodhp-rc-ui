@@ -271,7 +271,10 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
               </Flex>
             </Flex>
             <Text size="3" className={styles.subtitle}>
-              {item.id} • {convertDateToUTCString(new Date(item.properties.datetime))}
+              {item.id} •{' '}
+              {item.properties.datetime
+                ? convertDateToUTCString(new Date(item.properties.datetime))
+                : 'N/A'}
             </Text>
           </Flex>
 

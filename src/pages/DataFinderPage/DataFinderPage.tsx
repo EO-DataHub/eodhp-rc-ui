@@ -110,6 +110,62 @@ export const DataFinderPage: React.FC = () => {
     localStorage.removeItem('aoi')
   }, [])
 
+  // Auto-pin item from orders dashboard if stored in localStorage
+  useEffect(() => {
+    // Only proceed if collection is loaded
+    if (!collection) return
+
+    const storedItemData = localStorage.getItem('itemToPin')
+    if (!storedItemData) return
+
+    try {
+      const { item, collectionTitle } = JSON.parse(storedItemData)
+
+      // Create a render config for the thumbnail
+      const thumbnailRender = {
+        id: 'thumbnail',
+        title: 'Thumbnail',
+        assets: ['thumbnail'],
+        quicklook_georeference: 'bbox' as const,
+      }
+
+      // Pin the item to the map
+      dataFinderStore.send({
+        type: 'addPinnedItem',
+        item: item,
+        collectionRender: thumbnailRender,
+        isLicenseProprietary: collection.license === 'proprietary',
+        isUserCollection: true,
+        collectionName: collectionTitle,
+        collection: collection,
+      })
+
+      // Zoom to the item's bounding box
+      // Wait for map instance to be available before zooming
+      const attemptZoom = () => {
+        const mapInstance = dataFinderStore.getSnapshot().context.mapInstance
+        if (mapInstance) {
+          dataFinderStore.send({
+            type: 'zoomToItem',
+            item: item,
+          })
+        } else {
+          // Retry after 100ms if map instance not ready
+          setTimeout(attemptZoom, 100)
+        }
+      }
+
+      // Start attempting zoom after a short delay
+      setTimeout(attemptZoom, 500)
+
+      // Clear the stored item
+      localStorage.removeItem('itemToPin')
+    } catch (error) {
+      // If parsing fails, just clear the stored item
+      localStorage.removeItem('itemToPin')
+    }
+  }, [collection])
+
   return (
     <Box height="var(--content-height)" position="relative">
       <Box className={styles.floatingContainer}>
