@@ -9,15 +9,7 @@
 }
 
 .filterContainer {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-}
-
-.filterBox {
-  min-width: 180px;
+  width: 100%;
 }
 
 .ordersTable {

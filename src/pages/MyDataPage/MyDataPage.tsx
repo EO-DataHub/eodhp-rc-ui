@@ -165,60 +165,80 @@ export const MyDataPage: React.FC = () => {
             <Tabs.Content value="purchased_data">
               <Flex direction="column" gap="5">
                 {/* Filter Controls */}
-                <Flex gap="3" mb="4" wrap="wrap" className={styles.filterContainer}>
-                  <Box className={styles.filterBox}>
-                    <Text size="2" weight="medium" mb="1">
-                      Workspace
-                    </Text>
-                    <Select.Root value={selectedWorkspace} onValueChange={setSelectedWorkspace}>
-                      <Select.Trigger />
-                      <Select.Content>
-                        <Select.Item value="all">All Workspaces</Select.Item>
-                        {workspaceOptions
-                          .filter((w) => w !== 'all')
-                          .map((workspace) => (
-                            <Select.Item key={workspace} value={workspace}>
-                              {workspace}
-                            </Select.Item>
-                          ))}
+                <Flex
+                  p="5"
+                  direction="row"
+                  gap="2"
+                  align="center"
+                  justify="between"
+                  className={styles.filterContainer}
+                  overflow="auto"
+                >
+                  <Box flexGrow="1" width="160px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={selectedWorkspace}
+                      onValueChange={setSelectedWorkspace}
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          <Select.Item value="all">All Workspaces</Select.Item>
+                          {workspaceOptions
+                            .filter((w) => w !== 'all')
+                            .map((workspace) => (
+                              <Select.Item key={workspace} value={workspace}>
+                                {workspace}
+                              </Select.Item>
+                            ))}
+                        </Select.Group>
                       </Select.Content>
                     </Select.Root>
                   </Box>
 
-                  <Box className={styles.filterBox}>
-                    <Text size="2" weight="medium" mb="1">
-                      Collection
-                    </Text>
-                    <Select.Root value={selectedCollection} onValueChange={setSelectedCollection}>
-                      <Select.Trigger />
-                      <Select.Content>
-                        <Select.Item value="all">All Collections</Select.Item>
-                        {collectionOptions
-                          .filter((c) => c !== 'all')
-                          .map((collection) => (
-                            <Select.Item key={collection} value={collection}>
-                              {collection}
-                            </Select.Item>
-                          ))}
+                  <Box flexGrow="1" width="160px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={selectedCollection}
+                      onValueChange={setSelectedCollection}
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Collection" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          <Select.Item value="all">All Collections</Select.Item>
+                          {collectionOptions
+                            .filter((c) => c !== 'all')
+                            .map((collection) => (
+                              <Select.Item key={collection} value={collection}>
+                                {collection}
+                              </Select.Item>
+                            ))}
+                        </Select.Group>
                       </Select.Content>
                     </Select.Root>
                   </Box>
 
-                  <Box className={styles.filterBox}>
-                    <Text size="2" weight="medium" mb="1">
-                      Include Failed Orders
-                    </Text>
-                    <Flex align="center" gap="2">
+                  <Box flexGrow="1" width="160px" flexShrink="0">
+                    <Flex align="center" gap="2" height="100%">
                       <Checkbox
+                        size="3"
                         checked={includeFailedOrders}
                         onCheckedChange={(checked) => setIncludeFailedOrders(checked as boolean)}
                       />
-                      <Text size="2">Show failed orders</Text>
+                      <Text as="label" size="3" style={{ cursor: 'pointer' }}>
+                        Include Failed Orders
+                      </Text>
                     </Flex>
                   </Box>
 
-                  <Box>
-                    <Button variant="soft" onClick={handleResetFilters}>
+                  <Box flexGrow="0" flexShrink="0">
+                    <Button
+                      size="3"
+                      variant="soft"
+                      color="gray"
+                      onClick={handleResetFilters}
+                      style={{ minWidth: '160px' }}
+                    >
                       Reset Filters
                     </Button>
                   </Box>
