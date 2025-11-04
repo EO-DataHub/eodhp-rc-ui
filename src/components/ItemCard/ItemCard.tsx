@@ -78,19 +78,18 @@ const renderAdditionalFields = (item: Item, collectionId: string | null) => {
   })
 }
 
-const ActionButton = ({
-  children,
-  onClick,
-  active,
-  disabled,
-}: {
-  children: React.ReactNode
-  onClick: () => void
-  active?: boolean
-  disabled?: boolean
-}) => {
+const ActionButton = React.forwardRef<
+  HTMLButtonElement,
+  {
+    children: React.ReactNode
+    onClick: () => void
+    active?: boolean
+    disabled?: boolean
+  }
+>(({ children, onClick, active, disabled }, ref) => {
   return (
     <IconButton
+      ref={ref}
       size="1"
       radius="full"
       variant="ghost"
@@ -101,7 +100,9 @@ const ActionButton = ({
       {children}
     </IconButton>
   )
-}
+})
+
+ActionButton.displayName = 'ActionButton'
 
 const OpacitySelector = ({ item }: { item: Item }) => {
   return (

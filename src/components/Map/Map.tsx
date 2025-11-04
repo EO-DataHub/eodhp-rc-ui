@@ -1,27 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
-import dataFinderStore, { DrawModes } from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import * as turf from '@turf/turf'
 
-import Maplibre, { IControl, MapRef, NavigationControl, useControl } from 'react-map-gl/maplibre'
-import MapboxDraw, { DrawCreateEvent, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
-
-import drawStylesConfig from '@/components/Map/drawStylesConfig'
+import Maplibre, { MapRef, NavigationControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import PinnedItemsLayer from './layers/PinnedItems'
 import QueryItemsLayer from './layers/QueryItems'
 import HoveredItemLayer from './layers/HoveredItem'
 import { RestoreAOIDialog } from './RestoreAOIDialog'
-
-interface DrawConstants {
-  classes: {
-    CONTROL_BASE: string
-    CONTROL_PREFIX: string
-    CONTROL_GROUP: string
-  }
-}
+import { TerraDrawControl } from './TerraDrawControl'
+import { DrawingToolbar } from './DrawingToolbar'
+import { AreaTooltip } from './AreaTooltip'
 
 const MAP_STYLE = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'
 const DEFAULT_MAP_VIEW = {
@@ -31,79 +23,102 @@ const DEFAULT_MAP_VIEW = {
 }
 
 const MAP_STORAGE_KEY = 'mapViewState'
-const AOI_STORAGE_KEY = 'aoiData'
-
-function DrawControl() {
-  const drawInstance = useRef<MapboxDraw | null>(null)
-
-  useControl(
-    () => {
-      const mapboxDrawConstants = MapboxDraw.constants as unknown as DrawConstants
-      mapboxDrawConstants.classes.CONTROL_BASE = 'maplibregl-ctrl'
-      mapboxDrawConstants.classes.CONTROL_PREFIX = 'maplibregl-ctrl-'
-      mapboxDrawConstants.classes.CONTROL_GROUP = 'maplibregl-ctrl-group'
-
-      const draw = new MapboxDraw({
-        displayControlsDefault: false,
-        controls: {
-          polygon: true,
-          trash: true,
-        },
-        styles: drawStylesConfig,
-      })
-      drawInstance.current = draw
-
-      dataFinderStore.send({ type: 'drawControlLoad', drawInstance: draw })
-
-      return draw as unknown as IControl
-    },
-    { position: 'top-right' },
-  )
-
-  // Restore AOI when the draw instance is available
-  useEffect(() => {
-    if (drawInstance.current) {
-      const storedAoi = localStorage.getItem(AOI_STORAGE_KEY)
-      if (storedAoi) {
-        const parsedAoi = JSON.parse(storedAoi)
-        drawInstance.current.add(parsedAoi)
-      }
-    }
-  }, [])
-
-  // Overwrite the native delete button of Mapbox
-  // which already has a listener, but only for selected drawings
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const deleteButton = document.querySelector('.mapbox-gl-draw_trash')
-      if (deleteButton) {
-        const customDeleteButton = deleteButton.cloneNode(true) as HTMLButtonElement
-        deleteButton.parentNode?.replaceChild(customDeleteButton, deleteButton)
-
-        // Add our own behavior to delete all drawings
-        customDeleteButton.addEventListener('click', () => {
-          dataFinderStore.send({ type: 'drawDelete' })
-        })
-        clearInterval(interval)
-      }
-    }, 300)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  return null
-}
 
 export const Map = () => {
   const mapRef = useRef<MapRef>(null)
+  const terraDrawControlRef = useRef<{
+    delete: () => void
+    add: (feature: GeoJSON.Feature) => void
+  } | null>(null)
   const { pageItems } = useItemsQuery()
 
   // Load previous map state from local storage, or use default
   const savedViewState =
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
+  const [drawMode, setDrawMode] = useState<'rectangle' | 'polygon' | null>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [realTimeArea, setRealTimeArea] = useState<number | null>(null)
+  const [aoiCenterPosition, setAoiCenterPosition] = useState<{ x: number; y: number } | null>(null)
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const aoiArea = useSelector(dataFinderStore, (state) => state.context.aoiArea)
+
+  // Calculate AOI centroid position on screen
+  useEffect(() => {
+    if (!mapInstance || !aoi) {
+      setAoiCenterPosition(null)
+      return
+    }
+
+    const updatePosition = () => {
+      try {
+        // Calculate centroid using Turf
+        const centroid = turf.centroid(aoi)
+        const [lng, lat] = centroid.geometry.coordinates
+
+        // Convert geographic coordinates to pixel coordinates relative to map container
+        const point = mapInstance.project([lng, lat])
+
+        // Get map container's position on the page
+        const container = mapInstance.getContainer()
+        const containerRect = container.getBoundingClientRect()
+
+        // Convert to absolute screen coordinates
+        setAoiCenterPosition({
+          x: containerRect.left + point.x,
+          y: containerRect.top + point.y,
+        })
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error calculating AOI center position:', error)
+        setAoiCenterPosition(null)
+      }
+    }
+
+    // Initial calculation
+    updatePosition()
+
+    // Update position when map moves or zooms
+    mapInstance.on('move', updatePosition)
+    mapInstance.on('zoom', updatePosition)
+    mapInstance.on('resize', updatePosition)
+
+    return () => {
+      mapInstance.off('move', updatePosition)
+      mapInstance.off('zoom', updatePosition)
+      mapInstance.off('resize', updatePosition)
+    }
+  }, [mapInstance, aoi])
+
+  // Force position recalculation when area changes during drawing/editing
+  // This ensures tooltip position updates in real-time as geometry changes
+  useEffect(() => {
+    if (!mapInstance || !aoi) return
+
+    // Trigger position update by recalculating
+    const updatePosition = () => {
+      try {
+        const centroid = turf.centroid(aoi)
+        const [lng, lat] = centroid.geometry.coordinates
+        const point = mapInstance.project([lng, lat])
+        const container = mapInstance.getContainer()
+        const containerRect = container.getBoundingClientRect()
+        setAoiCenterPosition({
+          x: containerRect.left + point.x,
+          y: containerRect.top + point.y,
+        })
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Error updating AOI center position:', error)
+      }
+    }
+
+    // Use requestAnimationFrame to batch updates and avoid excessive recalculations
+    const rafId = requestAnimationFrame(updatePosition)
+    return () => cancelAnimationFrame(rafId)
+  }, [mapInstance, aoi, realTimeArea, aoiArea])
 
   const handleMapBoundsChange = () => {
     if (mapRef.current) {
@@ -120,28 +135,18 @@ export const Map = () => {
     dataFinderStore.send({ type: 'mapBoundsChange' })
   }
 
-  const isDrawing = useSelector(
-    dataFinderStore,
-    (state) => state.context.drawMode === DrawModes.DRAW_POLYGON,
-  )
+  const handleDelete = () => {
+    if (terraDrawControlRef.current) {
+      terraDrawControlRef.current.delete()
+    }
+  }
 
-  // This is a workaround to move the draw layers to the top as they are added
-  // on page load and should be on top of the other layers. Ideally we not need
-  // to do this but there is no way to control the order of the layers in the
-  // MapboxDraw control.
-  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
-  useEffect(() => {
-    if (!mapInstance) return
-
-    // Wait a bit for the layers to be added
-    setTimeout(() => {
-      mapInstance.getStyle().layers.forEach((layer) => {
-        if (layer.id.startsWith('gl-draw')) {
-          mapInstance.moveLayer(layer.id)
-        }
-      })
-    }, 100)
-  }, [mapInstance, pageItems, pinnedItems])
+  // Determine which area to display (real-time during drawing/editing, or stored area)
+  const displayArea = isDrawing ? realTimeArea : aoiArea
+  // Show tooltip whenever AOI exists and area is available
+  const showTooltip = Boolean(displayArea !== null && aoi !== null)
+  // Always use AOI center position for tooltip (never follow cursor)
+  const tooltipPosition = aoiCenterPosition
 
   return (
     <>
@@ -149,7 +154,7 @@ export const Map = () => {
         initialViewState={viewState}
         mapStyle={MAP_STYLE}
         ref={mapRef}
-        cursor={isDrawing ? 'crosshair' : 'grab'}
+        cursor={drawMode !== null ? 'crosshair' : 'grab'}
         onMoveEnd={handleMapBoundsChange}
         onLoad={() => {
           const mapInstance = mapRef.current?.getMap()
@@ -159,32 +164,30 @@ export const Map = () => {
           // Send the map instance to the store
           dataFinderStore.send({ type: 'mapLoad', mapInstance })
 
-          // Listen to draw mode changes
-          mapInstance.on('draw.modechange', (mapEvent: DrawModeChangeEvent) => {
-            dataFinderStore.send({ type: 'drawModeChange', mapEvent })
-          })
-
-          // Listen to draw events
-          mapInstance.on('draw.create', (mapEvent: DrawCreateEvent) =>
-            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-          )
-          mapInstance.on('draw.update', (mapEvent: DrawCreateEvent) =>
-            dataFinderStore.send({ type: 'drawCreateOrUpdate', mapEvent }),
-          )
-          mapInstance.on('draw.delete', () => {
-            dataFinderStore.send({ type: 'drawDelete' })
-          })
-
           // Update bounds on load
           handleMapBoundsChange()
         }}
       >
         <NavigationControl />
-        <DrawControl />
+        <TerraDrawControl
+          ref={terraDrawControlRef}
+          mapInstance={mapInstance ?? null}
+          mode={drawMode}
+          onAreaChange={setRealTimeArea}
+          onDrawingStateChange={setIsDrawing}
+        />
         <PinnedItemsLayer />
         <QueryItemsLayer queryItems={pageItems} />
         <HoveredItemLayer />
       </Maplibre>
+      <DrawingToolbar
+        onModeChange={setDrawMode}
+        currentMode={drawMode}
+        onDelete={handleDelete}
+        hasAoi={!!aoi}
+        aoi={aoi ?? null}
+      />
+      <AreaTooltip area={displayArea} position={tooltipPosition} visible={showTooltip} />
       <RestoreAOIDialog />
     </>
   )
