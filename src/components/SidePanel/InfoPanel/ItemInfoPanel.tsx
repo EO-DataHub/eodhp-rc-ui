@@ -49,7 +49,9 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
               </Flex>
             </Flex>
             <Text size="3" className={styles.subtitle}>
-              {convertDateToUTCString(new Date(item.properties.datetime))}
+              {item.properties.datetime
+                ? convertDateToUTCString(new Date(item.properties.datetime))
+                : 'N/A'}
             </Text>
           </Flex>
 

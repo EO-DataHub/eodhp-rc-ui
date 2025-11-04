@@ -239,7 +239,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     if (hasAllProperties) {
       // For time variable items, construct the render key from the specified properties
       const renderKey = collection['eodhrc:render-key-properties']
-        .map((key) => data.properties[key])
+        .map((key) => data.properties[key] as string)
         .join('--')
 
       const render = collectionRenderOptions.find((render) => render.id === renderKey)
@@ -272,7 +272,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       return item.id
     }
 
-    return data.properties.title
+    return data.properties.title as string
   }, [data?.properties?.title, item.id])
 
   return (
@@ -318,7 +318,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
             <Text size="1" className={styles.text}>
-              {convertDateToUTCString(new Date(item.properties.datetime))}
+              {item.properties.datetime
+                ? convertDateToUTCString(new Date(item.properties.datetime))
+                : 'N/A'}
             </Text>
             {data
               ? renderAdditionalFields(data, item.collection)

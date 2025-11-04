@@ -350,8 +350,7 @@ const dataFinderStore = createStore({
           duration: 100,
         })
       } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to zoom to item:', error)
+        // Silently fail if zoom fails
       }
       return context
     },
