@@ -79,6 +79,12 @@
         background: rgba(255, 255, 255, 0.7);
       }
     }
+
+    &.pinButtonDisabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+      pointer-events: none;
+    }
   }
 
   .buttonGroup {
