@@ -82,10 +82,12 @@ const ActionButton = ({
   children,
   onClick,
   active,
+  disabled,
 }: {
   children: React.ReactNode
   onClick: () => void
   active?: boolean
+  disabled?: boolean
 }) => {
   return (
     <IconButton
@@ -94,6 +96,7 @@ const ActionButton = ({
       variant="ghost"
       className={`${styles.iconButton} ${active ? styles.active : ''}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </IconButton>
@@ -170,8 +173,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
     const collectionConfig = collectionRenderingConfig[item.collection]
-    return collectionConfig?.renders?.preview?.auth === true
+    const requiresAuth = collectionConfig?.renders?.preview?.auth === true
+    return requiresAuth
   }, [item.collection])
+
+  // Check if pin button should be disabled
+  const isPinButtonDisabled = useMemo(() => {
+    return requiresThumbnailAuth && !isAuthenticated
+  }, [requiresThumbnailAuth, isAuthenticated])
 
   // temporarily fetching item details
   const { data } = useQuery({
@@ -193,6 +202,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         ? getPinnedItemId(item, collectionRender)
         : undefined)
   const isAlreadyPinned = pinnedItems.some((pinnedItem) => pinnedItem.pinId === pinId)
+
+  // Determine tooltip text based on state
+  const pinButtonTooltipText = useMemo(() => {
+    if (requiresThumbnailAuth && !isAuthenticated) {
+      return 'Log in to pin'
+    }
+    return isAlreadyPinned ? 'Unpin Item' : 'Pin Item'
+  }, [requiresThumbnailAuth, isAuthenticated, isAlreadyPinned])
 
   const unpinItem = useCallback(
     () => dataFinderStore.send({ type: 'removePinnedItem', item: { ...item, pinId } }),
@@ -239,7 +256,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     if (hasAllProperties) {
       // For time variable items, construct the render key from the specified properties
       const renderKey = collection['eodhrc:render-key-properties']
-        .map((key) => data.properties[key])
+        .map((key) => data.properties[key] as string)
         .join('--')
 
       const render = collectionRenderOptions.find((render) => render.id === renderKey)
@@ -272,7 +289,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       return item.id
     }
 
-    return data.properties.title
+    return data.properties.title as string
   }, [data?.properties?.title, item.id])
 
   return (
@@ -287,8 +304,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
         justify="center"
         flexShrink="0"
         p="4"
-        className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''}`}
-        onClick={() => (!isAlreadyPinned ? pinItem() : unpinItem())}
+        className={`${styles.thumbnailContainer} ${!itemRender ? styles.thumbnailContainerDisabled : ''} ${isPinButtonDisabled ? styles.pinButtonDisabled : ''}`}
+        onClick={() => {
+          if (isPinButtonDisabled) {
+            return // Button is disabled, no action
+          }
+          !isAlreadyPinned ? pinItem() : unpinItem()
+        }}
       >
         {item.assets?.thumbnail?.href?.endsWith('.tif') ||
         item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
@@ -301,8 +323,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           />
         )}
         <div className={styles.overlay}>
-          <Tooltip content={isAlreadyPinned ? 'Unpin Item' : 'Pin Item'}>
-            <DrawingPinIcon color={isAlreadyPinned ? 'gray' : 'white'} width={20} height={20} />
+          <Tooltip content={pinButtonTooltipText}>
+            <DrawingPinIcon
+              color={isPinButtonDisabled ? 'gray' : isAlreadyPinned ? 'gray' : 'white'}
+              width={20}
+              height={20}
+            />
           </Tooltip>
         </div>
       </Flex>
@@ -318,7 +344,9 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
             <Text size="1" className={styles.text}>
-              {convertDateToUTCString(new Date(item.properties.datetime))}
+              {item.properties.datetime
+                ? convertDateToUTCString(new Date(item.properties.datetime))
+                : 'N/A'}
             </Text>
             {data
               ? renderAdditionalFields(data, item.collection)
@@ -356,17 +384,34 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
-                  <ActionButton onClick={pinItem}>
-                    <Tooltip content="Pin Item">
+                  <Tooltip content={pinButtonTooltipText}>
+                    <ActionButton
+                      onClick={() => {
+                        if (isPinButtonDisabled) {
+                          return
+                        }
+                        pinItem()
+                      }}
+                      disabled={isPinButtonDisabled}
+                    >
                       <DrawingPinIcon />
-                    </Tooltip>
-                  </ActionButton>
+                    </ActionButton>
+                  </Tooltip>
                 ) : (
-                  <ActionButton onClick={unpinItem} active={isAlreadyPinned}>
-                    <Tooltip content="Unpin Item">
+                  <Tooltip content={pinButtonTooltipText}>
+                    <ActionButton
+                      onClick={() => {
+                        if (isPinButtonDisabled) {
+                          return
+                        }
+                        unpinItem()
+                      }}
+                      active={isAlreadyPinned}
+                      disabled={isPinButtonDisabled}
+                    >
                       <DrawingPinIcon />
-                    </Tooltip>
-                  </ActionButton>
+                    </ActionButton>
+                  </Tooltip>
                 )}
                 <ActionButton onClick={() => dataFinderStore.send({ type: 'zoomToItem', item })}>
                   <Tooltip content="Zoom to item">

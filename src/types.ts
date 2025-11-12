@@ -107,7 +107,22 @@ export interface Item {
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
   properties: {
-    [key: string]: never
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any
+    datetime?: string
+    created?: string
+    'order:status'?: string
+    'order:id'?: string
+    'order:date'?: string
+    order_options?: {
+      productBundle?: string
+      endUser?: {
+        country?: string | null
+        endUserName?: string
+      }
+      licence?: string
+      coordinates?: number[][][]
+    }
   }
   links: {
     rel: string

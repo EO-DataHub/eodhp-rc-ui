@@ -3,6 +3,8 @@ import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 
+const API_URL = import.meta.env.VITE_HUB_BASE_URL
+
 interface FetchItemsParams {
   limit: number
   mapBounds?: MapBounds
@@ -133,6 +135,41 @@ export const fetchUserItems = async (
 
   if (!response.ok) {
     throw new Error('Failed to fetch user items')
+  }
+
+  const data = await response.json()
+  return data.features as Item[]
+}
+
+export const fetchUserItemsByParams = async (
+  workspace: string,
+  collectionId: string,
+  catalogPath: string,
+  workspaceToken: string,
+): Promise<Item[]> => {
+  if (!workspace) {
+    throw new Error('Workspace is required for fetch user items.')
+  }
+  if (!workspaceToken) {
+    throw new Error('Workspace_token is required for fetch user items.')
+  }
+  if (!collectionId) {
+    throw new Error('Collection ID is required for fetch user items.')
+  }
+
+  const url = `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${workspace}/catalogs/commercial-data/catalogs/${catalogPath}/collections/${collectionId}/items`
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${workspaceToken}`,
+    },
+  })
+
+  if (!response.ok) {
+    return []
   }
 
   const data = await response.json()
