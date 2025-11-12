@@ -30,6 +30,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
     const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
     const lastAoiRef = useRef<GeoJSON.Feature | undefined>(undefined)
     const isUpdatingFromTerraDrawRef = useRef(false)
+    const mouseMoveCleanupRef = useRef<(() => void) | null>(null)
 
     useImperativeHandle(ref, () => ({
       delete: () => {
@@ -191,10 +192,6 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
       }
     }, [aoi])
 
-    // Track cursor position for tooltip - needs to be outside useEffect to be accessible in cleanup
-    const handleMouseMoveRef = useRef<((e: MouseEvent) => void) | null>(null)
-    const updateAreaFromCurrentStateRef = useRef<(() => void) | null>(null)
-
     useEffect(() => {
       if (!mapInstance) return
 
@@ -298,29 +295,6 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
           }
         }
 
-        // Track cursor position for tooltip (only during active drawing)
-        const handleMouseMove = (e: MouseEvent) => {
-          if (!onCursorPositionChange) return
-
-          // Only update cursor position when actively drawing a new feature
-          // When viewing/editing existing features, cursor position should be null
-          // so the tooltip appears at the AOI center instead
-          const modeState = terraDraw.getModeState()
-
-          // Only track cursor during active drawing (when drawing a new feature)
-          // Not during selection/editing of existing features
-          if (modeState === 'drawing') {
-            onCursorPositionChange({ x: e.clientX, y: e.clientY })
-          } else {
-            // Clear cursor position when not actively drawing
-            // This ensures the tooltip uses the AOI center position
-            onCursorPositionChange(null)
-          }
-        }
-
-        // Store handler reference for cleanup
-        handleMouseMoveRef.current = handleMouseMove
-
         // Track drawing state and update area during drawing
         const updateDrawingState = (isDrawing: boolean) => {
           if (onDrawingStateChange) {
@@ -338,52 +312,6 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
               }
             }
           }
-        }
-
-        // Function to update area from current TerraDraw state
-        const updateAreaFromCurrentState = () => {
-          try {
-            const modeState = terraDraw.getModeState()
-            if (modeState === 'drawing' || modeState === 'selecting') {
-              const allFeatures = terraDraw.getSnapshot()
-              if (allFeatures.length > 0) {
-                const currentFeature = allFeatures[allFeatures.length - 1]
-                // Only update if feature exists and is valid
-                if (currentFeature?.geometry) {
-                  // Verify the feature ID still exists (defensive check)
-                  if (currentFeature.id !== undefined && verifyFeatureExists(currentFeature.id)) {
-                    notifyArea(currentFeature as GeoJSON.Feature)
-                  } else {
-                    notifyArea(undefined)
-                  }
-                } else {
-                  notifyArea(undefined)
-                }
-              } else {
-                notifyArea(undefined)
-              }
-            }
-          } catch (error) {
-            // Log error but don't spam console - this can happen during normal operations
-            // when features are being removed, but we should still know about unexpected errors
-            // Only log if it's not a "feature not found" type error
-            const errorMessage = error instanceof Error ? error.message : String(error)
-            if (!errorMessage.includes('No feature with this')) {
-              // eslint-disable-next-line no-console
-              console.warn('Unexpected error updating area from TerraDraw state:', error)
-            }
-            notifyArea(undefined)
-          }
-        }
-
-        // Store update area function reference for cleanup
-        updateAreaFromCurrentStateRef.current = updateAreaFromCurrentState
-
-        // Add mouse move listener for cursor tracking
-        if (mapInstance.getContainer()) {
-          mapInstance.getContainer().addEventListener('mousemove', handleMouseMove)
-          // Also update area on mouse move during drawing/editing
-          mapInstance.getContainer().addEventListener('mousemove', updateAreaFromCurrentState)
         }
 
         // Map TerraDraw events to store actions
@@ -588,6 +516,47 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
             notifyArea(currentAoi)
           }
         }
+
+        // single rAF-throttled mousemove listener
+        // - computes area only when actively drawing
+        // - sends cursor position while drawing so the tooltip follows the cursor
+        // - resets cursor position when not drawing so the tooltip returns to AOI centroid
+        const container = mapInstance.getContainer()
+        if (container) {
+          let rafId: number | null = null
+
+          const onMouseMove = (e: MouseEvent) => {
+            if (rafId) return // avoid multiple calls per frame
+            rafId = requestAnimationFrame(() => {
+              rafId = null
+
+              const td = terraDrawRef.current
+              if (!td) return
+
+              const modeState = td.getModeState()
+
+              if (modeState === 'drawing') {
+                onCursorPositionChange?.({ x: e.clientX, y: e.clientY })
+
+                const features = td.getSnapshot()
+                const current = features[features.length - 1]
+                if (current?.geometry) {
+                  onAreaChange?.(calculateAoiArea(current as GeoJSON.Feature))
+                }
+              } else {
+                // when not drawing, tooltip should snap back to AOI centroid
+                onCursorPositionChange?.(null)
+              }
+            })
+          }
+
+          container.addEventListener('mousemove', onMouseMove)
+
+          // Keep cleanup closure so we can remove exactly this listener on unmount
+          mouseMoveCleanupRef.current = () => {
+            container.removeEventListener('mousemove', onMouseMove)
+          }
+        }
       }
 
       if (mapInstance.isStyleLoaded()) {
@@ -597,17 +566,10 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
       }
 
       return () => {
-        // Remove mouse move listeners
-        const container = mapInstance?.getContainer()
-        if (container) {
-          if (handleMouseMoveRef.current) {
-            container.removeEventListener('mousemove', handleMouseMoveRef.current)
-            handleMouseMoveRef.current = null
-          }
-          // Remove area update listener (if it exists)
-          if (updateAreaFromCurrentStateRef.current) {
-            container.removeEventListener('mousemove', updateAreaFromCurrentStateRef.current)
-          }
+        // Remove mouse move listener if registered
+        if (mouseMoveCleanupRef.current) {
+          mouseMoveCleanupRef.current()
+          mouseMoveCleanupRef.current = null
         }
         // Reset callbacks
         if (onCursorPositionChange) {
