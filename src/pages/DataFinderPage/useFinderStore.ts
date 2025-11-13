@@ -3,7 +3,7 @@ import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
-import * as turf from '@turf/turf'
+import bbox from '@turf/bbox'
 import { calculateAoiArea } from '@/library/geoUtils'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -347,7 +347,7 @@ const dataFinderStore = createStore({
       if (!geometry) return context
 
       try {
-        const [minX, minY, maxX, maxY] = turf.bbox(geometry)
+        const [minX, minY, maxX, maxY] = bbox(geometry)
 
         mapInstance.fitBounds([minX, minY, maxX, maxY], {
           padding: 20,

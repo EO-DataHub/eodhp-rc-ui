@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import * as turf from '@turf/turf'
+import centroid from '@turf/centroid'
 
 import Maplibre, { MapRef, NavigationControl } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -55,8 +55,8 @@ export const Map = () => {
     const updatePosition = () => {
       try {
         // Calculate centroid using Turf
-        const centroid = turf.centroid(aoi)
-        const [lng, lat] = centroid.geometry.coordinates
+        const centroidResult = centroid(aoi)
+        const [lng, lat] = centroidResult.geometry.coordinates
 
         // Convert geographic coordinates to pixel coordinates relative to map container
         const point = mapInstance.project([lng, lat])
@@ -100,8 +100,8 @@ export const Map = () => {
     // Trigger position update by recalculating
     const updatePosition = () => {
       try {
-        const centroid = turf.centroid(aoi)
-        const [lng, lat] = centroid.geometry.coordinates
+        const centroidResult = centroid(aoi)
+        const [lng, lat] = centroidResult.geometry.coordinates
         const point = mapInstance.project([lng, lat])
         const container = mapInstance.getContainer()
         const containerRect = container.getBoundingClientRect()
