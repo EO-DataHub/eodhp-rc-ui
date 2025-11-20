@@ -22,7 +22,8 @@ export const useCollections = () => {
   const queries = useQueries({
     queries: catalogs.map((catalog, index) => ({
       queryKey: ['Collections', index],
-      queryFn: () => fetchCollections(catalog),
+      queryFn: () =>
+        fetchCollections(catalog, catalog === 'public/catalogs/ceda-stac-catalogue' ? 50 : 20),
     })),
   })
 
