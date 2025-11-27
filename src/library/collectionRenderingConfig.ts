@@ -31,6 +31,8 @@ interface ServerRenderConfig {
   reference?: boolean
   quicklook_georeference?: string
   auth?: boolean
+  quicklook_bbox?: string
+  remove_black_background?: boolean
 }
 
 interface ServerCollectionConfig {
@@ -122,6 +124,8 @@ function translateServerConfigToCollectionConfig(
           reference: renderConfig.reference,
           quicklook_georeference: renderConfig.quicklook_georeference,
           auth: renderConfig.auth, // <-- Added to include auth property
+          quicklook_bbox: renderConfig.quicklook_bbox,
+          remove_black_background: renderConfig.remove_black_background,
         }
 
         const definedProps = Object.fromEntries(

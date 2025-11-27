@@ -38,6 +38,8 @@ export interface BaseStacRender {
   return_mask?: boolean
   quicklook_georeference?: string
   auth?: boolean
+  quicklook_bbox?: string
+  remove_black_background?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
