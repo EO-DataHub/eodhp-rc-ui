@@ -491,6 +491,20 @@
       }
     }
   },
+  "my-airbus_sar_data": {
+    "renders": {
+      "preview": {
+        "title": "Preview (approximate location)",
+        "assets": [
+          "quicklook"
+        ],
+        "quicklook_georeference": "geometry",
+        "auth": true,
+        "nodata": 0,
+        "remove_black_background": true
+      }
+    }
+  },
   "airbus_phr_data": {
     "renders": {
       "preview": {
@@ -499,6 +513,20 @@
           "quicklook"
         ],
         "quicklook_georeference": "geometry"
+      }
+    }
+  },
+  "my-airbus_phr_data": {
+    "renders": {
+      "preview": {
+        "title": "Preview (approximate location)",
+        "assets": [
+          "quicklook"
+        ],
+        "quicklook_georeference": "geometry",
+        "auth": true,
+        "nodata": 0,
+        "remove_black_background": true
       }
     }
   },
@@ -514,6 +542,21 @@
       }
     }
   },
+  "my-airbus_pneo_data": {
+    "renders": {
+      "preview": {
+        "title": "Preview (approximate location)",
+        "assets": [
+          "quicklook"
+        ],
+        "quicklook_georeference": "geometry",
+        "auth": true,
+        "nodata": 0,
+        "quicklook_bbox": "item.properties.order_options.coordinates",
+        "remove_black_background": true
+      }
+    }
+  },
   "airbus_spot_data": {
     "renders": {
       "preview": {
@@ -522,6 +565,21 @@
           "quicklook"
         ],
         "quicklook_georeference": "geometry"
+      }
+    }
+  },
+  "my-airbus_spot_data": {
+    "renders": {
+      "preview": {
+        "title": "Preview (approximate location)",
+        "assets": [
+          "quicklook"
+        ],
+        "quicklook_georeference": "geometry",
+        "auth": true,
+        "nodata": 0,
+        "quicklook_bbox": "item.properties.order_options.coordinates",
+        "remove_black_background": true
       }
     }
   },

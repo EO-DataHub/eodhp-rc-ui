@@ -1,5 +1,5 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
-import { Item } from '@/types'
+import { Item, StacRender } from '@/types'
 import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
@@ -8,6 +8,7 @@ import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchQuicklookImage } from '../../../library/fetchQuicklookImage'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -100,6 +101,81 @@ function normalizeCoordinates(geometry: Geometry): Coordinates {
 }
 
 /**
+ * Gets a value from an item by following a dot-separated path string.
+ * Path format: "item.properties.order_options.coordinates" (without the "item." prefix)
+ *
+ * @param {Item} item - The STAC item
+ * @param {string} path - The dot-separated path string
+ * @returns {unknown} - The value at the path, or undefined if not found
+ */
+function getValueByPath(item: Item, path: string): unknown {
+  // Remove "item." prefix if present
+  const cleanPath = path.startsWith('item.') ? path.slice(5) : path
+  const parts = cleanPath.split('.')
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let current: any = item
+  for (const part of parts) {
+    if (current === null || current === undefined) {
+      return undefined
+    }
+    current = current[part]
+  }
+  return current
+}
+
+/**
+ * Gets the effective geometry for an item, using quicklook_bbox path if configured,
+ * otherwise falling back to the item's geometry.
+ *
+ * @param {Item} item - The STAC item
+ * @param {StacRender | undefined} render - The render configuration
+ * @returns {Geometry} - The effective geometry to use for rendering
+ */
+function getEffectiveGeometry(item: Item, render?: StacRender): Geometry {
+  // Check if quicklook_bbox path is configured
+  if (render?.quicklook_bbox) {
+    const coordinates = getValueByPath(item, render.quicklook_bbox)
+    if (coordinates && Array.isArray(coordinates) && coordinates.length > 0) {
+      // Convert coordinates to GeoJSON Polygon geometry
+      // coordinates is number[][][] - array of coordinate arrays (polygon)
+      return {
+        type: 'Polygon',
+        coordinates: coordinates,
+      } as Geometry
+    }
+  }
+  // Fall back to item's geometry
+  return item.geometry
+}
+
+/**
+ * Gets the effective bbox for an item, using quicklook_bbox path if configured,
+ * otherwise falling back to the item's bbox.
+ *
+ * @param {Item} item - The STAC item
+ * @param {StacRender | undefined} render - The render configuration
+ * @returns {[number, number, number, number]} - The effective bbox [minlon, minlat, maxlon, maxlat]
+ */
+function getEffectiveBbox(item: Item, render?: StacRender): [number, number, number, number] {
+  // Check if quicklook_bbox path is configured
+  if (render?.quicklook_bbox) {
+    const coordinates = getValueByPath(item, render.quicklook_bbox)
+    if (coordinates && Array.isArray(coordinates) && coordinates.length > 0) {
+      // Convert coordinates to GeoJSON Polygon and calculate bbox
+      const polygon: Geometry = {
+        type: 'Polygon',
+        coordinates: coordinates,
+      }
+      const bbox = turf.bbox(polygon)
+      return [bbox[0], bbox[1], bbox[2], bbox[3]] as [number, number, number, number]
+    }
+  }
+  // Fall back to item's bbox
+  return item.bbox
+}
+
+/**
  * Transforms a geographic bounding box to a local UTM zone, makes it square, and transforms back to geographic coordinates.
  *
  * @param {number[]} bbox - The geographic bounding box [minlon, minlat, maxlon, maxlat].
@@ -148,18 +224,57 @@ function squareAndTransformBoundingBox(bbox: number[]): number[] {
 
 export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   const { render } = item
-  const { token } = useContext(AuthenticationContext)
+  const { token, currentWorkspace } = useContext(AuthenticationContext)
+
+  // Determine if item is from a user collection
+  const isUserCollection = item.isUserCollection === true || item.collection.startsWith('my-')
 
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
   const quicklookUrl = render ? getAssetUrl(item, render.assets[0]) : undefined
 
+  // Check if auth is required - for user collections, always require auth
+  // Also check render.auth flag for non-user collections
+  const requiresAuth = isUserCollection || render?.auth === true
+
+  // Fetch workspace-scoped tokens when item is from user collection and we have workspace and token
+  const needsWorkspaceToken = isUserCollection && !!currentWorkspace && !!token
+
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: needsWorkspaceToken,
+  })
+
+  // Determine which token to use: workspace-scoped token for user collections when available,
+  // otherwise fall back to regular JWT token when auth is required
+  // Always use a token for user collections or when render.auth is true
+  let authToken: string | undefined = undefined
+  if (requiresAuth && token) {
+    if (needsWorkspaceToken && workspaceTokensData) {
+      authToken = workspaceTokensData.access
+    } else {
+      authToken = token
+    }
+  }
+
   const { data: imageUrl } = useQuery<string | undefined>({
-    queryKey: ['quicklook', quicklookUrl, token],
+    queryKey: [
+      'quicklook',
+      quicklookUrl,
+      authToken,
+      currentWorkspace,
+      render?.remove_black_background,
+    ],
     queryFn: () =>
       quicklookUrl
-        ? fetchQuicklookImage({ url: quicklookUrl, token: render?.auth ? token : undefined })
+        ? fetchQuicklookImage({
+            url: quicklookUrl,
+            token: authToken,
+            removeBlackBackground: render?.remove_black_background === true,
+          })
         : Promise.resolve(undefined),
-    enabled: !!(render && quicklookUrl && (!render.auth || token)),
+    enabled: !!(render && quicklookUrl && (!requiresAuth || !!authToken)),
   })
 
   // Revoke object URL when imageUrl changes or component unmounts
@@ -173,17 +288,21 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   if (!render?.quicklook_georeference) return null
   if (typeof imageUrl !== 'string') return null
 
+  // Get effective geometry and bbox (use quicklook_bbox path if configured, otherwise use item geometry/bbox)
+  const effectiveGeometry = getEffectiveGeometry(item, render)
+  const effectiveBbox = getEffectiveBbox(item, render)
+
   let coordinates: Coordinates
 
   if (render.quicklook_georeference === 'bbox') {
     coordinates = [
-      [item.bbox[0], item.bbox[3]],
-      [item.bbox[2], item.bbox[3]],
-      [item.bbox[2], item.bbox[1]],
-      [item.bbox[0], item.bbox[1]],
+      [effectiveBbox[0], effectiveBbox[3]],
+      [effectiveBbox[2], effectiveBbox[3]],
+      [effectiveBbox[2], effectiveBbox[1]],
+      [effectiveBbox[0], effectiveBbox[1]],
     ] as Coordinates
   } else if (render.quicklook_georeference === 'bbox-squared') {
-    const bbox = squareAndTransformBoundingBox(item.bbox)
+    const bbox = squareAndTransformBoundingBox(effectiveBbox)
     coordinates = [
       [bbox[0], bbox[3]],
       [bbox[2], bbox[3]],
@@ -191,7 +310,7 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
       [bbox[0], bbox[1]],
     ] as Coordinates
   } else if (render.quicklook_georeference === 'geometry') {
-    coordinates = normalizeCoordinates(item.geometry)
+    coordinates = normalizeCoordinates(effectiveGeometry)
   } else {
     return null
   }

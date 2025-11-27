@@ -356,7 +356,28 @@ const dataFinderStore = createStore({
     },
     setCollection: (context, event: { collection: Collection }) => {
       const collection = event.collection
-      const collectionConfig = collectionRenderingConfig[collection.id]
+      // For user collections, prioritize 'my-' + collection.id config
+      // since user collections from API have id without 'my-' prefix but config uses 'my-' prefix
+      const isUserCollectionId = collection.id.startsWith('my-')
+      // Check if it's a user collection - check collection property first, then context
+      // Also check if the collection ID matches a user collection pattern (items have 'my-' prefix in their collection property)
+      const isUserCollection = collection.isUserCollection === true || context.isUserCollection
+      const userCollectionConfigKey = isUserCollectionId ? collection.id : `my-${collection.id}`
+
+      // For user collections, always try the 'my-' prefixed config first
+      // This handles the case where setCollection is called before setIsUserCollection
+      let collectionConfig
+      if (isUserCollection || collectionRenderingConfig[userCollectionConfigKey]) {
+        // If it's a user collection OR if the 'my-' config exists, prioritize that
+        collectionConfig =
+          collectionRenderingConfig[userCollectionConfigKey] ??
+          collectionRenderingConfig[collection.id]
+      } else {
+        // Otherwise use the regular collection.id lookup
+        collectionConfig =
+          collectionRenderingConfig[collection.id] ??
+          collectionRenderingConfig[userCollectionConfigKey]
+      }
 
       const baseRenders = collectionConfig?.renders ?? {}
       const renders = {
