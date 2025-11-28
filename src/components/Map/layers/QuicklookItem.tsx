@@ -3,6 +3,7 @@ import { Item, StacRender } from '@/types'
 import { getAssetUrl } from '@/library/collectionRenderingConfig'
 import simplify from '@turf/simplify'
 import centroid from '@turf/centroid'
+import bbox from '@turf/bbox'
 import { Geometry } from 'geojson'
 import proj4 from 'proj4'
 import { useEffect, useContext } from 'react'
@@ -172,8 +173,13 @@ function getEffectiveBbox(item: Item, render?: StacRender): [number, number, num
         type: 'Polygon',
         coordinates: coordinates,
       }
-      const bbox = turf.bbox(polygon)
-      return [bbox[0], bbox[1], bbox[2], bbox[3]] as [number, number, number, number]
+      const boundingBox = bbox(polygon)
+      return [boundingBox[0], boundingBox[1], boundingBox[2], boundingBox[3]] as [
+        number,
+        number,
+        number,
+        number,
+      ]
     }
   }
   // Fall back to item's bbox
