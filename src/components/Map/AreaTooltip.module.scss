@@ -1,0 +1,17 @@
+.tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  background-color: transparent; /* No background */
+  color: #333; /* Dark grey/black text */
+  padding: 8px 12px;
+  border: none; /* No border */
+  border-radius: 0;
+  font-family: var(--default-font-family);
+  font-size: var(--Typography-Font-size-1, 12px);
+  font-weight: normal; /* Normal weight, not bold */
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10000;
+}
+
