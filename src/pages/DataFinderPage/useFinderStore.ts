@@ -3,7 +3,8 @@ import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
-import * as turf from '@turf/turf'
+import bbox from '@turf/bbox'
+import { calculateAoiArea } from '@/library/geoUtils'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
 const PERSISTED_CONTEXT_KEYS = ['pinnedItems']
@@ -37,6 +38,7 @@ interface AppContext {
   drawInstance?: MapboxDraw
   drawMode?: DrawMode
   aoi?: GeoJSON.Feature
+  aoiArea: number | null
   mapBounds?: MapBounds
   queryFilter?: object
   page: number
@@ -63,6 +65,7 @@ const dataFinderStore = createStore({
     drawInstance: undefined,
     drawMode: undefined,
     aoi: undefined,
+    aoiArea: null,
     mapBounds: undefined,
     queryFilter: undefined,
     page: 0,
@@ -196,28 +199,29 @@ const dataFinderStore = createStore({
         drawInstance: event.drawInstance,
       }
     },
-    drawCreateOrUpdate: (context, event: { mapEvent: DrawCreateEvent }) => {
-      // If draw instance is not loaded, do nothing
-      if (!context.drawInstance) return context
-
+    drawCreateOrUpdate: (
+      context,
+      event: { mapEvent: DrawCreateEvent | { features: GeoJSON.Feature[] } },
+    ) => {
       const { features } = event.mapEvent
       const aoi = features[0]
+      const calculatedArea = calculateAoiArea(aoi)
 
       localStorage.setItem('aoiData', JSON.stringify(aoi))
 
       return {
         ...context,
         aoi,
+        aoiArea: calculatedArea,
       }
     },
     drawDelete: (context) => {
-      const { drawInstance } = context
       localStorage.removeItem('aoiData')
-      drawInstance!.deleteAll()
 
       return {
         ...context,
         aoi: undefined,
+        aoiArea: null,
       }
     },
     drawModeChange: (context, event: { mapEvent: DrawModeChangeEvent }) => {
@@ -343,7 +347,7 @@ const dataFinderStore = createStore({
       if (!geometry) return context
 
       try {
-        const [minX, minY, maxX, maxY] = turf.bbox(geometry)
+        const [minX, minY, maxX, maxY] = bbox(geometry)
 
         mapInstance.fitBounds([minX, minY, maxX, maxY], {
           padding: 20,
@@ -426,8 +430,14 @@ const dataFinderStore = createStore({
       }
     },
     storeAoi: (context, event: { aoi: GeoJSON.Feature | undefined }) => {
-      localStorage.setItem('aoi', JSON.stringify(event.aoi))
-      return { ...context, aoi: event.aoi }
+      if (event.aoi) {
+        const calculatedArea = calculateAoiArea(event.aoi)
+        localStorage.setItem('aoiData', JSON.stringify(event.aoi))
+        return { ...context, aoi: event.aoi, aoiArea: calculatedArea }
+      } else {
+        localStorage.removeItem('aoiData')
+        return { ...context, aoi: undefined, aoiArea: null }
+      }
     },
   },
 })

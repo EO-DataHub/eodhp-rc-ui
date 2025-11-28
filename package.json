@@ -73,6 +73,8 @@
     "rehype-mathjax": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
+    "terra-draw": "^1.18.1",
+    "terra-draw-maplibre-gl-adapter": "^1.2.2",
     "use-debounce": "^10.0.1",
     "utif": "^3.1.0",
     "vega": "^5.28.0",

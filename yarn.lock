@@ -12312,6 +12312,16 @@ systemjs@^6.15.1:
   resolved "https://registry.npmjs.org/systemjs/-/systemjs-6.15.1.tgz"
   integrity sha512-Nk8c4lXvMB98MtbmjX7JwJRgJOL8fluecYCfCeYBznwmpOs8Bf15hLM6z4z71EDAhQVrQrI+wt1aLWSXZq+hXA==
 
+terra-draw-maplibre-gl-adapter@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/terra-draw-maplibre-gl-adapter/-/terra-draw-maplibre-gl-adapter-1.2.2.tgz#ebdaf7b5ce0445be4eba72a58a65ee35e9ab53cc"
+  integrity sha512-Q5OtRWHbqrx6wSQDJOT/UiMh+dT3834e3dU7KalC33pUa8YT0VQ4XYE8OsoJOeIFUdKig/5bk3w0TvNuYMl+3Q==
+
+terra-draw@^1.18.1:
+  version "1.18.1"
+  resolved "https://registry.yarnpkg.com/terra-draw/-/terra-draw-1.18.1.tgz#f08c78f5d157846475115e5fa6e6f1d5108d96c8"
+  integrity sha512-8Bw4jHGdW5lzrlfKNYa2k10dirHs/nIkLRDMLSs8OD7IoZiq59cwNEjQIuXggxIZUTfxVwEPytakcdrmZyLADA==
+
 terser@^5.36.0:
   version "5.39.0"
   resolved "https://registry.npmjs.org/terser/-/terser-5.39.0.tgz"
