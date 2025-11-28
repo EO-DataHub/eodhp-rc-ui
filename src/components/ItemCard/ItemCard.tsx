@@ -31,6 +31,7 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
+import { isOrderItem } from '@/library/orderUtils'
 
 interface ItemCardProps {
   item: Item
@@ -171,11 +172,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const [itemRender, setItemRender] = useState(collectionRender)
 
   // Check if the collection requires authentication for thumbnails
+  // Also require auth for purchased items
   const requiresThumbnailAuth = useMemo(() => {
     const collectionConfig = collectionRenderingConfig[item.collection]
     const requiresAuth = collectionConfig?.renders?.preview?.auth === true
-    return requiresAuth
-  }, [item.collection])
+    const isPurchasedItem = isOrderItem(item)
+    return requiresAuth || isPurchasedItem
+  }, [item])
 
   // Check if pin button should be disabled
   const isPinButtonDisabled = useMemo(() => {
@@ -314,12 +317,22 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       >
         {item.assets?.thumbnail?.href?.endsWith('.tif') ||
         item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
-          <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+          requiresThumbnailAuth ? (
+            <AuthenticatedThumbnail
+              thumbnailUrl={item.assets?.thumbnail?.href || ''}
+              className={styles.thumbnail}
+              requiresAuth={requiresThumbnailAuth}
+              isPurchasedItem={isOrderItem(item)}
+            />
+          ) : (
+            <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+          )
         ) : (
           <AuthenticatedThumbnail
             thumbnailUrl={item.assets?.thumbnail?.href || ''}
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
+            isPurchasedItem={isOrderItem(item)}
           />
         )}
         <div className={styles.overlay}>
