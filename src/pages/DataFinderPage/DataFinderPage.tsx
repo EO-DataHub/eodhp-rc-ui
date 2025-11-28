@@ -26,7 +26,8 @@ export const DataFinderPage: React.FC = () => {
   const collectionQueries = useQueries({
     queries: catalogs.map((catalog) => ({
       queryKey: ['Collections', catalog],
-      queryFn: () => fetchCollections(catalog),
+      queryFn: () =>
+        fetchCollections(catalog, catalog === 'public/catalogs/ceda-stac-catalogue' ? 50 : 20),
     })),
     combine: (results) => ({
       isFetched: results.every((result) => result.isFetched),
