@@ -32,6 +32,6 @@ dist-ssr
 .env
 .env.*.local
 
-.cursor/*
-.specify/*
-specs/*
+.cursor
+.specify
+specs

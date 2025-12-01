@@ -1,8 +1,7 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
 import { getAssetUrl } from '@/library/collectionRenderingConfig'
-import simplify from '@turf/simplify'
-import centroid from '@turf/centroid'
+import * as turf from '@turf/turf'
 import { Geometry } from 'geojson'
 import proj4 from 'proj4'
 import { useEffect, useContext } from 'react'
@@ -19,13 +18,13 @@ function findSkewedParallelogram(geometry: Geometry): Coordinates {
 
   // Simplify the geometry if necessary
   if (geometry.coordinates[0].length > 5) {
-    geometry = simplify(geometry, { tolerance: 0.001, highQuality: true, mutate: true })
+    geometry = turf.simplify(geometry, { tolerance: 0.001, highQuality: true, mutate: true })
   }
 
   const coordinates = geometry.coordinates[0].slice(0, -1) // Remove the last point (duplicate of first)
 
   // Calculate the centroid
-  const centroidResult = centroid(geometry).geometry.coordinates
+  const centroid = turf.centroid(geometry).geometry.coordinates
 
   // Find the four corners of the polygon that best represent its shape
   // We'll find the points that are farthest from the centroid in each quadrant
@@ -33,8 +32,8 @@ function findSkewedParallelogram(geometry: Geometry): Coordinates {
 
   // Divide points into quadrants relative to the centroid
   for (const coord of coordinates) {
-    const dx = coord[0] - centroidResult[0]
-    const dy = coord[1] - centroidResult[1]
+    const dx = coord[0] - centroid[0]
+    const dy = coord[1] - centroid[1]
 
     if (dx >= 0 && dy >= 0)
       quadrants[0].push(coord) // Top-right
@@ -52,18 +51,14 @@ function findSkewedParallelogram(geometry: Geometry): Coordinates {
     if (quadrant.length === 0) {
       // If a quadrant is empty, create a point in that direction
       const angle = (corners.length * Math.PI) / 2
-      corners.push([
-        centroidResult[0] + Math.cos(angle) * 0.01,
-        centroidResult[1] + Math.sin(angle) * 0.01,
-      ])
+      corners.push([centroid[0] + Math.cos(angle) * 0.01, centroid[1] + Math.sin(angle) * 0.01])
     } else {
       // Find the point farthest from the centroid
       let maxDist = 0
       let farthestPoint = quadrant[0]
 
       for (const point of quadrant) {
-        const dist =
-          Math.pow(point[0] - centroidResult[0], 2) + Math.pow(point[1] - centroidResult[1], 2)
+        const dist = Math.pow(point[0] - centroid[0], 2) + Math.pow(point[1] - centroid[1], 2)
         if (dist > maxDist) {
           maxDist = dist
           farthestPoint = point
