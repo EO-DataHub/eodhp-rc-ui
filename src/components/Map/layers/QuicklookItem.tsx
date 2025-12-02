@@ -238,7 +238,8 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
 
   // Determine if item is from a user collection
-  const isUserCollection = item.isUserCollection === true || item.collection.startsWith('my-')
+  const isUserCollection =
+  item.isUserCollection === true || item.collection?.startsWith('my-') === true
 
   // The quicklook asset key is configurable: render.assets can be ["quicklook"] or ["quicklook"] etc.
   const quicklookUrl = render ? getAssetUrl(item, render.assets[0]) : undefined
