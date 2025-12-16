@@ -9,6 +9,7 @@ export interface KeycloakUserInfo {
   given_name?: string
   family_name?: string
   email?: string
+  member_groups?: string[]
 }
 
 interface AuthenticationContextValue {
@@ -24,6 +25,11 @@ interface AuthenticationContextValue {
   currentWorkspace?: string
   updateCurrentWorkspace: (workspace: string) => void
   clearCurrentWorkspace: () => void
+  selectedWorkspace?: string
+  setSelectedWorkspace: (workspace: string) => void
+  availableWorkspaces: string[]
+  showWorkspaceModal: boolean
+  setShowWorkspaceModal: (show: boolean) => void
 }
 
 export const AuthenticationContext = createContext<AuthenticationContextValue>({
@@ -37,4 +43,12 @@ export const AuthenticationContext = createContext<AuthenticationContextValue>({
   updateCurrentWorkspace: () => {},
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   clearCurrentWorkspace: () => {},
+  setSelectedWorkspace: () => {
+    throw new Error('setSelectedWorkspace must be used within an AuthenticationContextProvider')
+  },
+  availableWorkspaces: [],
+  showWorkspaceModal: false,
+  setShowWorkspaceModal: () => {
+    throw new Error('setShowWorkspaceModal must be used within an AuthenticationContextProvider')
+  },
 })

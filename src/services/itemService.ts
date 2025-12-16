@@ -115,6 +115,7 @@ export const fetchItem = async ({ collectionUrl, itemId }: FetchItemParams): Pro
 export const fetchUserItems = async (
   selectedCollection: Collection,
   workspace_token: string,
+  limit = 10000,
 ): Promise<Item[]> => {
   const itemsLink = selectedCollection.links.find((link) => link.rel === 'items')?.href
   if (!itemsLink) {
@@ -124,21 +125,46 @@ export const fetchUserItems = async (
     throw new Error('Workspace_token is required for fetch user items.')
   }
 
-  const response = await fetch(itemsLink, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${workspace_token}`,
-    },
-  })
+  const allItems: Item[] = []
+  let nextUrl: string | null = itemsLink
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch user items')
+  // Add limit parameter to the initial URL
+  const url = new URL(nextUrl, window.location.origin)
+  url.searchParams.set('limit', limit.toString())
+  nextUrl = url.toString()
+
+  while (nextUrl && allItems.length < limit) {
+    const response: Response = await fetch(nextUrl, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${workspace_token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user items')
+    }
+
+    const data: { features: Item[]; links?: { rel: string; href: string }[] } =
+      await response.json()
+    const features = data.features
+    allItems.push(...features)
+
+    // Check for pagination link
+    const nextLink: { rel: string; href: string } | undefined = data.links?.find(
+      (link: { rel: string }) => link.rel === 'next',
+    )
+    if (nextLink && allItems.length < limit) {
+      nextUrl = nextLink.href
+    } else {
+      nextUrl = null
+    }
   }
 
-  const data = await response.json()
-  return data.features as Item[]
+  // Return items up to the limit
+  return allItems.slice(0, limit)
 }
 
 export const fetchUserItemsByParams = async (
