@@ -332,14 +332,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           </Tooltip>
         </div>
       </Flex>
-      <Flex direction="column" p="2" flexGrow={'1'} justify="between">
-        <Flex>
-          <Flex direction="column" flexGrow={'1'}>
-            <Flex direction="column" justify="between">
-              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+      <Flex direction="column" p="2" flexGrow={'1'} justify="between" style={{ minWidth: 0 }}>
+        <Flex style={{ minWidth: 0 }}>
+          <Flex direction="column" flexGrow={'1'} style={{ minWidth: 0 }}>
+            <Flex direction="column" justify="between" style={{ minWidth: 0 }}>
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: '100%' }}>
                 {item.collectionName}
               </Text>
-              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: 220 }}>
+              <Text weight="bold" size="2" className={styles.text} style={{ maxWidth: '100%' }}>
                 {cardTitle}
               </Text>
             </Flex>
@@ -372,7 +372,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
-        <Flex justify={isPinnedCard ? 'between' : 'end'} gap="2" align="center">
+        <Flex
+          justify={isPinnedCard ? 'between' : 'end'}
+          gap="2"
+          align="center"
+          style={{ minWidth: 0, flexShrink: 0 }}
+        >
           {isPinnedCard && item.render && (
             <Flex>
               <Text size="1" className={styles.text}>
