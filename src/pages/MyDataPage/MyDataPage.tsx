@@ -79,12 +79,24 @@ export const MyDataPage: React.FC = () => {
   // Generate filter options from orders data
   const workspaceOptions = useMemo(() => {
     if (!orders) return []
-    return ['all', ...new Set(orders.map((o) => o.workspace))]
+    return [
+      'all',
+      ...new Set(
+        orders.map((o) => o.workspace).filter((w): w is string => Boolean(w) && w.trim() !== ''),
+      ),
+    ]
   }, [orders])
 
   const collectionOptions = useMemo(() => {
     if (!orders) return []
-    return ['all', ...new Set(orders.map((o) => o.collectionTitle))]
+    return [
+      'all',
+      ...new Set(
+        orders
+          .map((o) => o.collectionTitle)
+          .filter((c): c is string => Boolean(c) && c.trim() !== ''),
+      ),
+    ]
   }, [orders])
 
   const filteredOrders = useMemo(() => {
