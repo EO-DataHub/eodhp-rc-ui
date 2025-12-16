@@ -129,7 +129,12 @@ export const fetchUserItems = async (
   let nextUrl: string | null = itemsLink
 
   // Add limit parameter to the initial URL
-  const url = new URL(nextUrl, window.location.origin)
+  // new URL() handles both absolute URLs (ignores base) and relative URLs (uses base)
+  const baseUrl =
+    itemsLink.startsWith('http://') || itemsLink.startsWith('https://')
+      ? itemsLink
+      : `${window.location.protocol}//${window.location.host}${itemsLink}`
+  const url = new URL(baseUrl)
   url.searchParams.set('limit', limit.toString())
   nextUrl = url.toString()
 

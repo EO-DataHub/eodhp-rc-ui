@@ -9,6 +9,7 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useEffect } from 'react'
 
 export const MAX_TOTAL_ITEMS = 100
+export const MAX_USER_COLLECTION_ITEMS = 10000
 export const PAGE_SIZE = 10
 
 export const useItemsQuery = () => {
@@ -37,7 +38,7 @@ export const useItemsQuery = () => {
 
   const fetchFunction = () => {
     return isUserCollection && collection
-      ? fetchUserItems(collection, workspaceTokensData!.access)
+      ? fetchUserItems(collection, workspaceTokensData!.access, MAX_USER_COLLECTION_ITEMS)
       : fetchItems({
           limit: MAX_TOTAL_ITEMS,
           mapBounds: mapBounds,
