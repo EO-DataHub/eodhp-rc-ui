@@ -31,6 +31,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
     const lastAoiRef = useRef<GeoJSON.Feature | undefined>(undefined)
     const isUpdatingFromTerraDrawRef = useRef(false)
     const mouseMoveCleanupRef = useRef<(() => void) | null>(null)
+    const styleDataCleanupRef = useRef<(() => void) | null>(null)
 
     useImperativeHandle(ref, () => ({
       delete: () => {
@@ -191,6 +192,42 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
         }, 0)
       }
     }, [aoi])
+
+    // Helper to move TerraDraw layers to the top of the layer stack
+    const moveTerraDrawLayersToTop = (map: maplibregl.Map) => {
+      try {
+        const style = map.getStyle()
+        if (!style?.layers) return
+
+        // TerraDraw layers typically have IDs starting with "terra-draw-"
+        // or contain "terra-draw" in their ID, or start with "td-"
+        const terraDrawLayerIds: string[] = []
+
+        // Collect all layer IDs and identify TerraDraw layers
+        for (const layer of style.layers) {
+          if (layer.id.includes('terra-draw') || layer.id.startsWith('td-')) {
+            terraDrawLayerIds.push(layer.id)
+          }
+        }
+
+        // Move each TerraDraw layer to the top
+        // We move them in reverse order to maintain their relative order
+        for (let i = terraDrawLayerIds.length - 1; i >= 0; i--) {
+          const layerId = terraDrawLayerIds[i]
+          try {
+            // Move to the top (before undefined means move to top)
+            map.moveLayer(layerId)
+          } catch (error) {
+            // Layer might not exist yet or already be at top
+            // eslint-disable-next-line no-console
+            console.debug('Could not move TerraDraw layer:', layerId, error)
+          }
+        }
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.warn('Error moving TerraDraw layers to top:', error)
+      }
+    }
 
     useEffect(() => {
       if (!mapInstance) return
@@ -392,6 +429,12 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
 
         terraDraw.on('change', (ids, changeType) => {
           try {
+            // Ensure TerraDraw layers are always on top after any change
+            // Use setTimeout to ensure layers are created before moving
+            void setTimeout(() => {
+              moveTerraDrawLayersToTop(mapInstance)
+            }, 0)
+
             if (changeType === 'delete' || ids.length === 0) {
               // Check if there are still features remaining in TerraDraw
               // This prevents clearing the store when old features are removed during finish
@@ -423,6 +466,32 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
               // Feature was updated (editing, moving, or created)
               // Only update if we're not already processing a finish event
               if (!isUpdatingFromTerraDrawRef.current) {
+                // If this is a create event and we're in drawing mode, clear any existing AOI first
+                if (changeType === 'create') {
+                  const modeState = terraDraw.getModeState()
+                  if (modeState === 'drawing') {
+                    // Clear existing features before creating new one
+                    const existingIds = getExistingFeatureIds()
+                    if (existingIds.length > 0) {
+                      // Verify each ID still exists before removal
+                      const idsToRemove = existingIds.filter((existingId) =>
+                        verifyFeatureExists(existingId),
+                      )
+                      if (idsToRemove.length > 0) {
+                        terraDraw.removeFeatures(idsToRemove)
+                        // Also clear from store
+                        isUpdatingFromTerraDrawRef.current = true
+                        lastAoiRef.current = undefined
+                        notifyArea(undefined)
+                        dataFinderStore.send({ type: 'drawDelete' })
+                        void setTimeout(() => {
+                          isUpdatingFromTerraDrawRef.current = false
+                        }, 50)
+                      }
+                    }
+                  }
+                }
+
                 // Verify feature IDs exist before trying to access them
                 const validIds = ids.filter((id) => verifyFeatureExists(id))
 
@@ -481,6 +550,12 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
           onCursorPositionChange(null)
         }
         terraDrawRef.current = terraDraw
+
+        // Move TerraDraw layers to the top after initialization
+        // Use setTimeout to ensure layers are created
+        void setTimeout(() => {
+          moveTerraDrawLayersToTop(mapInstance)
+        }, 100)
 
         // Restore AOI from localStorage if not already in store
         // (storeAoi might have already been called by RestoreAOIDialog)
@@ -557,6 +632,29 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
             container.removeEventListener('mousemove', onMouseMove)
           }
         }
+
+        // Listen for style changes to ensure TerraDraw layers stay on top
+        // This handles cases where item layers are added dynamically
+        let styleDataTimeout: ReturnType<typeof setTimeout> | null = null
+        const onStyleData = () => {
+          // Debounce to avoid excessive calls
+          if (styleDataTimeout) {
+            clearTimeout(styleDataTimeout)
+          }
+          styleDataTimeout = setTimeout(() => {
+            moveTerraDrawLayersToTop(mapInstance)
+          }, 100)
+        }
+
+        mapInstance.on('styledata', onStyleData)
+
+        // Store cleanup function for style data listener
+        styleDataCleanupRef.current = () => {
+          if (styleDataTimeout) {
+            clearTimeout(styleDataTimeout)
+          }
+          mapInstance.off('styledata', onStyleData)
+        }
       }
 
       if (mapInstance.isStyleLoaded()) {
@@ -570,6 +668,11 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
         if (mouseMoveCleanupRef.current) {
           mouseMoveCleanupRef.current()
           mouseMoveCleanupRef.current = null
+        }
+        // Clean up style data listener
+        if (styleDataCleanupRef.current) {
+          styleDataCleanupRef.current()
+          styleDataCleanupRef.current = null
         }
         // Reset callbacks
         if (onCursorPositionChange) {
@@ -628,9 +731,21 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
         if (mode === 'rectangle') {
           terraDraw.setMode('rectangle')
           onDrawingStateChange?.(true)
+          // Ensure TerraDraw layers are on top when switching to drawing mode
+          if (mapInstance) {
+            void setTimeout(() => {
+              moveTerraDrawLayersToTop(mapInstance)
+            }, 50)
+          }
         } else if (mode === 'polygon') {
           terraDraw.setMode('polygon')
           onDrawingStateChange?.(true)
+          // Ensure TerraDraw layers are on top when switching to drawing mode
+          if (mapInstance) {
+            void setTimeout(() => {
+              moveTerraDrawLayersToTop(mapInstance)
+            }, 50)
+          }
         } else {
           // Return to select mode when mode is null (default mode for selection/editing)
           terraDraw.setMode('select')
@@ -645,7 +760,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
         // eslint-disable-next-line no-console
         console.warn('Error changing TerraDraw mode:', error, { requestedMode: mode })
       }
-    }, [mode, onDrawingStateChange, onCursorPositionChange])
+    }, [mode, mapInstance, onDrawingStateChange, onCursorPositionChange])
 
     return null
   },
