@@ -22,18 +22,38 @@ interface TerraDrawControlProps {
 export interface TerraDrawControlRef {
   delete: () => void
   add: (feature: GeoJSON.Feature) => void
+  isDrawing: () => boolean
 }
 
 export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControlProps>(
   ({ mapInstance, mode, onAreaChange, onCursorPositionChange, onDrawingStateChange }, ref) => {
     const terraDrawRef = useRef<TerraDraw | null>(null)
+    const modeRef = useRef<'rectangle' | 'polygon' | null>(mode ?? null)
     const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
     const lastAoiRef = useRef<GeoJSON.Feature | undefined>(undefined)
     const isUpdatingFromTerraDrawRef = useRef(false)
     const mouseMoveCleanupRef = useRef<(() => void) | null>(null)
     const styleDataCleanupRef = useRef<(() => void) | null>(null)
 
+    // Update mode ref when mode changes
+    useEffect(() => {
+      modeRef.current = mode ?? null
+    }, [mode])
+
     useImperativeHandle(ref, () => ({
+      isDrawing: () => {
+        if (!terraDrawRef.current) return false
+        try {
+          const modeState = terraDrawRef.current.getModeState()
+          // Check if TerraDraw is actively drawing
+          if (modeState === 'drawing') return true
+          // Also check if we're in drawing mode (rectangle/polygon) - TerraDraw might be in 'select'
+          // state after finishing, but we're still ready to draw another shape
+          return modeRef.current === 'rectangle' || modeRef.current === 'polygon'
+        } catch {
+          return false
+        }
+      },
       delete: () => {
         if (!terraDrawRef.current) return
 
@@ -270,7 +290,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
               },
               styles: {
                 selectedPolygonColor: '#000000', // Dark color for tint
-                selectedPolygonFillOpacity: 0.15, // Slight dark tint
+                selectedPolygonFillOpacity: 0, // No fill, only outline
                 selectedPolygonOutlineColor: '#D73027',
                 selectedPolygonOutlineWidth: 2,
                 selectionPointColor: '#D73027',
@@ -288,7 +308,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
                 fillColor: '#000000', // Dark color for tint
                 outlineColor: '#D73027',
                 outlineWidth: 2,
-                fillOpacity: 0.15, // Slight dark tint
+                fillOpacity: 0, // No fill, only outline
               },
             }),
             new TerraDrawPolygonMode({
@@ -296,7 +316,7 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
                 fillColor: '#000000', // Dark color for tint
                 outlineColor: '#D73027',
                 outlineWidth: 2,
-                fillOpacity: 0.15, // Slight dark tint
+                fillOpacity: 0, // No fill, only outline
               },
             }),
           ],
@@ -470,6 +490,10 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
                 if (changeType === 'create') {
                   const modeState = terraDraw.getModeState()
                   if (modeState === 'drawing') {
+                    // Set drawing state to true when starting a new shape
+                    // This ensures tooltip shows for subsequent shapes without switching tools
+                    updateDrawingState(true)
+
                     // Clear existing features before creating new one
                     const existingIds = getExistingFeatureIds()
                     if (existingIds.length > 0) {

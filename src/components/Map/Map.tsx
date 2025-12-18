@@ -29,6 +29,7 @@ export const Map = () => {
   const terraDrawControlRef = useRef<{
     delete: () => void
     add: (feature: GeoJSON.Feature) => void
+    isDrawing: () => boolean
   } | null>(null)
   const { pageItems } = useItemsQuery()
 
@@ -37,13 +38,34 @@ export const Map = () => {
     JSON.parse(localStorage.getItem(MAP_STORAGE_KEY) ?? 'null') || DEFAULT_MAP_VIEW
   const [viewState, setViewState] = useState(savedViewState)
   const [drawMode, setDrawMode] = useState<'rectangle' | 'polygon' | null>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
   const [realTimeArea, setRealTimeArea] = useState<number | null>(null)
   const [aoiCenterPosition, setAoiCenterPosition] = useState<{ x: number; y: number } | null>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const aoiArea = useSelector(dataFinderStore, (state) => state.context.aoiArea)
+
+  // Derive isDrawing from TerraDraw's actual state
+  useEffect(() => {
+    if (!terraDrawControlRef.current) {
+      setIsDrawing(false)
+      return
+    }
+
+    const checkDrawingState = () => {
+      const currentlyDrawing = terraDrawControlRef.current?.isDrawing() ?? false
+      setIsDrawing(currentlyDrawing)
+    }
+
+    // Check immediately
+    checkDrawingState()
+
+    // Check periodically to keep in sync with TerraDraw's state
+    const interval = setInterval(checkDrawingState, 100)
+
+    return () => clearInterval(interval)
+  }, [terraDrawControlRef, drawMode])
 
   // Calculate AOI centroid position on screen
   useEffect(() => {
@@ -143,8 +165,8 @@ export const Map = () => {
 
   // Determine which area to display (real-time during drawing/editing, or stored area)
   const displayArea = isDrawing ? realTimeArea : aoiArea
-  // Show tooltip whenever AOI exists and area is available
-  const showTooltip = Boolean(displayArea !== null && aoi !== null)
+  // Show tooltip only during active drawing, not for completed shapes
+  const showTooltip = Boolean(displayArea !== null && aoi !== null && isDrawing)
   // Always use AOI center position for tooltip (never follow cursor)
   const tooltipPosition = aoiCenterPosition
 
@@ -174,7 +196,6 @@ export const Map = () => {
           mapInstance={mapInstance ?? null}
           mode={drawMode}
           onAreaChange={setRealTimeArea}
-          onDrawingStateChange={setIsDrawing}
         />
         <PinnedItemsLayer />
         <QueryItemsLayer queryItems={pageItems} />
@@ -187,7 +208,12 @@ export const Map = () => {
         hasAoi={!!aoi}
         aoi={aoi ?? null}
       />
-      <AreaTooltip area={displayArea} position={tooltipPosition} visible={showTooltip} />
+      <AreaTooltip
+        area={displayArea}
+        position={tooltipPosition}
+        visible={showTooltip}
+        isDrawing={isDrawing}
+      />
       <RestoreAOIDialog />
     </>
   )

@@ -6,6 +6,7 @@ interface AreaTooltipProps {
   area: number | null
   position: { x: number; y: number } | null
   visible: boolean
+  isDrawing?: boolean
 }
 
 /**
@@ -20,7 +21,7 @@ function formatArea(area: number): string {
   return `${Math.round(area)} km²`
 }
 
-export const AreaTooltip = ({ area, position, visible }: AreaTooltipProps) => {
+export const AreaTooltip = ({ area, position, visible, isDrawing = false }: AreaTooltipProps) => {
   if (!visible || !position || area === null) {
     return null
   }
@@ -28,13 +29,14 @@ export const AreaTooltip = ({ area, position, visible }: AreaTooltipProps) => {
   return createPortal(
     <div
       className={styles.tooltip}
+      data-drawing={isDrawing}
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
         transform: 'translate(-50%, -100%)',
       }}
     >
-      <Text size="1" weight="regular">
+      <Text size="1" weight={isDrawing ? 'bold' : 'regular'}>
         {formatArea(area)}
       </Text>
     </div>,
