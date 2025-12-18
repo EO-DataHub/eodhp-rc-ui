@@ -12,7 +12,7 @@
   text-align: center;
   white-space: nowrap;
   pointer-events: none;
-  z-index: 10000;
+  z-index: 5; // Same as toolbar, lower than side panel (10)
 
   /* Enhanced styling when drawing */
   &[data-drawing='true'] {

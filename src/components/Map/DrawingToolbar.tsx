@@ -50,7 +50,7 @@ export const DrawingToolbar = ({
         position: 'absolute',
         top: '10px',
         right: '10px',
-        zIndex: 1000,
+        zIndex: 5, // Lower than side panel (10) but above map
         backgroundColor: 'white',
         borderRadius: '4px',
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',

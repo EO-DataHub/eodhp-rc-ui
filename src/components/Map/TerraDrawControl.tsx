@@ -45,11 +45,10 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
         if (!terraDrawRef.current) return false
         try {
           const modeState = terraDrawRef.current.getModeState()
-          // Check if TerraDraw is actively drawing
-          if (modeState === 'drawing') return true
-          // Also check if we're in drawing mode (rectangle/polygon) - TerraDraw might be in 'select'
-          // state after finishing, but we're still ready to draw another shape
-          return modeRef.current === 'rectangle' || modeRef.current === 'polygon'
+          // Only return true when TerraDraw is actively drawing
+          // This ensures the tooltip disappears as soon as the AOI is drawn,
+          // even if the drawing mode is still on
+          return modeState === 'drawing'
         } catch {
           return false
         }

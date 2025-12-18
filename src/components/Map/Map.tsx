@@ -165,7 +165,7 @@ export const Map = () => {
 
   // Determine which area to display (real-time during drawing/editing, or stored area)
   const displayArea = isDrawing ? realTimeArea : aoiArea
-  // Show tooltip only during active drawing, not for completed shapes
+  // Show tooltip only during active drawing, hide after drawing finishes
   const showTooltip = Boolean(displayArea !== null && aoi !== null && isDrawing)
   // Always use AOI center position for tooltip (never follow cursor)
   const tooltipPosition = aoiCenterPosition

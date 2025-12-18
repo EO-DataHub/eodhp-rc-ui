@@ -1,4 +1,3 @@
-import { createPortal } from 'react-dom'
 import { Text } from '@radix-ui/themes'
 import styles from './AreaTooltip.module.scss'
 
@@ -26,7 +25,7 @@ export const AreaTooltip = ({ area, position, visible, isDrawing = false }: Area
     return null
   }
 
-  return createPortal(
+  return (
     <div
       className={styles.tooltip}
       data-drawing={isDrawing}
@@ -39,7 +38,6 @@ export const AreaTooltip = ({ area, position, visible, isDrawing = false }: Area
       <Text size="1" weight={isDrawing ? 'bold' : 'regular'}>
         {formatArea(area)}
       </Text>
-    </div>,
-    document.body,
+    </div>
   )
 }
