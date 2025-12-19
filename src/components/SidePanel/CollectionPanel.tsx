@@ -13,6 +13,7 @@ import { InfoPanelWrapper } from './InfoPanel/InfoPanelWrapper'
 import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
 import { Callout } from '../Callout/Callout'
+import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
@@ -81,6 +82,7 @@ const renderGroupedByCollections = (
 }
 
 export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollectionPanel }) => {
+  const { trackCollectionVisualization } = useAnalyticsActions()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedCollectionInfo, setSelectedCollectionInfo] = useState<Collection | null>(null)
 
@@ -119,6 +121,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     } else {
       navigate(`/finder/${collection.id}`)
     }
+    trackCollectionVisualization(collection)
   }
 
   const handleOpenFilterPanel = () => {
