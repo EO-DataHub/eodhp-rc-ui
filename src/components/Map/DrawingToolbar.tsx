@@ -1,4 +1,6 @@
-import { IconButton, Tooltip, Flex } from '@radix-ui/themes'
+import { Tooltip } from '@radix-ui/themes'
+import { ZoomInIcon, ZoomOutIcon, ArrowUpIcon } from '@radix-ui/react-icons'
+import { MapRef } from 'react-map-gl/maplibre'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { GeoJSONDownload } from './GeoJSONDownload'
 import styles from './DrawingToolbar.module.scss'
@@ -6,8 +8,8 @@ import styles from './DrawingToolbar.module.scss'
 // Import SVG icons
 import SelectIcon from '@/assets/icons/select.svg?react'
 import RectangleIcon from '@/assets/icons/rectangle.svg?react'
-import PolygonIcon from '@/assets/icons/freehand.svg?react'
-import DeleteIcon from '@/assets/icons/delete.svg?react'
+import PolygonIcon from '@/assets/icons/pencil.svg?react'
+import DeleteIcon from '@/assets/icons/trash.svg?react'
 
 interface DrawingToolbarProps {
   onModeChange: (mode: 'rectangle' | 'polygon' | null) => void
@@ -15,6 +17,7 @@ interface DrawingToolbarProps {
   onDelete: () => void
   hasAoi: boolean
   aoi: GeoJSON.Feature | null
+  mapRef: React.RefObject<MapRef>
 }
 
 export const DrawingToolbar = ({
@@ -23,6 +26,7 @@ export const DrawingToolbar = ({
   onDelete,
   hasAoi,
   aoi,
+  mapRef,
 }: DrawingToolbarProps) => {
   const handleRectangleClick = () => {
     onModeChange(currentMode === 'rectangle' ? null : 'rectangle')
@@ -41,65 +45,102 @@ export const DrawingToolbar = ({
     onDelete()
   }
 
+  const handleZoomIn = () => {
+    mapRef.current?.getMap().zoomIn()
+  }
+
+  const handleZoomOut = () => {
+    mapRef.current?.getMap().zoomOut()
+  }
+
+  const handleResetNorth = () => {
+    const map = mapRef.current?.getMap()
+    if (map) {
+      map.resetNorthPitch()
+    }
+  }
+
   return (
-    <Flex
-      direction="column"
-      gap="1"
-      className={styles.toolbar}
-      style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        zIndex: 5, // Lower than side panel (10) but above map
-        backgroundColor: 'white',
-        borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-        padding: '4px',
-      }}
-    >
-      <Tooltip content="Select mode (select, move, edit)">
-        <IconButton
-          size="2"
-          variant={currentMode === null ? 'solid' : 'soft'}
-          onClick={handleSelectClick}
-          aria-label="Select mode"
-        >
-          <SelectIcon />
-        </IconButton>
-      </Tooltip>
-      <Tooltip content="Draw rectangle">
-        <IconButton
-          size="2"
-          variant={currentMode === 'rectangle' ? 'solid' : 'soft'}
-          onClick={handleRectangleClick}
-          aria-label="Draw rectangle"
-        >
-          <RectangleIcon />
-        </IconButton>
-      </Tooltip>
-      <Tooltip content="Draw polygon">
-        <IconButton
-          size="2"
-          variant={currentMode === 'polygon' ? 'solid' : 'soft'}
-          onClick={handlePolygonClick}
-          aria-label="Draw polygon"
-        >
-          <PolygonIcon />
-        </IconButton>
-      </Tooltip>
-      <Tooltip content="Delete AOI">
-        <IconButton
-          size="2"
-          variant="soft"
-          color="red"
-          onClick={handleDeleteClick}
-          disabled={!hasAoi}
-          aria-label="Delete AOI"
-        >
-          <DeleteIcon />
-        </IconButton>
-      </Tooltip>
-      <GeoJSONDownload aoi={aoi} disabled={!hasAoi} />
-    </Flex>
+    <div className={styles.toolbar}>
+      {/* Navigation Controls Section */}
+      <div className={styles.controlGroup}>
+        <Tooltip content="Zoom in" delayDuration={2500}>
+          <button
+            onClick={handleZoomIn}
+            aria-label="Zoom in"
+            className={styles.controlButton}
+            type="button"
+          >
+            <ZoomInIcon />
+          </button>
+        </Tooltip>
+        <Tooltip content="Zoom out" delayDuration={2500}>
+          <button
+            onClick={handleZoomOut}
+            aria-label="Zoom out"
+            className={styles.controlButton}
+            type="button"
+          >
+            <ZoomOutIcon />
+          </button>
+        </Tooltip>
+        <Tooltip content="Reset north" delayDuration={2500}>
+          <button
+            onClick={handleResetNorth}
+            aria-label="Reset north"
+            className={styles.controlButton}
+            type="button"
+          >
+            <ArrowUpIcon />
+          </button>
+        </Tooltip>
+      </div>
+
+      {/* Drawing Controls Section */}
+      <div className={styles.controlGroup}>
+        <Tooltip content="Select mode (select, move, edit)" delayDuration={2500}>
+          <button
+            onClick={handleSelectClick}
+            aria-label="Select mode"
+            className={`${styles.controlButton} ${currentMode === null ? styles.active : ''}`}
+            type="button"
+          >
+            <SelectIcon />
+          </button>
+        </Tooltip>
+        <Tooltip content="Draw rectangle" delayDuration={2500}>
+          <button
+            onClick={handleRectangleClick}
+            aria-label="Draw rectangle"
+            className={`${styles.controlButton} ${currentMode === 'rectangle' ? styles.active : ''}`}
+            type="button"
+          >
+            <RectangleIcon />
+          </button>
+        </Tooltip>
+        <Tooltip content="Draw polygon" delayDuration={2500}>
+          <button
+            onClick={handlePolygonClick}
+            aria-label="Draw polygon"
+            className={`${styles.controlButton} ${currentMode === 'polygon' ? styles.active : ''}`}
+            type="button"
+          >
+            <PolygonIcon />
+          </button>
+        </Tooltip>
+        <Tooltip content="Delete AOI" delayDuration={2500}>
+          <button
+            onClick={handleDeleteClick}
+            disabled={!hasAoi}
+            aria-label="Delete AOI"
+            className={styles.controlButton}
+            type="button"
+          >
+            <DeleteIcon />
+          </button>
+        </Tooltip>
+        <GeoJSONDownload aoi={aoi} disabled={!hasAoi} />
+      </div>
+    </div>
   )
 }

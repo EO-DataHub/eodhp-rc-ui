@@ -1,5 +1,6 @@
-import { IconButton, Tooltip } from '@radix-ui/themes'
+import { Tooltip } from '@radix-ui/themes'
 import DownloadIcon from '@/assets/icons/download.svg?react'
+import styles from './DrawingToolbar.module.scss'
 
 interface GeoJSONDownloadProps {
   aoi: GeoJSON.Feature | null
@@ -35,16 +36,16 @@ export const GeoJSONDownload = ({ aoi, disabled }: GeoJSONDownloadProps) => {
   }
 
   return (
-    <Tooltip content="Download AOI as GeoJSON">
-      <IconButton
-        size="2"
-        variant="soft"
+    <Tooltip content="Download AOI as GeoJSON" delayDuration={2500}>
+      <button
         onClick={handleDownload}
         disabled={(disabled ?? false) || !aoi}
         aria-label="Download AOI as GeoJSON"
+        className={styles.controlButton}
+        type="button"
       >
         <DownloadIcon />
-      </IconButton>
+      </button>
     </Tooltip>
   )
 }

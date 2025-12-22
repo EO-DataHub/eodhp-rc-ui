@@ -4,7 +4,7 @@ import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import centroid from '@turf/centroid'
 
-import Maplibre, { MapRef, NavigationControl } from 'react-map-gl/maplibre'
+import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 import PinnedItemsLayer from './layers/PinnedItems'
@@ -190,7 +190,6 @@ export const Map = () => {
           handleMapBoundsChange()
         }}
       >
-        <NavigationControl />
         <TerraDrawControl
           ref={terraDrawControlRef}
           mapInstance={mapInstance ?? null}
@@ -207,6 +206,7 @@ export const Map = () => {
         onDelete={handleDelete}
         hasAoi={!!aoi}
         aoi={aoi ?? null}
+        mapRef={mapRef}
       />
       <AreaTooltip
         area={displayArea}
