@@ -18,8 +18,6 @@ const initOptions = {
 
 const authenticationInstance = new Keycloak(initOptions)
 
-const WORKSPACE_STORAGE_KEY = 'selectedWorkspace'
-
 export const AuthenticationContextProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false)
@@ -29,44 +27,24 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
   const workspaceUserName = userInfo?.preferred_username
   const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(() => {
-    return localStorage.getItem(WORKSPACE_STORAGE_KEY) ?? workspaceUserName
+    return localStorage.getItem('selectedWorkspace') ?? workspaceUserName
   })
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(() => {
-    // Initialize from localStorage if available
-    return localStorage.getItem(WORKSPACE_STORAGE_KEY) ?? undefined
-  })
-  const [showWorkspaceModal, setShowWorkspaceModal] = useState<boolean>(false)
-  const availableWorkspaces = userInfo?.member_groups ?? []
 
   const updateCurrentWorkspace = (workspace: string) => {
-    localStorage.setItem(WORKSPACE_STORAGE_KEY, workspace)
+    localStorage.setItem('selectedWorkspace', workspace)
     setCurrentWorkspace(workspace)
   }
 
   const clearCurrentWorkspace = () => {
-    localStorage.removeItem(WORKSPACE_STORAGE_KEY)
+    localStorage.removeItem('selectedWorkspace')
     setCurrentWorkspace(workspaceUserName)
   }
-
-  // Update localStorage and currentWorkspace when selectedWorkspace changes
-  useEffect(() => {
-    if (selectedWorkspace) {
-      localStorage.setItem(WORKSPACE_STORAGE_KEY, selectedWorkspace)
-      setCurrentWorkspace(selectedWorkspace)
-    } else {
-      localStorage.removeItem(WORKSPACE_STORAGE_KEY)
-      setCurrentWorkspace(workspaceUserName)
-    }
-  }, [selectedWorkspace, workspaceUserName])
 
   const login = () => {
     if (isAuthenticated) return Promise.resolve()
     return authenticationInstance.login()
   }
   const logout = () => {
-    // Clear selected workspace on logout
-    localStorage.removeItem(WORKSPACE_STORAGE_KEY)
-    setSelectedWorkspace(undefined)
     clearCurrentWorkspace()
     return authenticationInstance.logout()
   }
@@ -125,19 +103,10 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         }
       })
       .then((userInfo) => {
-        const keycloakUserInfo = userInfo as KeycloakUserInfo
-        setUserInfo(keycloakUserInfo)
-        const defaultWorkspace = keycloakUserInfo?.preferred_username
-        if (!localStorage.getItem(WORKSPACE_STORAGE_KEY)) {
+        setUserInfo(userInfo as KeycloakUserInfo)
+        const defaultWorkspace = (userInfo as KeycloakUserInfo)?.preferred_username
+        if (!localStorage.getItem('selectedWorkspace')) {
           setCurrentWorkspace(defaultWorkspace)
-        }
-
-        // Only show workspace modal if we have workspaces and no workspace is selected
-        // or if the selected workspace is not in the available workspaces
-        const storedWorkspace = localStorage.getItem(WORKSPACE_STORAGE_KEY)
-        const workspaces = keycloakUserInfo.member_groups ?? []
-        if (workspaces.length > 0 && (!storedWorkspace || !workspaces.includes(storedWorkspace))) {
-          setShowWorkspaceModal(true)
         }
       })
       .catch((error) => {
@@ -189,11 +158,6 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         currentWorkspace,
         updateCurrentWorkspace,
         clearCurrentWorkspace,
-        selectedWorkspace,
-        setSelectedWorkspace,
-        availableWorkspaces,
-        showWorkspaceModal,
-        setShowWorkspaceModal,
       }}
     >
       {children}

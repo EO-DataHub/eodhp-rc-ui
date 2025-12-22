@@ -4,7 +4,6 @@ import { AuthenticationContext } from '../../context/AuthenticationContext'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 import styles from './LoginButton.module.scss'
 import { PersonIcon, ExitIcon } from '@radix-ui/react-icons'
-import SettingsIcon from '@material-design-icons/svg/filled/settings.svg?react'
 
 export const LoginButton = ({
   isUserMenuOpen,
@@ -13,15 +12,8 @@ export const LoginButton = ({
   isUserMenuOpen: boolean
   setIsUserMenuOpen: (isOpen: boolean) => void
 }) => {
-  const {
-    isAuthenticated,
-    isAuthenticating,
-    isAuthenticationServiceError,
-    login,
-    logout,
-    availableWorkspaces,
-    setShowWorkspaceModal,
-  } = useContext(AuthenticationContext)
+  const { isAuthenticated, isAuthenticating, isAuthenticationServiceError, login, logout } =
+    useContext(AuthenticationContext)
 
   if (isAuthenticationServiceError) {
     const errorText =
@@ -44,39 +36,19 @@ export const LoginButton = ({
         </DropdownMenu.Trigger>
         <DropdownMenu.Content className={styles.dropdownContent}>
           {isAuthenticated && !isAuthenticating ? (
-            <>
-              {availableWorkspaces.length > 0 && (
-                <DropdownMenu.Item
-                  asChild
-                  onSelect={() => {
-                    setShowWorkspaceModal(true)
-                    setIsUserMenuOpen(false)
-                  }}
-                  // temp workaround: using type assertion to bypass TS error about missing 'children' property on dropdown menu item
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  {...({} as any)}
-                  className={styles.logoutButton}
-                >
-                  <div>
-                    <Text className={styles.logoutText}>Change Workspace</Text>{' '}
-                    <SettingsIcon className={styles.icon} />
-                  </div>
-                </DropdownMenu.Item>
-              )}
-              <DropdownMenu.Item
-                asChild
-                onSelect={logout}
-                // temp workaround: using type assertion to bypass TS error about missing 'children' property on dropdown menu item
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                {...({} as any)}
-                className={styles.logoutButton}
-              >
-                <div>
-                  <Text className={styles.logoutText}>Log out</Text>{' '}
-                  <ExitIcon className={styles.icon} />
-                </div>
-              </DropdownMenu.Item>
-            </>
+            <DropdownMenu.Item
+              asChild
+              onSelect={logout}
+              // temp workaround: using type assertion to bypass TS error about missing 'children' property on dropdown menu item
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              {...({} as any)}
+              className={styles.logoutButton}
+            >
+              <div>
+                <Text className={styles.logoutText}>Log out</Text>{' '}
+                <ExitIcon className={styles.icon} />
+              </div>
+            </DropdownMenu.Item>
           ) : null}
         </DropdownMenu.Content>
       </DropdownMenu.Root>
