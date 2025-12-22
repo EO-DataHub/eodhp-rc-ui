@@ -39,6 +39,16 @@ export const MyDataPage: React.FC = () => {
     setSearchText(e.target.value)
   }
 
+  // Helper function to get collection map URL
+  const getCollectionMapUrl = (collectionId: string): string => {
+    if (collectionId === 'airbus_phr_data') {
+      return '/finder/my-airbus_phr_data'
+    } else {
+      // Default pattern for all collections including airbus_pneo_data
+      return `/finder/my-${collectionId}`
+    }
+  }
+
   const handleViewOnMap = (order: OrderData) => {
     const collectionId = order.item.collection
 
@@ -58,19 +68,18 @@ export const MyDataPage: React.FC = () => {
     // Set flag to automatically open the pinned items tab
     localStorage.setItem('openPinnedItemsTab', 'true')
 
-    // Determine the correct URL based on collection type
-    let mapUrl: string
-    if (collectionId === 'airbus_phr_data') {
-      mapUrl = '/finder/my-airbus_phr_data'
-    } else if (collectionId === 'airbus_pneo_data') {
-      mapUrl = '/finder/airbus_pneo_data'
-    } else {
-      // Default pattern for other collections
-      mapUrl = `/finder/my-${collectionId}`
-    }
-
     // Navigate to the collection's map view
-    navigate(mapUrl)
+    navigate(getCollectionMapUrl(collectionId))
+  }
+
+  const handleViewCollection = (order: OrderData) => {
+    const collectionId = order.item.collection
+
+    // CRITICAL: Switch to the workspace where the data was purchased
+    updateCurrentWorkspace?.(order.workspace)
+
+    // Navigate to the collection's map view without pinning any item
+    navigate(getCollectionMapUrl(collectionId))
   }
 
   const handleResetFilters = () => {
@@ -415,7 +424,23 @@ export const MyDataPage: React.FC = () => {
                         {paginatedOrders.map((order) => (
                           <Table.Row key={`${order.workspace}-${order.orderId}`}>
                             <Table.Cell>{order.workspace}</Table.Cell>
-                            <Table.Cell>{order.collectionTitle}</Table.Cell>
+                            <Table.Cell>
+                              <button
+                                onClick={() => handleViewCollection(order)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--accent-9)',
+                                  textDecoration: 'underline',
+                                  cursor: 'pointer',
+                                  fontSize: 'inherit',
+                                  fontFamily: 'inherit',
+                                  padding: 0,
+                                }}
+                              >
+                                {order.collectionTitle}
+                              </button>
+                            </Table.Cell>
                             <Table.Cell>{formatOrderDate(order.orderDate)}</Table.Cell>
                             <Table.Cell>{order.orderStatus}</Table.Cell>
                             <Table.Cell>{order.bundle}</Table.Cell>
