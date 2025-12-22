@@ -17,6 +17,7 @@ interface TerraDrawControlProps {
   onAreaChange?: (area: number | null) => void
   onCursorPositionChange?: (position: { x: number; y: number } | null) => void
   onDrawingStateChange?: (isDrawing: boolean) => void
+  onDrawingComplete?: () => void
 }
 
 export interface TerraDrawControlRef {
@@ -26,9 +27,20 @@ export interface TerraDrawControlRef {
 }
 
 export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControlProps>(
-  ({ mapInstance, mode, onAreaChange, onCursorPositionChange, onDrawingStateChange }, ref) => {
+  (
+    {
+      mapInstance,
+      mode,
+      onAreaChange,
+      onCursorPositionChange,
+      onDrawingStateChange,
+      onDrawingComplete,
+    },
+    ref,
+  ) => {
     const terraDrawRef = useRef<TerraDraw | null>(null)
     const modeRef = useRef<'rectangle' | 'polygon' | null>(mode ?? null)
+    const onDrawingCompleteRef = useRef(onDrawingComplete)
     const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
     const lastAoiRef = useRef<GeoJSON.Feature | undefined>(undefined)
     const isUpdatingFromTerraDrawRef = useRef(false)
@@ -39,6 +51,11 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
     useEffect(() => {
       modeRef.current = mode ?? null
     }, [mode])
+
+    // Update callback ref when callback changes
+    useEffect(() => {
+      onDrawingCompleteRef.current = onDrawingComplete
+    }, [onDrawingComplete])
 
     useImperativeHandle(ref, () => ({
       isDrawing: () => {
@@ -430,6 +447,12 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
               }
               // Ensure area is updated after finishing
               notifyArea(feature as GeoJSON.Feature)
+
+              // Notify parent to switch back to select mode if we were in a drawing mode
+              const currentMode = modeRef.current
+              if (currentMode === 'rectangle' || currentMode === 'polygon') {
+                onDrawingCompleteRef.current?.()
+              }
 
               // Reset flag after store update
               void setTimeout(() => {

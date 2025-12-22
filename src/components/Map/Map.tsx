@@ -163,6 +163,10 @@ export const Map = () => {
     }
   }
 
+  const handleDrawingComplete = () => {
+    setDrawMode(null) // Switch back to select mode
+  }
+
   // Determine which area to display (real-time during drawing/editing, or stored area)
   const displayArea = isDrawing ? realTimeArea : aoiArea
   // Show tooltip only during active drawing, hide after drawing finishes
@@ -195,6 +199,7 @@ export const Map = () => {
           mapInstance={mapInstance ?? null}
           mode={drawMode}
           onAreaChange={setRealTimeArea}
+          onDrawingComplete={handleDrawingComplete}
         />
         <PinnedItemsLayer />
         <QueryItemsLayer queryItems={pageItems} />
