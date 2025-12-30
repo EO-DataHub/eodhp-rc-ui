@@ -1,26 +1,35 @@
 import { Collection, Item, DownloadableAsset } from '@/types'
-import ReactGA from 'react-ga4'
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { hashSHA256 } from '@/library/hashUtils'
+import { safeEvent } from '@/library/googleAnalyticsClient'
 
 export const useAnalyticsActions = () => {
-  const { userInfo, isAuthenticated } = useContext(AuthenticationContext)
+  const { isAuthenticating, isAuthenticated, userInfo } = useContext(AuthenticationContext)
+  const [userTrackingId, setUserTrackingId] = useState<string>('anonymous')
 
-  const getUserParams = () => {
-    if (isAuthenticated && userInfo) {
-      return {
-        id: userInfo.sub,
-        auth_status: 'logged_in',
-      }
+  useEffect(() => {
+    // Auth not ready or user not authenticated
+    if (isAuthenticating || !isAuthenticated || !userInfo?.sub) {
+      setUserTrackingId('anonymous')
+      return
     }
-    return {
-      id: 'N/A',
-      auth_status: 'guest',
+
+    const userSub = userInfo.sub
+    const resolveUserTrackingId = async () => {
+      const hashed = await hashSHA256(userSub)
+      setUserTrackingId(hashed ?? 'anonymous')
     }
-  }
+    void resolveUserTrackingId()
+  }, [isAuthenticating, isAuthenticated, userInfo?.sub])
+
+  const getUserParams = () => ({
+    user_id: userTrackingId,
+    auth_status: isAuthenticated ? 'logged_in' : 'guest',
+  })
 
   const trackCollectionVisualization = (collection: Collection) => {
-    ReactGA.event('view_collection', {
+    safeEvent('view_collection', {
       ...getUserParams(),
       collection_id: collection.id,
       collection_title: collection.displayedTitle ?? collection.title ?? collection.id,
@@ -36,7 +45,7 @@ export const useAnalyticsActions = () => {
     asset: DownloadableAsset
     collection: Collection
   }) => {
-    ReactGA.event('download_collection_imagery', {
+    safeEvent('download_collection_imagery', {
       ...getUserParams(),
       collection_id: collection.id,
       asset_key: assetKey,
@@ -61,7 +70,7 @@ export const useAnalyticsActions = () => {
 
     const providers = collectionRef?.providers?.map((p) => p.name).join(',') ?? 'N/A'
 
-    ReactGA.event('download_item_imagery', {
+    safeEvent('download_item_imagery', {
       ...getUserParams(),
       item_id: item.id,
       collection_id: collectionRef?.id ?? 'N/A',
@@ -94,7 +103,7 @@ export const useAnalyticsActions = () => {
     currency?: string
     isPartialScene: boolean
   }) => {
-    ReactGA.event('purchase_imagery', {
+    safeEvent('purchase_imagery', {
       ...getUserParams(),
       item_id: item.id,
       collection_id: collection.id,
