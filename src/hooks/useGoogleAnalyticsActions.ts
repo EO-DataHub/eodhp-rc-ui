@@ -45,12 +45,15 @@ export const useAnalyticsActions = () => {
     asset: DownloadableAsset
     collection: Collection
   }) => {
+    const isCommercial = collection.license === 'proprietary'
+
     safeEvent('download_collection_imagery', {
       ...getUserParams(),
       collection_id: collection.id,
       asset_key: assetKey,
       file: asset.href,
       roles: asset.roles?.join(',') ?? 'N/A',
+      data_type: isCommercial ? 'commercial' : 'open',
     })
   }
 
