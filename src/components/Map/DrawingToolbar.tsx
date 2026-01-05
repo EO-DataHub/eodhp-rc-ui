@@ -64,7 +64,7 @@ export const DrawingToolbar = ({
     <div className={styles.toolbar}>
       {/* Navigation Controls Section */}
       <div className={styles.controlGroup}>
-        <Tooltip content="Zoom in" delayDuration={2500}>
+        <Tooltip content="Zoom in" delayDuration={700}>
           <button
             onClick={handleZoomIn}
             aria-label="Zoom in"
@@ -74,7 +74,7 @@ export const DrawingToolbar = ({
             <ZoomInIcon />
           </button>
         </Tooltip>
-        <Tooltip content="Zoom out" delayDuration={2500}>
+        <Tooltip content="Zoom out" delayDuration={700}>
           <button
             onClick={handleZoomOut}
             aria-label="Zoom out"
@@ -84,7 +84,7 @@ export const DrawingToolbar = ({
             <ZoomOutIcon />
           </button>
         </Tooltip>
-        <Tooltip content="Reset north" delayDuration={2500}>
+        <Tooltip content="Reset north" delayDuration={700}>
           <button
             onClick={handleResetNorth}
             aria-label="Reset north"
@@ -98,7 +98,7 @@ export const DrawingToolbar = ({
 
       {/* Drawing Controls Section */}
       <div className={styles.controlGroup}>
-        <Tooltip content="Select mode (select, move, edit)" delayDuration={2500}>
+        <Tooltip content="Select mode (select, move, edit)" delayDuration={700}>
           <button
             onClick={handleSelectClick}
             aria-label="Select mode"
@@ -108,7 +108,7 @@ export const DrawingToolbar = ({
             <SelectIcon />
           </button>
         </Tooltip>
-        <Tooltip content="Draw rectangle" delayDuration={2500}>
+        <Tooltip content="Draw rectangle" delayDuration={700}>
           <button
             onClick={handleRectangleClick}
             aria-label="Draw rectangle"
@@ -118,7 +118,7 @@ export const DrawingToolbar = ({
             <RectangleIcon />
           </button>
         </Tooltip>
-        <Tooltip content="Draw polygon" delayDuration={2500}>
+        <Tooltip content="Draw polygon" delayDuration={700}>
           <button
             onClick={handlePolygonClick}
             aria-label="Draw polygon"
@@ -128,7 +128,7 @@ export const DrawingToolbar = ({
             <PolygonIcon />
           </button>
         </Tooltip>
-        <Tooltip content="Delete AOI" delayDuration={2500}>
+        <Tooltip content="Delete AOI" delayDuration={700}>
           <button
             onClick={handleDeleteClick}
             disabled={!hasAoi}
