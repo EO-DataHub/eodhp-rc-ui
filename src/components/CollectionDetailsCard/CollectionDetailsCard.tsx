@@ -40,9 +40,9 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
 
     if (collection.isUserCollection) {
-      navigate(`/finder/my-${collection.id}`)
+      void navigate(`/finder/my-${collection.id}`)
     } else {
-      navigate(`/finder/${collection.id}`)
+      void navigate(`/finder/${collection.id}`)
     }
   }
 

@@ -40,9 +40,17 @@ const routesWithErrorFallback = routes.map((route) => ({
   errorElement: <div>&nbsp;We&apos;re sorry. Something is broken. </div>,
 }))
 
-export const router = createHashRouter([
+export const router = createHashRouter(
+  [
+    {
+      element: <AppLayout />,
+      children: routesWithErrorFallback,
+    },
+  ],
   {
-    element: <AppLayout />,
-    children: routesWithErrorFallback,
+    future: {
+      v7_startTransition: true,
+      v7_relativeSplatPath: true,
+    },
   },
-])
+)
