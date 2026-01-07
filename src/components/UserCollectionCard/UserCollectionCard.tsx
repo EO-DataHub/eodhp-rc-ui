@@ -27,7 +27,7 @@ export const UserCollectionCard: React.FC<UserCollectionCardProps> = ({ collecti
   const handleOpenCollection = () => {
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-    navigate(`/finder/my-${collection.id}`)
+    void navigate(`/finder/my-${collection.id}`)
   }
 
   return (

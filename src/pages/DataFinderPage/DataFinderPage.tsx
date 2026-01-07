@@ -93,7 +93,7 @@ export const DataFinderPage: React.FC = () => {
       : collectionQueries.isFetched
 
     if (allFetched) {
-      navigate('/')
+      void navigate('/')
     }
   }, [
     collectionId,

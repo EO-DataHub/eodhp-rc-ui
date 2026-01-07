@@ -36,7 +36,7 @@ export const GeoJSONDownload = ({ aoi, disabled }: GeoJSONDownloadProps) => {
   }
 
   return (
-    <Tooltip content="Download AOI as GeoJSON" delayDuration={2500}>
+    <Tooltip content="Download AOI as GeoJSON" delayDuration={700}>
       <button
         onClick={handleDownload}
         disabled={(disabled ?? false) || !aoi}

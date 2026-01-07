@@ -55,7 +55,7 @@ export const MyDataPage: React.FC = () => {
     }
 
     // Navigate to the collection's map view
-    navigate(mapUrl)
+    void navigate(mapUrl)
   }
 
   const handleResetFilters = () => {

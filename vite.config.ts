@@ -35,6 +35,16 @@ export default defineConfig(({ mode }) => {
         buffer: 'buffer/',
       },
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern-compiler',
+        },
+        sass: {
+          api: 'modern-compiler',
+        },
+      },
+    },
     optimizeDeps: {
       esbuildOptions: {
         // Node.js global to browser globalThis
