@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { TerraDraw } from 'terra-draw'
 import maplibregl from 'maplibre-gl'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -35,6 +35,9 @@ export function useTerraDrawEvents({
   onDrawingStateChange,
   onCursorPositionChange,
 }: UseTerraDrawEventsOptions) {
+  // Ref to track pending move update timeout
+  const pendingMoveUpdateRef = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
     if (!isReady) return
     const terraDraw = terraDrawRef.current
@@ -81,6 +84,36 @@ export function useTerraDrawEvents({
 
         const feature = terraDraw.getSnapshotFeature(id)
         if (feature?.geometry) {
+          // Detect move completion: select mode = user finished moving an existing feature
+          const isMoveCompletion = modeRef.current === null
+
+          if (isMoveCompletion) {
+            // Clear pending fallback timeout if it exists
+            if (pendingMoveUpdateRef.current) {
+              clearTimeout(pendingMoveUpdateRef.current)
+              pendingMoveUpdateRef.current = null
+            }
+
+            // Update store with final position - this is the only time we update store during moves
+            isUpdatingFromTerraDrawRef.current = true
+            lastAoiRef.current = feature as GeoJSON.Feature
+            notifyAreaChange(feature as GeoJSON.Feature, onAreaChange)
+
+            dataFinderStore.send({
+              type: 'drawCreateOrUpdate',
+              mapEvent: { features: [feature as GeoJSON.Feature] } as {
+                features: GeoJSON.Feature[]
+              },
+            })
+
+            void setTimeout(() => {
+              isUpdatingFromTerraDrawRef.current = false
+            }, 100)
+
+            // Return early - move completion handled
+            return
+          }
+
           // Clear any existing features before processing the new one
           // This ensures only one AOI exists at a time
           // Get current snapshot to verify what features actually exist
@@ -159,6 +192,88 @@ export function useTerraDrawEvents({
           void setTimeout(() => {
             moveTerraDrawLayersToTop(mapInstance)
           }, 0)
+        }
+
+        // Detect move operations: select mode + update event = user is moving an existing feature
+        const isMoveOperation = modeRef.current === null && changeType === 'update'
+
+        if (isMoveOperation) {
+          // During moves: Update refs and area for real-time display, but DON'T update store
+          // This prevents useTerraDrawSync from interfering with TerraDraw's selection state
+
+          // Verify feature IDs exist before trying to access them
+          const validIds = ids.filter((id) => verifyFeatureExistsLocal(id))
+
+          if (validIds.length === 0) {
+            // No valid features to process
+            return
+          }
+
+          const feature = validIds
+            .map((id) => {
+              try {
+                // Double-check feature exists before getting it
+                if (!verifyFeatureExistsLocal(id)) {
+                  return undefined
+                }
+                return terraDraw.getSnapshotFeature(id)
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('Error getting feature in move operation:', error, {
+                  featureId: id,
+                })
+                return undefined
+              }
+            })
+            .filter((f) => f?.geometry !== undefined)[0] as GeoJSON.Feature | undefined
+
+          if (feature) {
+            // Update refs and area for real-time UI display
+            lastAoiRef.current = feature
+            notifyAreaChange(feature, onAreaChange)
+
+            // Clear any existing pending timeout
+            if (pendingMoveUpdateRef.current) {
+              clearTimeout(pendingMoveUpdateRef.current)
+              pendingMoveUpdateRef.current = null
+            }
+
+            // Set fallback timeout in case finish event doesn't fire
+            pendingMoveUpdateRef.current = setTimeout(() => {
+              try {
+                // Use terraDrawRef.current to ensure we're accessing the current instance
+                const currentTerraDraw = terraDrawRef.current
+                if (!currentTerraDraw) {
+                  pendingMoveUpdateRef.current = null
+                  return
+                }
+
+                // Verify feature still exists before updating store
+                const currentFeature = currentTerraDraw.getSnapshotFeature(validIds[0])
+                if (currentFeature?.geometry) {
+                  isUpdatingFromTerraDrawRef.current = true
+                  lastAoiRef.current = currentFeature as GeoJSON.Feature
+                  notifyAreaChange(currentFeature as GeoJSON.Feature, onAreaChange)
+                  dataFinderStore.send({
+                    type: 'drawCreateOrUpdate',
+                    mapEvent: { features: [currentFeature as GeoJSON.Feature] } as {
+                      features: GeoJSON.Feature[]
+                    },
+                  })
+                  void setTimeout(() => {
+                    isUpdatingFromTerraDrawRef.current = false
+                  }, 100)
+                }
+              } catch (error) {
+                // eslint-disable-next-line no-console
+                console.warn('Error in fallback timeout for move operation:', error)
+              }
+              pendingMoveUpdateRef.current = null
+            }, 500)
+          }
+
+          // Skip store update - return early
+          return
         }
 
         if (changeType === 'delete' || ids.length === 0) {
@@ -278,6 +393,11 @@ export function useTerraDrawEvents({
     return () => {
       terraDraw.off('finish', handleFinish)
       terraDraw.off('change', handleChange)
+      // Clear pending move update timeout to prevent memory leaks
+      if (pendingMoveUpdateRef.current) {
+        clearTimeout(pendingMoveUpdateRef.current)
+        pendingMoveUpdateRef.current = null
+      }
     }
   }, [
     isReady,
