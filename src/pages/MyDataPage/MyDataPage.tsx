@@ -24,7 +24,10 @@ export const MyDataPage: React.FC = () => {
   const navigate = useNavigate()
   const [isChangeWokspaceModalOpen, setIsChangeWokspaceModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
-  const [selectedWorkspace, setSelectedWorkspace] = useState('all')
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
+    const stored = localStorage.getItem('ordersPageSelectedWorkspace')
+    return stored ?? currentWorkspace ?? 'all'
+  })
   const [selectedCollection, setSelectedCollection] = useState('all')
   const [includeFailedOrders, setIncludeFailedOrders] = useState(false) // Default to exclude failed orders
   const [currentPage, setCurrentPage] = useState(0)
@@ -38,6 +41,20 @@ export const MyDataPage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value)
   }
+
+  // Handle workspace change with localStorage persistence
+  const handleWorkspaceChange = (workspace: string) => {
+    localStorage.setItem('ordersPageSelectedWorkspace', workspace)
+    setSelectedWorkspace(workspace)
+  }
+
+  // Sync selectedWorkspace with active workspace changes
+  useEffect(() => {
+    if (currentWorkspace) {
+      localStorage.setItem('ordersPageSelectedWorkspace', currentWorkspace)
+      setSelectedWorkspace(currentWorkspace)
+    }
+  }, [currentWorkspace])
 
   // Helper function to get collection map URL
   const getCollectionMapUrl = (collectionId: string): string => {
@@ -83,6 +100,7 @@ export const MyDataPage: React.FC = () => {
   }
 
   const handleResetFilters = () => {
+    localStorage.removeItem('ordersPageSelectedWorkspace')
     setSelectedWorkspace('all')
     setSelectedCollection('all')
     setIncludeFailedOrders(false)
@@ -309,7 +327,7 @@ export const MyDataPage: React.FC = () => {
                     <Select.Root
                       size="3"
                       value={selectedWorkspace}
-                      onValueChange={setSelectedWorkspace}
+                      onValueChange={handleWorkspaceChange}
                     >
                       <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
                       <Select.Content position="popper">
