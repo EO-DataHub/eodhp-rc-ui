@@ -48,14 +48,6 @@ export const MyDataPage: React.FC = () => {
     setSelectedWorkspace(workspace)
   }
 
-  // Sync selectedWorkspace with active workspace changes
-  useEffect(() => {
-    if (currentWorkspace) {
-      localStorage.setItem('ordersPageSelectedWorkspace', currentWorkspace)
-      setSelectedWorkspace(currentWorkspace)
-    }
-  }, [currentWorkspace])
-
   // Helper function to get collection map URL
   const getCollectionMapUrl = (collectionId: string): string => {
     if (collectionId === 'airbus_phr_data') {
