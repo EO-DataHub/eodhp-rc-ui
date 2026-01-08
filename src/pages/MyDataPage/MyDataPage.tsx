@@ -410,15 +410,47 @@ export const MyDataPage: React.FC = () => {
                 {/* Results Count */}
                 <Flex justify="between" align="center" mb="3">
                   <Text size="2" color="gray">
-                    {pageCount > 1
-                      ? `Showing ${currentPage * PAGE_SIZE + 1}-${Math.min(
+                    {(() => {
+                      // Determine the total count to display
+                      // If there are more orders available, use filteredTotalItemsMatched if available, otherwise use totalItemsMatched
+                      // Otherwise use the current filtered orders count
+                      let totalCount = filteredOrders.length
+                      let showMoreIndicator = false
+
+                      if (hasMoreOrders) {
+                        // If filteredTotalItemsMatched is available and greater, use it
+                        if (
+                          filteredTotalItemsMatched !== null &&
+                          filteredTotalItemsMatched > filteredOrders.length
+                        ) {
+                          totalCount = filteredTotalItemsMatched
+                        } else if (
+                          totalItemsMatched !== null &&
+                          totalItemsMatched > filteredOrders.length
+                        ) {
+                          // Otherwise use totalItemsMatched if available
+                          totalCount = totalItemsMatched
+                        } else {
+                          // If we know there are more but don't have exact count, show indicator
+                          totalCount = filteredOrders.length
+                          showMoreIndicator = true
+                        }
+                      }
+
+                      // Show range format when there are multiple pages OR when there are more orders available
+                      if (pageCount > 1 || hasMoreOrders) {
+                        const startIndex = currentPage * PAGE_SIZE + 1
+                        const endIndex = Math.min(
                           (currentPage + 1) * PAGE_SIZE,
                           filteredOrders.length,
-                        )} of ${filteredOrders.length} orders`
-                      : `Showing ${filteredOrders.length} orders`}
-                    {filteredTotalItemsMatched !== null &&
-                      filteredTotalItemsMatched > filteredOrders.length &&
-                      ` (${filteredTotalItemsMatched}+ orders available)`}
+                        )
+                        const countDisplay = showMoreIndicator ? `${totalCount}+` : totalCount
+                        return `Showing ${startIndex}-${endIndex} of ${countDisplay} orders`
+                      }
+
+                      // Single page with no more orders available
+                      return `Showing ${filteredOrders.length} orders`
+                    })()}
                     {(selectedWorkspace !== 'all' ||
                       selectedCollection !== 'all' ||
                       includeFailedOrders ||
@@ -524,7 +556,7 @@ export const MyDataPage: React.FC = () => {
                             onClick={handleLoadMore}
                             disabled={isLoadingMore || isLoading}
                           >
-                            Load More Orders
+                            Load More Pages
                           </Button>
                         )}
                         {filteredTotalItemsMatched !== null &&
