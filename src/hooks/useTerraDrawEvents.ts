@@ -277,6 +277,11 @@ export function useTerraDrawEvents({
         }
 
         if (changeType === 'delete' || ids.length === 0) {
+          // Don't process delete events if we're already updating (e.g., during deselection)
+          if (isUpdatingFromTerraDrawRef.current) {
+            return
+          }
+
           // Check if there are still features remaining in TerraDraw
           // This prevents clearing the store when old features are removed during finish
           const remainingFeatures = terraDraw.getSnapshot()
@@ -365,18 +370,32 @@ export function useTerraDrawEvents({
               .filter((f) => f?.geometry !== undefined) as GeoJSON.Feature[]
 
             if (features.length > 0) {
-              isUpdatingFromTerraDrawRef.current = true
-              lastAoiRef.current = features[0]
-              // Notify area change for real-time display
-              notifyAreaChange(features[0], onAreaChange)
-              // Create a compatible event structure for the store
-              dataFinderStore.send({
-                type: 'drawCreateOrUpdate',
-                mapEvent: { features } as { features: GeoJSON.Feature[] },
-              })
-              void setTimeout(() => {
-                isUpdatingFromTerraDrawRef.current = false
-              }, 100)
+              // Check if geometry actually changed before updating store
+              // This prevents unnecessary updates when features are removed/re-added for deselection
+              const currentAoi = dataFinderStore.getSnapshot().context.aoi
+              const newFeature = features[0]
+              const geometryChanged =
+                !currentAoi ||
+                JSON.stringify(currentAoi.geometry) !== JSON.stringify(newFeature.geometry)
+
+              if (geometryChanged) {
+                isUpdatingFromTerraDrawRef.current = true
+                lastAoiRef.current = newFeature
+                // Notify area change for real-time display
+                notifyAreaChange(newFeature, onAreaChange)
+                // Create a compatible event structure for the store
+                dataFinderStore.send({
+                  type: 'drawCreateOrUpdate',
+                  mapEvent: { features } as { features: GeoJSON.Feature[] },
+                })
+                void setTimeout(() => {
+                  isUpdatingFromTerraDrawRef.current = false
+                }, 100)
+              } else {
+                // Geometry hasn't changed, just update the ref but don't update store
+                // This prevents unnecessary query refetches
+                lastAoiRef.current = newFeature
+              }
             }
           }
         }

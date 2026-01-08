@@ -6,6 +6,7 @@ import { useTerraDrawEvents } from '@/hooks/useTerraDrawEvents'
 import { useTerraDrawSync } from '@/hooks/useTerraDrawSync'
 import { useTerraDrawCursor } from '@/hooks/useTerraDrawCursor'
 import { useTerraDrawLayerManagement } from '@/hooks/useTerraDrawLayerManagement'
+import { useTerraDrawClickDeselect } from '@/hooks/useTerraDrawClickDeselect'
 import { getExistingFeatureIds } from '@/lib/terradraw/helpers/featureUtils'
 import { isValidAoiFeature } from '@/lib/terradraw/helpers/featureUtils'
 
@@ -101,6 +102,14 @@ export const TerraDrawControl = forwardRef<TerraDrawControlRef, TerraDrawControl
     useTerraDrawLayerManagement({
       mapInstance,
       terraDrawRef,
+    })
+
+    // Handle click-to-deselect functionality
+    useTerraDrawClickDeselect({
+      terraDrawRef,
+      mapInstance,
+      isReady,
+      isUpdatingFromTerraDrawRef,
     })
 
     // Imperative handle for parent component
