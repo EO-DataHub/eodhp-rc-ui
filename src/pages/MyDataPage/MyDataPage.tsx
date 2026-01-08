@@ -257,6 +257,20 @@ export const MyDataPage: React.FC = () => {
     })
   }, [allOrders, searchText, selectedWorkspace, selectedCollection, includeFailedOrders])
 
+  // Calculate filtered totalItemsMatched based on filtered orders
+  // When filters exclude orders (e.g., failed orders), totalItemsMatched should reflect filtered count
+  const filteredTotalItemsMatched = useMemo(() => {
+    // If no filters are applied that would exclude orders, use the original totalItemsMatched
+    // The only filter that excludes orders is includeFailedOrders=false (which excludes failed orders)
+    if (includeFailedOrders || totalItemsMatched === null) {
+      return totalItemsMatched
+    }
+
+    // When failed orders are excluded, use the filtered orders count as the total
+    // This ensures "X+ items available" reflects what's actually visible
+    return filteredOrders.length
+  }, [filteredOrders.length, includeFailedOrders, totalItemsMatched])
+
   // Pagination logic
   const pageCount = Math.ceil(filteredOrders.length / PAGE_SIZE)
   const paginatedOrders = useMemo(() => {
@@ -402,9 +416,9 @@ export const MyDataPage: React.FC = () => {
                           filteredOrders.length,
                         )} of ${filteredOrders.length} orders`
                       : `Showing ${filteredOrders.length} orders`}
-                    {totalItemsMatched !== null &&
-                      totalItemsMatched > filteredOrders.length &&
-                      ` (${totalItemsMatched}+ items available)`}
+                    {filteredTotalItemsMatched !== null &&
+                      filteredTotalItemsMatched > filteredOrders.length &&
+                      ` (${filteredTotalItemsMatched}+ orders available)`}
                     {(selectedWorkspace !== 'all' ||
                       selectedCollection !== 'all' ||
                       includeFailedOrders ||
@@ -513,10 +527,11 @@ export const MyDataPage: React.FC = () => {
                             Load More Orders
                           </Button>
                         )}
-                        {totalItemsMatched !== null &&
-                          totalItemsMatched > filteredOrders.length && (
+                        {filteredTotalItemsMatched !== null &&
+                          filteredTotalItemsMatched > filteredOrders.length && (
                             <Text size="2" color="gray">
-                              {filteredOrders.length} of {totalItemsMatched}+ orders loaded
+                              {filteredOrders.length} of {filteredTotalItemsMatched}+ orders
+                              available
                             </Text>
                           )}
                       </Flex>

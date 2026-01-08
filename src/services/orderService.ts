@@ -71,7 +71,7 @@ export const fetchOrdersForWorkspace = async (
         )
 
         // Store metadata for this collection
-        collectionMetadata.push({
+        const metadata = {
           workspace: workspaceName,
           collectionId: collection.id,
           catalogPath,
@@ -79,7 +79,8 @@ export const fetchOrdersForWorkspace = async (
           numMatched: result.numMatched,
           hasMore: result.hasMore,
           nextUrl: result.nextUrl,
-        })
+        }
+        collectionMetadata.push(metadata)
 
         return {
           ...result,
@@ -338,7 +339,7 @@ export const fetchAllOrders = async (token: string): Promise<OrderFetchResult> =
               )
 
               // Store metadata for this collection
-              collectionMetadata.push({
+              const metadata = {
                 workspace: workspace.name,
                 collectionId: collection.id,
                 catalogPath,
@@ -346,7 +347,8 @@ export const fetchAllOrders = async (token: string): Promise<OrderFetchResult> =
                 numMatched: result.numMatched,
                 hasMore: result.hasMore,
                 nextUrl: result.nextUrl,
-              })
+              }
+              collectionMetadata.push(metadata)
 
               return {
                 ...result,
