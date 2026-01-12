@@ -45,7 +45,7 @@ export function useTerraDrawClickDeselect({
 
         // Get the AOI feature from TerraDraw
         const allFeatures = terraDraw.getSnapshot()
-        const aoiFeature = allFeatures.find((f) => f.id === aoi.id)
+        const aoiFeature = allFeatures.find((f: GeoJSON.Feature) => f.id === aoi.id)
 
         if (!aoiFeature) {
           isDeselectingRef.current = false
