@@ -78,7 +78,7 @@ export const MyDataPage: React.FC = () => {
     localStorage.setItem('openPinnedItemsTab', 'true')
 
     // Navigate to the collection's map view
-    navigate(getCollectionMapUrl(collectionId))
+    void navigate(getCollectionMapUrl(collectionId))
   }
 
   const handleViewCollection = (order: OrderData) => {
@@ -88,7 +88,7 @@ export const MyDataPage: React.FC = () => {
     updateCurrentWorkspace?.(order.workspace)
 
     // Navigate to the collection's map view without pinning any item
-    navigate(getCollectionMapUrl(collectionId))
+    void navigate(getCollectionMapUrl(collectionId))
   }
 
   const handleResetFilters = () => {

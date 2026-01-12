@@ -1,0 +1,43 @@
+import { Text } from '@radix-ui/themes'
+import styles from './AreaTooltip.module.scss'
+
+interface AreaTooltipProps {
+  area: number | null
+  position: { x: number; y: number } | null
+  visible: boolean
+  isDrawing?: boolean
+}
+
+/**
+ * Formats area value with appropriate precision:
+ * - 2 decimal places for areas < 1 km²
+ * - 0 decimal places for areas ≥ 1 km²
+ */
+function formatArea(area: number): string {
+  if (area < 1) {
+    return `${area.toFixed(2)} km²`
+  }
+  return `${Math.round(area)} km²`
+}
+
+export const AreaTooltip = ({ area, position, visible, isDrawing = false }: AreaTooltipProps) => {
+  if (!visible || !position || area === null) {
+    return null
+  }
+
+  return (
+    <div
+      className={styles.tooltip}
+      data-drawing={isDrawing}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        transform: 'translate(-50%, -100%)',
+      }}
+    >
+      <Text size="1" weight={isDrawing ? 'bold' : 'regular'}>
+        {formatArea(area)}
+      </Text>
+    </div>
+  )
+}

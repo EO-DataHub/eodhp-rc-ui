@@ -64,12 +64,12 @@ export const RestoreAOIDialog = () => {
         <Flex gap="3" mt="4" justify="end">
           <Dialog.Close>
             <Button variant="soft" color="gray" onClick={removeAOI} className={styles.cancelButton}>
-              Cancel
+              No
             </Button>
           </Dialog.Close>
           <Dialog.Close>
             <Button onClick={restoreAOI} className={styles.button}>
-              Restore
+              Yes
             </Button>
           </Dialog.Close>
         </Flex>

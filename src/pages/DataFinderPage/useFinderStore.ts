@@ -196,10 +196,10 @@ const dataFinderStore = createStore({
         drawInstance: event.drawInstance,
       }
     },
-    drawCreateOrUpdate: (context, event: { mapEvent: DrawCreateEvent }) => {
-      // If draw instance is not loaded, do nothing
-      if (!context.drawInstance) return context
-
+    drawCreateOrUpdate: (
+      context,
+      event: { mapEvent: DrawCreateEvent | { features: GeoJSON.Feature[] } },
+    ) => {
       const { features } = event.mapEvent
       const aoi = features[0]
 
@@ -211,9 +211,11 @@ const dataFinderStore = createStore({
       }
     },
     drawDelete: (context) => {
-      const { drawInstance } = context
       localStorage.removeItem('aoiData')
-      drawInstance!.deleteAll()
+      // Only call deleteAll if drawInstance exists (MapboxDraw)
+      if (context.drawInstance) {
+        context.drawInstance.deleteAll()
+      }
 
       return {
         ...context,
@@ -405,7 +407,11 @@ const dataFinderStore = createStore({
       }
     },
     storeAoi: (context, event: { aoi: GeoJSON.Feature | undefined }) => {
-      localStorage.setItem('aoi', JSON.stringify(event.aoi))
+      if (event.aoi) {
+        localStorage.setItem('aoiData', JSON.stringify(event.aoi))
+      } else {
+        localStorage.removeItem('aoiData')
+      }
       return { ...context, aoi: event.aoi }
     },
   },
