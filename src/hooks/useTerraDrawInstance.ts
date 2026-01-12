@@ -64,16 +64,24 @@ export function useTerraDrawInstance({
 
       // Restore AOI from localStorage if not already in store
       // (storeAoi might have already been called by RestoreAOIDialog)
+      // Don't auto-restore if it's a new tab (dialog will show and ask user)
+      const navEntries = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[]
+      const isNewTab = navEntries[0]?.type === 'navigate'
+
       const currentAoi = dataFinderStore.getSnapshot().context.aoi
       if (!currentAoi) {
-        const storedAoi = restoreAoiFromStorage()
-        if (storedAoi) {
-          terraDraw.addFeatures([storedAoi as Parameters<typeof terraDraw.addFeatures>[0][0]])
-          if (lastAoiRef) {
-            lastAoiRef.current = storedAoi
+        // Only auto-restore if it's not a new tab (dialog won't show)
+        // If it's a new tab, wait for user to confirm via dialog
+        if (!isNewTab) {
+          const storedAoi = restoreAoiFromStorage()
+          if (storedAoi) {
+            terraDraw.addFeatures([storedAoi as Parameters<typeof terraDraw.addFeatures>[0][0]])
+            if (lastAoiRef) {
+              lastAoiRef.current = storedAoi
+            }
+            // Notify area for restored AOI
+            notifyAreaChange(storedAoi, onAreaChange)
           }
-          // Notify area for restored AOI
-          notifyAreaChange(storedAoi, onAreaChange)
         }
       } else {
         // AOI already in store, add it to TerraDraw
