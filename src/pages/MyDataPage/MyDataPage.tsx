@@ -1,27 +1,61 @@
-import React, { useMemo, useState, useContext } from 'react'
+import React, { useMemo, useState, useContext, useEffect } from 'react'
 import { Flex, Text, TextField, Tabs, Box, Table, Select, Button, Checkbox } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { fetchAllOrders } from '@/services/orderService'
+import {
+  fetchAllOrders,
+  fetchOrdersForWorkspace,
+  fetchMoreOrders,
+  OrderFetchResult,
+} from '@/services/orderService'
+import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
 import { Callout } from '@/components/Callout/Callout'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
+import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
+import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
-  const { token, updateCurrentWorkspace } = useContext(AuthenticationContext)
+  const { token, updateCurrentWorkspace, currentWorkspace } = useContext(AuthenticationContext)
   const navigate = useNavigate()
   const [isChangeWokspaceModalOpen, setIsChangeWokspaceModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
-  const [selectedWorkspace, setSelectedWorkspace] = useState('all')
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
+    const stored = localStorage.getItem('ordersPageSelectedWorkspace')
+    return stored ?? currentWorkspace ?? 'all'
+  })
   const [selectedCollection, setSelectedCollection] = useState('all')
   const [includeFailedOrders, setIncludeFailedOrders] = useState(false) // Default to exclude failed orders
+  const [currentPage, setCurrentPage] = useState(0)
+  const [allOrders, setAllOrders] = useState<OrderData[]>([])
+  const [collectionMetadata, setCollectionMetadata] = useState<
+    OrderFetchResult['collectionMetadata']
+  >([])
+  const [totalItemsMatched, setTotalItemsMatched] = useState<number | null>(null)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value)
+  }
+
+  // Handle workspace change with localStorage persistence
+  const handleWorkspaceChange = (workspace: string) => {
+    localStorage.setItem('ordersPageSelectedWorkspace', workspace)
+    setSelectedWorkspace(workspace)
+  }
+
+  // Helper function to get collection map URL
+  const getCollectionMapUrl = (collectionId: string): string => {
+    if (collectionId === 'airbus_phr_data') {
+      return '/finder/my-airbus_phr_data'
+    } else {
+      // Default pattern for all collections including airbus_pneo_data
+      return `/finder/my-${collectionId}`
+    }
   }
 
   const handleViewOnMap = (order: OrderData) => {
@@ -43,56 +77,139 @@ export const MyDataPage: React.FC = () => {
     // Set flag to automatically open the pinned items tab
     localStorage.setItem('openPinnedItemsTab', 'true')
 
-    // Determine the correct URL based on collection type
-    let mapUrl: string
-    if (collectionId === 'airbus_phr_data') {
-      mapUrl = '/finder/my-airbus_phr_data'
-    } else if (collectionId === 'airbus_pneo_data') {
-      mapUrl = '/finder/airbus_pneo_data'
-    } else {
-      // Default pattern for other collections
-      mapUrl = `/finder/my-${collectionId}`
-    }
-
     // Navigate to the collection's map view
-    void navigate(mapUrl)
+    void navigate(getCollectionMapUrl(collectionId))
+  }
+
+  const handleViewCollection = (order: OrderData) => {
+    const collectionId = order.item.collection
+
+    // CRITICAL: Switch to the workspace where the data was purchased
+    updateCurrentWorkspace?.(order.workspace)
+
+    // Navigate to the collection's map view without pinning any item
+    void navigate(getCollectionMapUrl(collectionId))
   }
 
   const handleResetFilters = () => {
+    localStorage.removeItem('ordersPageSelectedWorkspace')
     setSelectedWorkspace('all')
     setSelectedCollection('all')
     setIncludeFailedOrders(false)
     setSearchText('')
+    setCurrentPage(0)
   }
 
   const {
-    data: orders,
+    data: ordersResult,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['AllOrders', token],
-    queryFn: () => fetchAllOrders(token!),
+  } = useQuery<OrderFetchResult>({
+    queryKey: ['Orders', selectedWorkspace, token],
+    queryFn: () =>
+      selectedWorkspace === 'all'
+        ? fetchAllOrders(token!)
+        : fetchOrdersForWorkspace(selectedWorkspace, token!),
     refetchOnWindowFocus: false,
     enabled: !!token,
   })
 
-  // Generate filter options from orders data
+  // Update local state when orders result changes
+  useEffect(() => {
+    if (ordersResult) {
+      setAllOrders(ordersResult.orders)
+      setCollectionMetadata(ordersResult.collectionMetadata)
+      setTotalItemsMatched(ordersResult.totalItemsMatched)
+    }
+  }, [ordersResult])
+
+  // Handle loading more orders
+  const handleLoadMore = async () => {
+    if (!token || isLoadingMore) return
+
+    // Check if we have collections with more items available
+    const collectionsWithMore = collectionMetadata.filter((meta) => meta.hasMore)
+    if (collectionsWithMore.length === 0) {
+      return
+    }
+
+    setIsLoadingMore(true)
+    try {
+      const moreResult = await fetchMoreOrders(token, collectionMetadata)
+      if (moreResult.orders.length > 0) {
+        // Append new orders
+        setAllOrders((prev) => [...prev, ...moreResult.orders])
+        setCollectionMetadata(moreResult.collectionMetadata)
+        setTotalItemsMatched(moreResult.totalItemsMatched)
+      }
+    } catch (error) {
+      // Silently handle errors - user can try again if needed
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }
+
+  // Reset to first page when workspace changes
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [selectedWorkspace])
+
+  // Fetch all workspaces to populate dropdown
+  const { data: allWorkspaces } = useQuery({
+    queryKey: ['Workspaces', token],
+    queryFn: () => fetchWorkspaces(token),
+    refetchOnWindowFocus: false,
+    enabled: !!token,
+  })
+
+  // Generate filter options from fetched workspaces and orders data
   const workspaceOptions = useMemo(() => {
-    if (!orders) return []
-    return ['all', ...new Set(orders.map((o) => o.workspace))]
-  }, [orders])
+    const workspaceSet = new Set<string>()
+
+    // Add workspaces from API
+    if (allWorkspaces) {
+      allWorkspaces.forEach((ws) => {
+        if (ws.name) {
+          workspaceSet.add(ws.name)
+        }
+      })
+    }
+
+    // Add workspaces from orders data (in case some aren't in the API response)
+    if (allOrders) {
+      allOrders.forEach((o) => {
+        if (o.workspace && o.workspace.trim() !== '') {
+          workspaceSet.add(o.workspace)
+        }
+      })
+    }
+
+    // Always include current workspace if it exists
+    if (currentWorkspace) {
+      workspaceSet.add(currentWorkspace)
+    }
+
+    return ['all', ...Array.from(workspaceSet).sort()]
+  }, [allWorkspaces, allOrders, currentWorkspace])
 
   const collectionOptions = useMemo(() => {
-    if (!orders) return []
-    return ['all', ...new Set(orders.map((o) => o.collectionTitle))]
-  }, [orders])
+    if (!allOrders) return []
+    return [
+      'all',
+      ...new Set(
+        allOrders
+          .map((o) => o.collectionTitle)
+          .filter((c): c is string => Boolean(c) && c.trim() !== ''),
+      ),
+    ]
+  }, [allOrders])
 
   const filteredOrders = useMemo(() => {
-    if (!orders) return []
+    if (!allOrders) return []
 
-    let filtered = orders
+    let filtered = allOrders
 
-    // Apply workspace filter
+    // Apply workspace filter (only needed when viewing all workspaces)
     if (selectedWorkspace !== 'all') {
       filtered = filtered.filter((order) => order.workspace === selectedWorkspace)
     }
@@ -130,7 +247,45 @@ export const MyDataPage: React.FC = () => {
       const dateB = new Date(b.orderDate).getTime()
       return dateB - dateA // Descending order (newest first)
     })
-  }, [orders, searchText, selectedWorkspace, selectedCollection, includeFailedOrders])
+  }, [allOrders, searchText, selectedWorkspace, selectedCollection, includeFailedOrders])
+
+  // Calculate filtered totalItemsMatched based on filtered orders
+  // When filters exclude orders (e.g., failed orders), totalItemsMatched should reflect filtered count
+  const filteredTotalItemsMatched = useMemo(() => {
+    // If no filters are applied that would exclude orders, use the original totalItemsMatched
+    // The only filter that excludes orders is includeFailedOrders=false (which excludes failed orders)
+    if (includeFailedOrders || totalItemsMatched === null) {
+      return totalItemsMatched
+    }
+
+    // When failed orders are excluded, use the filtered orders count as the total
+    // This ensures "X+ items available" reflects what's actually visible
+    return filteredOrders.length
+  }, [filteredOrders.length, includeFailedOrders, totalItemsMatched])
+
+  // Pagination logic
+  const pageCount = Math.ceil(filteredOrders.length / PAGE_SIZE)
+  const paginatedOrders = useMemo(() => {
+    const startIndex = currentPage * PAGE_SIZE
+    return filteredOrders.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [filteredOrders, currentPage])
+
+  // Check if there are more orders available (must be after filteredOrders is defined)
+  const hasMoreOrders = useMemo(() => {
+    // Check if any collection has more items available AND has a nextUrl to fetch from
+    const collectionsHaveMore = collectionMetadata.some((meta) => meta.hasMore && meta.nextUrl)
+    // Also check if totalItemsMatched indicates more items than we've loaded
+    const hasMoreByCount =
+      totalItemsMatched !== null &&
+      totalItemsMatched > filteredOrders.length &&
+      filteredOrders.length > 0
+    return collectionsHaveMore || hasMoreByCount
+  }, [collectionMetadata, totalItemsMatched, filteredOrders.length])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [selectedCollection, includeFailedOrders, searchText])
 
   return (
     <>
@@ -178,7 +333,7 @@ export const MyDataPage: React.FC = () => {
                     <Select.Root
                       size="3"
                       value={selectedWorkspace}
-                      onValueChange={setSelectedWorkspace}
+                      onValueChange={handleWorkspaceChange}
                     >
                       <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
                       <Select.Content position="popper">
@@ -247,10 +402,51 @@ export const MyDataPage: React.FC = () => {
                 {/* Results Count */}
                 <Flex justify="between" align="center" mb="3">
                   <Text size="2" color="gray">
-                    Showing {filteredOrders.length} of {orders?.length ?? 0} orders
+                    {(() => {
+                      // Determine the total count to display
+                      // If there are more orders available, use filteredTotalItemsMatched if available, otherwise use totalItemsMatched
+                      // Otherwise use the current filtered orders count
+                      let totalCount = filteredOrders.length
+                      let showMoreIndicator = false
+
+                      if (hasMoreOrders) {
+                        // If filteredTotalItemsMatched is available and greater, use it
+                        if (
+                          filteredTotalItemsMatched !== null &&
+                          filteredTotalItemsMatched > filteredOrders.length
+                        ) {
+                          totalCount = filteredTotalItemsMatched
+                        } else if (
+                          totalItemsMatched !== null &&
+                          totalItemsMatched > filteredOrders.length
+                        ) {
+                          // Otherwise use totalItemsMatched if available
+                          totalCount = totalItemsMatched
+                        } else {
+                          // If we know there are more but don't have exact count, show indicator
+                          totalCount = filteredOrders.length
+                          showMoreIndicator = true
+                        }
+                      }
+
+                      // Show range format when there are multiple pages OR when there are more orders available
+                      if (pageCount > 1 || hasMoreOrders) {
+                        const startIndex = currentPage * PAGE_SIZE + 1
+                        const endIndex = Math.min(
+                          (currentPage + 1) * PAGE_SIZE,
+                          filteredOrders.length,
+                        )
+                        const countDisplay = showMoreIndicator ? `${totalCount}+` : totalCount
+                        return `Showing ${startIndex}-${endIndex} of ${countDisplay} orders`
+                      }
+
+                      // Single page with no more orders available
+                      return `Showing ${filteredOrders.length} orders`
+                    })()}
                     {(selectedWorkspace !== 'all' ||
                       selectedCollection !== 'all' ||
-                      includeFailedOrders) &&
+                      includeFailedOrders ||
+                      searchText.trim()) &&
                       ' (filtered)'}
                   </Text>
                 </Flex>
@@ -264,53 +460,107 @@ export const MyDataPage: React.FC = () => {
                     />
                   )
                 )}
-                {filteredOrders && filteredOrders.length > 0 && (
-                  <Table.Root className={styles.ordersTable}>
-                    <Table.Header>
-                      <Table.Row>
-                        <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Collection</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Order Date</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Order Status</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Bundle</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Country</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>License</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Order ID</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>View</Table.ColumnHeaderCell>
-                      </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                      {filteredOrders.map((order) => (
-                        <Table.Row key={`${order.workspace}-${order.orderId}`}>
-                          <Table.Cell>{order.workspace}</Table.Cell>
-                          <Table.Cell>{order.collectionTitle}</Table.Cell>
-                          <Table.Cell>{formatOrderDate(order.orderDate)}</Table.Cell>
-                          <Table.Cell>{order.orderStatus}</Table.Cell>
-                          <Table.Cell>{order.bundle}</Table.Cell>
-                          <Table.Cell>{order.country ?? 'N/A'}</Table.Cell>
-                          <Table.Cell>{order.license ?? 'N/A'}</Table.Cell>
-                          <Table.Cell>{order.orderId}</Table.Cell>
-                          <Table.Cell>
-                            <button
-                              onClick={() => handleViewOnMap(order)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--accent-9)',
-                                textDecoration: 'underline',
-                                cursor: 'pointer',
-                                fontSize: 'inherit',
-                                fontFamily: 'inherit',
-                                padding: 0,
-                              }}
-                            >
-                              View on map
-                            </button>
-                          </Table.Cell>
+                {paginatedOrders && paginatedOrders.length > 0 && (
+                  <>
+                    <Table.Root className={styles.ordersTable}>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Collection</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Order Date</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Order Status</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Bundle</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Country</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>License</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Order ID</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>View</Table.ColumnHeaderCell>
                         </Table.Row>
-                      ))}
-                    </Table.Body>
-                  </Table.Root>
+                      </Table.Header>
+                      <Table.Body>
+                        {paginatedOrders.map((order) => (
+                          <Table.Row key={`${order.workspace}-${order.orderId}`}>
+                            <Table.Cell>{order.workspace}</Table.Cell>
+                            <Table.Cell>
+                              <button
+                                onClick={() => handleViewCollection(order)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--accent-9)',
+                                  textDecoration: 'underline',
+                                  cursor: 'pointer',
+                                  fontSize: 'inherit',
+                                  fontFamily: 'inherit',
+                                  padding: 0,
+                                }}
+                              >
+                                {order.collectionTitle}
+                              </button>
+                            </Table.Cell>
+                            <Table.Cell>{formatOrderDate(order.orderDate)}</Table.Cell>
+                            <Table.Cell>{order.orderStatus}</Table.Cell>
+                            <Table.Cell>{order.bundle}</Table.Cell>
+                            <Table.Cell>{order.country ?? 'N/A'}</Table.Cell>
+                            <Table.Cell>{order.license ?? 'N/A'}</Table.Cell>
+                            <Table.Cell>{order.orderId}</Table.Cell>
+                            <Table.Cell>
+                              <button
+                                onClick={() => handleViewOnMap(order)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--accent-9)',
+                                  textDecoration: 'underline',
+                                  cursor: 'pointer',
+                                  fontSize: 'inherit',
+                                  fontFamily: 'inherit',
+                                  padding: 0,
+                                }}
+                              >
+                                View on map
+                              </button>
+                            </Table.Cell>
+                          </Table.Row>
+                        ))}
+                      </Table.Body>
+                    </Table.Root>
+                    {pageCount > 1 && (
+                      <Flex justify="center" mt="auto">
+                        <PageSelector
+                          currentPageIndex={currentPage}
+                          nextDisabled={currentPage === pageCount - 1}
+                          onGoToPage={setCurrentPage}
+                          onNextClick={() => setCurrentPage(currentPage + 1)}
+                          onPreviousClick={() => setCurrentPage(currentPage - 1)}
+                          pageCount={pageCount}
+                          previousDisabled={currentPage === 0}
+                        />
+                      </Flex>
+                    )}
+                    {hasMoreOrders && (
+                      <Flex justify="center" mt="4" direction="column" align="center" gap="2">
+                        {isLoadingMore ? (
+                          <LoadingIndicator size="3" />
+                        ) : (
+                          <Button
+                            size="3"
+                            variant="soft"
+                            onClick={handleLoadMore}
+                            disabled={isLoadingMore || isLoading}
+                          >
+                            Load More Pages
+                          </Button>
+                        )}
+                        {filteredTotalItemsMatched !== null &&
+                          filteredTotalItemsMatched > filteredOrders.length && (
+                            <Text size="2" color="gray">
+                              {filteredOrders.length} of {filteredTotalItemsMatched}+ orders
+                              available
+                            </Text>
+                          )}
+                      </Flex>
+                    )}
+                  </>
                 )}
               </Flex>
             </Tabs.Content>
