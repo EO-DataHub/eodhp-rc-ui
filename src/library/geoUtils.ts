@@ -30,6 +30,17 @@ export function calculateAoiArea(feature: GeoJSON.Feature): number {
 }
 
 /**
+ * Validate geometry type is supported
+ * @param geometry - GeoJSON Geometry
+ * @returns True if geometry type is Polygon or MultiPolygon
+ */
+export function isValidAoiGeometry(
+  geometry: GeoJSON.Geometry,
+): geometry is GeoJSON.Polygon | GeoJSON.MultiPolygon {
+  return geometry.type === 'Polygon' || geometry.type === 'MultiPolygon'
+}
+
+/**
  * Validate GeoJSON Feature
  * @param feature - GeoJSON Feature to validate
  * @returns Validation result with error message if invalid
@@ -97,15 +108,4 @@ export function validateGeoJSONFeature(feature: unknown): { valid: boolean; erro
   }
 
   return { valid: true }
-}
-
-/**
- * Validate geometry type is supported
- * @param geometry - GeoJSON Geometry
- * @returns True if geometry type is Polygon or MultiPolygon
- */
-export function isValidAoiGeometry(
-  geometry: GeoJSON.Geometry,
-): geometry is GeoJSON.Polygon | GeoJSON.MultiPolygon {
-  return geometry.type === 'Polygon' || geometry.type === 'MultiPolygon'
 }

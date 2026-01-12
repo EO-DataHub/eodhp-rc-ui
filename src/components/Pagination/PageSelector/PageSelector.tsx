@@ -149,7 +149,7 @@ export const PageSelector = ({
   }, [pageCount, currentPageIndex, onGoToPage])
 
   return (
-    <Flex justify="between" width="100%" data-testid="page-control">
+    <Flex align="center" gap="2" data-testid="page-control">
       <SelectorButton onClick={onPreviousClick} disabled={previousDisabled}>
         <BackIcon /> Back
       </SelectorButton>

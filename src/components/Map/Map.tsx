@@ -1,8 +1,9 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import centroid from '@turf/centroid'
+import area from '@turf/area'
 
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -44,7 +45,17 @@ export const Map = () => {
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-  const aoiArea = useSelector(dataFinderStore, (state) => state.context.aoiArea)
+
+  // Calculate AOI area from the feature
+  const aoiArea = useMemo(() => {
+    if (!aoi) return null
+    try {
+      // Convert area from square meters to square kilometers
+      return area(aoi) / 1000000
+    } catch {
+      return null
+    }
+  }, [aoi])
 
   // Derive isDrawing from TerraDraw's actual state
   useEffect(() => {
