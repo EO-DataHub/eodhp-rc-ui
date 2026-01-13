@@ -38,7 +38,13 @@ export const useItemsQuery = () => {
 
   const fetchFunction = () => {
     return isUserCollection && collection
-      ? fetchUserItems(collection, workspaceTokensData!.access, MAX_USER_COLLECTION_ITEMS)
+      ? fetchUserItems(
+          collection,
+          workspaceTokensData!.access,
+          MAX_USER_COLLECTION_ITEMS,
+          mapBounds,
+          aoi,
+        )
       : fetchItems({
           limit: MAX_TOTAL_ITEMS,
           mapBounds: mapBounds,
