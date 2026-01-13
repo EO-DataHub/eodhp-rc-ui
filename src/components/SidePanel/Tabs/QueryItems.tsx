@@ -78,6 +78,7 @@ const RenderSelectionButton = () => {
 const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
+  const isUserCollection = useSelector(dataFinderStore, ({ context }) => context.isUserCollection)
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
@@ -116,11 +117,13 @@ const QueryItemsTab = () => {
             {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
           </Flex>
         )}
-        <Flex gap="2" align="center">
-          <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
-            <FilterAltOutlined />
-          </IconButton>
-        </Flex>
+        {!isUserCollection && (
+          <Flex gap="2" align="center">
+            <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
+              <FilterAltOutlined />
+            </IconButton>
+          </Flex>
+        )}
       </Flex>
 
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
