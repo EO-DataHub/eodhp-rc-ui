@@ -40,7 +40,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   const handleOpenCollection = () => {
     trackCollectionVisualization(collection)
 
-    dataFinderStore.send({ type: 'setCollection', collection: collection })
+    dataFinderStore.send({
+      type: 'setCollection',
+      collection: collection,
+      isUserCollection: collection.isUserCollection ?? false,
+    })
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
 

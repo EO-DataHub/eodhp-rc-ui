@@ -10,6 +10,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
 import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
+import { AuthenticatedTileUrlsProvider } from '@/components/AuthenticatedTileUrlsProvider'
 
 function App() {
   useGoogleAnalytics(router)
@@ -22,11 +23,13 @@ function App() {
   return (
     <ErrorBoundary fallback={<div>We&apos;re sorry. Something is broken.</div>}>
       <AuthenticationContextProvider>
-        <RestoreAOIContextProvider>
-          <Theme accentColor="blue">
-            <RouterProvider router={router} />
-          </Theme>
-        </RestoreAOIContextProvider>
+        <AuthenticatedTileUrlsProvider>
+          <RestoreAOIContextProvider>
+            <Theme accentColor="blue">
+              <RouterProvider router={router} />
+            </Theme>
+          </RestoreAOIContextProvider>
+        </AuthenticatedTileUrlsProvider>
       </AuthenticationContextProvider>
     </ErrorBoundary>
   )
