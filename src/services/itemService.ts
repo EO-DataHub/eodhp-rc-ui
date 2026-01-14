@@ -24,6 +24,7 @@ interface StacQueryBodyParams {
 interface FetchItemParams {
   collectionUrl?: string
   itemId?: string
+  workspaceToken?: string
 }
 
 interface FetchItemFromCollectionParams {
@@ -91,17 +92,28 @@ export const fetchItemFromCollection = async ({
   return fetchItem({ collectionUrl, itemId })
 }
 
-export const fetchItem = async ({ collectionUrl, itemId }: FetchItemParams): Promise<Item> => {
+export const fetchItem = async ({
+  collectionUrl,
+  itemId,
+  workspaceToken,
+}: FetchItemParams): Promise<Item> => {
   if (!itemId || !collectionUrl) {
     throw new Error('Item is not valid')
   }
   const url = `${collectionUrl}/items/${itemId}`
 
+  const headers: HeadersInit = {
+    Accept: 'application/json',
+  }
+
+  // Add Authorization header for user collections
+  if (workspaceToken) {
+    headers.Authorization = `Bearer ${workspaceToken}`
+  }
+
   const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
+    headers,
   })
 
   if (!response.ok) {
