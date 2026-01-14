@@ -15,6 +15,7 @@
 .ordersTable {
   width: 100%;
   border-collapse: collapse;
+  table-layout: auto;
   
   th, td {
     padding: 12px 16px;
@@ -32,39 +33,90 @@
     background-color: var(--gray-2);
   }
   
-  // Make some columns narrower
-  th:nth-child(1), td:nth-child(1) { // Workspace
+  // Column width constraints based on data-column-id attribute
+  th[data-column-id="workspace"],
+  td[data-column-id="workspace"] {
     width: 120px;
+    min-width: 120px;
+    max-width: 120px;
   }
   
-  th:nth-child(3), td:nth-child(3) { // Order Date
+  th[data-column-id="collection"],
+  td[data-column-id="collection"] {
+    width: 180px;
+    min-width: 150px;
+    max-width: 250px;
+  }
+  
+  th[data-column-id="orderDate"],
+  td[data-column-id="orderDate"] {
+    width: 120px;
+    min-width: 100px;
+    max-width: 150px;
+  }
+  
+  th[data-column-id="orderStatus"],
+  td[data-column-id="orderStatus"] {
+    width: 180px;
+    min-width: 150px;
+    max-width: 200px;
+  }
+  
+  th[data-column-id="bundle"],
+  td[data-column-id="bundle"] {
     width: 100px;
+    min-width: 80px;
+    max-width: 120px;
   }
   
-  th:nth-child(4), td:nth-child(4) { // Order Status
-    width: 150px;
-  }
-  
-  th:nth-child(5), td:nth-child(5) { // Bundle
+  th[data-column-id="country"],
+  td[data-column-id="country"] {
     width: 100px;
+    min-width: 80px;
+    max-width: 120px;
   }
   
-  th:nth-child(6), td:nth-child(6) { // Country
-    width: 80px;
+  th[data-column-id="license"],
+  td[data-column-id="license"] {
+    width: 120px;
+    min-width: 100px;
+    max-width: 150px;
   }
   
-  th:nth-child(7), td:nth-child(7) { // License
-    width: 100px;
+  th[data-column-id="title"],
+  td[data-column-id="title"] {
+    min-width: 200px;
+    // Allow title column to grow to fill remaining space
   }
   
-  th:nth-child(8), td:nth-child(8) { // Order ID
-    width: 200px;
+  th[data-column-id="description"],
+  td[data-column-id="description"] {
+    min-width: 200px;
+    max-width: 400px;
+    // Allow description column to grow but limit max width
+  }
+  
+  th[data-column-id="orderId"],
+  td[data-column-id="orderId"] {
+    width: 250px;
+    min-width: 200px;
+    max-width: 300px;
     font-family: monospace;
     font-size: 12px;
   }
   
-  th:nth-child(9), td:nth-child(9) { // View
-    width: 100px;
+  th[data-column-id="date"],
+  td[data-column-id="date"] {
+    width: 120px;
+    min-width: 100px;
+    max-width: 150px;
+  }
+  
+  th[data-column-id="view"],
+  td[data-column-id="view"] {
+    width: 120px;
+    min-width: 100px;
+    max-width: 120px;
     text-align: center;
   }
 }

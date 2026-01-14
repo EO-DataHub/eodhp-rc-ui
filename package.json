@@ -23,6 +23,9 @@
   "dependencies": {
     "@apidevtools/json-schema-ref-parser": "11.9.0",
     "@aws-sdk/client-s3": "^3.697.0",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
     "@esbuild-plugins/node-globals-polyfill": "^0.2.3",
@@ -73,9 +76,9 @@
     "rehype-mathjax": "^6.0.0",
     "remark-gfm": "^4.0.0",
     "remark-math": "^6.0.0",
-    "use-debounce": "^10.0.1",
     "terra-draw": "^1.18.1",
     "terra-draw-maplibre-gl-adapter": "^1.2.2",
+    "use-debounce": "^10.0.1",
     "utif": "^3.1.0",
     "vega": "^5.28.0",
     "vega-lite": "^5.18.0"

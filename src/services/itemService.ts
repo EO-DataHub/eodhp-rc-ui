@@ -116,6 +116,8 @@ export const fetchUserItems = async (
   selectedCollection: Collection,
   workspace_token: string,
   limit = 10000,
+  mapBounds?: MapBounds,
+  aoi?: GeoJSON.Feature,
 ): Promise<Item[]> => {
   const itemsLink = selectedCollection.links.find((link) => link.rel === 'items')?.href
   if (!itemsLink) {
@@ -125,8 +127,90 @@ export const fetchUserItems = async (
     throw new Error('Workspace_token is required for fetch user items.')
   }
 
+  // Check if there's a search endpoint available
+  const searchLink = selectedCollection.links.find((link) => link.rel === 'search')
+
+  // If we have spatial filters, try to use POST to search endpoint (like regular collections)
+  if (aoi != null || mapBounds != null) {
+    // Construct search URL from items URL by removing /collections/{id}/items and adding /search
+    // Example: .../collections/airbus_phr_data/items -> .../search
+    let searchUrl: string
+    if (searchLink?.href) {
+      searchUrl = searchLink.href
+    } else {
+      // Construct search URL from items URL
+      const itemsUrl =
+        itemsLink.startsWith('http://') || itemsLink.startsWith('https://')
+          ? itemsLink
+          : `${window.location.protocol}//${window.location.host}${itemsLink}`
+      const urlObj = new URL(itemsUrl)
+      // Remove /collections/{id}/items from pathname and add /search
+      const pathParts = urlObj.pathname.split('/')
+      const collectionsIndex = pathParts.indexOf('collections')
+      if (collectionsIndex !== -1) {
+        // Remove everything from 'collections' onwards and add 'search'
+        pathParts.splice(collectionsIndex)
+        pathParts.push('search')
+        urlObj.pathname = pathParts.join('/')
+      } else {
+        // Fallback: just append /search
+        urlObj.pathname = urlObj.pathname.replace(/\/items$/, '/search')
+      }
+      searchUrl = urlObj.toString()
+    }
+
+    // Build request body similar to fetchItems
+    const baseBody: {
+      collections: string[]
+      limit: number
+      intersects?: GeoJSON.Geometry
+      bbox?: MapBounds
+    } = {
+      collections: [selectedCollection.id],
+      limit,
+    }
+
+    if (aoi) {
+      baseBody.intersects = aoi.geometry
+    } else if (mapBounds) {
+      baseBody.bbox = mapBounds
+    }
+
+    const response = await fetch(searchUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/geo+json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${workspace_token}`,
+      },
+      body: JSON.stringify(baseBody),
+    })
+
+    if (!response.ok) {
+      // Fall through to GET method below
+    } else {
+      const data = await response.json()
+      const features = (data.features ?? []) as Item[]
+      return features.slice(0, limit)
+    }
+  }
+
+  // Fallback to GET method if no spatial filters or POST failed
   const allItems: Item[] = []
   let nextUrl: string | null = itemsLink
+
+  // Helper function to add spatial filter parameters to a URL
+  const addSpatialFiltersToUrl = (url: URL): void => {
+    if (aoi) {
+      // Add intersects parameter with GeoJSON geometry (URL-encoded)
+      const intersectsValue = JSON.stringify(aoi.geometry)
+      url.searchParams.set('intersects', intersectsValue)
+    } else if (mapBounds) {
+      // Add bbox parameter as comma-separated values: minx,miny,maxx,maxy
+      const bboxValue = mapBounds.join(',')
+      url.searchParams.set('bbox', bboxValue)
+    }
+  }
 
   // Add limit parameter to the initial URL
   // new URL() handles both absolute URLs (ignores base) and relative URLs (uses base)
@@ -136,6 +220,7 @@ export const fetchUserItems = async (
       : `${window.location.protocol}//${window.location.host}${itemsLink}`
   const url = new URL(baseUrl)
   url.searchParams.set('limit', limit.toString())
+  addSpatialFiltersToUrl(url)
   nextUrl = url.toString()
 
   while (nextUrl && allItems.length < limit) {
@@ -162,7 +247,19 @@ export const fetchUserItems = async (
       (link: { rel: string }) => link.rel === 'next',
     )
     if (nextLink && allItems.length < limit) {
-      nextUrl = nextLink.href
+      // Ensure spatial filters are applied to pagination URL
+      const nextUrlString =
+        nextLink.href.startsWith('http://') || nextLink.href.startsWith('https://')
+          ? nextLink.href
+          : `${window.location.protocol}//${window.location.host}${nextLink.href}`
+      const nextUrlObj = new URL(nextUrlString)
+      // Only add spatial filters if they're not already present
+      if (aoi && !nextUrlObj.searchParams.has('intersects')) {
+        nextUrlObj.searchParams.set('intersects', JSON.stringify(aoi.geometry))
+      } else if (mapBounds && !nextUrlObj.searchParams.has('bbox')) {
+        nextUrlObj.searchParams.set('bbox', mapBounds.join(','))
+      }
+      nextUrl = nextUrlObj.toString()
     } else {
       nextUrl = null
     }

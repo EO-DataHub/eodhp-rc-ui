@@ -4,6 +4,7 @@ export interface OrderData {
   item: Item
   workspace: string
   collectionTitle: string
+  itemTitle: string
   orderId: string
   orderDate: string
   orderStatus: string
@@ -60,6 +61,7 @@ export const extractOrderData = (
     item,
     workspace,
     collectionTitle,
+    itemTitle: properties.title ?? item.id,
     orderId: properties['order:id'] ?? item.id,
     orderDate: properties['order:date'] ?? properties.created ?? '',
     orderStatus: mapOrderStatus(properties['order:status'] ?? 'unknown'),

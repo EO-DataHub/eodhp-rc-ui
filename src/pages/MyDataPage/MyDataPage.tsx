@@ -17,6 +17,14 @@ import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
+import {
+  ColumnConfig,
+  ColumnId,
+  loadColumnConfig,
+  saveColumnConfig,
+  getVisibleColumns,
+} from '@/library/columnConfig'
+import { ColumnSelector } from '@/components/ColumnSelector/ColumnSelector'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
@@ -37,6 +45,18 @@ export const MyDataPage: React.FC = () => {
   >([])
   const [totalItemsMatched, setTotalItemsMatched] = useState<number | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>(() => loadColumnConfig())
+
+  // Load column config on mount
+  useEffect(() => {
+    setColumnConfig(loadColumnConfig())
+  }, [])
+
+  // Save column config when it changes
+  const handleColumnConfigChange = (config: ColumnConfig[]) => {
+    setColumnConfig(config)
+    saveColumnConfig(config)
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchText(e.target.value)
@@ -231,6 +251,7 @@ export const MyDataPage: React.FC = () => {
         return (
           order.workspace.toLowerCase().includes(searchLower) ||
           order.collectionTitle.toLowerCase().includes(searchLower) ||
+          order.itemTitle.toLowerCase().includes(searchLower) ||
           order.orderId.toLowerCase().includes(searchLower) ||
           order.orderStatus.toLowerCase().includes(searchLower) ||
           order.bundle.toLowerCase().includes(searchLower) ||
@@ -286,6 +307,113 @@ export const MyDataPage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(0)
   }, [selectedCollection, includeFailedOrders, searchText])
+
+  // Get visible columns sorted by order
+  const visibleColumns = useMemo(() => getVisibleColumns(columnConfig), [columnConfig])
+
+  // Render cell content for each column type
+  const renderCell = (columnId: ColumnId, order: OrderData) => {
+    switch (columnId) {
+      case ColumnId.WORKSPACE:
+        return <Table.Cell data-column-id={columnId}>{order.workspace}</Table.Cell>
+      case ColumnId.COLLECTION:
+        return (
+          <Table.Cell data-column-id={columnId}>
+            <button
+              onClick={() => handleViewCollection(order)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-9)',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: 'inherit',
+                fontFamily: 'inherit',
+                padding: 0,
+              }}
+            >
+              {order.collectionTitle}
+            </button>
+          </Table.Cell>
+        )
+      case ColumnId.ORDER_DATE:
+        return <Table.Cell data-column-id={columnId}>{formatOrderDate(order.orderDate)}</Table.Cell>
+      case ColumnId.ORDER_STATUS:
+        return <Table.Cell data-column-id={columnId}>{order.orderStatus}</Table.Cell>
+      case ColumnId.BUNDLE:
+        return <Table.Cell data-column-id={columnId}>{order.bundle}</Table.Cell>
+      case ColumnId.COUNTRY:
+        return <Table.Cell data-column-id={columnId}>{order.country ?? 'N/A'}</Table.Cell>
+      case ColumnId.LICENSE:
+        return <Table.Cell data-column-id={columnId}>{order.license ?? 'N/A'}</Table.Cell>
+      case ColumnId.TITLE:
+        return (
+          <Table.Cell data-column-id={columnId}>
+            <Text size="2" weight="medium">
+              {order.itemTitle}
+            </Text>
+          </Table.Cell>
+        )
+      case ColumnId.DESCRIPTION:
+        return (
+          <Table.Cell data-column-id={columnId}>
+            {order.item.properties.description ? (
+              <Text size="2" color="gray">
+                {order.item.properties.description}
+              </Text>
+            ) : (
+              <Text size="2" color="gray">
+                N/A
+              </Text>
+            )}
+          </Table.Cell>
+        )
+      case ColumnId.ORDER_ID:
+        return (
+          <Table.Cell data-column-id={columnId}>
+            <Text size="1" style={{ fontFamily: 'monospace' }}>
+              {order.orderId}
+            </Text>
+          </Table.Cell>
+        )
+      case ColumnId.DATE: {
+        const dateValue = order.item.properties.datetime ?? order.item.properties.start_datetime
+        return (
+          <Table.Cell data-column-id={columnId}>
+            {dateValue ? (
+              formatOrderDate(dateValue)
+            ) : (
+              <Text size="2" color="gray">
+                N/A
+              </Text>
+            )}
+          </Table.Cell>
+        )
+      }
+      case ColumnId.VIEW:
+        return (
+          <Table.Cell data-column-id={columnId}>
+            <button
+              onClick={() => handleViewOnMap(order)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-9)',
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                fontSize: 'inherit',
+                fontFamily: 'inherit',
+                padding: 0,
+              }}
+            >
+              View on map
+            </button>
+          </Table.Cell>
+        )
+      default:
+        return null
+    }
+  }
 
   return (
     <>
@@ -397,6 +525,12 @@ export const MyDataPage: React.FC = () => {
                       Reset Filters
                     </Button>
                   </Box>
+                  <Box flexGrow="0" flexShrink="0">
+                    <ColumnSelector
+                      columns={columnConfig}
+                      onColumnsChange={handleColumnConfigChange}
+                    />
+                  </Box>
                 </Flex>
 
                 {/* Results Count */}
@@ -465,61 +599,21 @@ export const MyDataPage: React.FC = () => {
                     <Table.Root className={styles.ordersTable}>
                       <Table.Header>
                         <Table.Row>
-                          <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Collection</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Order Date</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Order Status</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Bundle</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Country</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>License</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Order ID</Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>View</Table.ColumnHeaderCell>
+                          {visibleColumns.map((column) => (
+                            <Table.ColumnHeaderCell key={column.id} data-column-id={column.id}>
+                              {column.label}
+                            </Table.ColumnHeaderCell>
+                          ))}
                         </Table.Row>
                       </Table.Header>
                       <Table.Body>
                         {paginatedOrders.map((order) => (
                           <Table.Row key={`${order.workspace}-${order.orderId}`}>
-                            <Table.Cell>{order.workspace}</Table.Cell>
-                            <Table.Cell>
-                              <button
-                                onClick={() => handleViewCollection(order)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--accent-9)',
-                                  textDecoration: 'underline',
-                                  cursor: 'pointer',
-                                  fontSize: 'inherit',
-                                  fontFamily: 'inherit',
-                                  padding: 0,
-                                }}
-                              >
-                                {order.collectionTitle}
-                              </button>
-                            </Table.Cell>
-                            <Table.Cell>{formatOrderDate(order.orderDate)}</Table.Cell>
-                            <Table.Cell>{order.orderStatus}</Table.Cell>
-                            <Table.Cell>{order.bundle}</Table.Cell>
-                            <Table.Cell>{order.country ?? 'N/A'}</Table.Cell>
-                            <Table.Cell>{order.license ?? 'N/A'}</Table.Cell>
-                            <Table.Cell>{order.orderId}</Table.Cell>
-                            <Table.Cell>
-                              <button
-                                onClick={() => handleViewOnMap(order)}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  color: 'var(--accent-9)',
-                                  textDecoration: 'underline',
-                                  cursor: 'pointer',
-                                  fontSize: 'inherit',
-                                  fontFamily: 'inherit',
-                                  padding: 0,
-                                }}
-                              >
-                                View on map
-                              </button>
-                            </Table.Cell>
+                            {visibleColumns.map((column) => (
+                              <React.Fragment key={column.id}>
+                                {renderCell(column.id, order)}
+                              </React.Fragment>
+                            ))}
                           </Table.Row>
                         ))}
                       </Table.Body>
