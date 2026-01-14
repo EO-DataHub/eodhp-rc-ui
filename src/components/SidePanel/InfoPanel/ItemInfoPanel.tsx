@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useContext } from 'react'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { Flex, Text, IconButton, Tabs, Box } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
@@ -9,6 +9,8 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 
 interface ItemInfoPanelProps {
   item: Item | null
@@ -17,21 +19,38 @@ interface ItemInfoPanelProps {
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
+  const { currentWorkspace, token } = useContext(AuthenticationContext)
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
   }, [item?.links])
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+  // Fetch workspace token for user collections
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!item && !isUserItem,
+    enabled: !!currentWorkspace && !!token && !!isUserItem,
   })
 
-  const dataResult = isUserItem ? item : data
-  const isLoadingResult = isUserItem ? false : isLoading
-  const errorResult = isUserItem ? false : !!error
+  // Always fetch the full item when viewing metadata (GET /items/{id} returns full properties)
+  // POST search endpoint returns minimal properties for performance, but GET /items/{id} returns full
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['Items', item?.collection, item?.id, isUserItem],
+    queryFn: () =>
+      fetchItem({
+        collectionUrl: collectionUrl,
+        itemId: item?.id,
+        workspaceToken: isUserItem ? workspaceTokensData?.access : undefined,
+      }),
+    refetchOnWindowFocus: false,
+    enabled: !!item && !!collectionUrl && (isUserItem ? !!workspaceTokensData : true),
+  })
+
+  // Use fetched data if available, otherwise fallback to original item
+  const dataResult = data ?? item
+  const isLoadingResult = isLoading
+  const errorResult = !!error && !data // Only show error if no fallback data available
 
   return (
     <>
