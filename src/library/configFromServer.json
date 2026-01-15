@@ -4366,5 +4366,132 @@
         ]
       }
     }
+  },
+  "eocis-chuk-land-vegetation-fapar": {
+    "renders": {
+      "data": {
+        "title": "Fraction of Absorbed Photosynthetically Active Radiation",
+        "assets": [
+          "data"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap_name": "greens"
+      }
+    }
+  },
+  "eocis-chuk-geospatial-elevation": {
+    "renders": {
+      "data": {
+        "title": "Elevation",
+        "assets": [
+          "data"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap_name": "viridis",
+        "rescale": [
+          [
+            0,
+            1200
+          ]
+        ]
+      }
+    }
+  },
+  "eocis-chuk-geospatial-landcover": {
+    "renders": {
+      "data": {
+        "title": "Land Cover",
+        "assets": [
+          "data"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap": {
+          "-1": "#00FFFFFF",
+          "1": "#FF0000",
+          "2": "#006600",
+          "3": "#732600",
+          "4": "#00FF00",
+          "5": "#7FE57F",
+          "6": "#70A800",
+          "7": "#998100",
+          "8": "#FFFF00",
+          "9": "#801A80",
+          "10": "#E68CA6",
+          "11": "#008073",
+          "12": "#D2D2FF",
+          "13": "#000080",
+          "14": "#0000FF",
+          "15": "#CCB300",
+          "16": "#CCB300",
+          "17": "#FFFF80",
+          "18": "#FFFF80",
+          "19": "#8080FF",
+          "20": "#000000",
+          "21": "#808080"
+        }
+      }
+    }
+  },
+  "eocis-chuk-land-vegetation-lai": {
+    "renders": {
+      "data": {
+        "title": "Leaf Area Index (LAI)",
+        "assets": [
+          "data"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap_name": "greens",
+        "rescale": [
+          [
+            0,
+            50
+          ]
+        ]
+      }
+    }
+  },
+  "eocis-chuk-geospatial-builtarea": {
+    "renders": {
+      "urban_area": {
+        "title": "Urban Area",
+        "assets": [
+          "urban_area"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap_name": "viridis",
+        "rescale": [
+          [
+            0,
+            0.1
+          ]
+        ]
+      },
+      "suburban_area": {
+        "title": "Suburban Area",
+        "assets": [
+          "suburban_area"
+        ],
+        "bidx": [
+          1
+        ],
+        "colormap_name": "viridis",
+        "rescale": [
+          [
+            0,
+            0.1
+          ]
+        ]
+      }
+    }
   }
 }
