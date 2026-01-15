@@ -163,6 +163,11 @@ export interface Item {
   collectionRef?: Collection
 }
 
+export interface DownloadableAsset {
+  href: string
+  roles?: string[]
+}
+
 export interface CubeData {
   [key: string]: { [key: string]: string | number | string[] | number[] }
 }

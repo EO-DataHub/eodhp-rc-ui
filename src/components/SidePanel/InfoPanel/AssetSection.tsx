@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef } from 'react'
 import type { Item } from '@/types'
 import { Box, Flex, Text } from '@radix-ui/themes'
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
-import { AssetItemTable } from './AssetItemTable'
+import { AssetTable } from './AssetTable'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import DefaultItemLayer from '@/components/Map/layers/DefaultItemLayer'
 
@@ -55,6 +55,9 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
   if (hasError) {
     return <Text color="red">Error loading items!</Text>
   }
+  if (!item) {
+    return <Text>No items available.</Text>
+  }
 
   return (
     <Flex direction="column" gap="6">
@@ -70,7 +73,13 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
           {item && <DefaultItemLayer key={item.id} item={item} />}
         </Maplibre>
       </Box>
-      <AssetItemTable assets={item?.assets} />
+      <AssetTable
+        mode="item"
+        assets={item.assets}
+        item={item}
+        collection={item.collectionRef!}
+        provider={item.collectionRef?.providers?.[0]?.name ?? 'unknown'}
+      />
     </Flex>
   )
 }
