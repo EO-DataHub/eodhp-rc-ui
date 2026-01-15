@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
-import type { Router } from '@remix-run/router'
+import type { DataRouter } from 'react-router-dom'
 import { initGA, safeSendPageView } from '@/library/googleAnalyticsClient'
 
 const GA_MEASUREMENT_ID = import.meta.env.VITE_GA_MEASUREMENT_ID
 
-export const useGoogleAnalytics = (router: Router) => {
+export const useGoogleAnalytics = (router: DataRouter) => {
   useEffect(() => {
     if (!GA_MEASUREMENT_ID) return
 
@@ -16,6 +16,6 @@ export const useGoogleAnalytics = (router: Router) => {
       safeSendPageView(state.location.pathname + state.location.search)
     })
 
-    return () => unsubscribe()
+    return () => void unsubscribe()
   }, [router])
 }
