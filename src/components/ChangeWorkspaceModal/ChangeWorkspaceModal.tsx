@@ -2,16 +2,16 @@ import React, { useRef, useContext, useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Dialog, Button, Flex, Text, Select } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
-import styles from './ChangeWokspaceModal.module.scss'
+import styles from './ChangeWorkspaceModal.module.scss'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
-interface ChangeWokspaceModalProps {
+interface ChangeWorkspaceModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-export const ChangeWokspaceModal: React.FC<ChangeWokspaceModalProps> = ({ isOpen, onClose }) => {
+export const ChangeWorkspaceModal: React.FC<ChangeWorkspaceModalProps> = ({ isOpen, onClose }) => {
   const { updateCurrentWorkspace, currentWorkspace, token } = useContext(AuthenticationContext)
   const containerRef = useRef<HTMLDivElement>(null)
 
