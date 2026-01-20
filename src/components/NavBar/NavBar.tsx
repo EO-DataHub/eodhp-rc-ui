@@ -165,6 +165,7 @@ export const NavBar: React.FC = () => {
                 {isAuthenticated && (
                   <button
                     type="button"
+                    aria-label="Change current workspace"
                     onClick={() => {
                       setIsChangeWorkspaceModalOpen(true)
                       toggleMenu(null)
