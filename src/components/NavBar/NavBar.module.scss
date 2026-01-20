@@ -108,12 +108,19 @@
   z-index: 9999;
 }
 
-.dropdown__menu a {
+.dropdown__menu a,
+.dropdown__menu button {
   padding: 0.6rem 2.3rem;
   text-decoration: none;
   font-size: 16px;
   color: #000000;
   background-color: #ffffff;
+  border: none;
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
