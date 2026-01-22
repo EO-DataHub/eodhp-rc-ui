@@ -2,7 +2,11 @@ import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@map
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
 import { Collection, StacRender, Item } from '@/types'
-import { collectionRenderingConfig, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import {
+  collectionRenderingConfig,
+  resolveTilesUrl,
+  getCollectionConfigKey,
+} from '@/library/collectionRenderingConfig'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -356,9 +360,14 @@ const dataFinderStore = createStore({
       }
       return context
     },
-    setCollection: (context, event: { collection: Collection }) => {
+    setCollection: (
+      context: AppContext,
+      event: { collection: Collection; isUserCollection?: boolean },
+    ) => {
       const collection = event.collection
-      const collectionConfig = collectionRenderingConfig[collection.id]
+      const isUserCollection = event.isUserCollection ?? context.isUserCollection
+      const collectionConfig =
+        collectionRenderingConfig[getCollectionConfigKey(collection.id, isUserCollection)]
 
       const baseRenders = collectionConfig?.renders ?? {}
       const renders = {
@@ -392,6 +401,7 @@ const dataFinderStore = createStore({
         collection: mergedCollection,
         collectionRenderOptions,
         collectionRender: collectionRenderOptions[0] ?? undefined,
+        isUserCollection: event.isUserCollection ?? context.isUserCollection,
         // Close info panel and clear infoPanelItem when switching collections
         secondaryPanel: undefined,
         infoPanelItem: undefined,

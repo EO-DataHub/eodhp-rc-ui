@@ -8,9 +8,12 @@ import BoundingBoxLayer from '@/pages/OrderDetailsPage/ItemMap/BoundingBoxLayer'
 
 export const DefaultItemLayer = ({ item }: { item: Item }) => {
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
+  const isUserCollection = useSelector(dataFinderStore, ({ context }) => context.isUserCollection)
   const modifiedItem = {
     ...item,
-    tilesUrl: resolveTilesUrl(item, collectionRender) ?? '',
+    isUserCollection: item.isUserCollection ?? isUserCollection,
+    tilesUrl:
+      resolveTilesUrl(item, collectionRender, item.isUserCollection ?? isUserCollection) ?? '',
     render: collectionRender,
     mapRender: {
       visible: true,
