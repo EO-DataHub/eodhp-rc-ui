@@ -397,6 +397,150 @@
       }
     }
   },
+  "my-SkySatCollect": {
+    "renders": {
+      "preview": {
+        "title": "Preview",
+        "assets": [
+          "primaryAsset"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true,
+        "rescale": [
+          200,
+          5000
+        ]
+      }
+    }
+  },
+  "my-PSScene": {
+    "renders": {
+      "preview": {
+        "title": "Preview",
+        "assets": [
+          "primaryAsset_2"
+        ],
+        "bidx": [
+          6,
+          4,
+          2
+        ],
+        "nodata": 0,
+        "auth": true,
+        "rescale": [
+          1000,
+          8000
+        ]
+      }
+    }
+  },
+  "my-platero-l1C-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
+  "platero-l1C-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
+  "my-mantis_l1d-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
+  "mantis_l1d-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
+  "my-hammer-l1C-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
+  "hammer-l1C-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": [
+          "TCI"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "auth": true
+      }
+    }
+  },
   "SkySatScene": {
     "renders": {
       "preview": {
@@ -502,6 +646,22 @@
       }
     }
   },
+  "my-airbus_phr_data": {
+    "renders": {
+      "cog_rgb": {
+        "title": "Cloud-Optimized GeoTIFF image",
+        "assets": [
+          "cog_rgb"
+        ],
+        "bidx": [
+          3,
+          2,
+          1
+        ],
+        "nodata": 0
+      }
+    }
+  },
   "airbus_pneo_data": {
     "renders": {
       "preview": {
@@ -514,6 +674,36 @@
       }
     }
   },
+  "my-airbus_pneo_data": {
+    "renders": {
+      "cog_rgb": {
+        "title": "Cloud-Optimized GeoTIFF image",
+        "assets": [
+          "cog_rgb"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "rescale": [
+          0,
+          1000
+        ]
+      },
+      "cog_pan": {
+        "title": "Cloud-Optimized GeoTIFF panchromatic image",
+        "assets": [
+          "cog_pan"
+        ],
+        "bidx": [
+          1
+        ],
+        "nodata": 0
+      }
+    }
+  },
   "airbus_spot_data": {
     "renders": {
       "preview": {
@@ -522,6 +712,26 @@
           "quicklook"
         ],
         "quicklook_georeference": "geometry"
+      }
+    }
+  },
+  "my-airbus_spot_data": {
+    "renders": {
+      "cog_rgb": {
+        "title": "Cloud-Optimized GeoTIFF image",
+        "assets": [
+          "cog_rgb"
+        ],
+        "bidx": [
+          1,
+          2,
+          3
+        ],
+        "nodata": 0,
+        "rescale": [
+          0,
+          1000
+        ]
       }
     }
   },

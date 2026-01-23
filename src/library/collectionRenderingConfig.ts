@@ -47,8 +47,28 @@ export function getAssetUrl(item: Item, asset: string): string | undefined {
   return item.assets?.[asset]?.href
 }
 
-export const resolveTilesUrl = (item: Item, render: StacRender | undefined): string | undefined => {
-  const collectionConfig = collectionRenderingConfig[item.collection]
+export function getCollectionConfigKey(collectionId: string, isUserCollection: boolean): string {
+  return isUserCollection ? `my-${collectionId}` : collectionId
+}
+
+export function requiresAuthentication(
+  render: StacRender | undefined,
+  isUserCollection: boolean,
+): boolean {
+  if (!render) return false
+  if (render.auth === true) return true
+  if (render.auth === false) return false
+  // Default: require auth if user collection
+  return isUserCollection
+}
+
+export const resolveTilesUrl = (
+  item: Item,
+  render: StacRender | undefined,
+  isUserCollection?: boolean,
+): string | undefined => {
+  const configKey = getCollectionConfigKey(item.collection, isUserCollection ?? false)
+  const collectionConfig = collectionRenderingConfig[configKey]
   if (!collectionConfig) return undefined
   if (!render) return undefined
 
@@ -70,9 +90,12 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   } as { url: string; rescale?: string[]; colormap?: string }
 
   if (render) {
+    // Exclude client-side only properties (auth, quicklook_georeference) from query params
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { auth, quicklook_georeference, ...renderParams } = render
     queryParams = {
       ...queryParams,
-      ...render,
+      ...renderParams,
       // Handles rescale parameter which can be either:
       // 1. A nested array of [min,max] pairs: [[0,100], [0,255]]
       // 2. A single [min,max] pair: [0,100]

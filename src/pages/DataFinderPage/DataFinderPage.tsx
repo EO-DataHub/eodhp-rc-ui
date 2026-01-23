@@ -70,7 +70,11 @@ export const DataFinderPage: React.FC = () => {
       if (isAuthenticated && userCollectionQuery.isFetched) {
         const foundUser = findCollectionById(userCollectionQuery.data, collectionIdWithoutPrefix)
         if (foundUser) {
-          dataFinderStore.send({ type: 'setCollection', collection: foundUser })
+          dataFinderStore.send({
+            type: 'setCollection',
+            collection: foundUser,
+            isUserCollection: true,
+          })
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
           return
         }
@@ -80,7 +84,11 @@ export const DataFinderPage: React.FC = () => {
       if (collectionQueries.isFetched) {
         const foundPublic = findCollectionById(collectionQueries.data, collectionIdWithoutPrefix)
         if (foundPublic) {
-          dataFinderStore.send({ type: 'setCollection', collection: foundPublic })
+          dataFinderStore.send({
+            type: 'setCollection',
+            collection: foundPublic,
+            isUserCollection: false,
+          })
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
           return
         }

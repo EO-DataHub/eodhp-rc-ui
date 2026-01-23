@@ -1,9 +1,13 @@
-import { useRef, useState, useEffect, useMemo } from 'react'
+import { useRef, useState, useEffect, useMemo, useContext, useCallback } from 'react'
 import { useSelector } from '@xstate/store/react'
+import { useQuery } from '@tanstack/react-query'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import centroid from '@turf/centroid'
 import area from '@turf/area'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -33,6 +37,29 @@ export const Map = () => {
     isDrawing: () => boolean
   } | null>(null)
   const { pageItems } = useItemsQuery()
+  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { isAuthenticated, getTokenType } = useAuthenticatedTileUrls()
+
+  // Fetch workspace tokens for user collection tile requests
+  const { data: workspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!currentWorkspace && !!token,
+  })
+
+  // Use refs to ensure transformRequest always has access to the latest token values
+  const tokenRef = useRef<string | undefined>(token)
+  const workspaceTokenRef = useRef<string | undefined>(workspaceTokensData?.access)
+
+  // Keep refs in sync with token values
+  useEffect(() => {
+    tokenRef.current = token
+  }, [token])
+
+  useEffect(() => {
+    workspaceTokenRef.current = workspaceTokensData?.access
+  }, [workspaceTokensData?.access])
 
   // Load previous map state from local storage, or use default
   const savedViewState =
@@ -185,6 +212,32 @@ export const Map = () => {
   // Always use AOI center position for tooltip (never follow cursor)
   const tooltipPosition = aoiCenterPosition
 
+  const transformRequest = useCallback(
+    (url: string, resourceType?: string): { url: string; headers?: Record<string, string> } => {
+      if (resourceType === 'Tile') {
+        const needsAuth = isAuthenticated(url)
+        if (needsAuth) {
+          // Determine which token type to use for this URL
+          const tokenType = getTokenType(url)
+          // Use workspace token for user collections, keycloak token for others
+          const currentToken =
+            tokenType === 'workspace' ? workspaceTokenRef.current : tokenRef.current
+
+          if (currentToken) {
+            return {
+              url,
+              headers: {
+                Authorization: `Bearer ${currentToken}`,
+              },
+            }
+          }
+        }
+      }
+      return { url }
+    },
+    [isAuthenticated, getTokenType],
+  )
+
   return (
     <>
       <Maplibre
@@ -193,6 +246,7 @@ export const Map = () => {
         ref={mapRef}
         cursor={drawMode !== null ? 'crosshair' : 'grab'}
         onMoveEnd={handleMapBoundsChange}
+        transformRequest={transformRequest}
         onLoad={() => {
           const mapInstance = mapRef.current?.getMap()
 
