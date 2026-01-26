@@ -15,6 +15,7 @@ interface CollectionConfig {
   renders?: Record<string, BaseStacRender>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  thumbnail_auth?: boolean
 }
 
 interface ServerRenderConfig {
@@ -37,6 +38,7 @@ interface ServerCollectionConfig {
   renders: Record<string, ServerRenderConfig>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  thumbnail_auth?: boolean
 }
 
 export function getItemUrl(item: Item): string | undefined {
@@ -52,12 +54,28 @@ export function getCollectionConfigKey(collectionId: string, isUserCollection: b
 }
 
 export function requiresAuthentication(
-  render: StacRender | undefined,
+  render: BaseStacRender | undefined,
   isUserCollection: boolean,
 ): boolean {
   if (!render) return false
   if (render.auth === true) return true
   if (render.auth === false) return false
+  // Default: require auth if user collection
+  return isUserCollection
+}
+
+export function requiresThumbnailAuthentication(
+  collectionConfig: CollectionConfig | undefined,
+  isUserCollection: boolean,
+): boolean {
+  if (!collectionConfig) return isUserCollection
+
+  // Check explicitly set thumbnail_auth (set during config translation)
+  // Note: thumbnail_auth is already explicitly set to true during translation
+  // if renders.preview.auth === true, so we don't need to check renders here
+  if (collectionConfig.thumbnail_auth === true) return true
+  if (collectionConfig.thumbnail_auth === false) return false
+
   // Default: require auth if user collection
   return isUserCollection
 }
@@ -167,6 +185,14 @@ function translateServerConfigToCollectionConfig(
 
     if (config['eodhrc:render-key-properties']) {
       baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
+    }
+
+    // Explicitly set thumbnail_auth with backward-compatible default
+    if (config.thumbnail_auth !== undefined) {
+      baseConfig.thumbnail_auth = config.thumbnail_auth
+    } else if (renders?.preview?.auth === true) {
+      // Explicitly set thumbnail_auth to true when preview requires auth
+      baseConfig.thumbnail_auth = true
     }
 
     // Add specific properties based on renderer type

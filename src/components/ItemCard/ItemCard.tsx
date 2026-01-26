@@ -25,7 +25,11 @@ import {
   itemCardFieldsToDisplay,
 } from '@/constants/collectionCategorizations'
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
-import { collectionRenderingConfig } from '@/library/collectionRenderingConfig'
+import {
+  collectionRenderingConfig,
+  getCollectionConfigKey,
+  requiresThumbnailAuthentication,
+} from '@/library/collectionRenderingConfig'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
@@ -173,10 +177,10 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
-    const collectionConfig = collectionRenderingConfig[item.collection]
-    const requiresAuth = collectionConfig?.renders?.preview?.auth === true
-    return requiresAuth
-  }, [item.collection])
+    const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
+    const collectionConfig = collectionRenderingConfig[configKey]
+    return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
+  }, [item.collection, itemBelongsToUserCollection])
 
   // Check if pin button should be disabled
   const isPinButtonDisabled = useMemo(() => {
@@ -321,6 +325,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             thumbnailUrl={item.assets?.thumbnail?.href || ''}
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
+            isUserCollection={itemBelongsToUserCollection}
           />
         )}
         <div className={styles.overlay}>
