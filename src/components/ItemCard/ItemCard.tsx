@@ -28,6 +28,7 @@ import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractS
 import {
   collectionRenderingConfig,
   getCollectionConfigKey,
+  getThumbnailAssetUrl,
   requiresThumbnailAuthentication,
 } from '@/library/collectionRenderingConfig'
 import { useSelector } from '@xstate/store/react'
@@ -182,6 +183,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
   }, [item.collection, itemBelongsToUserCollection])
 
+  // Get thumbnail URL using configured asset with fallback
+  const thumbnailUrl = useMemo(() => {
+    const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
+    const collectionConfig = collectionRenderingConfig[configKey]
+    return getThumbnailAssetUrl(item, collectionConfig)
+  }, [item, itemBelongsToUserCollection])
+
   // Check if pin button should be disabled
   const isPinButtonDisabled = useMemo(() => {
     return requiresThumbnailAuth && !isAuthenticated
@@ -317,12 +325,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           !isAlreadyPinned ? pinItem() : unpinItem()
         }}
       >
-        {item.assets?.thumbnail?.href?.endsWith('.tif') ||
-        item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
-          <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+        {thumbnailUrl && (thumbnailUrl.endsWith('.tif') || thumbnailUrl.endsWith('.tiff')) ? (
+          <TiffViewer url={thumbnailUrl} className={styles.thumbnail} />
         ) : (
           <AuthenticatedThumbnail
-            thumbnailUrl={item.assets?.thumbnail?.href || ''}
+            thumbnailUrl={thumbnailUrl ?? ''}
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
             isUserCollection={itemBelongsToUserCollection}

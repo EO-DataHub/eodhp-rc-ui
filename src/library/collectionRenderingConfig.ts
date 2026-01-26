@@ -16,6 +16,7 @@ interface CollectionConfig {
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
   thumbnail_auth?: boolean
+  thumbnail_asset?: string
 }
 
 interface ServerRenderConfig {
@@ -39,6 +40,7 @@ interface ServerCollectionConfig {
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
   thumbnail_auth?: boolean
+  thumbnail_asset?: string
 }
 
 export function getItemUrl(item: Item): string | undefined {
@@ -47,6 +49,27 @@ export function getItemUrl(item: Item): string | undefined {
 
 export function getAssetUrl(item: Item, asset: string): string | undefined {
   return item.assets?.[asset]?.href
+}
+
+export function getThumbnailAssetUrl(
+  item: Item,
+  collectionConfig: CollectionConfig | undefined,
+): string | undefined {
+  // Get configured asset name (defaults to "thumbnail")
+  const configuredAsset = collectionConfig?.thumbnail_asset ?? 'thumbnail'
+
+  // First: Try the configured asset
+  const configuredUrl = getAssetUrl(item, configuredAsset)
+  if (configuredUrl) return configuredUrl
+
+  // Second: If configured asset doesn't exist and it wasn't "thumbnail", try "thumbnail"
+  if (configuredAsset !== 'thumbnail') {
+    const thumbnailUrl = getAssetUrl(item, 'thumbnail')
+    if (thumbnailUrl) return thumbnailUrl
+  }
+
+  // Third: If neither exists, return undefined (will show default image)
+  return undefined
 }
 
 export function getCollectionConfigKey(collectionId: string, isUserCollection: boolean): string {
@@ -194,6 +217,9 @@ function translateServerConfigToCollectionConfig(
       // Explicitly set thumbnail_auth to true when preview requires auth
       baseConfig.thumbnail_auth = true
     }
+
+    // Set thumbnail_asset with default
+    baseConfig.thumbnail_asset = config.thumbnail_asset ?? 'thumbnail'
 
     // Add specific properties based on renderer type
     result[collectionId] = baseConfig

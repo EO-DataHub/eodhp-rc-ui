@@ -202,6 +202,8 @@
     }
   },
   "PSScene": {
+    "thumbnail_auth": false,
+    "thumbnail_asset": "thumbnail",
     "renders": {
       "preview": {
         "title": "Preview (approximate location)",
@@ -265,7 +267,8 @@
         ]
       }
     },
-    "thumbnail_auth": true
+    "thumbnail_auth": false,
+    "thumbnail_asset": "external_thumbnail"
   },
   "my-platero-l1C-cogs": {
     "renders": {
@@ -504,7 +507,9 @@
         "quicklook_georeference": "geometry",
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": false,
+    "thumbnail_asset": "external_thumbnail"
   },
   "my-airbus_pneo_data": {
     "renders": {
@@ -535,7 +540,8 @@
         "nodata": 0
       }
     },
-    "thumbnail_auth": true
+    "thumbnail_auth": true,
+    "thumbnail_asset": "quicklook"
   },
   "airbus_spot_data": {
     "renders": {
@@ -4541,9 +4547,9 @@
   "cmip6": {
     "eodhrc:time-variable-items": true,
     "eodhrc:render-key-properties": [
-        "cmip6:variable_id",
-        "cmip6:frequency",
-        "cmip6:experiment_id"
+      "cmip6:variable_id",
+      "cmip6:frequency",
+      "cmip6:experiment_id"
     ],
     "renders": {
       "rsus--mon--ssp585": {
