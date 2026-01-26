@@ -416,7 +416,8 @@
           5000
         ]
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "my-PSScene": {
     "renders": {
@@ -437,7 +438,8 @@
           8000
         ]
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "my-platero-l1C-cogs": {
     "renders": {
@@ -454,7 +456,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "platero-l1C-cogs": {
     "renders": {
@@ -488,7 +491,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "mantis_l1d-cogs": {
     "renders": {
@@ -522,7 +526,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "hammer-l1C-cogs": {
     "renders": {
@@ -660,7 +665,8 @@
         ],
         "nodata": 0
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "airbus_pneo_data": {
     "renders": {
@@ -702,7 +708,8 @@
         ],
         "nodata": 0
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "airbus_spot_data": {
     "renders": {
@@ -733,7 +740,8 @@
           1000
         ]
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "eocis-sst-cdrv3-climatology": {
     "renders": {
