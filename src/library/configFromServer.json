@@ -4531,6 +4531,12 @@
     }
   },
   "cmip6": {
+    "eodhrc:time-variable-items": true,
+    "eodhrc:render-key-properties": [
+        "cmip6:variable_id",
+        "cmip6:frequency",
+        "cmip6:experiment_id"
+    ],
     "renders": {
       "rsus--mon--ssp585": {
         "title": "Surface Upwelling Shortwave Radiation (W m-2)",
