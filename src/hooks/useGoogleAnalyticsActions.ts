@@ -3,12 +3,18 @@ import { useContext, useEffect, useState } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { hashSHA256 } from '@/library/hashUtils'
 import { safeEvent } from '@/library/googleAnalyticsClient'
+import { useAnalyticsConsent } from '@/context/AnalyticsConsentContext'
 
 export const useAnalyticsActions = () => {
   const { isAuthenticating, isAuthenticated, userInfo } = useContext(AuthenticationContext)
+  const { consent } = useAnalyticsConsent()
   const [userTrackingId, setUserTrackingId] = useState<string>('anonymous')
 
   useEffect(() => {
+    if (consent !== 'granted') {
+      setUserTrackingId('anonymous')
+      return
+    }
     // Auth not ready or user not authenticated
     if (isAuthenticating || !isAuthenticated || !userInfo?.sub) {
       setUserTrackingId('anonymous')
@@ -21,7 +27,7 @@ export const useAnalyticsActions = () => {
       setUserTrackingId(hashed ?? 'anonymous')
     }
     void resolveUserTrackingId()
-  }, [isAuthenticating, isAuthenticated, userInfo?.sub])
+  }, [consent, isAuthenticating, isAuthenticated, userInfo?.sub])
 
   const getUserParams = () => ({
     user_id: userTrackingId,
@@ -29,6 +35,8 @@ export const useAnalyticsActions = () => {
   })
 
   const trackCollectionVisualization = (collection: Collection) => {
+    if (consent !== 'granted') return
+
     safeEvent('view_collection', {
       ...getUserParams(),
       collection_id: collection.id,
@@ -45,6 +53,8 @@ export const useAnalyticsActions = () => {
     asset: DownloadableAsset
     collection: Collection
   }) => {
+    if (consent !== 'granted') return
+
     const isCommercial = collection.license === 'proprietary'
 
     safeEvent('download_collection_imagery', {
@@ -66,6 +76,8 @@ export const useAnalyticsActions = () => {
     asset: DownloadableAsset
     item: Item
   }) => {
+    if (consent !== 'granted') return
+
     const collectionRef = item.collectionRef
 
     const isCommercial =
@@ -106,6 +118,8 @@ export const useAnalyticsActions = () => {
     currency?: string
     isPartialScene: boolean
   }) => {
+    if (consent !== 'granted') return
+
     safeEvent('purchase_imagery', {
       ...getUserParams(),
       item_id: item.id,
