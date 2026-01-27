@@ -11,8 +11,6 @@ import { useEffect } from 'react'
 import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { AuthenticatedTileUrlsProvider } from '@/components/AuthenticatedTileUrlsProvider'
-import { ConsentBanner } from '@/components/ConsentBanner/ConsentBanner'
-import { ConsentButton } from '@/components/ConsentButton/ConsentButton'
 
 function App() {
   useGoogleAnalytics(router)
@@ -29,8 +27,6 @@ function App() {
           <RestoreAOIContextProvider>
             <Theme accentColor="blue">
               <RouterProvider router={router} />
-              <ConsentBanner />
-              <ConsentButton />
             </Theme>
           </RestoreAOIContextProvider>
         </AuthenticatedTileUrlsProvider>

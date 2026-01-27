@@ -1,10 +1,9 @@
 import ReactGA from 'react-ga4'
-import { isAnalyticsConsentGranted } from '@/library/analyticsConsentCookie'
 
 let isGAInitialized = false
 
 export const initGA = (measurementId: string) => {
-  if (!measurementId || isGAInitialized || !isAnalyticsConsentGranted()) return
+  if (!measurementId || isGAInitialized) return
 
   try {
     ReactGA.initialize(measurementId)
@@ -16,7 +15,7 @@ export const initGA = (measurementId: string) => {
 }
 
 export const safeSendPageView = (page: string) => {
-  if (!isGAInitialized || !isAnalyticsConsentGranted()) return
+  if (!isGAInitialized) return
 
   try {
     ReactGA.send({
@@ -30,7 +29,7 @@ export const safeSendPageView = (page: string) => {
 }
 
 export const safeEvent = (eventName: string, params?: Record<string, unknown>) => {
-  if (!isGAInitialized || !isAnalyticsConsentGranted()) return
+  if (!isGAInitialized) return
 
   try {
     ReactGA.event(eventName, params)
