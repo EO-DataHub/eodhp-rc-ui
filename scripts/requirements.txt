@@ -1,0 +1,8 @@
+xarray
+pystac_client
+fsspec
+kerchunk
+aiohttp==3.13.3
+cftime
+pystac
+requests
