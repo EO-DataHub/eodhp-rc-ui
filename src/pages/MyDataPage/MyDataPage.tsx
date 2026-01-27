@@ -83,20 +83,19 @@ export const MyDataPage: React.FC = () => {
     updateCurrentWorkspace?.(order.workspace)
 
     // Store the item to pin after navigation
-    localStorage.setItem(
-      'itemToPin',
-      JSON.stringify({
-        item: order.item,
-        collectionTitle: order.collectionTitle,
-        workspace: order.workspace,
-      }),
-    )
+    const itemToPinData = {
+      item: order.item,
+      collectionTitle: order.collectionTitle,
+      workspace: order.workspace,
+    }
+    localStorage.setItem('itemToPin', JSON.stringify(itemToPinData))
 
     // Set flag to automatically open the pinned items tab
     localStorage.setItem('openPinnedItemsTab', 'true')
 
     // Navigate to the collection's map view
-    void navigate(getCollectionMapUrl(collectionId))
+    const targetUrl = getCollectionMapUrl(collectionId)
+    void navigate(targetUrl)
   }
 
   const handleViewCollection = (order: OrderData) => {
