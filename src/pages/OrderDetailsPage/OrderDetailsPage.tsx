@@ -19,6 +19,7 @@ import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
+import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
@@ -36,6 +37,7 @@ export const OrderDetailsPage: React.FC = () => {
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
 
+  const [isChangeWokspaceModalOpen, setIsChangeWokspaceModalOpen] = useState(false)
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -308,6 +310,10 @@ export const OrderDetailsPage: React.FC = () => {
           </Flex>
         </Flex>
       </Flex>
+      <ChangeWokspaceModal
+        isOpen={isChangeWokspaceModalOpen}
+        onClose={() => setIsChangeWokspaceModalOpen(false)}
+      />
     </>
   )
 }

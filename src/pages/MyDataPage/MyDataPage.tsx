@@ -10,6 +10,7 @@ import {
 } from '@/services/orderService'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
 import { Callout } from '@/components/Callout/Callout'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
@@ -29,6 +30,7 @@ import styles from './MyDataPage.module.scss'
 export const MyDataPage: React.FC = () => {
   const { token, updateCurrentWorkspace, currentWorkspace } = useContext(AuthenticationContext)
   const navigate = useNavigate()
+  const [isChangeWokspaceModalOpen, setIsChangeWokspaceModalOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
     const stored = localStorage.getItem('ordersPageSelectedWorkspace')
@@ -123,23 +125,10 @@ export const MyDataPage: React.FC = () => {
     error,
   } = useQuery<OrderFetchResult>({
     queryKey: ['Orders', selectedWorkspace, token],
-    queryFn: (): Promise<OrderFetchResult> => {
-      if (!token) {
-        return Promise.resolve({
-          orders: [],
-          totalItemsMatched: null,
-          hasMore: false,
-          collectionMetadata: [],
-        })
-      }
-
-      const result: Promise<OrderFetchResult> =
-        selectedWorkspace === 'all'
-          ? fetchAllOrders(token)
-          : fetchOrdersForWorkspace(selectedWorkspace, token)
-
-      return result
-    },
+    queryFn: () =>
+      selectedWorkspace === 'all'
+        ? fetchAllOrders(token!)
+        : fetchOrdersForWorkspace(selectedWorkspace, token!),
     refetchOnWindowFocus: false,
     enabled: !!token,
   })
@@ -158,18 +147,17 @@ export const MyDataPage: React.FC = () => {
     if (!token || isLoadingMore) return
 
     // Check if we have collections with more items available
-    const collectionsWithMore = collectionMetadata.filter((meta) => Boolean(meta.hasMore))
+    const collectionsWithMore = collectionMetadata.filter((meta) => meta.hasMore)
     if (collectionsWithMore.length === 0) {
       return
     }
 
     setIsLoadingMore(true)
     try {
-      const moreResult: OrderFetchResult = await fetchMoreOrders(token, collectionMetadata)
-      const moreOrders: OrderData[] = moreResult.orders
+      const moreResult = await fetchMoreOrders(token, collectionMetadata)
       if (moreResult.orders.length > 0) {
         // Append new orders
-        setAllOrders((prev) => [...prev, ...moreOrders])
+        setAllOrders((prev) => [...prev, ...moreResult.orders])
         setCollectionMetadata(moreResult.collectionMetadata)
         setTotalItemsMatched(moreResult.totalItemsMatched)
       }
@@ -305,15 +293,13 @@ export const MyDataPage: React.FC = () => {
   // Check if there are more orders available (must be after filteredOrders is defined)
   const hasMoreOrders = useMemo(() => {
     // Check if any collection has more items available AND has a nextUrl to fetch from
-    const collectionsHaveMore = collectionMetadata.some((meta) =>
-      Boolean(meta.hasMore && meta.nextUrl),
-    )
+    const collectionsHaveMore = collectionMetadata.some((meta) => meta.hasMore && meta.nextUrl)
     // Also check if totalItemsMatched indicates more items than we've loaded
     const hasMoreByCount =
       totalItemsMatched !== null &&
       totalItemsMatched > filteredOrders.length &&
       filteredOrders.length > 0
-    return Boolean(collectionsHaveMore || hasMoreByCount)
+    return collectionsHaveMore || hasMoreByCount
   }, [collectionMetadata, totalItemsMatched, filteredOrders.length])
 
   // Reset to first page when filters change
@@ -678,6 +664,11 @@ export const MyDataPage: React.FC = () => {
           </Box>
         </Tabs.Root>
       </Flex>
+
+      <ChangeWokspaceModal
+        isOpen={isChangeWokspaceModalOpen}
+        onClose={() => setIsChangeWokspaceModalOpen(false)}
+      />
     </>
   )
 }
