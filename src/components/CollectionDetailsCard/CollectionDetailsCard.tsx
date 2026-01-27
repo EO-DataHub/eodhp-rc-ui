@@ -7,7 +7,6 @@ import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
-import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 interface CollectionDetailsCardProps {
   collection: Collection
@@ -20,8 +19,6 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { trackCollectionVisualization } = useAnalyticsActions()
-
   const containerRef = useRef<HTMLDivElement>(null)
 
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
@@ -38,13 +35,7 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
   const navigate = useNavigate()
 
   const handleOpenCollection = () => {
-    trackCollectionVisualization(collection)
-
-    dataFinderStore.send({
-      type: 'setCollection',
-      collection: collection,
-      isUserCollection: collection.isUserCollection ?? false,
-    })
+    dataFinderStore.send({ type: 'setCollection', collection: collection })
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
 

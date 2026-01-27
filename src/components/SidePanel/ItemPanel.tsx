@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Flex, Tooltip } from '@radix-ui/themes'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import styles from './SidePanel.module.scss'
@@ -31,15 +31,6 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
       setActiveTab('pinned-items-tab')
     }
   }, [collection])
-
-  const itemWithCollectionContext = useMemo(() => {
-    if (!infoPanelItem || !collection) return infoPanelItem
-    const x = {
-      ...infoPanelItem,
-      collectionRef: collection,
-    }
-    return x
-  }, [infoPanelItem, collection])
 
   const isLicenseProprietary = collection?.license === 'proprietary'
 
@@ -99,9 +90,9 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
 
       {/* Show either item or collection info panel, and close the other one if needed */}
       <InfoPanelWrapper isOpen={isInfoPanelOpen}>
-        {secondaryPanel === 'item-info' && itemWithCollectionContext && (
+        {secondaryPanel === 'item-info' && infoPanelItem && (
           <ItemInfoPanel
-            item={itemWithCollectionContext}
+            item={infoPanelItem}
             isUserItem={isUserCollection}
             onClose={closeSecondaryPanel}
           />
@@ -109,8 +100,8 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         {secondaryPanel === 'collection-info' && (
           <CollectionInfoPanel selectedCollection={collection} onClose={closeSecondaryPanel} />
         )}
-        {secondaryPanel === 'integration-tools' && itemWithCollectionContext && (
-          <IntegrationToolsPanel item={itemWithCollectionContext} onClose={closeSecondaryPanel} />
+        {secondaryPanel === 'integration-tools' && infoPanelItem && (
+          <IntegrationToolsPanel item={infoPanelItem} onClose={closeSecondaryPanel} />
         )}
       </InfoPanelWrapper>
     </>

@@ -9,11 +9,9 @@ import { router } from './router'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
 import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
-import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { AuthenticatedTileUrlsProvider } from '@/components/AuthenticatedTileUrlsProvider'
 
 function App() {
-  useGoogleAnalytics(router)
   useEffect(() => {
     dataFinderStore.send({
       type: 'hydrateFromLocalStorage',

@@ -2,27 +2,16 @@ import React, { PropsWithChildren } from 'react'
 
 import { Accordion } from 'radix-ui'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
-import styles from './AssetTable.module.scss'
-import type { Collection, Item, MetadataItem, DownloadableAsset } from '@/types'
+import styles from './AssetItemTable.module.scss'
+import type { Collection, Item, MetadataItem } from '@/types'
 import { Button, Flex, Text } from '@radix-ui/themes'
 import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
-import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
-type AssetTableProps =
-  | {
-      mode: 'item'
-      assets?: Item['assets']
-      item: Item
-      collection: Collection
-      provider: string
-    }
-  | {
-      mode: 'collection'
-      assets?: Collection['assets']
-      collection: Collection
-    }
+interface AssetItemTableProps {
+  assets?: Item['assets'] | Collection['assets']
+}
 
 const AccordionTrigger: React.FC<PropsWithChildren> = ({ children, ...props }) => (
   <Accordion.Header className={styles.AccordionHeader}>
@@ -39,36 +28,19 @@ const AccordionContent: React.FC<PropsWithChildren> = ({ children, ...props }) =
   </Accordion.Content>
 )
 
-// AssetTable is a context-agnostic component used for rendering and downloading STAC assets
-// from either an Item or a Collection depending on mode property
-export const AssetTable: React.FC<AssetTableProps> = (props) => {
-  const { trackDownloadCollectionImagery, trackDownloadItemImagery } = useAnalyticsActions()
+export const AssetItemTable: React.FC<AssetItemTableProps> = ({ assets }) => {
+  if (!assets) {
+    return null
+  }
 
-  if (!props.assets) return null
-
-  const handleDownload = (assetKey: string, asset: DownloadableAsset) => {
-    if (props.mode === 'item') {
-      trackDownloadItemImagery({
-        assetKey,
-        asset,
-        item: props.item,
-      })
-    } else {
-      trackDownloadCollectionImagery({
-        assetKey,
-        asset,
-        collection: props.collection,
-      })
-    }
-
+  const handleDownload = (href: string) => {
     const a = document.createElement('a')
-    a.href = asset.href
+    a.href = href
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
   }
 
-  const assets = props.assets
   const assetsWithMetadata = Object.keys(assets).map((key) => {
     const asset = assets[key]
     const metadata = StacFields.formatAsset(asset) as MetadataItem[]
@@ -89,7 +61,7 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
               <Button
                 style={{ alignSelf: 'flex-start' }}
                 variant="outline"
-                onClick={() => handleDownload(key, asset)}
+                onClick={() => handleDownload(asset.href)}
               >
                 <DownloadIcon /> Download
               </Button>

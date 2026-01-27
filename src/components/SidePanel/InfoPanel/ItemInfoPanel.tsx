@@ -52,22 +52,6 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const isLoadingResult = isLoading
   const errorResult = !!error && !data // Only show error if no fallback data available
 
-  const itemWithCollectionContext = useMemo(() => {
-    if (!dataResult) return dataResult
-    // Keep existing collectionRef if present
-    if (dataResult.collectionRef) {
-      return dataResult
-    }
-    // Inherit collectionRef from the original item if available
-    if (item?.collectionRef) {
-      return {
-        ...dataResult,
-        collectionRef: item.collectionRef,
-      }
-    }
-    return dataResult
-  }, [dataResult, item])
-
   return (
     <>
       {item && (
@@ -100,7 +84,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
             <Box pt="6">
               <Tabs.Content value="metadata">
                 <MetadataSection
-                  stacElement={itemWithCollectionContext}
+                  stacElement={dataResult}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                   ignoredFields={['providers']}
@@ -109,7 +93,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
 
               <Tabs.Content value="assets">
                 <AssetSection
-                  item={itemWithCollectionContext}
+                  item={dataResult}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                 />
@@ -117,7 +101,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
 
               <Tabs.Content value="resources">
                 <AdditionalResourcesSection
-                  links={itemWithCollectionContext?.links}
+                  links={dataResult?.links}
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                 />

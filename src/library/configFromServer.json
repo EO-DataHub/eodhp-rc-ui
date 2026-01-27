@@ -502,10 +502,10 @@
       "preview": {
         "title": "Preview (approximate location)",
         "assets": [
-          "quicklook"
+          "external_quicklook"
         ],
         "quicklook_georeference": "geometry",
-        "auth": true
+        "auth": false
       }
     },
     "thumbnail_auth": false,
