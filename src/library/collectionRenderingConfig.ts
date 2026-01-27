@@ -15,6 +15,8 @@ interface CollectionConfig {
   renders?: Record<string, BaseStacRender>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  thumbnail_auth?: boolean
+  thumbnail_asset?: string
 }
 
 interface ServerRenderConfig {
@@ -37,6 +39,8 @@ interface ServerCollectionConfig {
   renders: Record<string, ServerRenderConfig>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  thumbnail_auth?: boolean
+  thumbnail_asset?: string
 }
 
 export function getItemUrl(item: Item): string | undefined {
@@ -47,8 +51,65 @@ export function getAssetUrl(item: Item, asset: string): string | undefined {
   return item.assets?.[asset]?.href
 }
 
-export const resolveTilesUrl = (item: Item, render: StacRender | undefined): string | undefined => {
-  const collectionConfig = collectionRenderingConfig[item.collection]
+export function getThumbnailAssetUrl(
+  item: Item,
+  collectionConfig: CollectionConfig | undefined,
+): string | undefined {
+  // Get configured asset name (defaults to "thumbnail")
+  const configuredAsset = collectionConfig?.thumbnail_asset ?? 'thumbnail'
+
+  // First: Try the configured asset
+  const configuredUrl = getAssetUrl(item, configuredAsset)
+  if (configuredUrl) return configuredUrl
+
+  // Second: If configured asset doesn't exist and it wasn't "thumbnail", try "thumbnail"
+  if (configuredAsset !== 'thumbnail') {
+    const thumbnailUrl = getAssetUrl(item, 'thumbnail')
+    if (thumbnailUrl) return thumbnailUrl
+  }
+
+  // Third: If neither exists, return undefined (will show default image)
+  return undefined
+}
+
+export function getCollectionConfigKey(collectionId: string, isUserCollection: boolean): string {
+  return isUserCollection ? `my-${collectionId}` : collectionId
+}
+
+export function requiresAuthentication(
+  render: BaseStacRender | undefined,
+  isUserCollection: boolean,
+): boolean {
+  if (!render) return false
+  if (render.auth === true) return true
+  if (render.auth === false) return false
+  // Default: require auth if user collection
+  return isUserCollection
+}
+
+export function requiresThumbnailAuthentication(
+  collectionConfig: CollectionConfig | undefined,
+  isUserCollection: boolean,
+): boolean {
+  if (!collectionConfig) return isUserCollection
+
+  // Check explicitly set thumbnail_auth (set during config translation)
+  // Note: thumbnail_auth is already explicitly set to true during translation
+  // if renders.preview.auth === true, so we don't need to check renders here
+  if (collectionConfig.thumbnail_auth === true) return true
+  if (collectionConfig.thumbnail_auth === false) return false
+
+  // Default: require auth if user collection
+  return isUserCollection
+}
+
+export const resolveTilesUrl = (
+  item: Item,
+  render: StacRender | undefined,
+  isUserCollection?: boolean,
+): string | undefined => {
+  const configKey = getCollectionConfigKey(item.collection, isUserCollection ?? false)
+  const collectionConfig = collectionRenderingConfig[configKey]
   if (!collectionConfig) return undefined
   if (!render) return undefined
 
@@ -70,9 +131,12 @@ export const resolveTilesUrl = (item: Item, render: StacRender | undefined): str
   } as { url: string; rescale?: string[]; colormap?: string }
 
   if (render) {
+    // Exclude client-side only properties (auth, quicklook_georeference) from query params
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { auth, quicklook_georeference, ...renderParams } = render
     queryParams = {
       ...queryParams,
-      ...render,
+      ...renderParams,
       // Handles rescale parameter which can be either:
       // 1. A nested array of [min,max] pairs: [[0,100], [0,255]]
       // 2. A single [min,max] pair: [0,100]
@@ -145,6 +209,17 @@ function translateServerConfigToCollectionConfig(
     if (config['eodhrc:render-key-properties']) {
       baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
     }
+
+    // Explicitly set thumbnail_auth with backward-compatible default
+    if (config.thumbnail_auth !== undefined) {
+      baseConfig.thumbnail_auth = config.thumbnail_auth
+    } else if (renders?.preview?.auth === true) {
+      // Explicitly set thumbnail_auth to true when preview requires auth
+      baseConfig.thumbnail_auth = true
+    }
+
+    // Set thumbnail_asset with default
+    baseConfig.thumbnail_asset = config.thumbnail_asset ?? 'thumbnail'
 
     // Add specific properties based on renderer type
     result[collectionId] = baseConfig
