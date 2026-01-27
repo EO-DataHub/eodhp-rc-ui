@@ -202,6 +202,8 @@
     }
   },
   "PSScene": {
+    "thumbnail_auth": false,
+    "thumbnail_asset": "thumbnail",
     "renders": {
       "preview": {
         "title": "Preview (approximate location)",
@@ -242,7 +244,8 @@
           5000
         ]
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "my-PSScene": {
     "renders": {
@@ -263,7 +266,9 @@
           8000
         ]
       }
-    }
+    },
+    "thumbnail_auth": false,
+    "thumbnail_asset": "external_thumbnail"
   },
   "my-platero-l1C-cogs": {
     "renders": {
@@ -280,7 +285,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "platero-l1C-cogs": {
     "renders": {
@@ -314,7 +320,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "mantis_l1d-cogs": {
     "renders": {
@@ -348,7 +355,8 @@
         "nodata": 0,
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "hammer-l1C-cogs": {
     "renders": {
@@ -486,7 +494,8 @@
         ],
         "nodata": 0
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "airbus_pneo_data": {
     "renders": {
@@ -498,7 +507,9 @@
         "quicklook_georeference": "geometry",
         "auth": true
       }
-    }
+    },
+    "thumbnail_auth": false,
+    "thumbnail_asset": "external_thumbnail"
   },
   "my-airbus_pneo_data": {
     "renders": {
@@ -528,7 +539,9 @@
         ],
         "nodata": 0
       }
-    }
+    },
+    "thumbnail_auth": true,
+    "thumbnail_asset": "quicklook"
   },
   "airbus_spot_data": {
     "renders": {
@@ -559,7 +572,8 @@
           1000
         ]
       }
-    }
+    },
+    "thumbnail_auth": true
   },
   "eocis-sst-cdrv3-climatology": {
     "renders": {

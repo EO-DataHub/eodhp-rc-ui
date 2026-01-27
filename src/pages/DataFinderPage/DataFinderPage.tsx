@@ -22,6 +22,7 @@ export const DataFinderPage: React.FC = () => {
   const navigate = useNavigate()
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
 
   const collectionQueries = useQueries({
     queries: catalogs.map((catalog) => ({
@@ -37,14 +38,18 @@ export const DataFinderPage: React.FC = () => {
 
   const { data: workspaceTokensData } = useQuery({
     queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
+    queryFn: () => {
+      return fetchWorkspaceTokens(currentWorkspace!, token!)
+    },
     refetchOnWindowFocus: false,
     enabled: !!currentWorkspace && !!token,
   })
 
   const userCollectionQuery = useQuery({
     queryKey: ['UserCollections', currentWorkspace],
-    queryFn: () => fetchUserCollections(currentWorkspace!, workspaceTokensData!.access),
+    queryFn: () => {
+      return fetchUserCollections(currentWorkspace!, workspaceTokensData!.access)
+    },
     refetchOnWindowFocus: false,
     enabled: !!currentWorkspace && !!workspaceTokensData,
   })
@@ -128,21 +133,29 @@ export const DataFinderPage: React.FC = () => {
     if (!storedItemData) return
 
     try {
-      const { item, collectionTitle } = JSON.parse(storedItemData)
+      const { item, collectionTitle, workspace } = JSON.parse(storedItemData)
 
-      // Create a render config for the thumbnail
-      const thumbnailRender = {
-        id: 'thumbnail',
-        title: 'Thumbnail',
-        assets: ['thumbnail'],
-        quicklook_georeference: 'bbox' as const,
+      // CRITICAL: Verify workspace matches before proceeding
+      if (currentWorkspace !== workspace) {
+        return
+      }
+
+      // CRITICAL: Verify collection ID matches the item's collection
+      const itemCollectionId = item?.collection
+      if (collection.id !== itemCollectionId) {
+        return
+      }
+
+      // CRITICAL: Ensure collection render is available
+      if (!collectionRender) {
+        return
       }
 
       // Pin the item to the map
       dataFinderStore.send({
         type: 'addPinnedItem',
         item: item,
-        collectionRender: thumbnailRender,
+        collectionRender,
         isLicenseProprietary: collection.license === 'proprietary',
         isUserCollection: true,
         collectionName: collectionTitle,
@@ -171,9 +184,11 @@ export const DataFinderPage: React.FC = () => {
       localStorage.removeItem('itemToPin')
     } catch (error) {
       // If parsing fails, just clear the stored item
+      // eslint-disable-next-line no-console
+      console.error('[DataFinderPage] Error processing itemToPin:', error)
       localStorage.removeItem('itemToPin')
     }
-  }, [collection])
+  }, [collection, currentWorkspace, collectionRender])
 
   return (
     <Box height="var(--content-height)" position="relative">

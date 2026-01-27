@@ -25,7 +25,12 @@ import {
   itemCardFieldsToDisplay,
 } from '@/constants/collectionCategorizations'
 import { extractStacMetadata, getMetadataItemProperty } from '@/library/extractStacMetadata'
-import { collectionRenderingConfig } from '@/library/collectionRenderingConfig'
+import {
+  collectionRenderingConfig,
+  getCollectionConfigKey,
+  getThumbnailAssetUrl,
+  requiresThumbnailAuthentication,
+} from '@/library/collectionRenderingConfig'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
@@ -173,10 +178,17 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
-    const collectionConfig = collectionRenderingConfig[item.collection]
-    const requiresAuth = collectionConfig?.renders?.preview?.auth === true
-    return requiresAuth
-  }, [item.collection])
+    const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
+    const collectionConfig = collectionRenderingConfig[configKey]
+    return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
+  }, [item.collection, itemBelongsToUserCollection])
+
+  // Get thumbnail URL using configured asset with fallback
+  const thumbnailUrl = useMemo(() => {
+    const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
+    const collectionConfig = collectionRenderingConfig[configKey]
+    return getThumbnailAssetUrl(item, collectionConfig)
+  }, [item, itemBelongsToUserCollection])
 
   // Check if pin button should be disabled
   const isPinButtonDisabled = useMemo(() => {
@@ -313,14 +325,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           !isAlreadyPinned ? pinItem() : unpinItem()
         }}
       >
-        {item.assets?.thumbnail?.href?.endsWith('.tif') ||
-        item.assets?.thumbnail?.href?.endsWith('.tiff') ? (
-          <TiffViewer url={item.assets.thumbnail.href} className={styles.thumbnail} />
+        {thumbnailUrl && (thumbnailUrl.endsWith('.tif') || thumbnailUrl.endsWith('.tiff')) ? (
+          <TiffViewer url={thumbnailUrl} className={styles.thumbnail} />
         ) : (
           <AuthenticatedThumbnail
-            thumbnailUrl={item.assets?.thumbnail?.href || ''}
+            thumbnailUrl={thumbnailUrl ?? ''}
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
+            isUserCollection={itemBelongsToUserCollection}
           />
         )}
         <div className={styles.overlay}>
