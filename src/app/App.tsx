@@ -10,8 +10,12 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
 import { RestoreAOIContextProvider } from '@/provider/RestoreAOIProvider'
 import { AuthenticatedTileUrlsProvider } from '@/components/AuthenticatedTileUrlsProvider'
+import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
+import { ConsentBanner } from '@/components/ConsentBanner/ConsentBanner'
+import { ConsentButton } from '@/components/ConsentButton/ConsentButton'
 
 function App() {
+  useGoogleAnalytics(router)
   useEffect(() => {
     dataFinderStore.send({
       type: 'hydrateFromLocalStorage',
@@ -25,6 +29,8 @@ function App() {
           <RestoreAOIContextProvider>
             <Theme accentColor="blue">
               <RouterProvider router={router} />
+              <ConsentBanner />
+              <ConsentButton />
             </Theme>
           </RestoreAOIContextProvider>
         </AuthenticatedTileUrlsProvider>

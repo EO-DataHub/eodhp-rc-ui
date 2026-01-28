@@ -21,8 +21,10 @@ import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
 import { ChangeWokspaceModal } from '@/components/ChangeWokspaceModal/ChangeWokspaceModal'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 export const OrderDetailsPage: React.FC = () => {
+  const { trackPurchasedImagery } = useAnalyticsActions()
   const { state } = useLocation()
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
@@ -56,6 +58,19 @@ export const OrderDetailsPage: React.FC = () => {
     mutationFn: purchaseProduct,
     onSuccess: () => {
       setOrderStatus('success')
+
+      if (item && selectedCollection) {
+        trackPurchasedImagery({
+          item,
+          collection: selectedCollection,
+          provider: providerType,
+          productBundle: orderSelections.productBundle,
+          workspace: selectedWorkspace,
+          price: quote?.data?.value,
+          currency: quote?.data?.units,
+          isPartialScene: !isFullScene,
+        })
+      }
     },
     onError: () => {
       setOrderStatus('error')

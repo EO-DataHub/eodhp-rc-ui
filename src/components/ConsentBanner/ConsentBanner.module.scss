@@ -1,0 +1,39 @@
+.banner {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.card {
+  width: min(720px, 100%);
+  pointer-events: auto;
+  background: #ffffff;
+  border: 1px solid rgb(0 0 0 / 15%);
+  box-shadow: 0 12px 30px rgb(0 0 0 / 12%);
+  padding: 16px;
+}
+
+.text {
+  color: #1a1a1a;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  .banner {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+}
