@@ -6,7 +6,7 @@ import { TruncatedText } from './TruncatedText'
 import { MetadataSection } from './MetadataSection'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import { Collection } from '@/types'
-import { AssetItemTable } from './AssetItemTable'
+import { AssetTable } from './AssetTable'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { ProvidersSection } from './ProvidersSection'
 import { DataQualitySection } from './DataQualitySection'
@@ -72,7 +72,11 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
 
               <Tabs.Content value="assets">
                 <Flex direction="column" gap="6">
-                  <AssetItemTable assets={selectedCollection.assets} />
+                  <AssetTable
+                    mode="collection"
+                    assets={selectedCollection.assets}
+                    collection={selectedCollection}
+                  />
                 </Flex>
               </Tabs.Content>
 
