@@ -42,6 +42,7 @@ interface AppContext {
   drawMode?: DrawMode
   aoi?: GeoJSON.Feature
   mapBounds?: MapBounds
+  initialBounds?: MapBounds
   queryFilter?: object
   page: number
   pinnedItems: Item[]
@@ -68,6 +69,7 @@ const dataFinderStore = createStore({
     drawMode: undefined,
     aoi: undefined,
     mapBounds: undefined,
+    initialBounds: undefined,
     queryFilter: undefined,
     page: 0,
     pinnedItems: [],
@@ -193,6 +195,14 @@ const dataFinderStore = createStore({
         mapBounds: clippedBounds,
       }
     },
+    setInitialBounds: (context, event: { bounds: MapBounds }) => ({
+      ...context,
+      initialBounds: event.bounds,
+    }),
+    clearInitialBounds: (context) => ({
+      ...context,
+      initialBounds: undefined,
+    }),
 
     drawControlLoad: (context, event: { drawInstance: MapboxDraw | undefined }) => {
       return {
@@ -294,6 +304,41 @@ const dataFinderStore = createStore({
       return {
         ...context,
         pinnedItems: context.pinnedItems.filter((i) => i.pinId !== event.item.pinId),
+      }
+    },
+    addPinnedItems: (
+      context,
+      event: {
+        items: Item[]
+        collectionRender: StacRender
+        isLicenseProprietary: boolean
+        isUserCollection: boolean
+        collectionName: string
+        collection?: Collection
+      },
+    ): typeof context => {
+      const existingIds = new Set(context.pinnedItems.map((i) => i.pinId))
+      const newPinnedItems = event.items
+        .filter((item) => {
+          const pinId = getPinnedItemId(item, event.collectionRender)
+          if (existingIds.has(pinId)) return false
+          existingIds.add(pinId)
+          return true
+        })
+        .map((item) => ({
+          ...item,
+          pinId: getPinnedItemId(item, event.collectionRender),
+          tilesUrl: resolveTilesUrl(item, event.collectionRender) ?? '',
+          isLicenseProprietary: event.isLicenseProprietary,
+          isUserCollection: event.isUserCollection,
+          collectionName: event.collectionName,
+          collectionRef: event.collection,
+          render: event.collectionRender,
+          mapRender: { visible: true, opacity: 1 },
+        }))
+      return {
+        ...context,
+        pinnedItems: [...context.pinnedItems, ...newPinnedItems],
       }
     },
     clearAllPinnedItems: {

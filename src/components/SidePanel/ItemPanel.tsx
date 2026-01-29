@@ -21,16 +21,17 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   const [activeTab, setActiveTab] = useState('query-items-tab')
 
-  // Check for localStorage flag when component mounts or collection changes
+  // Check for localStorage flag when component mounts, collection changes, or pinned items change (e.g. permalink restore)
   useEffect(() => {
     const shouldOpenPinned = localStorage.getItem('openPinnedItemsTab')
     if (shouldOpenPinned) {
       localStorage.removeItem('openPinnedItemsTab')
       setActiveTab('pinned-items-tab')
     }
-  }, [collection])
+  }, [collection, pinnedItems])
 
   const itemWithCollectionContext = useMemo(() => {
     if (!infoPanelItem || !collection) return infoPanelItem

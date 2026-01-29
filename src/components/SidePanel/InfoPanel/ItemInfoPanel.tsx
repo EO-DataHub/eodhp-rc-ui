@@ -78,7 +78,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                 {item.id}
               </Text>
               <Flex direction="row" gap="5" justify="start">
-                <IconButton variant="ghost" onClick={onClose}>
+                <IconButton variant="ghost" onClick={onClose} aria-label="Close">
                   <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
               </Flex>
