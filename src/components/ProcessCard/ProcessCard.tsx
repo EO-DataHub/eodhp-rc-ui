@@ -41,7 +41,7 @@ export const ProcessCard: React.FC<ProcessCardProps> = ({ record }) => {
     >
       <Flex direction="column" p="4" justify="center" flexGrow="1">
         <Flex gap="2" align="center" mb="2">
-          <Badge size="1" variant="soft" color="blue">
+          <Badge size="1" variant="solid" color="blue" highContrast>
             {type === 'notebook' ? 'Notebook' : 'Workflow'}
           </Badge>
         </Flex>
