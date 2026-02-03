@@ -55,6 +55,7 @@ export const NavBar: React.FC = () => {
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
   const isMyDataActive = location.pathname === '/my-data'
+  const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
@@ -137,6 +138,12 @@ export const NavBar: React.FC = () => {
               <>
                 <Link to="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
                   Browse
+                </Link>
+                <Link
+                  to="/catalogue/processes"
+                  className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
+                >
+                  Processes Catalogue
                 </Link>
                 <Link
                   to="/finder/sentinel2_ard"

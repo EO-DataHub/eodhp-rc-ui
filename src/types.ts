@@ -200,6 +200,38 @@ export interface QuickFilter {
   qa?: string
 }
 
+// OGC API Records – Process Catalogue (workflows/notebooks)
+export interface ProcessRecord {
+  id: string
+  type: string
+  properties: {
+    type: 'workflow' | 'notebook'
+    title: string
+    description: string | null
+    keywords?: string[]
+    created?: string
+    updated?: string
+    applicableCollections?: string[]
+    contacts?: unknown[]
+  }
+}
+
+export interface ProcessDetail extends ProcessRecord {
+  links?: { href: string; rel: string; type?: string; title?: string }[]
+  properties: ProcessRecord['properties'] & {
+    contacts?: { name: string; organization?: string; roles?: string[] }[]
+    inputParameters?: Record<string, unknown>
+  }
+}
+
+export interface PaginatedProcessResponse {
+  items: ProcessRecord[]
+  total_items: number
+  page: number
+  total_pages: number
+  page_size: number
+}
+
 export interface DocumentQA {
   type: 'FeatureCollection'
   features: {
