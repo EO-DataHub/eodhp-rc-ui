@@ -1,0 +1,26 @@
+.card {
+  background-color: var(--Colors-Neutral-Neutral-Alpha-6, #1c2024);
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 120px;
+
+  .text {
+    color: var(--blue-contrast);
+  }
+
+  /* Light color for sufficient contrast on dark card background */
+  .textMuted {
+    color: var(--gray-3);
+  }
+}
+
+.card::before,
+.card::after {
+  content: none;
+  background: none;
+}
+
+.card:hover {
+  cursor: pointer;
+  outline: 2px solid var(--app-background-dark-2);
+}

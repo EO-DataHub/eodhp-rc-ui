@@ -11,6 +11,9 @@ import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface ItemInfoPanelProps {
   item: Item | null
@@ -19,32 +22,41 @@ interface ItemInfoPanelProps {
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
-  const { currentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, isAuthenticated } = useContext(AuthenticationContext)
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
   }, [item?.links])
 
-  // Fetch workspace token for user collections
+  // Determine if collection is a job collection
+  const isJobCollection = collection?.isJobCollection ?? false
+  // Extract workspace from collection for job collections
+  const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
+  // Use collection workspace for job collections, otherwise use currentWorkspace
+  const targetWorkspace = collectionWorkspace ?? currentWorkspace
+
+  // Fetch workspace token for user collections and job collections
   const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
+    queryKey: ['WorkspaceTokens', targetWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(targetWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token && !!isUserItem,
+    enabled: !!targetWorkspace && !!token && (!!isUserItem || !!isJobCollection) && isAuthenticated,
   })
 
   // Always fetch the full item when viewing metadata (GET /items/{id} returns full properties)
   // POST search endpoint returns minimal properties for performance, but GET /items/{id} returns full
+  const needsAuth = (isUserItem ?? false) || isJobCollection
   const { data, isLoading, error } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id, isUserItem],
+    queryKey: ['Items', item?.collection, item?.id, isUserItem, isJobCollection],
     queryFn: () =>
       fetchItem({
         collectionUrl: collectionUrl,
         itemId: item?.id,
-        workspaceToken: isUserItem ? workspaceTokensData?.access : undefined,
+        workspaceToken: needsAuth ? workspaceTokensData?.access : undefined,
       }),
     refetchOnWindowFocus: false,
-    enabled: !!item && !!collectionUrl && (isUserItem ? !!workspaceTokensData : true),
+    enabled: !!item && !!collectionUrl && (needsAuth ? !!workspaceTokensData : true),
   })
 
   // Use fetched data if available, otherwise fallback to original item
