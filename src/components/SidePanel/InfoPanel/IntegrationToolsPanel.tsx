@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useContext } from 'react'
 import { Cross1Icon, DownloadIcon, CopyIcon, CheckIcon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton, Button, Box, Card, Tabs } from '@radix-ui/themes'
+import { Flex, Text, IconButton, Button, Box, Card, Tabs, RadioGroup } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
-import type { Item } from '@/types'
+import type { Collection, Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import {
   downloadQlrForItem,
@@ -12,6 +12,9 @@ import {
 import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
+import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
+import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface IntegrationToolsPanelProps {
   item: Item | null
@@ -225,22 +228,145 @@ const WorkflowsTab: React.FC = () => {
 }
 
 // Jupyter Tab Component
-const JupyterTab: React.FC = () => {
+const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
+  const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
+  const username = userInfo?.preferred_username
+  const {
+    notebooks,
+    selectedNotebook,
+    setSelectedNotebook,
+    launch,
+    isLoadingNotebooks,
+    isLaunching,
+    notebooksError,
+    launchError,
+    retry,
+  } = useNotebookLaunch({
+    item,
+    collection,
+    token,
+    currentWorkspace,
+    username,
+  })
+
+  const canLaunch =
+    isAuthenticated && !!currentWorkspace && !!item && !!selectedNotebook && !isLaunching
+  const showContent = isAuthenticated && !!currentWorkspace && !!item
+  const hasNotebooks = notebooks.length > 0
+  const isEmpty = !isLoadingNotebooks && !notebooksError && notebooks.length === 0
+
+  if (!showContent) {
+    return (
+      <Card>
+        <Flex direction="column" gap="3" p="4">
+          <Text weight="medium" size="3">
+            Jupyter Notebook Integration
+          </Text>
+          <Text size="2" color="gray">
+            Launch Jupyter notebooks with this data already loaded and ready for analysis. Log in
+            and select a workspace to use this feature.
+          </Text>
+        </Flex>
+      </Card>
+    )
+  }
+
   return (
-    <Card>
-      <Flex direction="column" gap="3" p="4">
-        <Text weight="medium" size="3">
-          Jupyter Notebook Integration
-        </Text>
-        <Text size="2" color="gray">
-          Launch Jupyter notebooks with this data already loaded and ready for analysis. Access
-          pre-configured notebooks for common analysis tasks.
-        </Text>
-        <Text size="2" color="orange">
-          🚧 Coming Soon: Jupyter notebook integration will be available in a future update.
-        </Text>
-      </Flex>
-    </Card>
+    <Flex direction="column" gap="4">
+      <Card>
+        <Flex direction="column" gap="3" p="4">
+          <Text weight="medium" size="3">
+            Jupyter Notebook Integration
+          </Text>
+          <Text size="2" color="gray">
+            Launch Jupyter notebooks with this data already loaded and ready for analysis. Select a
+            notebook below and click Launch.
+          </Text>
+
+          {isLoadingNotebooks && (
+            <Flex pt="4" pb="4">
+              <LoadingIndicator size="2" />
+            </Flex>
+          )}
+
+          {notebooksError && (
+            <Flex direction="column" gap="2" pt="2">
+              <Text size="2" color="red">
+                Unable to load notebooks
+              </Text>
+              <Text size="2" color="gray">
+                {notebooksError}
+              </Text>
+              <Button variant="soft" size="2" onClick={retry}>
+                Retry
+              </Button>
+            </Flex>
+          )}
+
+          {!isLoadingNotebooks && !notebooksError && (
+            <>
+              {isEmpty && (
+                <Text size="2" color="gray">
+                  No notebooks available for this dataset
+                </Text>
+              )}
+
+              {hasNotebooks && (
+                <Flex direction="column" gap="3" pt="2">
+                  <RadioGroup.Root
+                    value={selectedNotebook?.id ?? ''}
+                    onValueChange={(id) => {
+                      const nb = notebooks.find((n) => n.id === id) ?? null
+                      setSelectedNotebook(nb)
+                    }}
+                  >
+                    <Flex direction="column" gap="2">
+                      {notebooks.map((nb) => (
+                        <label key={nb.id} style={{ cursor: 'pointer' }}>
+                          <Flex gap="2" align="center">
+                            <RadioGroup.Item value={nb.id} />
+                            <Flex direction="column" gap="0">
+                              <Text size="2" weight="medium">
+                                {nb.properties?.title ?? nb.id}
+                              </Text>
+                              {nb.properties?.description && (
+                                <Text size="1" color="gray">
+                                  {nb.properties.description}
+                                </Text>
+                              )}
+                            </Flex>
+                          </Flex>
+                        </label>
+                      ))}
+                    </Flex>
+                  </RadioGroup.Root>
+
+                  <Button
+                    variant="soft"
+                    size="2"
+                    disabled={!canLaunch}
+                    onClick={() => void launch()}
+                  >
+                    {isLaunching ? 'Launching...' : 'Launch'}
+                  </Button>
+
+                  {launchError && (
+                    <Flex direction="column" gap="2">
+                      <Text size="2" color="red">
+                        {launchError}
+                      </Text>
+                      <Button variant="soft" size="2" color="red" onClick={() => void launch()}>
+                        Retry
+                      </Button>
+                    </Flex>
+                  )}
+                </Flex>
+              )}
+            </>
+          )}
+        </Flex>
+      </Card>
+    </Flex>
   )
 }
 
@@ -248,6 +374,7 @@ const JupyterTab: React.FC = () => {
 export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ item, onClose }) => {
   // Get the item's render if it exists (for pinned items or items with attached render)
   const itemRender = item?.render
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
 
   // Don't render if item doesn't support integration tools
   // For time-variable items, this will check if itemRender is valid
@@ -300,7 +427,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
 
               <Tabs.Content value="jupyter">
                 <Box pt="4">
-                  <JupyterTab />
+                  <JupyterTab item={item} collection={item.collectionRef ?? collection} />
                 </Box>
               </Tabs.Content>
             </Tabs.Root>

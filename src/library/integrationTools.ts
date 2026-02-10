@@ -1,5 +1,40 @@
+import type { ProcessRecord } from '@/types'
 import { Item, StacRender } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
+
+/**
+ * Extracts the notebook template URL from a ProcessDetail's links.
+ * The catalogue API uses rel="application" for the notebook file (application/x-ipynb+json).
+ *
+ * @see src/example_notebook_response.json - links with rel "application"
+ * @see specs/001-launch-notebook-integration/contracts/catalogue-notebooks.md
+ */
+export function getNotebookTemplateUrl(
+  record: ProcessRecord & { links?: { rel?: string; href?: string; type?: string }[] },
+): string | undefined {
+  const links = record.links
+  if (!Array.isArray(links)) return undefined
+
+  const application = links.find(
+    (l) =>
+      l.rel === 'application' &&
+      typeof l.href === 'string' &&
+      (l.type?.includes('ipynb') ?? l.href.endsWith('.ipynb')),
+  )
+  if (application?.href) return application.href
+
+  const enclosure = links.find(
+    (l) =>
+      (l.rel === 'enclosure' &&
+        typeof l.href === 'string' &&
+        (l.type?.includes('json') ?? false)) ||
+      (l.type?.includes('ipynb') ?? false),
+  )
+  if (enclosure?.href) return enclosure.href
+
+  const ipynb = links.find((l) => typeof l.href === 'string' && l.href.endsWith('.ipynb'))
+  return ipynb?.href
+}
 
 /**
  * Gets the COG asset href from an item
@@ -157,7 +192,8 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
     renderId,
   }
 
-  const apiUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000/qlr'
+  const baseUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000'
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}/qlr`
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
