@@ -1,5 +1,16 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
-import { Flex, Text, TextField, Tabs, Box, Table, Select, Button, Checkbox } from '@radix-ui/themes'
+import {
+  Flex,
+  Text,
+  TextField,
+  Tabs,
+  Box,
+  Table,
+  Select,
+  Button,
+  Checkbox,
+  Progress,
+} from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -12,7 +23,7 @@ import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
+import { DownloadIcon, MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
@@ -24,6 +35,15 @@ import {
   getVisibleColumns,
 } from '@/library/columnConfig'
 import { ColumnSelector } from '@/components/ColumnSelector/ColumnSelector'
+import { useDropzone } from 'react-dropzone'
+import {
+  listWorkspaceFiles,
+  uploadWorkspaceFiles,
+  StoreType,
+  WorkspaceFileItem,
+  WorkspaceFileListResponse,
+} from '@/services/workspaceFilesService'
+import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
@@ -44,11 +64,28 @@ export const MyDataPage: React.FC = () => {
   const [totalItemsMatched, setTotalItemsMatched] = useState<number | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>(() => loadColumnConfig())
+  const [activeTab, setActiveTab] = useState('purchased_data')
+  const [dataWorkspace, setDataWorkspace] = useState<string>(() => {
+    const stored = localStorage.getItem('dataStorageSelectedWorkspace')
+    return stored ?? currentWorkspace ?? ''
+  })
+  const [dataStoreFilter, setDataStoreFilter] = useState<'all' | StoreType>('all')
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
 
   // Load column config on mount
   useEffect(() => {
     setColumnConfig(loadColumnConfig())
   }, [])
+
+  // Default to the current workspace when the data tab first loads and no selection exists yet.
+  useEffect(() => {
+    if (!dataWorkspace && currentWorkspace) {
+      setDataWorkspace(currentWorkspace)
+    }
+  }, [currentWorkspace, dataWorkspace])
 
   // Save column config when it changes
   const handleColumnConfigChange = (config: ColumnConfig[]) => {
@@ -64,6 +101,11 @@ export const MyDataPage: React.FC = () => {
   const handleWorkspaceChange = (workspace: string) => {
     localStorage.setItem('ordersPageSelectedWorkspace', workspace)
     setSelectedWorkspace(workspace)
+  }
+
+  const handleDataWorkspaceChange = (workspace: string) => {
+    localStorage.setItem('dataStorageSelectedWorkspace', workspace)
+    setDataWorkspace(workspace)
   }
 
   // Helper function to get collection map URL
@@ -223,6 +265,23 @@ export const MyDataPage: React.FC = () => {
     return ['all', ...Array.from(workspaceSet).sort()]
   }, [allWorkspaces, allOrders, currentWorkspace])
 
+  const dataWorkspaceOptions = useMemo(() => {
+    return workspaceOptions.filter((workspace) => workspace !== 'all')
+  }, [workspaceOptions])
+
+  // If no workspace is selected yet, default to the first available option
+  useEffect(() => {
+    if (!dataWorkspace && dataWorkspaceOptions.length > 0) {
+      setDataWorkspace(dataWorkspaceOptions[0])
+    }
+  }, [dataWorkspace, dataWorkspaceOptions])
+
+  // Clear stale upload messages when the workspace or store filter changes
+  useEffect(() => {
+    setUploadSuccess(null)
+    setUploadError(null)
+  }, [dataWorkspace, dataStoreFilter])
+
   const collectionOptions = useMemo(() => {
     if (!allOrders) return []
     return [
@@ -234,6 +293,20 @@ export const MyDataPage: React.FC = () => {
       ),
     ]
   }, [allOrders])
+
+  const storeParam = dataStoreFilter === 'all' ? undefined : dataStoreFilter
+
+  const {
+    data: filesResult,
+    isLoading: filesLoading,
+    error: filesError,
+    refetch: refetchFiles,
+  } = useQuery<WorkspaceFileListResponse>({
+    queryKey: ['WorkspaceFiles', dataWorkspace, dataStoreFilter, token],
+    queryFn: () => listWorkspaceFiles(dataWorkspace, token ?? '', storeParam),
+    refetchOnWindowFocus: false,
+    enabled: Boolean(token && dataWorkspace && activeTab === 'data_storage'),
+  })
 
   const filteredOrders = useMemo(() => {
     if (!allOrders) return []
@@ -280,6 +353,25 @@ export const MyDataPage: React.FC = () => {
       return dateB - dateA // Descending order (newest first)
     })
   }, [allOrders, searchText, selectedWorkspace, selectedCollection, includeFailedOrders])
+
+  // Derive visible files: filter by store + search term, then sort by most recent.
+  const filteredFiles = useMemo(() => {
+    const items = filesResult?.items ?? []
+    const searchLower = searchText.trim().toLowerCase()
+    let filtered = items
+
+    if (dataStoreFilter !== 'all') {
+      filtered = filtered.filter((item) => item.storeType === dataStoreFilter)
+    }
+    if (searchLower) {
+      filtered = filtered.filter((item) => item.fileName.toLowerCase().includes(searchLower))
+    }
+    return [...filtered].sort((a, b) => {
+      const dateA = a.lastModified ? new Date(a.lastModified).getTime() : 0
+      const dateB = b.lastModified ? new Date(b.lastModified).getTime() : 0
+      return dateB - dateA
+    })
+  }, [filesResult, searchText, dataStoreFilter])
 
   // Calculate filtered totalItemsMatched based on filtered orders
   // When filters exclude orders (e.g., failed orders), totalItemsMatched should reflect filtered count
@@ -428,6 +520,49 @@ export const MyDataPage: React.FC = () => {
     }
   }
 
+  const canUpload = Boolean(token && dataWorkspace && dataStoreFilter !== 'all')
+
+  const handleDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return
+    if (!token) {
+      setUploadError('You must be signed in to upload files.')
+      return
+    }
+    if (!dataWorkspace) {
+      setUploadError('Select a workspace to upload files.')
+      return
+    }
+    if (dataStoreFilter === 'all') {
+      setUploadError('Select a store type to upload files.')
+      return
+    }
+
+    setUploadError(null)
+    setUploadSuccess(null)
+    setIsUploading(true)
+    setUploadProgress(0)
+
+    try {
+      await uploadWorkspaceFiles(dataWorkspace, token, dataStoreFilter, acceptedFiles, (progress) =>
+        setUploadProgress(progress),
+      )
+      setUploadSuccess(
+        `Uploaded ${acceptedFiles.length} file${acceptedFiles.length === 1 ? '' : 's'}.`,
+      )
+      await refetchFiles()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload failed.')
+    } finally {
+      setIsUploading(false)
+      setUploadProgress(null)
+    }
+  }
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: handleDrop,
+    disabled: !canUpload || isUploading,
+  })
+
   return (
     <>
       <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
@@ -439,14 +574,15 @@ export const MyDataPage: React.FC = () => {
             View all your orders across all workspaces
           </Text>
         </Flex>
-        <Tabs.Root defaultValue="purchased_data">
+        <Tabs.Root defaultValue="purchased_data" value={activeTab} onValueChange={setActiveTab}>
           <Flex justify="between">
             <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="purchased_data">Purchased Data</Tabs.Trigger>
+              <Tabs.Trigger value="data_storage">Data storage</Tabs.Trigger>
               <Tabs.Trigger value="workflow_outputs">Workflow Outputs</Tabs.Trigger>
             </Tabs.List>
             <TextField.Root
-              placeholder="Search"
+              placeholder={activeTab === 'data_storage' ? 'Search files' : 'Search'}
               value={searchText}
               onChange={handleChange}
               size="3"
@@ -666,6 +802,184 @@ export const MyDataPage: React.FC = () => {
                             </Text>
                           )}
                       </Flex>
+                    )}
+                  </>
+                )}
+              </Flex>
+            </Tabs.Content>
+
+            <Tabs.Content value="data_storage">
+              <Flex direction="column" gap="5">
+                <Flex
+                  p="5"
+                  direction="row"
+                  gap="2"
+                  align="center"
+                  justify="between"
+                  className={styles.filterContainer}
+                  overflow="auto"
+                >
+                  <Box flexGrow="1" width="200px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={dataWorkspace}
+                      onValueChange={handleDataWorkspaceChange}
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          {dataWorkspaceOptions.map((workspace) => (
+                            <Select.Item key={workspace} value={workspace}>
+                              {workspace}
+                            </Select.Item>
+                          ))}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </Box>
+
+                  <Box flexGrow="1" width="200px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={dataStoreFilter}
+                      onValueChange={(value) => setDataStoreFilter(value as 'all' | StoreType)}
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Store type" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          <Select.Item value="all">All stores</Select.Item>
+                          <Select.Item value="object">Object store</Select.Item>
+                          <Select.Item value="block">Block store</Select.Item>
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </Box>
+                </Flex>
+
+                {uploadError && <Callout type="error" message={uploadError} />}
+                {uploadSuccess && <Callout type="info" message={uploadSuccess} />}
+
+                <Box
+                  {...getRootProps()}
+                  className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ''} ${
+                    !canUpload || isUploading ? styles.dropzoneDisabled : ''
+                  }`}
+                >
+                  <input {...getInputProps()} />
+                  <Flex direction="column" gap="2" align="center">
+                    <UploadIcon />
+                    <Text size="3" weight="medium">
+                      Drag and drop files here
+                    </Text>
+                    <Text size="2" color="gray">
+                      or click to select files
+                    </Text>
+                    {!canUpload && (
+                      <Text size="2" color="gray">
+                        Select a workspace and store type to enable uploads.
+                      </Text>
+                    )}
+                  </Flex>
+                </Box>
+
+                {isUploading && (
+                  <Flex direction="column" gap="2">
+                    <Progress value={uploadProgress ?? 0} />
+                    <Text size="2" color="gray">
+                      {uploadProgress ?? 0}%
+                    </Text>
+                  </Flex>
+                )}
+
+                {!token && <Callout type="info" message="Sign in to view workspace files." />}
+
+                {filesLoading ? (
+                  <LoadingIndicator size="3" />
+                ) : (
+                  filesError && (
+                    <Callout
+                      type="error"
+                      message={
+                        filesError instanceof Error
+                          ? filesError.message
+                          : 'Failed to load workspace files.'
+                      }
+                    />
+                  )
+                )}
+
+                {!filesLoading && !filesError && dataWorkspace && (
+                  <>
+                    <Flex justify="between" align="center" mb="3">
+                      <Text size="2" color="gray">
+                        {filteredFiles.length === 1
+                          ? 'Showing 1 file'
+                          : `Showing ${filteredFiles.length} files`}
+                      </Text>
+                    </Flex>
+
+                    {filteredFiles.length === 0 ? (
+                      <Callout type="info" message="No files found for this workspace." />
+                    ) : (
+                      <Table.Root className={`${styles.ordersTable} ${styles.filesTable}`}>
+                        <Table.Header>
+                          <Table.Row>
+                            <Table.ColumnHeaderCell data-column-id="fileName">
+                              File name
+                            </Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell data-column-id="storeType">
+                              Store
+                            </Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell data-column-id="size">
+                              Size
+                            </Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell data-column-id="lastModified">
+                              Last modified
+                            </Table.ColumnHeaderCell>
+                            <Table.ColumnHeaderCell data-column-id="download">
+                              Download
+                            </Table.ColumnHeaderCell>
+                          </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                          {filteredFiles.map((item: WorkspaceFileItem) => (
+                            <Table.Row key={`${item.storeType}-${item.fileName}`}>
+                              <Table.Cell data-column-id="fileName">
+                                <Text size="2" weight="medium">
+                                  {item.fileName}
+                                </Text>
+                              </Table.Cell>
+                              <Table.Cell data-column-id="storeType">
+                                {item.storeType === 'object' ? 'Object' : 'Block'}
+                              </Table.Cell>
+                              <Table.Cell data-column-id="size">
+                                {formatFileSize(item.size)}
+                              </Table.Cell>
+                              <Table.Cell data-column-id="lastModified">
+                                {formatFileDateTime(item.lastModified)}
+                              </Table.Cell>
+                              <Table.Cell data-column-id="download">
+                                {item.downloadUrl ? (
+                                  <Button size="2" variant="soft" asChild>
+                                    <a
+                                      href={item.downloadUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      aria-label={`Download ${item.fileName}`}
+                                    >
+                                      <DownloadIcon />
+                                    </a>
+                                  </Button>
+                                ) : (
+                                  <Text size="2" color="gray">
+                                    N/A
+                                  </Text>
+                                )}
+                              </Table.Cell>
+                            </Table.Row>
+                          ))}
+                        </Table.Body>
+                      </Table.Root>
                     )}
                   </>
                 )}
