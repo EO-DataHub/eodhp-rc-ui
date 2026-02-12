@@ -216,11 +216,19 @@ export interface ProcessRecord {
   }
 }
 
+/** Single input parameter entry from process catalogue (e.g. for notebooks). Used for variable form UI. */
+export interface InputParameterEntry {
+  type?: string
+  label?: string
+  description?: string
+  default?: unknown
+}
+
 export interface ProcessDetail extends ProcessRecord {
   links?: { href: string; rel: string; type?: string; title?: string }[]
   properties: ProcessRecord['properties'] & {
     contacts?: { name: string; organization?: string; roles?: string[] }[]
-    inputParameters?: Record<string, unknown>
+    inputParameters?: Record<string, InputParameterEntry>
   }
 }
 

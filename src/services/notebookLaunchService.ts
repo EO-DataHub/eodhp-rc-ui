@@ -2,17 +2,15 @@
  * Notebook Launch API client.
  * Creates parameterized notebooks and returns JupyterHub spawn URLs.
  *
- * @see specs/001-launch-notebook-integration/contracts/notebook-launch-api.md
+ * @see specs/notebook-launch-api-changes.md
  */
 
 export interface NotebookLaunchRequest {
-  stac_collection_name: string
-  stac_item_link: string
   workspace_name: string
   username: string
   action_name: string
   template_url: string
-  aoi?: GeoJSON.Feature
+  variables?: Record<string, string>
 }
 
 export interface NotebookLaunchResponse {

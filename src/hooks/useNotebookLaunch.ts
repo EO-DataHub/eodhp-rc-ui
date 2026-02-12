@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import type { Collection, Item, ProcessRecord } from '@/types'
 import { fetchItems, fetchItemById } from '@/services/processCatalogueService'
 import { launchNotebook } from '@/services/notebookLaunchService'
+import { buildNotebookVariables } from '@/services/notebookVariableResolvers'
 import { getSelfLinkHref, getNotebookTemplateUrl } from '@/library/integrationTools'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -108,18 +109,21 @@ export function useNotebookLaunch({
           return
         }
 
-        // Include AOI only if user opted in AND AOI exists
+        const inputParameterKeys =
+          selectedNotebook.properties?.type === 'notebook'
+            ? Object.keys(detail?.properties?.inputParameters ?? {})
+            : []
+        const context = { item, aoi, includeAoi }
+        const variables = buildNotebookVariables(inputParameterKeys, context)
+
         const requestPayload: Parameters<typeof launchNotebook>[0] = {
-          stac_collection_name: item.collection,
-          stac_item_link: stacItemLink,
           workspace_name: currentWorkspace,
           username,
           action_name: selectedNotebook.id,
           template_url: templateUrl,
         }
-
-        if (includeAoi && aoi) {
-          requestPayload.aoi = aoi
+        if (Object.keys(variables).length > 0) {
+          requestPayload.variables = variables
         }
 
         const spawnUrl = await launchNotebook(requestPayload, token)
