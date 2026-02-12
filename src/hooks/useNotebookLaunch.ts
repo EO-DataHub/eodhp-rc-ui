@@ -3,6 +3,8 @@ import type { Collection, Item, ProcessRecord } from '@/types'
 import { fetchItems, fetchItemById } from '@/services/processCatalogueService'
 import { launchNotebook } from '@/services/notebookLaunchService'
 import { getSelfLinkHref, getNotebookTemplateUrl } from '@/library/integrationTools'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 export interface UseNotebookLaunchParams {
   item: Item | null
@@ -16,7 +18,7 @@ export interface UseNotebookLaunchResult {
   notebooks: ProcessRecord[]
   selectedNotebook: ProcessRecord | null
   setSelectedNotebook: (n: ProcessRecord | null) => void
-  launch: () => Promise<void>
+  launch: (includeAoi?: boolean) => Promise<void>
   isLoadingNotebooks: boolean
   isLaunching: boolean
   notebooksError: string | null
@@ -37,6 +39,9 @@ export function useNotebookLaunch({
   const [notebooksError, setNotebooksError] = useState<string | null>(null)
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchError, setLaunchError] = useState<string | null>(null)
+
+  // Retrieve AOI from store
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
   const collectionUrl = collection ? getSelfLinkHref(collection) : undefined
 
@@ -76,53 +81,60 @@ export function useNotebookLaunch({
     void loadNotebooks()
   }, [loadNotebooks])
 
-  const launch = useCallback(async () => {
-    if (!item || !selectedNotebook || !token || !currentWorkspace || !username) return
+  const launch = useCallback(
+    async (includeAoi = false) => {
+      if (!item || !selectedNotebook || !token || !currentWorkspace || !username) return
 
-    const stacItemLink = getSelfLinkHref(item)
-    if (!stacItemLink) {
-      setLaunchError('Missing required data for notebook launch. Please try again.')
-      return
-    }
-
-    setIsLaunching(true)
-    setLaunchError(null)
-
-    try {
-      // List items don't include links; fetch full item to get template URL (rel="application")
-      const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
-      if (fetchError != null || detail == null) {
-        setLaunchError(fetchError ?? 'Could not load notebook details. Please try again.')
+      const stacItemLink = getSelfLinkHref(item)
+      if (!stacItemLink) {
+        setLaunchError('Missing required data for notebook launch. Please try again.')
         return
       }
 
-      const templateUrl = getNotebookTemplateUrl(detail)
-      if (!templateUrl) {
-        setLaunchError('Notebook template URL not found. Please contact support.')
-        return
-      }
+      setIsLaunching(true)
+      setLaunchError(null)
 
-      const spawnUrl = await launchNotebook(
-        {
+      try {
+        // List items don't include links; fetch full item to get template URL (rel="application")
+        const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
+        if (fetchError != null || detail == null) {
+          setLaunchError(fetchError ?? 'Could not load notebook details. Please try again.')
+          return
+        }
+
+        const templateUrl = getNotebookTemplateUrl(detail)
+        if (!templateUrl) {
+          setLaunchError('Notebook template URL not found. Please contact support.')
+          return
+        }
+
+        // Include AOI only if user opted in AND AOI exists
+        const requestPayload: Parameters<typeof launchNotebook>[0] = {
           stac_collection_name: item.collection,
           stac_item_link: stacItemLink,
           workspace_name: currentWorkspace,
           username,
           action_name: selectedNotebook.id,
           template_url: templateUrl,
-        },
-        token,
-      )
+        }
 
-      window.open(spawnUrl, '_blank')
-    } catch (err) {
-      setLaunchError(
-        err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.',
-      )
-    } finally {
-      setIsLaunching(false)
-    }
-  }, [item, selectedNotebook, token, currentWorkspace, username])
+        if (includeAoi && aoi) {
+          requestPayload.aoi = aoi
+        }
+
+        const spawnUrl = await launchNotebook(requestPayload, token)
+
+        window.open(spawnUrl, '_blank')
+      } catch (err) {
+        setLaunchError(
+          err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.',
+        )
+      } finally {
+        setIsLaunching(false)
+      }
+    },
+    [item, selectedNotebook, token, currentWorkspace, username, aoi],
+  )
 
   const retry = useCallback(() => {
     void loadNotebooks()

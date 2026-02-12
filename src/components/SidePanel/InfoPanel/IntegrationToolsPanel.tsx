@@ -1,6 +1,16 @@
-import React, { useState, useMemo, useContext } from 'react'
+import React, { useState, useMemo, useContext, useEffect } from 'react'
 import { Cross1Icon, DownloadIcon, CopyIcon, CheckIcon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton, Button, Box, Card, Tabs, RadioGroup } from '@radix-ui/themes'
+import {
+  Flex,
+  Text,
+  IconButton,
+  Button,
+  Box,
+  Card,
+  Tabs,
+  RadioGroup,
+  Checkbox,
+} from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Collection, Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -231,6 +241,18 @@ const WorkflowsTab: React.FC = () => {
 const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const username = userInfo?.preferred_username
+
+  // Retrieve AOI from store
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // State for checkbox - defaults to true when AOI exists
+  const [includeAoi, setIncludeAoi] = useState(true)
+
+  // Reset checkbox state when AOI changes
+  useEffect(() => {
+    setIncludeAoi(!!aoi)
+  }, [aoi])
+
   const {
     notebooks,
     selectedNotebook,
@@ -341,11 +363,28 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
                     </Flex>
                   </RadioGroup.Root>
 
+                  {hasNotebooks && aoi && (
+                    <Flex align="center" gap="2">
+                      <Checkbox
+                        checked={includeAoi}
+                        onCheckedChange={(checked) => setIncludeAoi(Boolean(checked))}
+                        size="2"
+                      />
+                      <Text
+                        size="2"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setIncludeAoi(!includeAoi)}
+                      >
+                        Include Area of Interest (AOI)
+                      </Text>
+                    </Flex>
+                  )}
+
                   <Button
                     variant="soft"
                     size="2"
                     disabled={!canLaunch}
-                    onClick={() => void launch()}
+                    onClick={() => void launch(includeAoi)}
                   >
                     {isLaunching ? 'Launching...' : 'Launch'}
                   </Button>

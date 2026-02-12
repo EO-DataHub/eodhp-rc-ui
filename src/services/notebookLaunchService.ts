@@ -12,6 +12,7 @@ export interface NotebookLaunchRequest {
   username: string
   action_name: string
   template_url: string
+  aoi?: GeoJSON.Feature
 }
 
 export interface NotebookLaunchResponse {
