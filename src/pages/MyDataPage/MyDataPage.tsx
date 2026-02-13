@@ -23,7 +23,7 @@ import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { DownloadIcon, MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
+import { MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
@@ -37,6 +37,7 @@ import {
 import { ColumnSelector } from '@/components/ColumnSelector/ColumnSelector'
 import { useDropzone } from 'react-dropzone'
 import {
+  deleteWorkspaceFile,
   listWorkspaceFiles,
   uploadWorkspaceFiles,
   StoreType,
@@ -44,6 +45,7 @@ import {
   WorkspaceFileListResponse,
 } from '@/services/workspaceFilesService'
 import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
+import DeleteIcon from '@/assets/icons/trash.svg?react'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
@@ -74,6 +76,7 @@ export const MyDataPage: React.FC = () => {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [deletingFileKey, setDeletingFileKey] = useState<string | null>(null)
 
   // Load column config on mount
   useEffect(() => {
@@ -558,6 +561,32 @@ export const MyDataPage: React.FC = () => {
     }
   }
 
+  const handleDeleteFile = async (item: WorkspaceFileItem) => {
+    if (!token) {
+      setUploadError('You must be signed in to delete files.')
+      return
+    }
+    if (!dataWorkspace) {
+      setUploadError('Select a workspace to delete files.')
+      return
+    }
+
+    setUploadError(null)
+    setUploadSuccess(null)
+    const deletingKey = `${item.storeType}:${item.fileName}`
+    setDeletingFileKey(deletingKey)
+
+    try {
+      await deleteWorkspaceFile(dataWorkspace, token, item.storeType, item.fileName)
+      setUploadSuccess(`Deleted ${item.fileName}`)
+      await refetchFiles()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Delete failed.')
+    } finally {
+      setDeletingFileKey(null)
+    }
+  }
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: handleDrop,
     disabled: !canUpload || isUploading,
@@ -936,8 +965,8 @@ export const MyDataPage: React.FC = () => {
                             <Table.ColumnHeaderCell data-column-id="lastModified">
                               Last modified
                             </Table.ColumnHeaderCell>
-                            <Table.ColumnHeaderCell data-column-id="download">
-                              Download
+                            <Table.ColumnHeaderCell data-column-id="delete">
+                              Delete
                             </Table.ColumnHeaderCell>
                           </Table.Row>
                         </Table.Header>
@@ -958,23 +987,20 @@ export const MyDataPage: React.FC = () => {
                               <Table.Cell data-column-id="lastModified">
                                 {formatFileDateTime(item.lastModified)}
                               </Table.Cell>
-                              <Table.Cell data-column-id="download">
-                                {item.downloadUrl ? (
-                                  <Button size="2" variant="soft" asChild>
-                                    <a
-                                      href={item.downloadUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      aria-label={`Download ${item.fileName}`}
-                                    >
-                                      <DownloadIcon />
-                                    </a>
-                                  </Button>
-                                ) : (
-                                  <Text size="2" color="gray">
-                                    N/A
-                                  </Text>
-                                )}
+                              <Table.Cell data-column-id="delete">
+                                <Button
+                                  size="2"
+                                  variant="soft"
+                                  color="red"
+                                  type="button"
+                                  onClick={() => void handleDeleteFile(item)}
+                                  disabled={Boolean(
+                                    deletingFileKey === `${item.storeType}:${item.fileName}`,
+                                  )}
+                                  aria-label={`Delete ${item.fileName}`}
+                                >
+                                  <DeleteIcon />
+                                </Button>
                               </Table.Cell>
                             </Table.Row>
                           ))}

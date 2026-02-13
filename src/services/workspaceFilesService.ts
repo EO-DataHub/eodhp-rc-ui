@@ -5,7 +5,6 @@ export type StoreType = 'object' | 'block'
 export interface WorkspaceFileItem {
   storeType: StoreType
   fileName: string
-  downloadUrl?: string
   size?: number
   lastModified?: string
   etag?: string
@@ -79,4 +78,40 @@ export const uploadWorkspaceFiles = (
     }
     xhr.send(formData)
   })
+}
+
+export interface WorkspaceFileDeleteResponse {
+  workspace: string
+  deleted: string[]
+  failed?: {
+    fileName: string
+    error: string
+  }[]
+}
+
+export const deleteWorkspaceFile = async (
+  workspaceId: string,
+  token: string,
+  store: StoreType,
+  fileName: string,
+): Promise<WorkspaceFileDeleteResponse> => {
+  const params = new URLSearchParams()
+  params.set('file', fileName)
+
+  const response = await fetch(
+    `${HUB_BASE_URL}/api/workspaces/${workspaceId}/files/${store}?${params.toString()}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error('Failed to delete workspace file')
+  }
+
+  const data = await response.json()
+  return data as WorkspaceFileDeleteResponse
 }
