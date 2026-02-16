@@ -269,8 +269,8 @@
         ]
       }
     },
-    "thumbnail_auth": false,
-    "thumbnail_asset": "external_thumbnail"
+    "thumbnail_auth": true,
+    "thumbnail_asset": "thumbnail"
   },
   "my-platero-l1C-cogs": {
     "renders": {
