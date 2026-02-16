@@ -96,7 +96,7 @@ export function useNotebookLaunch({
       setLaunchError(null)
 
       try {
-        // List items don't include links; fetch full item to get template URL (rel="application")
+        // List items don't include links; fetch full item to get template URL (rel="template")
         const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
         if (fetchError != null || detail == null) {
           setLaunchError(fetchError ?? 'Could not load notebook details. Please try again.')

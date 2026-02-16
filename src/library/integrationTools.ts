@@ -4,9 +4,9 @@ import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderin
 
 /**
  * Extracts the notebook template URL from a ProcessDetail's links.
- * The catalogue API uses rel="application" for the notebook file (application/x-ipynb+json).
+ * The catalogue API uses rel="template" for the notebook template file.
+ * Falls back to legacy rel types for backward compatibility.
  *
- * @see src/example_notebook_response.json - links with rel "application"
  * @see specs/001-launch-notebook-integration/contracts/catalogue-notebooks.md
  */
 export function getNotebookTemplateUrl(
@@ -15,6 +15,16 @@ export function getNotebookTemplateUrl(
   const links = record.links
   if (!Array.isArray(links)) return undefined
 
+  // Primary: Look for rel="template" (custom extension rel type for notebook templates)
+  const template = links.find(
+    (l) =>
+      l.rel === 'template' &&
+      typeof l.href === 'string' &&
+      (l.type?.includes('ipynb') ?? l.href.endsWith('.ipynb')),
+  )
+  if (template?.href) return template.href
+
+  // Fallback 1: Legacy support for rel="application"
   const application = links.find(
     (l) =>
       l.rel === 'application' &&
@@ -23,6 +33,7 @@ export function getNotebookTemplateUrl(
   )
   if (application?.href) return application.href
 
+  // Fallback 2: Legacy support for rel="enclosure"
   const enclosure = links.find(
     (l) =>
       (l.rel === 'enclosure' &&
@@ -32,6 +43,7 @@ export function getNotebookTemplateUrl(
   )
   if (enclosure?.href) return enclosure.href
 
+  // Fallback 3: Any link ending with .ipynb
   const ipynb = links.find((l) => typeof l.href === 'string' && l.href.endsWith('.ipynb'))
   return ipynb?.href
 }
