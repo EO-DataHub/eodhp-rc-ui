@@ -240,9 +240,11 @@
         "nodata": 0,
         "auth": true,
         "rescale": [
-          200,
-          5000
-        ]
+          [200,7000],
+          [200,6000],
+          [200,5000]
+        ],
+        "color_formula": "sigmoidal r 4 0.6, saturation 1.1"
       }
     },
     "thumbnail_auth": true
