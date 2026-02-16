@@ -28,7 +28,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 }
 
 function getBaseUrl(): string {
-  const apiUrl = import.meta.env.VITE_QLR_API_URL as string | undefined
+  const apiUrl = import.meta.env.VITE_RC_SUPPORT_UTILS_URL as string | undefined
   if (apiUrl && typeof apiUrl === 'string') {
     return apiUrl.replace(/\/$/, '')
   }
@@ -47,7 +47,9 @@ export async function launchNotebook(
 ): Promise<string> {
   const baseUrl = getBaseUrl()
   if (!baseUrl) {
-    throw new Error('Notebook launch API is not configured. Please check VITE_QLR_API_URL.')
+    throw new Error(
+      'Notebook launch API is not configured. Please check VITE_RC_SUPPORT_UTILS_URL.',
+    )
   }
 
   const url = `${baseUrl}/api/v1/notebooks/launch`

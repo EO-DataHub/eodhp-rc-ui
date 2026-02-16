@@ -192,7 +192,7 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
     renderId,
   }
 
-  const baseUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000'
+  const baseUrl = import.meta.env.VITE_RC_SUPPORT_UTILS_URL || 'http://127.0.0.1:8000'
   const apiUrl = `${baseUrl.replace(/\/$/, '')}/qlr`
   const response = await fetch(apiUrl, {
     method: 'POST',
