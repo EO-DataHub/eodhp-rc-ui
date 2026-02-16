@@ -373,3 +373,48 @@ export interface DocumentRadiometricOutput {
   publisher: string
   eodh_qa_check_version: number
 }
+
+// Workflow Job Types
+export interface JobLink {
+  title?: string
+  rel: string
+  type?: string
+  href: string
+}
+
+export interface WorkflowJob {
+  id: string
+  jobID: string
+  type: 'process'
+  processID: string
+  created: string
+  started: string
+  finished: string | null
+  updated: string
+  status: 'successful' | 'failed' | 'running'
+  message: string
+  links: JobLink[]
+}
+
+export interface JobsApiResponse {
+  jobs: WorkflowJob[]
+  links: JobLink[]
+  numberTotal: number
+}
+
+export interface WorkflowJobFilterState {
+  selectedWorkspace: string
+  selectedStatus: 'all' | 'successful' | 'failed' | 'running'
+  searchText: string
+}
+
+export interface WorkflowJobDisplayData {
+  id: string
+  processID: string
+  status: 'successful' | 'failed' | 'running'
+  createdDate: Date
+  finishedDate: Date | null
+  createdFormatted: string
+  finishedFormatted: string
+  workspace: string
+}

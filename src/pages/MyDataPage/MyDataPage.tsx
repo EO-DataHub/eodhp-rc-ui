@@ -9,6 +9,9 @@ import {
   OrderFetchResult,
 } from '@/services/orderService'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { transformJobForDisplay, sortJobsByCreated } from '@/library/jobUtils'
+import { WorkflowJob, JobsApiResponse } from '@/types'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -24,6 +27,7 @@ import {
   getVisibleColumns,
 } from '@/library/columnConfig'
 import { ColumnSelector } from '@/components/ColumnSelector/ColumnSelector'
+import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
 import styles from './MyDataPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
@@ -34,6 +38,12 @@ export const MyDataPage: React.FC = () => {
     const stored = localStorage.getItem('ordersPageSelectedWorkspace')
     return stored ?? currentWorkspace ?? 'all'
   })
+  const [workflowOutputsSelectedWorkspace, setWorkflowOutputsSelectedWorkspace] = useState<string>(
+    () => {
+      const stored = localStorage.getItem('workflowOutputsPageSelectedWorkspace')
+      return stored ?? currentWorkspace ?? 'all'
+    },
+  )
   const [selectedCollection, setSelectedCollection] = useState('all')
   const [includeFailedOrders, setIncludeFailedOrders] = useState(false) // Default to exclude failed orders
   const [currentPage, setCurrentPage] = useState(0)
@@ -44,6 +54,15 @@ export const MyDataPage: React.FC = () => {
   const [totalItemsMatched, setTotalItemsMatched] = useState<number | null>(null)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [columnConfig, setColumnConfig] = useState<ColumnConfig[]>(() => loadColumnConfig())
+
+  // Workflow outputs state
+  const [allJobs, setAllJobs] = useState<WorkflowJob[]>([])
+  const [workflowJobsPage, setWorkflowJobsPage] = useState(0)
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
+    'all',
+  )
+  const [selectedJob, setSelectedJob] = useState<WorkflowJob | null>(null)
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false)
 
   // Load column config on mount
   useEffect(() => {
@@ -193,6 +212,39 @@ export const MyDataPage: React.FC = () => {
     enabled: !!token,
   })
 
+  // Fetch workflow jobs for selected workspace (use workflow-specific workspace state)
+  const workflowWorkspace =
+    workflowOutputsSelectedWorkspace === 'all'
+      ? currentWorkspace ?? ''
+      : workflowOutputsSelectedWorkspace
+  const {
+    data: jobsResponse,
+    isLoading: isLoadingJobs,
+    error: jobsError,
+  } = useQuery<JobsApiResponse>({
+    queryKey: ['WorkflowJobs', workflowWorkspace, token],
+    queryFn: (): Promise<JobsApiResponse> => {
+      if (!token || !workflowWorkspace) {
+        return Promise.resolve({
+          jobs: [],
+          links: [],
+          numberTotal: 0,
+        })
+      }
+      return fetchJobsForWorkspace(workflowWorkspace, token)
+    },
+    refetchOnWindowFocus: false,
+    enabled: !!token && !!workflowWorkspace,
+  })
+
+  // Update local state when jobs result changes
+  useEffect(() => {
+    if (jobsResponse) {
+      const sortedJobs = sortJobsByCreated(jobsResponse.jobs)
+      setAllJobs(sortedJobs)
+    }
+  }, [jobsResponse])
+
   // Generate filter options from fetched workspaces and orders data
   const workspaceOptions = useMemo(() => {
     const workspaceSet = new Set<string>()
@@ -320,6 +372,51 @@ export const MyDataPage: React.FC = () => {
   useEffect(() => {
     setCurrentPage(0)
   }, [selectedCollection, includeFailedOrders, searchText])
+
+  // Filter and transform workflow jobs for display
+  const filteredJobs = useMemo(() => {
+    if (!allJobs) return []
+
+    let filtered = allJobs
+
+    // Apply status filter
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter((job) => job.status === selectedStatus)
+    }
+
+    // Apply search filter
+    if (searchText.trim()) {
+      const searchLower = searchText.toLowerCase()
+      filtered = filtered.filter((job) => {
+        return (
+          job.id.toLowerCase().includes(searchLower) ||
+          job.jobID.toLowerCase().includes(searchLower) ||
+          job.processID.toLowerCase().includes(searchLower) ||
+          job.message.toLowerCase().includes(searchLower)
+        )
+      })
+    }
+
+    return filtered
+  }, [allJobs, searchText, selectedStatus])
+
+  // Transform jobs for display
+  const displayJobs = useMemo(() => {
+    const workspace = workflowWorkspace || ''
+    return filteredJobs.map((job) => transformJobForDisplay(job, workspace))
+  }, [filteredJobs, workflowWorkspace])
+
+  // Pagination for workflow jobs
+  const workflowJobsPageCount = Math.ceil(displayJobs.length / PAGE_SIZE)
+  const paginatedJobs = useMemo(() => {
+    const startIndex = workflowJobsPage * PAGE_SIZE
+    return displayJobs.slice(startIndex, startIndex + PAGE_SIZE)
+  }, [displayJobs, workflowJobsPage])
+
+  // Reset workflow jobs page when filters change
+  useEffect(() => {
+    setWorkflowJobsPage(0)
+  }, [selectedStatus, searchText, workflowOutputsSelectedWorkspace])
 
   // Get visible columns sorted by order
   const visibleColumns = useMemo(() => getVisibleColumns(columnConfig), [columnConfig])
@@ -673,10 +770,171 @@ export const MyDataPage: React.FC = () => {
             </Tabs.Content>
 
             <Tabs.Content value="workflow_outputs">
-              <Callout type="info" message="Workflows are not currently supported." />
+              <Flex direction="column" gap="5">
+                {/* Filter Controls */}
+                <Flex
+                  p="5"
+                  direction="row"
+                  gap="2"
+                  align="center"
+                  justify="between"
+                  className={styles.filterContainer}
+                  overflow="auto"
+                >
+                  <Box flexGrow="1" width="160px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={workflowOutputsSelectedWorkspace}
+                      onValueChange={(workspace) => {
+                        localStorage.setItem('workflowOutputsPageSelectedWorkspace', workspace)
+                        setWorkflowOutputsSelectedWorkspace(workspace)
+                      }}
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          <Select.Item value="all">All Workspaces</Select.Item>
+                          {workspaceOptions
+                            .filter((w) => w !== 'all')
+                            .map((workspace) => (
+                              <Select.Item key={workspace} value={workspace}>
+                                {workspace}
+                              </Select.Item>
+                            ))}
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </Box>
+
+                  <Box flexGrow="1" width="160px" flexShrink="0">
+                    <Select.Root
+                      size="3"
+                      value={selectedStatus}
+                      onValueChange={(value) =>
+                        setSelectedStatus(value as 'all' | 'successful' | 'failed' | 'running')
+                      }
+                    >
+                      <Select.Trigger style={{ width: '100%' }} placeholder="Status" />
+                      <Select.Content position="popper">
+                        <Select.Group>
+                          <Select.Item value="all">All Statuses</Select.Item>
+                          <Select.Item value="successful">Successful</Select.Item>
+                          <Select.Item value="failed">Failed</Select.Item>
+                          <Select.Item value="running">Running</Select.Item>
+                        </Select.Group>
+                      </Select.Content>
+                    </Select.Root>
+                  </Box>
+
+                  <Box flexGrow="0" flexShrink="0">
+                    <Button
+                      size="3"
+                      variant="soft"
+                      color="gray"
+                      onClick={() => {
+                        setSelectedStatus('all')
+                        setSearchText('')
+                        const resetWorkspace = currentWorkspace ?? 'all'
+                        localStorage.setItem('workflowOutputsPageSelectedWorkspace', resetWorkspace)
+                        setWorkflowOutputsSelectedWorkspace(resetWorkspace)
+                      }}
+                      style={{ minWidth: '160px' }}
+                    >
+                      Reset Filters
+                    </Button>
+                  </Box>
+                </Flex>
+
+                {/* Results Count */}
+                <Flex justify="between" align="center" mb="3">
+                  <Text size="2" color="gray">
+                    {workflowJobsPageCount > 1
+                      ? `Showing ${workflowJobsPage * PAGE_SIZE + 1}-${Math.min(
+                          (workflowJobsPage + 1) * PAGE_SIZE,
+                          displayJobs.length,
+                        )} of ${displayJobs.length} jobs`
+                      : `Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
+                    {(selectedStatus !== 'all' || searchText.trim()) && ' (filtered)'}
+                  </Text>
+                </Flex>
+
+                {isLoadingJobs ? (
+                  <LoadingIndicator size="3" />
+                ) : (
+                  (jobsError ?? displayJobs.length === 0) && (
+                    <Callout
+                      type={jobsError ? 'error' : 'info'}
+                      message={
+                        jobsError
+                          ? jobsError instanceof Error
+                            ? jobsError.message
+                            : 'Unable to load workflow outputs. Please try again later.'
+                          : 'You currently have no workflow outputs. Your workflow execution jobs will appear here once you run a workflow.'
+                      }
+                    />
+                  )
+                )}
+
+                {paginatedJobs.length > 0 && (
+                  <>
+                    <Table.Root className={styles.ordersTable}>
+                      <Table.Header>
+                        <Table.Row>
+                          <Table.ColumnHeaderCell>Job ID</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Process ID</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Created Date</Table.ColumnHeaderCell>
+                          <Table.ColumnHeaderCell>Finished Date</Table.ColumnHeaderCell>
+                        </Table.Row>
+                      </Table.Header>
+                      <Table.Body>
+                        {paginatedJobs.map((displayJob) => {
+                          const job = allJobs.find((j) => j.id === displayJob.id)
+                          return (
+                            <Table.Row
+                              key={displayJob.id}
+                              onClick={() => {
+                                if (job) {
+                                  setSelectedJob(job)
+                                  setIsJobModalOpen(true)
+                                }
+                              }}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <Table.Cell>
+                                <Text size="1" style={{ fontFamily: 'monospace' }}>
+                                  {displayJob.id}
+                                </Text>
+                              </Table.Cell>
+                              <Table.Cell>{displayJob.processID}</Table.Cell>
+                              <Table.Cell>{displayJob.status}</Table.Cell>
+                              <Table.Cell>{displayJob.createdFormatted}</Table.Cell>
+                              <Table.Cell>{displayJob.finishedFormatted}</Table.Cell>
+                            </Table.Row>
+                          )
+                        })}
+                      </Table.Body>
+                    </Table.Root>
+                    {workflowJobsPageCount > 1 && (
+                      <Flex justify="center" mt="auto">
+                        <PageSelector
+                          currentPageIndex={workflowJobsPage}
+                          nextDisabled={workflowJobsPage === workflowJobsPageCount - 1}
+                          onGoToPage={setWorkflowJobsPage}
+                          onNextClick={() => setWorkflowJobsPage(workflowJobsPage + 1)}
+                          onPreviousClick={() => setWorkflowJobsPage(workflowJobsPage - 1)}
+                          pageCount={workflowJobsPageCount}
+                          previousDisabled={workflowJobsPage === 0}
+                        />
+                      </Flex>
+                    )}
+                  </>
+                )}
+              </Flex>
             </Tabs.Content>
           </Box>
         </Tabs.Root>
+        <JobDetailsModal job={selectedJob} open={isJobModalOpen} onOpenChange={setIsJobModalOpen} />
       </Flex>
     </>
   )
