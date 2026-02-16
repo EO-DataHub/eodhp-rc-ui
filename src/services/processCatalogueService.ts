@@ -39,7 +39,7 @@ export async function fetchItems(params: FetchItemsParams = {}): Promise<FetchIt
   searchParams.set('page_size', String(pageSize))
   if (q) searchParams.set('q', q)
   if (type) searchParams.set('type', type)
-  if (applicableCollections) searchParams.set('applicable_collections', applicableCollections)
+  if (applicableCollections) searchParams.set('applicableCollections', applicableCollections)
 
   const url = `${baseUrl}/collections/${CATALOGUE_ID}/items?${searchParams.toString()}`
 
