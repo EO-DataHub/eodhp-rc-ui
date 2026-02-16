@@ -222,6 +222,7 @@ export interface InputParameterEntry {
   label?: string
   description?: string
   default?: unknown
+  variableRef?: string // Platform variable name to resolve (e.g., "STAC_ITEM_LINK", "STAC_COLLECTION_NAME", "AOI")
 }
 
 export interface ProcessDetail extends ProcessRecord {

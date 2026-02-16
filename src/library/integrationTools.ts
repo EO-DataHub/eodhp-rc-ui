@@ -49,6 +49,31 @@ export function getNotebookTemplateUrl(
 }
 
 /**
+ * Extracts the workflow execution URL from a ProcessDetail's links.
+ * The catalogue API uses rel="application-platform" for the workflow execution endpoint.
+ * The execution URL is constructed by appending "/execution" to the application-platform link href.
+ *
+ * @see specs/001-workflow-integration/contracts/workflow-execution-api.md
+ */
+export function getWorkflowExecutionUrl(
+  record: ProcessRecord & { links?: { rel?: string; href?: string; type?: string }[] },
+): string | undefined {
+  const links = record.links
+  if (!Array.isArray(links)) return undefined
+
+  // Look for rel="application-platform" link
+  const applicationPlatform = links.find(
+    (l) => l.rel === 'application-platform' && typeof l.href === 'string',
+  )
+
+  if (!applicationPlatform?.href) return undefined
+
+  // Remove trailing slash if present, then append /execution
+  const baseUrl = applicationPlatform.href.replace(/\/$/, '')
+  return `${baseUrl}/execution`
+}
+
+/**
  * Gets the COG asset href from an item
  */
 export function getCogAssetHref(item: Item): string | undefined {

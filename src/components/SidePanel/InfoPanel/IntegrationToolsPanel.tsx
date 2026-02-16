@@ -23,6 +23,7 @@ import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
+import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
@@ -218,22 +219,191 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
 }
 
 // Workflows Tab Component
-const WorkflowsTab: React.FC = () => {
+const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
+  const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
+  const username = userInfo?.preferred_username
+
+  // Retrieve AOI from store
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // State for checkbox - defaults to true when AOI exists
+  const [includeAoi, setIncludeAoi] = useState(true)
+
+  // Reset checkbox state when AOI changes
+  useEffect(() => {
+    setIncludeAoi(!!aoi)
+  }, [aoi])
+
+  const {
+    workflows,
+    selectedWorkflow,
+    setSelectedWorkflow,
+    launch,
+    isLoadingWorkflows,
+    isLaunching,
+    workflowsError,
+    launchError,
+    workflowId,
+    retry,
+  } = useWorkflowLaunch({
+    item,
+    collection,
+    token,
+    currentWorkspace,
+    username,
+  })
+
+  const canLaunch =
+    isAuthenticated && !!currentWorkspace && !!item && !!selectedWorkflow && !isLaunching
+  const showContent = isAuthenticated && !!currentWorkspace && !!item
+  const hasWorkflows = workflows.length > 0
+  const isEmpty = !isLoadingWorkflows && !workflowsError && workflows.length === 0
+
+  if (!showContent) {
+    return (
+      <Card>
+        <Flex direction="column" gap="3" p="4">
+          <Text weight="medium" size="3">
+            Workflow Integration
+          </Text>
+          <Text size="2" color="gray">
+            Start data processing workflows directly with this item. Log in and select a workspace
+            to use this feature.
+          </Text>
+        </Flex>
+      </Card>
+    )
+  }
+
   return (
-    <Card>
-      <Flex direction="column" gap="3" p="4">
-        <Text weight="medium" size="3">
-          Workflow Integration
-        </Text>
-        <Text size="2" color="gray">
-          Start data processing workflows directly with this item. This feature will allow you to
-          launch analysis pipelines, data processing jobs, and automated workflows.
-        </Text>
-        <Text size="2" color="orange">
-          🚧 Coming Soon: Workflow integration will be available in a future update.
-        </Text>
-      </Flex>
-    </Card>
+    <Flex direction="column" gap="4">
+      <Card>
+        <Flex direction="column" gap="3" p="4">
+          <Text weight="medium" size="3">
+            Workflow Integration
+          </Text>
+          <Text size="2" color="gray">
+            Start data processing workflows directly with this item. Select a workflow below and
+            click Launch.
+          </Text>
+
+          {isLoadingWorkflows && (
+            <Flex pt="4" pb="4">
+              <LoadingIndicator size="2" />
+            </Flex>
+          )}
+
+          {workflowsError && (
+            <Flex direction="column" gap="2" pt="2">
+              <Text size="2" color="red">
+                Unable to load workflows
+              </Text>
+              <Text size="2" color="gray">
+                {workflowsError}
+              </Text>
+              <Button variant="soft" size="2" onClick={retry}>
+                Retry
+              </Button>
+            </Flex>
+          )}
+
+          {!isLoadingWorkflows && !workflowsError && (
+            <>
+              {isEmpty && (
+                <Text size="2" color="gray">
+                  No workflows available for this dataset
+                </Text>
+              )}
+
+              {hasWorkflows && (
+                <Flex direction="column" gap="3" pt="2">
+                  <RadioGroup.Root
+                    value={selectedWorkflow?.id ?? ''}
+                    onValueChange={(id) => {
+                      const wf = workflows.find((w) => w.id === id) ?? null
+                      setSelectedWorkflow(wf)
+                    }}
+                  >
+                    <Flex direction="column" gap="2">
+                      {workflows.map((wf) => (
+                        <label key={wf.id} style={{ cursor: 'pointer' }}>
+                          <Flex gap="2" align="center">
+                            <RadioGroup.Item value={wf.id} />
+                            <Flex direction="column" gap="0">
+                              <Text size="2" weight="medium">
+                                {wf.properties?.title ?? wf.id}
+                              </Text>
+                              {wf.properties?.description && (
+                                <Text size="1" color="gray">
+                                  {wf.properties.description}
+                                </Text>
+                              )}
+                            </Flex>
+                          </Flex>
+                        </label>
+                      ))}
+                    </Flex>
+                  </RadioGroup.Root>
+
+                  {hasWorkflows && aoi && (
+                    <Flex align="center" gap="2">
+                      <Checkbox
+                        checked={includeAoi}
+                        onCheckedChange={(checked) => setIncludeAoi(Boolean(checked))}
+                        size="2"
+                      />
+                      <Text
+                        size="2"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setIncludeAoi(!includeAoi)}
+                      >
+                        Include Area of Interest (AOI)
+                      </Text>
+                    </Flex>
+                  )}
+
+                  <Button
+                    variant="soft"
+                    size="2"
+                    disabled={!canLaunch}
+                    onClick={() => void launch(includeAoi)}
+                  >
+                    {isLaunching ? 'Launching...' : 'Launch'}
+                  </Button>
+
+                  {launchError && (
+                    <Flex direction="column" gap="2">
+                      <Text size="2" color="red">
+                        {launchError}
+                      </Text>
+                      <Button
+                        variant="soft"
+                        size="2"
+                        color="red"
+                        onClick={() => void launch(includeAoi)}
+                      >
+                        Retry
+                      </Button>
+                    </Flex>
+                  )}
+
+                  {!launchError && !isLaunching && workflowId && (
+                    <Flex direction="column" gap="1">
+                      <Text size="2" color="green">
+                        Workflow launched successfully
+                      </Text>
+                      <Text size="1" color="gray">
+                        Workflow ID: {workflowId}
+                      </Text>
+                    </Flex>
+                  )}
+                </Flex>
+              )}
+            </>
+          )}
+        </Flex>
+      </Card>
+    </Flex>
   )
 }
 
@@ -460,7 +630,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
 
               <Tabs.Content value="workflows">
                 <Box pt="4">
-                  <WorkflowsTab />
+                  <WorkflowsTab item={item} collection={item.collectionRef ?? collection} />
                 </Box>
               </Tabs.Content>
 
