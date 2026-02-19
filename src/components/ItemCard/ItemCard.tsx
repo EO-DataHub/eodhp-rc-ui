@@ -178,12 +178,18 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [itemRender, setItemRender] = useState(collectionRender)
 
+  // Determine if collection is a job collection
+  const isJobCollection = collection?.isJobCollection ?? false
+
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
+    // Job collections always require authentication
+    if (isJobCollection) return true
+
     const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
     const collectionConfig = collectionRenderingConfig[configKey]
     return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
-  }, [item.collection, itemBelongsToUserCollection])
+  }, [item.collection, itemBelongsToUserCollection, isJobCollection])
 
   // Get thumbnail URL using configured asset with fallback
   const thumbnailUrl = useMemo(() => {
@@ -197,8 +203,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return requiresThumbnailAuth && !isAuthenticated
   }, [requiresThumbnailAuth, isAuthenticated])
 
-  // Determine if collection is a job collection
-  const isJobCollection = collection?.isJobCollection ?? false
   // Extract workspace from collection for job collections
   const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
 
@@ -356,6 +360,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
             isUserCollection={itemBelongsToUserCollection}
+            isJobCollection={isJobCollection}
+            workspaceToken={isJobCollection ? jobWorkspaceTokensData?.access : undefined}
           />
         )}
         <div className={styles.overlay}>
