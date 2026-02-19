@@ -1,4 +1,4 @@
-import React, { useEffect, useContext } from 'react'
+import React, { useEffect, useContext, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
@@ -7,10 +7,15 @@ import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
+import {
+  fetchCollections,
+  fetchUserCollections,
+  fetchJobCollection,
+} from '@/services/collectionService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
+import { parseCollectionPath } from '@/library/catalogUtils'
 import dataFinderStore from './useFinderStore'
 
 import styles from './DataFinderPage.module.scss'
@@ -18,7 +23,9 @@ import styles from './DataFinderPage.module.scss'
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
-  const { collectionId } = useParams<{ collectionId: string }>()
+  // Use catch-all route parameter '*' to capture full path
+  const params = useParams<{ '*': string }>()
+  const collectionPath = params['*'] ?? ''
   const navigate = useNavigate()
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
@@ -54,6 +61,30 @@ export const DataFinderPage: React.FC = () => {
     enabled: !!currentWorkspace && !!workspaceTokensData,
   })
 
+  // Parse the collection path to determine type (memoized to prevent infinite loops)
+  const parsedPath = useMemo(
+    () => (collectionPath ? parseCollectionPath(collectionPath) : null),
+    [collectionPath],
+  )
+
+  // Fetch job collection if needed
+  const jobCollectionQuery = useQuery({
+    queryKey: ['JobCollection', currentWorkspace, parsedPath?.jobPath],
+    queryFn: () => {
+      if (!parsedPath?.jobPath || !currentWorkspace || !workspaceTokensData?.access) {
+        return null
+      }
+      return fetchJobCollection(currentWorkspace, parsedPath.jobPath, workspaceTokensData.access)
+    },
+    refetchOnWindowFocus: false,
+    enabled:
+      !!parsedPath &&
+      parsedPath.type === 'job' &&
+      !!currentWorkspace &&
+      !!workspaceTokensData &&
+      isAuthenticated,
+  })
+
   const findCollectionById = (
     collections: Collection[] | undefined,
     id: string | undefined,
@@ -63,17 +94,39 @@ export const DataFinderPage: React.FC = () => {
 
   // Collection selection and redirection if not found
   useEffect(() => {
-    if (!collectionId || isAuthenticating) return
+    if (!collectionPath || isAuthenticating) return
 
-    const isUserCollectionId = collectionId.startsWith('my-')
-    const collectionIdWithoutPrefix = isUserCollectionId
-      ? collectionId.replace(/^my-/, '')
-      : collectionId
+    if (!parsedPath) {
+      // Invalid path, redirect to home
+      void navigate('/')
+      return
+    }
 
-    if (isUserCollectionId) {
-      // search only in user collections
+    if (parsedPath.type === 'job') {
+      // Handle job collections
+      if (isAuthenticated && jobCollectionQuery.isFetched) {
+        const jobCollection = jobCollectionQuery.data
+        if (jobCollection) {
+          dataFinderStore.send({
+            type: 'setCollection',
+            collection: jobCollection,
+            isUserCollection: false, // Job collections are not user collections
+          })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
+          return
+        }
+        // Job collection not found, redirect
+        void navigate('/')
+        return
+      }
+      // Still loading job collection
+      return
+    }
+
+    if (parsedPath.type === 'purchased') {
+      // Handle purchased collections (existing logic)
       if (isAuthenticated && userCollectionQuery.isFetched) {
-        const foundUser = findCollectionById(userCollectionQuery.data, collectionIdWithoutPrefix)
+        const foundUser = findCollectionById(userCollectionQuery.data, parsedPath.collectionId)
         if (foundUser) {
           dataFinderStore.send({
             type: 'setCollection',
@@ -83,11 +136,18 @@ export const DataFinderPage: React.FC = () => {
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
           return
         }
+        // Collection not found, redirect
+        void navigate('/')
+        return
       }
-    } else {
-      // search only in public collections
+      // Still loading user collections
+      return
+    }
+
+    // Handle public collections (existing logic)
+    if (parsedPath.type === 'public') {
       if (collectionQueries.isFetched) {
-        const foundPublic = findCollectionById(collectionQueries.data, collectionIdWithoutPrefix)
+        const foundPublic = findCollectionById(collectionQueries.data, parsedPath.collectionId)
         if (foundPublic) {
           dataFinderStore.send({
             type: 'setCollection',
@@ -97,25 +157,24 @@ export const DataFinderPage: React.FC = () => {
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
           return
         }
+        // Collection not found, redirect
+        void navigate('/')
+        return
       }
-    }
-
-    // redirect if collection not found
-    const allFetched = isUserCollectionId
-      ? userCollectionQuery.isFetched
-      : collectionQueries.isFetched
-
-    if (allFetched) {
-      void navigate('/')
+      // Still loading public collections
+      return
     }
   }, [
-    collectionId,
+    collectionPath,
+    parsedPath,
     isAuthenticating,
     isAuthenticated,
     collectionQueries.data,
     collectionQueries.isFetched,
     userCollectionQuery.data,
     userCollectionQuery.isFetched,
+    jobCollectionQuery.data,
+    jobCollectionQuery.isFetched,
     navigate,
   ])
 
