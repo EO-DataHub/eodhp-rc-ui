@@ -258,6 +258,7 @@ const dataFinderStore = createStore({
       context,
       event: {
         item: Item
+        selectedAssetKey?: string
         collectionRender: StacRender
         isLicenseProprietary: boolean
         isUserCollection: boolean
@@ -273,7 +274,14 @@ const dataFinderStore = createStore({
       const pinnedItem = {
         ...event.item,
         pinId: pinnedItemId,
-        tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        selectedAssetKey: event.selectedAssetKey,
+        tilesUrl:
+          resolveTilesUrl(
+            event.item,
+            event.collectionRender,
+            event.isUserCollection,
+            event.selectedAssetKey,
+          ) ?? '',
         isLicenseProprietary: event.isLicenseProprietary,
         isUserCollection: event.isUserCollection,
         collectionName: event.collectionName,
@@ -321,6 +329,26 @@ const dataFinderStore = createStore({
           }
           return pinnedItem
         }),
+      }
+    },
+    updatePinnedItemAsset: (context, event: { item: Item }) => {
+      return {
+        ...context,
+        pinnedItems: context.pinnedItems.map((pinnedItem) =>
+          pinnedItem.pinId === event.item.pinId
+            ? {
+                ...pinnedItem,
+                selectedAssetKey: event.item.selectedAssetKey,
+                tilesUrl:
+                  resolveTilesUrl(
+                    pinnedItem,
+                    pinnedItem.render,
+                    pinnedItem.isUserCollection,
+                    event.item.selectedAssetKey,
+                  ) ?? '',
+              }
+            : pinnedItem,
+        ),
       }
     },
     changeItemOpacity: (context, event: { item: Item; opacity: number }) => {

@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import qs from 'qs'
 import { Item, BaseStacRender, StacRender } from '@/types'
 import serverConfig from './configFromServer.json'
@@ -23,7 +24,7 @@ interface ServerRenderConfig {
   title: string
   assets: string[]
   bidx?: number[]
-  rescale?: [number, number][]
+  rescale?: number[][] | number[] // JSON can have number[][] or number[] (single pair)
   nodata?: number | string
   colormap?: Record<string, string>
   colormap_name?: string
@@ -51,14 +52,37 @@ export function getAssetUrl(item: Item, asset: string): string | undefined {
   return item.assets?.[asset]?.href
 }
 
+/**
+ * Filters assets by type pattern (e.g., 'image/tiff').
+ * Returns an array of asset keys and their asset objects that match the type pattern.
+ * @param assets - The item's assets object
+ * @param typePattern - The type pattern to match (e.g., 'image/tiff')
+ * @returns Array of { key, asset } objects where asset type includes the pattern
+ */
+export function getAssetsByType(
+  assets: Item['assets'],
+  typePattern: string,
+): { key: string; asset: Item['assets'][string] }[] {
+  if (!assets) return []
+
+  return Object.entries(assets)
+    .filter(([, asset]) => {
+      // Check if asset has a type property that includes the pattern
+      // Assets may have type as a property or we may need to check other properties
+      const assetType = (asset as { type?: string }).type
+      return assetType?.includes(typePattern) ?? false
+    })
+    .map(([key, asset]) => ({ key, asset }))
+}
+
 export function getThumbnailAssetUrl(
   item: Item,
   collectionConfig: CollectionConfig | undefined,
 ): string | undefined {
-  // Get configured asset name (defaults to "thumbnail")
-  const configuredAsset = collectionConfig?.thumbnail_asset ?? 'thumbnail'
+  if (!collectionConfig) return undefined
 
-  // First: Try the configured asset
+  // First: Try configured thumbnail asset
+  const configuredAsset = collectionConfig.thumbnail_asset ?? 'thumbnail'
   const configuredUrl = getAssetUrl(item, configuredAsset)
   if (configuredUrl) return configuredUrl
 
@@ -107,16 +131,41 @@ export const resolveTilesUrl = (
   item: Item,
   render: StacRender | undefined,
   isUserCollection?: boolean,
+  assetKey?: string,
 ): string | undefined => {
+  console.log('[resolveTilesUrl] Called', {
+    itemId: item.id,
+    collection: item.collection,
+    isUserCollection,
+    hasRender: !!render,
+    assetKey,
+  })
+
   const configKey = getCollectionConfigKey(item.collection, isUserCollection ?? false)
   const collectionConfig = collectionRenderingConfig[configKey]
-  if (!collectionConfig) return undefined
-  if (!render) return undefined
+
+  console.log('[resolveTilesUrl] Config lookup', {
+    configKey,
+    hasCollectionConfig: !!collectionConfig,
+    renderId: render?.id,
+  })
+
+  // For job collections, we might not have a config, but we can still generate a URL if we have a render
+  if (!collectionConfig && !render) {
+    console.log('[resolveTilesUrl] No config and no render, returning undefined')
+    return undefined
+  }
+
+  if (!render) {
+    console.log('[resolveTilesUrl] No render, returning undefined')
+    return undefined
+  }
 
   let tilerUrl = undefined
   let urlParam = undefined
 
   if (render.quicklook_georeference) {
+    console.log('[resolveTilesUrl] quicklook_georeference, returning undefined')
     return undefined
   } else if (render.variable) {
     tilerUrl = tilerUrls['titiler-multidim']
@@ -126,14 +175,31 @@ export const resolveTilesUrl = (
     urlParam = getItemUrl(item)
   }
 
+  console.log('[resolveTilesUrl] URL params', {
+    tilerUrl,
+    urlParam,
+    hasUrlParam: !!urlParam,
+  })
+
+  if (!urlParam) {
+    console.log('[resolveTilesUrl] No urlParam, returning undefined')
+    return undefined
+  }
+
   let queryParams = {
     url: urlParam,
-  } as { url: string; rescale?: string[]; colormap?: string }
+  } as { url: string; assets?: string; rescale?: string[]; colormap?: string }
+
+  // Add asset key if provided (for job collections)
+  if (assetKey) {
+    queryParams.assets = assetKey
+  }
 
   if (render) {
     // Exclude client-side only properties (auth, quicklook_georeference) from query params
+    // Also exclude assets if assetKey is provided (for job collections)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { auth, quicklook_georeference, ...renderParams } = render
+    const { auth, quicklook_georeference, assets, ...renderParams } = render
     queryParams = {
       ...queryParams,
       ...renderParams,
@@ -155,7 +221,9 @@ export const resolveTilesUrl = (
     indices: false,
   })
 
-  return `${tilerUrl}?${queryString}`
+  const result = `${tilerUrl}?${queryString}`
+  console.log('[resolveTilesUrl] Result', { result })
+  return result
 }
 
 function translateServerConfigToCollectionConfig(
@@ -174,61 +242,76 @@ function translateServerConfigToCollectionConfig(
     // Translate renders
     if (renders) {
       for (const [renderId, renderConfig] of Object.entries(renders)) {
+        // Transform rescale from number[][] or number[] to [number, number][] if present
+        const rescale = renderConfig.rescale
+          ? Array.isArray(renderConfig.rescale[0])
+            ? // It's number[][] - array of pairs
+              (renderConfig.rescale as number[][]).map((pair): [number, number] => {
+                if (
+                  Array.isArray(pair) &&
+                  pair.length === 2 &&
+                  typeof pair[0] === 'number' &&
+                  typeof pair[1] === 'number'
+                ) {
+                  return [pair[0], pair[1]]
+                }
+                throw new Error(`Invalid rescale pair: ${JSON.stringify(pair)}`)
+              })
+            : // It's number[] - single pair, wrap it
+              renderConfig.rescale.length === 2 &&
+                typeof renderConfig.rescale[0] === 'number' &&
+                typeof renderConfig.rescale[1] === 'number'
+              ? [[renderConfig.rescale[0], renderConfig.rescale[1]] as [number, number]]
+              : undefined
+          : undefined
+
         const optionalProps = {
           bidx: renderConfig.bidx,
-          rescale: renderConfig.rescale,
+          rescale,
           nodata: renderConfig.nodata,
           colormap: renderConfig.colormap,
-          variable: renderConfig.variable,
           colormap_name: renderConfig.colormap_name,
           color_formula: renderConfig.color_formula,
           expression: renderConfig.expression,
+          variable: renderConfig.variable,
           reference: renderConfig.reference,
           quicklook_georeference: renderConfig.quicklook_georeference,
-          auth: renderConfig.auth, // <-- Added to include auth property
+          auth: renderConfig.auth,
         }
 
-        const definedProps = Object.fromEntries(
-          Object.entries(optionalProps).filter((entry) => entry[1] !== undefined),
+        // Remove undefined values
+        const cleanedProps = Object.fromEntries(
+          Object.entries(optionalProps).filter(([, value]) => value !== undefined),
         )
 
-        const translatedRender: BaseStacRender = {
-          title: renderConfig.title ?? renderId,
+        baseConfig.renders![renderId] = {
+          id: renderId,
+          title: renderConfig.title,
           assets: renderConfig.assets,
-          ...definedProps,
-        }
-
-        baseConfig.renders![renderId] = translatedRender
+          ...cleanedProps,
+        } as BaseStacRender
       }
     }
 
-    if (config['eodhrc:time-variable-items']) {
+    // Add other config properties
+    if (config['eodhrc:time-variable-items'] !== undefined) {
       baseConfig['eodhrc:time-variable-items'] = config['eodhrc:time-variable-items']
     }
-
-    if (config['eodhrc:render-key-properties']) {
+    if (config['eodhrc:render-key-properties'] !== undefined) {
       baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
     }
-
-    // Explicitly set thumbnail_auth with backward-compatible default
     if (config.thumbnail_auth !== undefined) {
       baseConfig.thumbnail_auth = config.thumbnail_auth
-    } else if (renders?.preview?.auth === true) {
-      // Explicitly set thumbnail_auth to true when preview requires auth
-      baseConfig.thumbnail_auth = true
+    }
+    if (config.thumbnail_asset !== undefined) {
+      baseConfig.thumbnail_asset = config.thumbnail_asset
     }
 
-    // Set thumbnail_asset with default
-    baseConfig.thumbnail_asset = config.thumbnail_asset ?? 'thumbnail'
-
-    // Add specific properties based on renderer type
     result[collectionId] = baseConfig
   }
 
   return result
 }
 
-// Type assertion to ensure serverConfig matches ServerCollectionConfig
-const typedServerConfig = serverConfig as unknown as Record<string, ServerCollectionConfig>
 export const collectionRenderingConfig: Record<string, CollectionConfig> =
-  translateServerConfigToCollectionConfig(typedServerConfig)
+  translateServerConfigToCollectionConfig(serverConfig)

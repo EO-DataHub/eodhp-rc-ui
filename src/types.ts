@@ -163,6 +163,7 @@ export interface Item {
   isLicenseProprietary?: boolean
   collectionName?: string
   collectionRef?: Collection
+  selectedAssetKey?: string
 }
 
 export interface DownloadableAsset {

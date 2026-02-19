@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo, useContext, useCallback } from 'react'
 import { useSelector } from '@xstate/store/react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueries } from '@tanstack/react-query'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import centroid from '@turf/centroid'
@@ -29,6 +29,9 @@ const DEFAULT_MAP_VIEW = {
 
 const MAP_STORAGE_KEY = 'mapViewState'
 
+// Store reference to global Map constructor to avoid shadowing by component name
+const MapConstructor = globalThis.Map
+
 export const Map = () => {
   const mapRef = useRef<MapRef>(null)
   const terraDrawControlRef = useRef<{
@@ -38,9 +41,53 @@ export const Map = () => {
   } | null>(null)
   const { pageItems } = useItemsQuery()
   const { token, currentWorkspace } = useContext(AuthenticationContext)
-  const { isAuthenticated, getTokenType } = useAuthenticatedTileUrls()
+  const { isAuthenticated, getTokenType, getWorkspace } = useAuthenticatedTileUrls()
 
-  // Fetch workspace tokens for user collection tile requests
+  // Track registered workspaces to fetch tokens for them
+  const [registeredWorkspaces, setRegisteredWorkspaces] = useState<Set<string>>(new Set())
+  const registeredWorkspacesRef = useRef<Set<string>>(new Set())
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    registeredWorkspacesRef.current = registeredWorkspaces
+  }, [registeredWorkspaces])
+
+  // Fetch workspace tokens for all registered workspaces
+  const workspaceTokenQueries = useQueries({
+    queries: Array.from(registeredWorkspaces).map((workspace) => ({
+      queryKey: ['WorkspaceTokens', workspace, token],
+      queryFn: () => fetchWorkspaceTokens(workspace, token!),
+      refetchOnWindowFocus: false,
+      enabled: !!workspace && !!token,
+    })),
+  })
+
+  // Store workspace tokens in a map keyed by workspace name
+  const workspaceTokensMapRef = useRef<Map<string, string>>(new MapConstructor())
+
+  // Update workspace tokens map when queries complete
+  useEffect(() => {
+    workspaceTokenQueries.forEach((query, index) => {
+      const workspace = Array.from(registeredWorkspaces)[index]
+      if (workspace && query.data?.access) {
+        workspaceTokensMapRef.current.set(workspace, query.data.access)
+      }
+    })
+  }, [workspaceTokenQueries, registeredWorkspaces])
+
+  // Helper to add workspace to tracking set
+  const addWorkspace = useCallback((workspace: string) => {
+    if (workspace && !registeredWorkspacesRef.current.has(workspace)) {
+      setRegisteredWorkspaces((prev) => {
+        const next = new Set(prev)
+        next.add(workspace)
+        registeredWorkspacesRef.current = next
+        return next
+      })
+    }
+  }, [])
+
+  // Fetch workspace tokens for currentWorkspace (for backward compatibility)
   const { data: workspaceTokensData } = useQuery({
     queryKey: ['WorkspaceTokens', currentWorkspace, token],
     queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
@@ -59,7 +106,18 @@ export const Map = () => {
 
   useEffect(() => {
     workspaceTokenRef.current = workspaceTokensData?.access
-  }, [workspaceTokensData?.access])
+    // Also store in map for currentWorkspace
+    if (currentWorkspace && workspaceTokensData?.access) {
+      workspaceTokensMapRef.current.set(currentWorkspace, workspaceTokensData.access)
+    }
+  }, [workspaceTokensData?.access, currentWorkspace])
+
+  // Monitor registered URLs to track workspaces
+  useEffect(() => {
+    // This effect will be triggered when URLs are registered/unregistered
+    // We'll extract workspaces from the context's internal state
+    // For now, we'll rely on the getWorkspace function being called during transformRequest
+  }, [])
 
   // Load previous map state from local storage, or use default
   const savedViewState =
@@ -219,23 +277,64 @@ export const Map = () => {
         if (needsAuth) {
           // Determine which token type to use for this URL
           const tokenType = getTokenType(url)
-          // Use workspace token for user collections, keycloak token for others
-          const currentToken =
-            tokenType === 'workspace' ? workspaceTokenRef.current : tokenRef.current
 
-          if (currentToken) {
-            return {
-              url,
-              headers: {
-                Authorization: `Bearer ${currentToken}`,
-              },
+          if (tokenType === 'workspace') {
+            // Try to get workspace from registered URL info first
+            let workspace = getWorkspace(url)
+
+            // If not found, extract from URL
+            if (!workspace) {
+              try {
+                const urlObj = new URL(url)
+                const itemUrl = urlObj.searchParams.get('url')
+                if (itemUrl) {
+                  const decodedItemUrl = decodeURIComponent(itemUrl)
+                  const match = decodedItemUrl.match(/\/catalogs\/user\/catalogs\/([^/]+)\//)
+                  workspace = match?.[1] ?? undefined
+
+                  // Add to registered workspaces if we found one (triggers token fetch)
+                  if (workspace) {
+                    addWorkspace(workspace)
+                  }
+                }
+              } catch {
+                // Ignore URL parsing errors
+              }
+            } else {
+              // Workspace was found from registration, ensure it's tracked
+              addWorkspace(workspace)
+            }
+
+            // Get token for the specific workspace
+            const workspaceToken = workspace
+              ? workspaceTokensMapRef.current.get(workspace) ?? workspaceTokenRef.current
+              : workspaceTokenRef.current
+
+            if (workspaceToken) {
+              return {
+                url,
+                headers: {
+                  Authorization: `Bearer ${workspaceToken}`,
+                },
+              }
+            }
+          } else {
+            // Use keycloak token
+            const currentToken = tokenRef.current
+            if (currentToken) {
+              return {
+                url,
+                headers: {
+                  Authorization: `Bearer ${currentToken}`,
+                },
+              }
             }
           }
         }
       }
       return { url }
     },
-    [isAuthenticated, getTokenType],
+    [isAuthenticated, getTokenType, getWorkspace, addWorkspace],
   )
 
   return (

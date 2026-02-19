@@ -30,6 +30,7 @@ import {
   getCollectionConfigKey,
   getThumbnailAssetUrl,
   requiresThumbnailAuthentication,
+  getAssetsByType,
 } from '@/library/collectionRenderingConfig'
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
@@ -38,6 +39,7 @@ import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
+import { AssetSelector } from './AssetSelector'
 
 interface ItemCardProps {
   item: Item
@@ -206,6 +208,20 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   // Extract workspace from collection for job collections
   const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
 
+  // Get image/tiff assets for job collections
+  const imageAssets = useMemo(() => getAssetsByType(item.assets, 'image/tiff'), [item.assets])
+  const showAssetSelector = isJobCollection && imageAssets.length > 0
+
+  // State for selected asset key (defaults to first image/tiff asset)
+  const [selectedAssetKey, setSelectedAssetKey] = useState<string | undefined>(imageAssets[0]?.key)
+
+  // Update selectedAssetKey when imageAssets change
+  useEffect(() => {
+    if (imageAssets.length > 0 && !selectedAssetKey) {
+      setSelectedAssetKey(imageAssets[0]?.key)
+    }
+  }, [imageAssets, selectedAssetKey])
+
   // Fetch workspace tokens for job collections
   const { data: jobWorkspaceTokensData } = useQuery({
     queryKey: ['WorkspaceTokens', collectionWorkspace, token],
@@ -261,13 +277,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       dataFinderStore.send({
         type: 'addPinnedItem',
         item,
+        selectedAssetKey,
         isLicenseProprietary: collection?.license === 'proprietary',
         isUserCollection: isUserCollection,
         collectionName: collection?.title ?? collection?.id ?? '',
         collection,
         collectionRender: (itemRender ?? collectionRender)!,
       }),
-    [item, collection, isUserCollection, itemRender, collectionRender],
+    [item, collection, isUserCollection, itemRender, collectionRender, selectedAssetKey],
   )
 
   useEffect(() => {
@@ -430,6 +447,14 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           <Flex justify="end" gap="3" align="center">
             {isQueryCard && itemRender && (
               <>
+                {showAssetSelector && (
+                  <AssetSelector
+                    assets={item.assets}
+                    selectedAssetKey={selectedAssetKey}
+                    onSelect={setSelectedAssetKey}
+                    disabled={isPinButtonDisabled}
+                  />
+                )}
                 {!isAlreadyPinned ? (
                   <Tooltip content={pinButtonTooltipText}>
                     <ActionButton
@@ -469,6 +494,18 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             )}
             {isPinnedCard && (
               <>
+                {showAssetSelector && (
+                  <AssetSelector
+                    assets={item.assets}
+                    selectedAssetKey={item.selectedAssetKey}
+                    onSelect={(key) => {
+                      dataFinderStore.send({
+                        type: 'updatePinnedItemAsset',
+                        item: { ...item, selectedAssetKey: key },
+                      })
+                    }}
+                  />
+                )}
                 <ActionButton
                   active={item.mapRender?.visible}
                   onClick={() => dataFinderStore.send({ type: 'toggleItemVisibility', item })}

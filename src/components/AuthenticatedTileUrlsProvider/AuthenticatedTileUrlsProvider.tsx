@@ -9,24 +9,32 @@ interface AuthenticatedTileUrlsProviderProps {
   children: ReactNode
 }
 
+interface RegisteredUrlInfo {
+  tokenType: TokenType
+  workspace?: string
+}
+
 export function AuthenticatedTileUrlsProvider({ children }: AuthenticatedTileUrlsProviderProps) {
-  const [registeredUrls, setRegisteredUrls] = useState<Map<string, TokenType>>(new Map())
+  const [registeredUrls, setRegisteredUrls] = useState<Map<string, RegisteredUrlInfo>>(new Map())
   // Use a ref to always have the latest registeredUrls value in callbacks
-  const registeredUrlsRef = useRef<Map<string, TokenType>>(new Map())
+  const registeredUrlsRef = useRef<Map<string, RegisteredUrlInfo>>(new Map())
 
   // Keep ref in sync with state
   useEffect(() => {
     registeredUrlsRef.current = registeredUrls
   }, [registeredUrls])
 
-  const registerUrl = useCallback((baseUrl: string, tokenType: TokenType = 'keycloak') => {
-    setRegisteredUrls((prev) => {
-      const next = new Map(prev)
-      next.set(baseUrl, tokenType)
-      registeredUrlsRef.current = next // Update ref immediately
-      return next
-    })
-  }, [])
+  const registerUrl = useCallback(
+    (baseUrl: string, tokenType: TokenType = 'keycloak', workspace?: string) => {
+      setRegisteredUrls((prev) => {
+        const next = new Map(prev)
+        next.set(baseUrl, { tokenType, workspace })
+        registeredUrlsRef.current = next // Update ref immediately
+        return next
+      })
+    },
+    [],
+  )
 
   const unregisterUrl = useCallback((baseUrl: string) => {
     setRegisteredUrls((prev) => {
@@ -64,7 +72,17 @@ export function AuthenticatedTileUrlsProvider({ children }: AuthenticatedTileUrl
       const baseUrl = extractBaseUrl(url)
       // Use ref to get the latest value, avoiding stale closures
       const currentUrls = registeredUrlsRef.current
-      return currentUrls.get(baseUrl)
+      return currentUrls.get(baseUrl)?.tokenType
+    },
+    [extractBaseUrl],
+  )
+
+  const getWorkspace = useCallback(
+    (url: string): string | undefined => {
+      const baseUrl = extractBaseUrl(url)
+      // Use ref to get the latest value, avoiding stale closures
+      const currentUrls = registeredUrlsRef.current
+      return currentUrls.get(baseUrl)?.workspace
     },
     [extractBaseUrl],
   )
@@ -74,6 +92,7 @@ export function AuthenticatedTileUrlsProvider({ children }: AuthenticatedTileUrl
     unregisterUrl,
     isAuthenticated,
     getTokenType,
+    getWorkspace,
   }
 
   return (
