@@ -92,6 +92,8 @@ export interface Collection {
   }
   // unique key to differentiate between public collections and user collections
   isUserCollection?: boolean
+  // flag to differentiate job collections from processing results
+  isJobCollection?: boolean
   displayedTitle?: string
 }
 

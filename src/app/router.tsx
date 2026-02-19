@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { createHashRouter, Navigate } from 'react-router-dom'
+import { createHashRouter } from 'react-router-dom'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
@@ -25,10 +25,6 @@ const routes = [
   },
   {
     path: '/finder/*',
-    element: <Navigate to="/" replace />,
-  },
-  {
-    path: '/finder/:collectionId',
     element: <DataFinderPage />,
   },
   {
