@@ -67,21 +67,39 @@ export const DataFinderPage: React.FC = () => {
     [collectionPath],
   )
 
+  // Determine workspace to use: from URL if present, otherwise currentWorkspace
+  const targetWorkspace = parsedPath?.workspace ?? currentWorkspace
+
+  // Fetch workspace tokens for job collections (use workspace from URL if available)
+  const jobWorkspaceTokensQuery = useQuery({
+    queryKey: ['WorkspaceTokens', targetWorkspace, token],
+    queryFn: () => {
+      return fetchWorkspaceTokens(targetWorkspace!, token!)
+    },
+    refetchOnWindowFocus: false,
+    enabled:
+      !!parsedPath && parsedPath.type === 'job' && !!targetWorkspace && !!token && isAuthenticated,
+  })
+
   // Fetch job collection if needed
   const jobCollectionQuery = useQuery({
-    queryKey: ['JobCollection', currentWorkspace, parsedPath?.jobPath],
+    queryKey: ['JobCollection', targetWorkspace, parsedPath?.jobPath],
     queryFn: () => {
-      if (!parsedPath?.jobPath || !currentWorkspace || !workspaceTokensData?.access) {
+      if (!parsedPath?.jobPath || !targetWorkspace || !jobWorkspaceTokensQuery.data?.access) {
         return null
       }
-      return fetchJobCollection(currentWorkspace, parsedPath.jobPath, workspaceTokensData.access)
+      return fetchJobCollection(
+        targetWorkspace,
+        parsedPath.jobPath,
+        jobWorkspaceTokensQuery.data.access,
+      )
     },
     refetchOnWindowFocus: false,
     enabled:
       !!parsedPath &&
       parsedPath.type === 'job' &&
-      !!currentWorkspace &&
-      !!workspaceTokensData &&
+      !!targetWorkspace &&
+      !!jobWorkspaceTokensQuery.data &&
       isAuthenticated,
   })
 

@@ -34,6 +34,8 @@ import {
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
 
@@ -139,7 +141,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   }, [item?.links])
 
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useContext(AuthenticationContext)
+  const { isAuthenticated, login, token } = useContext(AuthenticationContext)
 
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
@@ -195,12 +197,33 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return requiresThumbnailAuth && !isAuthenticated
   }, [requiresThumbnailAuth, isAuthenticated])
 
+  // Determine if collection is a job collection
+  const isJobCollection = collection?.isJobCollection ?? false
+  // Extract workspace from collection for job collections
+  const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
+
+  // Fetch workspace tokens for job collections
+  const { data: jobWorkspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
+  })
+
   // temporarily fetching item details
   const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+    queryKey: ['Items', item?.collection, item?.id, isJobCollection],
+    queryFn: () =>
+      fetchItem({
+        collectionUrl: collectionUrl,
+        itemId: item?.id,
+        workspaceToken: isJobCollection ? jobWorkspaceTokensData?.access : undefined,
+      }),
     refetchOnWindowFocus: false,
-    enabled: !!item && !isUserCollection,
+    enabled:
+      !!item &&
+      (!isUserCollection || isJobCollection) &&
+      (!isJobCollection || !!jobWorkspaceTokensData),
   })
 
   // In order to determine if the item is already pinned, we need a unique ID

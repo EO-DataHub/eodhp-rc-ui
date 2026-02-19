@@ -7,13 +7,14 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useEffect } from 'react'
+import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 
 export const MAX_TOTAL_ITEMS = 100
 export const MAX_USER_COLLECTION_ITEMS = 10000
 export const PAGE_SIZE = 10
 
 export const useItemsQuery = () => {
-  const { currentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
@@ -21,37 +22,68 @@ export const useItemsQuery = () => {
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const page = useSelector(dataFinderStore, (state) => state.context.page)
 
+  // Determine if this is a job collection that needs authenticated fetching
+  const isJobCollection = collection?.isJobCollection ?? false
+  // Extract workspace from collection for job collections
+  const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
+
   const queryKey = JSON.stringify({
     queryFilter,
     aoi: aoi?.geometry,
     mapBounds,
     collectionId: collection?.id,
     isUserCollection,
+    isJobCollection,
+    collectionWorkspace,
   })
 
+  // Fetch workspace tokens for user collections (using currentWorkspace)
   const { data: workspaceTokensData } = useQuery({
     queryKey: ['WorkspaceTokens', currentWorkspace, token],
     queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token,
+    enabled: !!currentWorkspace && !!token && isUserCollection,
+  })
+
+  // Fetch workspace tokens for job collections (using collection's workspace)
+  const { data: jobWorkspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
   })
 
   const fetchFunction = () => {
-    return isUserCollection && collection
-      ? fetchUserItems(
-          collection,
-          workspaceTokensData!.access,
-          MAX_USER_COLLECTION_ITEMS,
-          mapBounds,
-          aoi,
-        )
-      : fetchItems({
-          limit: MAX_TOTAL_ITEMS,
-          mapBounds: mapBounds,
-          aoi: aoi,
-          selectedCollection: collection ?? undefined,
-          queryFilter: queryFilter,
-        })
+    // Job collections use authenticated fetching like user collections
+    if (isJobCollection && collection && jobWorkspaceTokensData?.access) {
+      return fetchUserItems(
+        collection,
+        jobWorkspaceTokensData.access,
+        MAX_USER_COLLECTION_ITEMS,
+        mapBounds,
+        aoi,
+      )
+    }
+
+    // User collections use authenticated fetching
+    if (isUserCollection && collection && workspaceTokensData?.access) {
+      return fetchUserItems(
+        collection,
+        workspaceTokensData.access,
+        MAX_USER_COLLECTION_ITEMS,
+        mapBounds,
+        aoi,
+      )
+    }
+
+    // Public collections use unauthenticated fetching
+    return fetchItems({
+      limit: MAX_TOTAL_ITEMS,
+      mapBounds: mapBounds,
+      aoi: aoi,
+      selectedCollection: collection ?? undefined,
+      queryFilter: queryFilter,
+    })
   }
 
   const {
@@ -64,7 +96,13 @@ export const useItemsQuery = () => {
     queryFn: fetchFunction,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
-    enabled: !!collection && (!!queryFilter || !!aoi || !!mapBounds),
+    enabled:
+      !!collection &&
+      (!!queryFilter || !!aoi || !!mapBounds) &&
+      // For job collections, wait for workspace tokens
+      (!isJobCollection || !!jobWorkspaceTokensData) &&
+      // For user collections, wait for workspace tokens
+      (!isUserCollection || !!workspaceTokensData),
     placeholderData: (previousValue: Item[] | undefined): Item[] => previousValue ?? [],
   })
 

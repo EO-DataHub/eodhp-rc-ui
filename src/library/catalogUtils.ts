@@ -19,10 +19,26 @@ export const getCatalog = (selectedCollection: Collection): string => {
   return parentLink.href
 }
 
+/**
+ * Extracts the workspace name from a collection's self link.
+ * @param collection - The collection object
+ * @returns The workspace name or null if not found
+ */
+export const extractWorkspaceFromCollection = (collection: Collection): string | null => {
+  const selfLink = collection.links?.find((link) => link.rel === 'self')
+  if (!selfLink?.href) return null
+
+  // Pattern: /catalogs/user/catalogs/{workspace}/catalogs/processing-results/...
+  // or: /catalogs/user/catalogs/{workspace}/catalogs/commercial-data/...
+  const match = selfLink.href.match(/\/catalogs\/user\/catalogs\/([^/]+)\//)
+  return match?.[1] ?? null
+}
+
 export interface ParsedCollectionPath {
   type: 'public' | 'purchased' | 'job'
   collectionId: string
   jobPath?: string
+  workspace?: string
 }
 
 /**
@@ -31,7 +47,32 @@ export interface ParsedCollectionPath {
  * @returns Parsed collection path information
  */
 export const parseCollectionPath = (path: string): ParsedCollectionPath => {
-  // Check if it's a job collection (starts with "processing-results")
+  // Check if it's a job collection
+  // New format: {workspace}/processing-results/...
+  // Old format: processing-results/... (backward compatibility)
+  const workspaceMatch = path.match(/^([^/]+)\/processing-results\/(.+)$/)
+  if (workspaceMatch) {
+    // New format with workspace
+    const workspace = workspaceMatch[1]
+    const jobPath = workspaceMatch[2]
+
+    // Extract collection ID (last segment after "collections/")
+    const pathParts = jobPath.split('/')
+    const collectionsIndex = pathParts.indexOf('collections')
+    const collectionId =
+      collectionsIndex >= 0 && collectionsIndex < pathParts.length - 1
+        ? pathParts[collectionsIndex + 1]
+        : pathParts[pathParts.length - 1]
+
+    return {
+      type: 'job',
+      collectionId,
+      jobPath,
+      workspace,
+    }
+  }
+
+  // Check if it's a job collection (old format without workspace - backward compatibility)
   if (path.startsWith('processing-results/')) {
     // Extract the job path (everything after "processing-results/")
     // Format: catalogs/{workflow}/catalogs/{catalog}/collections/{collectionId}
@@ -49,6 +90,7 @@ export const parseCollectionPath = (path: string): ParsedCollectionPath => {
       type: 'job',
       collectionId,
       jobPath,
+      // workspace is undefined for old format - will fallback to currentWorkspace
     }
   }
 
@@ -76,7 +118,9 @@ export const parseCollectionPath = (path: string): ParsedCollectionPath => {
  */
 export const getCollectionFinderUrl = (collection: Collection, jobPath?: string): string => {
   if (collection.isJobCollection) {
-    // For job collections, use the full path
+    // Extract workspace from collection
+    const workspace = extractWorkspaceFromCollection(collection)
+
     // Extract job path from collection links if not provided
     if (!jobPath) {
       const selfLink = collection.links?.find((link) => link.rel === 'self')
@@ -91,12 +135,19 @@ export const getCollectionFinderUrl = (collection: Collection, jobPath?: string)
       }
     }
 
+    if (jobPath && workspace) {
+      return `/finder/${workspace}/processing-results/${jobPath}`
+    }
+
     if (jobPath) {
+      // Fallback: if workspace not found, use old format (backward compatibility)
       return `/finder/processing-results/${jobPath}`
     }
 
     // Fallback: if we can't extract the path, use collection ID (shouldn't happen)
-    return `/finder/processing-results/${collection.id}`
+    return workspace
+      ? `/finder/${workspace}/processing-results/${collection.id}`
+      : `/finder/processing-results/${collection.id}`
   }
 
   if (collection.isUserCollection) {
