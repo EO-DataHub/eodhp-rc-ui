@@ -509,11 +509,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !itemBelongsToUserCollection && (
-              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
-                Purchase
-              </Button>
-            )}
+            {isLicenseProprietary &&
+              !itemBelongsToUserCollection &&
+              !collection?.isJobCollection && (
+                <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+                  Purchase
+                </Button>
+              )}
           </Flex>
         </Flex>
       </Flex>
