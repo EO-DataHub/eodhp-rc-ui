@@ -1,5 +1,5 @@
-import React, { useEffect, useContext } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useContext, useRef } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
@@ -12,6 +12,11 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from './useFinderStore'
+import { parsePermalinkParams } from '@/utils/permalink'
+import {
+  restoreFromPermalinkMultiCollection,
+  restoreFromPermalinkSingleCollection,
+} from './permalinkRestore'
 
 import styles from './DataFinderPage.module.scss'
 
@@ -20,6 +25,8 @@ export const DataFinderPage: React.FC = () => {
     useContext(AuthenticationContext)
   const { collectionId } = useParams<{ collectionId: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const permalinkRestoreDoneRef = useRef(false)
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
@@ -189,6 +196,87 @@ export const DataFinderPage: React.FC = () => {
       localStorage.removeItem('itemToPin')
     }
   }, [collection, currentWorkspace, collectionRender])
+
+  // Restore from permalink URL: pin item(s) from URL as the only pinned items, apply bounds
+  useEffect(() => {
+    if (!collection || !collectionId) return
+
+    const { itemIds, itemsByCollection, bounds } = parsePermalinkParams(searchParams)
+    const useMultiCollection = itemsByCollection.length > 0
+    const hasItemsToRestore = useMultiCollection || itemIds.length > 0
+
+    if (permalinkRestoreDoneRef.current) return
+    if (!hasItemsToRestore && !bounds) return
+
+    const isUserCollection = collectionId.startsWith('my-')
+    if (hasItemsToRestore && isUserCollection && !workspaceTokensData?.access) return
+
+    if (bounds) {
+      dataFinderStore.send({ type: 'setInitialBounds', bounds })
+    }
+
+    if (useMultiCollection) {
+      const needsUserCollections = itemsByCollection.some((r) => r.collectionId.startsWith('my-'))
+      if (needsUserCollections && !userCollectionQuery.isFetched) return
+      if (!collectionQueries.isFetched) return
+
+      localStorage.setItem('openPinnedItemsTab', '1')
+      dataFinderStore.send({ type: 'clearAllPinnedItems' })
+
+      const publicCollections = collectionQueries.data ?? []
+      const userCollections = userCollectionQuery.data ?? []
+      const resolveCollection = (cid: string) => {
+        if (cid.startsWith('my-')) {
+          const found = findCollectionById(userCollections, cid.replace(/^my-/, ''))
+          return found ? { collection: found, isUserCollection: true } : null
+        }
+        const found = findCollectionById(publicCollections, cid)
+        return found ? { collection: found, isUserCollection: false } : null
+      }
+
+      void restoreFromPermalinkMultiCollection({
+        itemsByCollection,
+        resolveCollection,
+        workspaceTokenForUser: workspaceTokensData?.access,
+      }).then(() => {
+        permalinkRestoreDoneRef.current = true
+      })
+      return
+    }
+
+    if (itemIds.length > 0) {
+      const collectionUrl = collection.links.find((l) => l.rel === 'self')?.href
+      if (!collectionUrl || !collectionRender) {
+        permalinkRestoreDoneRef.current = true
+        return
+      }
+
+      localStorage.setItem('openPinnedItemsTab', '1')
+      dataFinderStore.send({ type: 'clearAllPinnedItems' })
+
+      void restoreFromPermalinkSingleCollection({
+        itemIds,
+        collection,
+        collectionRender,
+        isUserCollection,
+        workspaceTokenForUser: workspaceTokensData?.access,
+      }).then(() => {
+        permalinkRestoreDoneRef.current = true
+      })
+    } else {
+      permalinkRestoreDoneRef.current = true
+    }
+  }, [
+    collection,
+    collectionId,
+    collectionRender,
+    searchParams,
+    workspaceTokensData?.access,
+    collectionQueries.data,
+    collectionQueries.isFetched,
+    userCollectionQuery.data,
+    userCollectionQuery.isFetched,
+  ])
 
   return (
     <Box height="var(--content-height)" position="relative">
