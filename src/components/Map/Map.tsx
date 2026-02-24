@@ -78,7 +78,13 @@ export const Map = () => {
   useEffect(() => {
     if (!mapInstance || !initialBounds) return
     const [west, south, east, north] = initialBounds
-    mapInstance.fitBounds([west, south, east, north], { padding: 20, duration: 300 })
+    mapInstance.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      { padding: 20, duration: 300 },
+    )
     dataFinderStore.send({ type: 'clearInitialBounds' })
   }, [mapInstance, initialBounds])
 

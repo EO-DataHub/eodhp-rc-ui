@@ -37,7 +37,13 @@ export function useCopyPermalink(
   const canCopy = !!primaryCollectionId && items.length > 0 && !!mapInstance
 
   const tooltip =
-    items.length === 0 ? 'Pin items to share a link' : !mapInstance ? 'Map loading…' : 'Copy link'
+    items.length === 0
+      ? 'Pin items to share a link'
+      : !primaryCollectionId
+        ? 'Open a collection to share a link'
+        : !mapInstance
+          ? 'Map loading…'
+          : 'Copy link'
 
   const copyLink = useCallback(() => {
     if (!primaryCollectionId || items.length === 0) {
