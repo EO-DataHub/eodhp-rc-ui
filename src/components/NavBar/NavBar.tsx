@@ -9,6 +9,9 @@ import { ChangeWorkspaceModal } from '@/components/ChangeWorkspaceModal/ChangeWo
 import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
 
+const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
+const WORKSPACE_UI_BASE_URL = import.meta.env.VITE_WORKSPACE_UI_BASE_URL || HUB_BASE_URL
+
 interface DropdownMenuProps {
   label: string
   shouldOpen: boolean
@@ -75,14 +78,14 @@ export const NavBar: React.FC = () => {
   }, [location.pathname])
 
   const workspaceHref = currentWorkspace
-    ? `/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
-    : '/workspaces/'
+    ? `${WORKSPACE_UI_BASE_URL}/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
+    : `${WORKSPACE_UI_BASE_URL}/workspaces/`
 
   return (
     <>
       <Flex px="6" py="2" align="center" justify="between" className={styles.container}>
         <Flex className={styles.navLinks} width="50%">
-          <a href="https://eodatahub.org.uk/" className={styles.logo}>
+          <a href={`${HUB_BASE_URL}/`} className={styles.logo}>
             <EarthObservationDataHubLogo style={{ width: '162px', height: '60px' }} />
           </a>
 
@@ -92,8 +95,8 @@ export const NavBar: React.FC = () => {
             onClick={() => toggleMenu('about')}
             renderMenuItem={() => (
               <>
-                <a href="/about/hub">Earth Observation Data Hub</a>
-                <a href="/about/applications">Access Points</a>
+                <a href={`${HUB_BASE_URL}/about/hub`}>Earth Observation Data Hub</a>
+                <a href={`${HUB_BASE_URL}/about/applications`}>Access Points</a>
               </>
             )}
           />
@@ -104,9 +107,9 @@ export const NavBar: React.FC = () => {
             onClick={() => toggleMenu('data')}
             renderMenuItem={() => (
               <>
-                <a href="/data/open-access">Open Access</a>
-                <a href="/data/commercial">Commercial</a>
-                <a href="/data/quality-assurance">Quality Assurance</a>
+                <a href={`${HUB_BASE_URL}/data/open-access`}>Open Access</a>
+                <a href={`${HUB_BASE_URL}/data/commercial`}>Commercial</a>
+                <a href={`${HUB_BASE_URL}/data/quality-assurance`}>Quality Assurance</a>
               </>
             )}
           />
@@ -117,10 +120,10 @@ export const NavBar: React.FC = () => {
             onClick={() => toggleMenu('getting-started')}
             renderMenuItem={() => (
               <>
-                <a href="/case-studies">Case Studies</a>
-                <a href="/docs/account-setup">Account Setup</a>
-                <a href="/docs/faqs">FAQs</a>
-                <a href="/docs/documentation">Documentation</a>
+                <a href={`${HUB_BASE_URL}/case-studies`}>Case Studies</a>
+                <a href={`${HUB_BASE_URL}/docs/account-setup`}>Account Setup</a>
+                <a href={`${HUB_BASE_URL}/docs/faqs`}>FAQs</a>
+                <a href={`${HUB_BASE_URL}/docs/documentation`}>Documentation</a>
               </>
             )}
           />
