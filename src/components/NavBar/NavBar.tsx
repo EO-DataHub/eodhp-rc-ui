@@ -54,7 +54,8 @@ export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
-  const isMyDataActive = location.pathname === '/my-data'
+  const isPurchasedDataActive = location.pathname === '/my-data/purchased'
+  const isWorkflowOutputsActive = location.pathname === '/my-data/workflow-outputs'
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
@@ -152,12 +153,20 @@ export const NavBar: React.FC = () => {
                   Maps
                 </Link>
                 {isAuthenticated && (
-                  <Link
-                    to="/my-data"
-                    className={`${styles.link} ${isMyDataActive ? styles.active : ''}`}
-                  >
-                    My Data
-                  </Link>
+                  <>
+                    <Link
+                      to="/my-data/purchased"
+                      className={`${styles.link} ${isPurchasedDataActive ? styles.active : ''}`}
+                    >
+                      Purchased Data
+                    </Link>
+                    <Link
+                      to="/my-data/workflow-outputs"
+                      className={`${styles.link} ${isWorkflowOutputsActive ? styles.active : ''}`}
+                    >
+                      Workflow Outputs
+                    </Link>
+                  </>
                 )}
               </>
             )}

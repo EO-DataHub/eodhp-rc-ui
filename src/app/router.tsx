@@ -4,7 +4,9 @@ import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
 import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
-import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
+import { Navigate } from 'react-router-dom'
+import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
+import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 
 const ProcessesCataloguePage = lazy(() =>
@@ -53,7 +55,15 @@ const routes = [
     children: [
       {
         path: '',
-        element: <MyDataPage />,
+        element: <Navigate to="purchased" replace />,
+      },
+      {
+        path: 'purchased',
+        element: <PurchasedDataPage />,
+      },
+      {
+        path: 'workflow-outputs',
+        element: <WorkflowOutputsPage />,
       },
     ],
   },
