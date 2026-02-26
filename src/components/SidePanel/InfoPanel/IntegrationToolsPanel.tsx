@@ -25,6 +25,7 @@ import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { WorkflowLaunchModal } from '@/components/WorkflowLaunchModal/WorkflowLaunchModal'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface IntegrationToolsPanelProps {
@@ -226,13 +227,7 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
   // Retrieve AOI from store
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  // State for checkbox - defaults to true when AOI exists
-  const [includeAoi, setIncludeAoi] = useState(true)
-
-  // Reset checkbox state when AOI changes
-  useEffect(() => {
-    setIncludeAoi(!!aoi)
-  }, [aoi])
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false)
 
   const {
     workflows,
@@ -244,6 +239,7 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
     workflowsError,
     launchError,
     workflowId,
+    clearWorkflowId,
     retry,
   } = useWorkflowLaunch({
     item,
@@ -253,11 +249,15 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
     username,
   })
 
-  const canLaunch =
-    isAuthenticated && !!currentWorkspace && !!item && !!selectedWorkflow && !isLaunching
+  const canOpenLaunchModal = isAuthenticated && !!currentWorkspace && !!item && !!selectedWorkflow
   const showContent = isAuthenticated && !!currentWorkspace && !!item
   const hasWorkflows = workflows.length > 0
   const isEmpty = !isLoadingWorkflows && !workflowsError && workflows.length === 0
+
+  const handleLaunchModalOpenChange = (open: boolean) => {
+    setIsLaunchModalOpen(open)
+    if (!open) clearWorkflowId()
+  }
 
   if (!showContent) {
     return (
@@ -284,7 +284,7 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
           </Text>
           <Text size="2" color="gray">
             Start data processing workflows directly with this item. Select a workflow below and
-            click Launch.
+            click Launch to configure and run it.
           </Text>
 
           {isLoadingWorkflows && (
@@ -345,64 +345,32 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
                     </Flex>
                   </RadioGroup.Root>
 
-                  {hasWorkflows && aoi && (
-                    <Flex align="center" gap="2">
-                      <Checkbox
-                        checked={includeAoi}
-                        onCheckedChange={(checked) => setIncludeAoi(Boolean(checked))}
-                        size="2"
-                      />
-                      <Text
-                        size="2"
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setIncludeAoi(!includeAoi)}
-                      >
-                        Include Area of Interest (AOI)
-                      </Text>
-                    </Flex>
-                  )}
-
                   <Button
                     variant="soft"
                     size="2"
-                    disabled={!canLaunch}
-                    onClick={() => void launch(includeAoi)}
+                    disabled={!canOpenLaunchModal}
+                    onClick={() => setIsLaunchModalOpen(true)}
                   >
-                    {isLaunching ? 'Launching...' : 'Launch'}
+                    Launch
                   </Button>
-
-                  {launchError && (
-                    <Flex direction="column" gap="2">
-                      <Text size="2" color="red">
-                        {launchError}
-                      </Text>
-                      <Button
-                        variant="soft"
-                        size="2"
-                        color="red"
-                        onClick={() => void launch(includeAoi)}
-                      >
-                        Retry
-                      </Button>
-                    </Flex>
-                  )}
-
-                  {!launchError && !isLaunching && workflowId && (
-                    <Flex direction="column" gap="1">
-                      <Text size="2" color="green">
-                        Workflow launched successfully
-                      </Text>
-                      <Text size="1" color="gray">
-                        Workflow ID: {workflowId}
-                      </Text>
-                    </Flex>
-                  )}
                 </Flex>
               )}
             </>
           )}
         </Flex>
       </Card>
+      <WorkflowLaunchModal
+        open={isLaunchModalOpen}
+        onOpenChange={handleLaunchModalOpenChange}
+        workflow={selectedWorkflow}
+        item={item}
+        aoi={aoi}
+        launch={launch}
+        isLaunching={isLaunching}
+        launchError={launchError}
+        workflowId={workflowId}
+        currentWorkspace={currentWorkspace}
+      />
     </Flex>
   )
 }

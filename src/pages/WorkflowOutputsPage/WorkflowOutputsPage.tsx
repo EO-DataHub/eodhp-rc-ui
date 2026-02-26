@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
@@ -15,6 +16,11 @@ import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
 export const WorkflowOutputsPage: React.FC = () => {
+  const { workspace: workspaceParam, jobId: jobIdParam } = useParams<{
+    workspace?: string
+    jobId?: string
+  }>()
+  const navigate = useNavigate()
   const { token, currentWorkspace } = useContext(AuthenticationContext)
   const [searchText, setSearchText] = useState('')
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
@@ -31,9 +37,34 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   const workflowWorkspace = selectedWorkspace === 'all' ? currentWorkspace ?? '' : selectedWorkspace
 
+  // Sync selectedWorkspace from URL when navigating to a job details URL
+  useEffect(() => {
+    if (workspaceParam && workspaceParam !== selectedWorkspace) {
+      setSelectedWorkspace(workspaceParam)
+      localStorage.setItem('workflowOutputsPageSelectedWorkspace', workspaceParam)
+    }
+  }, [workspaceParam, selectedWorkspace])
+
+  // When we have jobId in URL and jobs have loaded, open the job details modal
+  useEffect(() => {
+    if (!jobIdParam || !allJobs.length) return
+    const job = allJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
+    if (job) {
+      setSelectedJob(job)
+      setIsJobModalOpen(true)
+    }
+  }, [jobIdParam, allJobs])
+
   const handleWorkspaceChange = (workspace: string) => {
     localStorage.setItem('workflowOutputsPageSelectedWorkspace', workspace)
     setSelectedWorkspace(workspace)
+  }
+
+  const handleJobModalOpenChange = (open: boolean) => {
+    setIsJobModalOpen(open)
+    if (!open && jobIdParam) {
+      void navigate('/my-data/workflow-outputs')
+    }
   }
 
   const handleResetFilters = () => {
@@ -246,6 +277,15 @@ export const WorkflowOutputsPage: React.FC = () => {
                           if (job) {
                             setSelectedJob(job)
                             setIsJobModalOpen(true)
+                            const workspaceForUrl =
+                              selectedWorkspace === 'all'
+                                ? currentWorkspace ?? ''
+                                : selectedWorkspace
+                            if (workspaceForUrl) {
+                              void navigate(
+                                `/my-data/workflow-outputs/${workspaceForUrl}/${job.id}`,
+                              )
+                            }
                           }
                         }}
                         style={{ cursor: 'pointer' }}
@@ -281,7 +321,11 @@ export const WorkflowOutputsPage: React.FC = () => {
           )}
         </Flex>
       </Flex>
-      <JobDetailsModal job={selectedJob} open={isJobModalOpen} onOpenChange={setIsJobModalOpen} />
+      <JobDetailsModal
+        job={selectedJob}
+        open={isJobModalOpen}
+        onOpenChange={handleJobModalOpenChange}
+      />
     </>
   )
 }

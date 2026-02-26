@@ -76,15 +76,35 @@ export async function launchWorkflow(
       throw new Error(message)
     }
 
-    // Workflow API returns 202 Accepted for async execution
-    if (response.status === 202) {
-      const data = (await response.json()) as WorkflowLaunchResponse
-      return data
+    // Workflow API returns 202 Accepted for async execution; body may be empty or use job_id/id
+    let data: Record<string, unknown> = {}
+    try {
+      const text = await response.text()
+      if (text.trim()) data = JSON.parse(text) as Record<string, unknown>
+    } catch {
+      // ignore parse errors for empty or non-JSON body
     }
 
-    // Handle unexpected success status codes
-    const data = (await response.json()) as WorkflowLaunchResponse
-    return data
+    const workflowId =
+      typeof data.workflowId === 'string'
+        ? data.workflowId
+        : typeof data.job_id === 'string'
+          ? data.job_id
+          : typeof data.id === 'string'
+            ? data.id
+            : ''
+    const normalized: WorkflowLaunchResponse = {
+      workflowId,
+      status: typeof data.status === 'string' ? data.status : 'accepted',
+      submittedAt:
+        typeof data.submittedAt === 'string' ? data.submittedAt : new Date().toISOString(),
+    }
+
+    if (response.status === 202) {
+      return normalized
+    }
+
+    return normalized
   } catch (err) {
     clearTimeout(timeoutId)
     if (err instanceof Error && err.name === 'AbortError') {

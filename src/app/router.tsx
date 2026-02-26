@@ -65,6 +65,10 @@ const routes = [
         path: 'workflow-outputs',
         element: <WorkflowOutputsPage />,
       },
+      {
+        path: 'workflow-outputs/:workspace/:jobId',
+        element: <WorkflowOutputsPage />,
+      },
     ],
   },
 ]

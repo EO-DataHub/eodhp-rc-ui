@@ -20,12 +20,16 @@ export interface UseWorkflowLaunchResult {
   workflows: ProcessRecord[]
   selectedWorkflow: ProcessRecord | null
   setSelectedWorkflow: (w: ProcessRecord | null) => void
-  launch: (includeAoi?: boolean) => Promise<void>
+  launch: (
+    includeAoi?: boolean,
+    userProvidedVariables?: Record<string, string | number | boolean>,
+  ) => Promise<void>
   isLoadingWorkflows: boolean
   isLaunching: boolean
   workflowsError: string | null
   launchError: string | null
   workflowId: string | null
+  clearWorkflowId: () => void
   retry: () => void
 }
 
@@ -86,7 +90,10 @@ export function useWorkflowLaunch({
   }, [loadWorkflows])
 
   const launch = useCallback(
-    async (includeAoi = false) => {
+    async (
+      includeAoi = false,
+      userProvidedVariables?: Record<string, string | number | boolean>,
+    ) => {
       if (!item || !selectedWorkflow || !token || !currentWorkspace || !username) return
 
       const stacItemLink = getSelfLinkHref(item)
@@ -118,7 +125,17 @@ export function useWorkflowLaunch({
             ? detail?.properties?.inputParameters ?? {}
             : {}
         const context = { item, aoi, includeAoi }
-        const variables = buildWorkflowVariables(inputParameters, context)
+        const resolvedVariables = buildWorkflowVariables(inputParameters, context)
+        const paramKeys = new Set(Object.keys(inputParameters))
+        const filteredUserVars =
+          userProvidedVariables &&
+          Object.fromEntries(
+            Object.entries(userProvidedVariables).filter(([key]) => paramKeys.has(key)),
+          )
+        const variables = {
+          ...resolvedVariables,
+          ...filteredUserVars,
+        }
 
         // Fetch workspace-scoped token for user-specific workflow execution endpoint
         let workspaceToken: string
@@ -136,8 +153,9 @@ export function useWorkflowLaunch({
 
         const response = await launchWorkflow(executionUrl, variables, workspaceToken)
 
-        // Store workflowId for display
-        setWorkflowId(response.workflowId)
+        // Store workflow/job id for success view (service normalizes workflowId from API response)
+        const id = response.workflowId?.trim()
+        setWorkflowId(id ? id : null)
         setLaunchError(null)
       } catch (err) {
         setLaunchError(
@@ -155,6 +173,10 @@ export function useWorkflowLaunch({
     void loadWorkflows()
   }, [loadWorkflows])
 
+  const clearWorkflowId = useCallback(() => {
+    setWorkflowId(null)
+  }, [])
+
   return {
     workflows,
     selectedWorkflow,
@@ -165,6 +187,7 @@ export function useWorkflowLaunch({
     workflowsError,
     launchError,
     workflowId,
+    clearWorkflowId,
     retry,
   }
 }
