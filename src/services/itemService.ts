@@ -5,6 +5,26 @@ import { bboxToPolygon } from '@/library/geoUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
+export const fetchCollectionByUrl = async (collectionUrl: string): Promise<Collection> => {
+  if (!collectionUrl) {
+    throw new Error('Collection URL is required')
+  }
+
+  const response = await fetch(collectionUrl, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch collection')
+  }
+
+  const data = (await response.json()) as Collection
+  return data
+}
+
 interface FetchItemsParams {
   limit: number
   mapBounds?: MapBounds
