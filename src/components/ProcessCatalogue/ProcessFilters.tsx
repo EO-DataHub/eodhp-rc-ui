@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Flex, Text, Select, TextField, Button } from '@radix-ui/themes'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import type { TypeFilter } from '@/hooks/useProcessCatalogue'
+import { useCollections } from '@/hooks/useCollections'
+import { getSelfLinkHref } from '@/library/integrationTools'
 
 export interface ProcessFiltersProps {
   searchValue: string
@@ -24,6 +26,39 @@ export const ProcessFilters: React.FC<ProcessFiltersProps> = ({
   hasActiveFilters = false,
   onClearAll,
 }) => {
+  const { sortedCollections, isLoading: isCollectionsLoading } = useCollections()
+
+  const collectionOptions = useMemo(() => {
+    const seen = new Set<string>()
+
+    return sortedCollections.reduce<{ value: string; label: string }[]>((acc, collection) => {
+      const value = getSelfLinkHref(collection) ?? collection.id
+
+      if (!value || seen.has(value)) {
+        return acc
+      }
+
+      seen.add(value)
+
+      const baseTitle = collection.displayedTitle ?? collection.title ?? collection.id
+      const label =
+        collection.title && collection.title !== collection.id
+          ? `${baseTitle} (${collection.id})`
+          : baseTitle
+
+      acc.push({ value, label })
+      return acc
+    }, [])
+  }, [sortedCollections])
+
+  const hasCollectionOptions = collectionOptions.length > 0
+  const isCollectionSelectDisabled = isCollectionsLoading || !hasCollectionOptions
+  const collectionPlaceholder = isCollectionsLoading
+    ? 'Loading collections…'
+    : hasCollectionOptions
+      ? 'All collections'
+      : 'Collections unavailable'
+
   return (
     <Flex direction="column" gap="3" width="100%">
       <Flex align="center" justify="end">
@@ -62,13 +97,21 @@ export const ProcessFilters: React.FC<ProcessFiltersProps> = ({
           <Text weight="bold" size="2">
             Collection
           </Text>
-          <TextField.Root
-            placeholder="STAC collection ID"
-            value={collectionFilter ?? ''}
-            onChange={(e) => onCollectionFilterChange(e.target.value || null)}
-            size="2"
-            style={{ width: '200px' }}
-          />
+          <Select.Root
+            value={collectionFilter ?? 'all'}
+            onValueChange={(v) => onCollectionFilterChange(v === 'all' ? null : v)}
+            disabled={isCollectionSelectDisabled}
+          >
+            <Select.Trigger placeholder={collectionPlaceholder} style={{ width: '200px' }} />
+            <Select.Content position="popper">
+              <Select.Item value="all">All</Select.Item>
+              {collectionOptions.map((option) => (
+                <Select.Item key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
         </Flex>
 
         {hasActiveFilters && onClearAll ? (
