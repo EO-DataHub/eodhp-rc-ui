@@ -10,7 +10,6 @@ import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?rea
 import styles from './NavBar.module.scss'
 
 const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
-const WORKSPACE_UI_BASE_URL = import.meta.env.VITE_WORKSPACE_UI_BASE_URL || HUB_BASE_URL
 
 interface DropdownMenuProps {
   label: string
@@ -78,8 +77,8 @@ export const NavBar: React.FC = () => {
   }, [location.pathname])
 
   const workspaceHref = currentWorkspace
-    ? `${WORKSPACE_UI_BASE_URL}/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
-    : `${WORKSPACE_UI_BASE_URL}/workspaces/`
+    ? `${HUB_BASE_URL}/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
+    : `${HUB_BASE_URL}/workspaces/`
 
   return (
     <>
