@@ -2,6 +2,7 @@ import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
+import { isHubOriginUrl, resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -51,6 +52,11 @@ interface FetchItemFromCollectionParams {
   catalogUrl?: string
   collectionId?: string
   itemId?: string
+}
+
+interface FetchItemByUrlParams {
+  itemUrl?: string
+  workspaceToken?: string
 }
 
 export const fetchItems = async ({
@@ -128,6 +134,42 @@ export const fetchItem = async ({
 
   // Add Authorization header for user collections
   if (workspaceToken) {
+    headers.Authorization = `Bearer ${workspaceToken}`
+  }
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers,
+  })
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch Item')
+  }
+
+  const data = await response.json()
+  return data as Item
+}
+
+/**
+ * Fetches a STAC Item directly from a full item URL.
+ * Useful when results provide an absolute href to an item JSON file.
+ * Authorization is only attached when the URL is on the hub origin.
+ */
+export const fetchItemByUrl = async ({
+  itemUrl,
+  workspaceToken,
+}: FetchItemByUrlParams): Promise<Item> => {
+  if (!itemUrl) {
+    throw new Error('Item URL is required')
+  }
+
+  const url = resolveApiUrl(itemUrl)
+
+  const headers: HeadersInit = {
+    Accept: 'application/json',
+  }
+
+  if (workspaceToken && isHubOriginUrl(url)) {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 

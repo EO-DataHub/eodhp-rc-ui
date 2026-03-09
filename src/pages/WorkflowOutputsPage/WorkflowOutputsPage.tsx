@@ -277,13 +277,9 @@ export const WorkflowOutputsPage: React.FC = () => {
                           if (job) {
                             setSelectedJob(job)
                             setIsJobModalOpen(true)
-                            const workspaceForUrl =
-                              selectedWorkspace === 'all'
-                                ? currentWorkspace ?? ''
-                                : selectedWorkspace
-                            if (workspaceForUrl) {
+                            if (workflowWorkspace) {
                               void navigate(
-                                `/my-data/workflow-outputs/${workspaceForUrl}/${job.id}`,
+                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}`,
                               )
                             }
                           }
@@ -325,6 +321,7 @@ export const WorkflowOutputsPage: React.FC = () => {
         job={selectedJob}
         open={isJobModalOpen}
         onOpenChange={handleJobModalOpenChange}
+        workspaceName={workflowWorkspace}
       />
     </>
   )
