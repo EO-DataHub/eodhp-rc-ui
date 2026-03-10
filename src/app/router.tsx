@@ -7,6 +7,7 @@ import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
 import { Navigate } from 'react-router-dom'
 import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
 import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
+import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 
 const ProcessesCataloguePage = lazy(() =>
@@ -68,6 +69,10 @@ const routes = [
       {
         path: 'workflow-outputs/:workspace/:jobId',
         element: <WorkflowOutputsPage />,
+      },
+      {
+        path: 'data-storage',
+        element: <DataStoragePage />,
       },
     ],
   },

@@ -54,8 +54,9 @@ export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
-  const isPurchasedDataActive = location.pathname === '/my-data/purchased'
-  const isWorkflowOutputsActive = location.pathname === '/my-data/workflow-outputs'
+  const isPurchasedDataActive = location.pathname.startsWith('/my-data/purchased')
+  const isWorkflowOutputsActive = location.pathname.startsWith('/my-data/workflow-outputs')
+  const isDataStorageActive = location.pathname.startsWith('/my-data/data-storage')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
@@ -153,20 +154,27 @@ export const NavBar: React.FC = () => {
                   Maps
                 </Link>
                 {isAuthenticated && (
-                  <>
+                  <div className={styles.myDataGroup}>
+                    <div className={styles.myDataLabel}>My Data</div>
                     <Link
                       to="/my-data/purchased"
                       className={`${styles.link} ${isPurchasedDataActive ? styles.active : ''}`}
                     >
-                      Purchased Data
+                      Purchased data
                     </Link>
                     <Link
                       to="/my-data/workflow-outputs"
                       className={`${styles.link} ${isWorkflowOutputsActive ? styles.active : ''}`}
                     >
-                      Workflow Outputs
+                      Workflow outputs
                     </Link>
-                  </>
+                    <Link
+                      to="/my-data/data-storage"
+                      className={`${styles.link} ${isDataStorageActive ? styles.active : ''}`}
+                    >
+                      Data storage
+                    </Link>
+                  </div>
                 )}
               </>
             )}
