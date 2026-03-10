@@ -29,10 +29,10 @@ export function useProcessLaunchFromCatalogue(
 ): UseProcessLaunchFromCatalogueResult {
   const applicableCollections = params.process.properties?.applicableCollections ?? []
 
-  const collections = applicableCollections.map((value) => ({
-    id: value,
-    label: value,
-    url: value,
+  const collections = applicableCollections.map((name) => ({
+    id: name,
+    label: name,
+    url: `${import.meta.env.VITE_HUB_BASE_URL}/api/catalogue/stac/collections/${name}`,
   }))
 
   const [selectedCollectionUrl, setSelectedCollectionUrlState] = useState<string | null>(null)
