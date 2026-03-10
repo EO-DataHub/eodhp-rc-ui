@@ -1,10 +1,25 @@
-import { createHashRouter, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { createHashRouter } from 'react-router-dom'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
 import { OrderDetailsPage } from '@/pages/OrderDetailsPage/OrderDetailsPage'
-import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
+import { Navigate } from 'react-router-dom'
+import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
+import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
+import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
+
+const ProcessesCataloguePage = lazy(() =>
+  import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
+    default: m.ProcessesCataloguePage,
+  })),
+)
+const ProcessDetailPage = lazy(() =>
+  import('@/pages/ProcessDetailPage/ProcessDetailPage').then((m) => ({
+    default: m.ProcessDetailPage,
+  })),
+)
 
 const routes = [
   {
@@ -13,11 +28,23 @@ const routes = [
   },
   {
     path: '/finder/*',
-    element: <Navigate to="/" replace />,
+    element: <DataFinderPage />,
   },
   {
-    path: '/finder/:collectionId',
-    element: <DataFinderPage />,
+    path: '/catalogue/processes',
+    element: (
+      <Suspense fallback={<div>Loading…</div>}>
+        <ProcessesCataloguePage />
+      </Suspense>
+    ),
+  },
+  {
+    path: '/catalogue/processes/:itemId',
+    element: (
+      <Suspense fallback={<div>Loading…</div>}>
+        <ProcessDetailPage />
+      </Suspense>
+    ),
   },
   {
     path: '/order-details/:orderId',
@@ -29,7 +56,23 @@ const routes = [
     children: [
       {
         path: '',
-        element: <MyDataPage />,
+        element: <Navigate to="purchased" replace />,
+      },
+      {
+        path: 'purchased',
+        element: <PurchasedDataPage />,
+      },
+      {
+        path: 'workflow-outputs',
+        element: <WorkflowOutputsPage />,
+      },
+      {
+        path: 'workflow-outputs/:workspace/:jobId',
+        element: <WorkflowOutputsPage />,
+      },
+      {
+        path: 'data-storage',
+        element: <DataStoragePage />,
       },
     ],
   },

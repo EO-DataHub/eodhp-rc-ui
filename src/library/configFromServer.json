@@ -240,9 +240,18 @@
         "nodata": 0,
         "auth": true,
         "rescale": [
-          [200,7000],
-          [200,6000],
-          [200,5000]
+          [
+            200,
+            7000
+          ],
+          [
+            200,
+            6000
+          ],
+          [
+            200,
+            5000
+          ]
         ],
         "color_formula": "sigmoidal r 4 0.6, saturation 1.1"
       }
@@ -504,10 +513,10 @@
       "preview": {
         "title": "Preview (approximate location)",
         "assets": [
-          "quicklook"
+          "external_quicklook"
         ],
         "quicklook_georeference": "geometry",
-        "auth": true
+        "auth": false
       }
     },
     "thumbnail_auth": false,

@@ -19,7 +19,7 @@ import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useCopyPermalink } from '@/hooks/useCopyPermalink'
 import {
   collectionCategorization,
@@ -36,6 +36,8 @@ import {
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
 
@@ -135,7 +137,8 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const { collectionId } = useParams<{ collectionId: string }>()
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionId = collection?.id
   const {
     copyLink: handleCopyLink,
     canCopy: canCopyLink,
@@ -148,7 +151,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   }, [item?.links])
 
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useContext(AuthenticationContext)
+  const { isAuthenticated, login, token } = useContext(AuthenticationContext)
 
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
@@ -158,7 +161,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     infoPanelItem?.id === item.id && secondaryPanel === 'integration-tools'
   const isAnyPanelSelected = infoPanelItem?.id === item.id
 
-  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const collectionRenderOptions = useSelector(
@@ -185,12 +187,18 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [itemRender, setItemRender] = useState(collectionRender)
 
+  // Determine if collection is a job collection
+  const isJobCollection = collection?.isJobCollection ?? false
+
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
+    // Job collections always require authentication
+    if (isJobCollection) return true
+
     const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
     const collectionConfig = collectionRenderingConfig[configKey]
     return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
-  }, [item.collection, itemBelongsToUserCollection])
+  }, [item.collection, itemBelongsToUserCollection, isJobCollection])
 
   // Get thumbnail URL using configured asset with fallback
   const thumbnailUrl = useMemo(() => {
@@ -204,12 +212,31 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return requiresThumbnailAuth && !isAuthenticated
   }, [requiresThumbnailAuth, isAuthenticated])
 
+  // Extract workspace from collection for job collections
+  const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
+
+  // Fetch workspace tokens for job collections
+  const { data: jobWorkspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
+  })
+
   // temporarily fetching item details
   const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+    queryKey: ['Items', item?.collection, item?.id, isJobCollection],
+    queryFn: () =>
+      fetchItem({
+        collectionUrl: collectionUrl,
+        itemId: item?.id,
+        workspaceToken: isJobCollection ? jobWorkspaceTokensData?.access : undefined,
+      }),
     refetchOnWindowFocus: false,
-    enabled: !!item && !isUserCollection,
+    enabled:
+      !!item &&
+      (!isUserCollection || isJobCollection) &&
+      (!isJobCollection || !!jobWorkspaceTokensData),
   })
 
   // In order to determine if the item is already pinned, we need a unique ID
@@ -342,6 +369,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
             isUserCollection={itemBelongsToUserCollection}
+            isJobCollection={isJobCollection}
+            workspaceToken={isJobCollection ? jobWorkspaceTokensData?.access : undefined}
           />
         )}
         <div className={styles.overlay}>
@@ -500,11 +529,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !itemBelongsToUserCollection && (
-              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
-                Purchase
-              </Button>
-            )}
+            {isLicenseProprietary &&
+              !itemBelongsToUserCollection &&
+              !collection?.isJobCollection && (
+                <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+                  Purchase
+                </Button>
+              )}
           </Flex>
         </Flex>
       </Flex>

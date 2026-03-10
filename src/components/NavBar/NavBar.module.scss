@@ -142,3 +142,58 @@
 .menu__item.open .arrow {
   transform: rotate(180deg);
 }
+
+/* Nested My Data submenu inside the Catalogue dropdown */
+.myDataSubmenu {
+  position: relative;
+}
+
+.myDataToggle {
+  width: 100%;
+  padding: 0.6rem 2.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: none;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #000000;
+    color: #ffffff;
+  }
+}
+
+.myDataArrow {
+  width: 11px;
+  height: 11px;
+  margin-left: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.myDataMenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 0;
+  width: 220px;
+  z-index: 10000;
+  flex-direction: column;
+}
+
+.myDataMenu .link {
+  padding-left: 2.8rem;
+}
+
+.myDataSubmenu:hover .myDataMenu {
+  display: flex;
+}
+
+.myDataSubmenu:hover .myDataArrow {
+  transform: rotate(180deg);
+}
