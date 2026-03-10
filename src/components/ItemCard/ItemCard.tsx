@@ -19,7 +19,7 @@ import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useCopyPermalink } from '@/hooks/useCopyPermalink'
 import {
   collectionCategorization,
@@ -137,7 +137,8 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
-  const { collectionId } = useParams<{ collectionId: string }>()
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionId = collection?.id
   const {
     copyLink: handleCopyLink,
     canCopy: canCopyLink,
@@ -160,7 +161,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     infoPanelItem?.id === item.id && secondaryPanel === 'integration-tools'
   const isAnyPanelSelected = infoPanelItem?.id === item.id
 
-  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const collectionRenderOptions = useSelector(
