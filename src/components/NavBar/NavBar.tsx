@@ -156,26 +156,31 @@ export const NavBar: React.FC = () => {
                   Maps
                 </Link>
                 {isAuthenticated && (
-                  <div className={styles.myDataGroup}>
-                    <div className={styles.myDataLabel}>My Data</div>
-                    <Link
-                      to="/my-data/purchased"
-                      className={`${styles.link} ${isPurchasedDataActive ? styles.active : ''}`}
-                    >
-                      Purchased data
-                    </Link>
-                    <Link
-                      to="/my-data/workflow-outputs"
-                      className={`${styles.link} ${isWorkflowOutputsActive ? styles.active : ''}`}
-                    >
-                      Workflow outputs
-                    </Link>
-                    <Link
-                      to="/my-data/data-storage"
-                      className={`${styles.link} ${isDataStorageActive ? styles.active : ''}`}
-                    >
-                      Data storage
-                    </Link>
+                  <div className={styles.myDataSubmenu}>
+                    <button type="button" className={styles.myDataToggle}>
+                      <span>My Data</span>
+                      <ArrowIcon className={styles.myDataArrow} />
+                    </button>
+                    <div className={styles.myDataMenu}>
+                      <Link
+                        to="/my-data/purchased"
+                        className={`${styles.link} ${isPurchasedDataActive ? styles.active : ''}`}
+                      >
+                        Purchased data
+                      </Link>
+                      <Link
+                        to="/my-data/workflow-outputs"
+                        className={`${styles.link} ${isWorkflowOutputsActive ? styles.active : ''}`}
+                      >
+                        Workflow outputs
+                      </Link>
+                      <Link
+                        to="/my-data/data-storage"
+                        className={`${styles.link} ${isDataStorageActive ? styles.active : ''}`}
+                      >
+                        Data storage
+                      </Link>
+                    </div>
                   </div>
                 )}
               </>
