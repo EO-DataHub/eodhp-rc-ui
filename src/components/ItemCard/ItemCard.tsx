@@ -3,6 +3,7 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
+  CopyIcon,
   Cross2Icon,
   DrawingPinIcon,
   EyeOpenIcon,
@@ -18,7 +19,8 @@ import styles from './ItemCard.module.scss'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useCopyPermalink } from '@/hooks/useCopyPermalink'
 import {
   collectionCategorization,
   isValidCollectionId,
@@ -135,6 +137,13 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
+  const { collectionId } = useParams<{ collectionId: string }>()
+  const {
+    copyLink: handleCopyLink,
+    canCopy: canCopyLink,
+    tooltip: copyLinkTooltip,
+  } = useCopyPermalink(collectionId ?? undefined, item?.id ? [item] : [], { useLimit: false })
+
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
@@ -507,6 +516,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 </Tooltip>
               </ActionButton>
             )}
+            <Tooltip content={copyLinkTooltip}>
+              <ActionButton onClick={handleCopyLink} disabled={!canCopyLink}>
+                <CopyIcon />
+              </ActionButton>
+            </Tooltip>
             <ActionButton
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}

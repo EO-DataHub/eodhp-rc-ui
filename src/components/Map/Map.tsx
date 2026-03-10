@@ -71,7 +71,22 @@ export const Map = () => {
   const [isDrawing, setIsDrawing] = useState(false)
 
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  const initialBounds = useSelector(dataFinderStore, (state) => state.context.initialBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+
+  // Apply permalink initial bounds when map is ready
+  useEffect(() => {
+    if (!mapInstance || !initialBounds) return
+    const [west, south, east, north] = initialBounds
+    mapInstance.fitBounds(
+      [
+        [west, south],
+        [east, north],
+      ],
+      { padding: 20, duration: 300 },
+    )
+    dataFinderStore.send({ type: 'clearInitialBounds' })
+  }, [mapInstance, initialBounds])
 
   // Calculate AOI area from the feature
   const aoiArea = useMemo(() => {

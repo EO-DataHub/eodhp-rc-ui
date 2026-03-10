@@ -293,9 +293,7 @@ export const DataStoragePage: React.FC = () => {
             <Callout
               type="error"
               message={
-                filesError instanceof Error
-                  ? filesError.message
-                  : 'Failed to load workspace files.'
+                filesError instanceof Error ? filesError.message : 'Failed to load workspace files.'
               }
             />
           )
@@ -341,9 +339,7 @@ export const DataStoragePage: React.FC = () => {
                       <Table.Cell data-column-id="storeType">
                         {item.storeType === 'object' ? 'Object' : 'Block'}
                       </Table.Cell>
-                      <Table.Cell data-column-id="size">
-                        {formatFileSize(item.size)}
-                      </Table.Cell>
+                      <Table.Cell data-column-id="size">{formatFileSize(item.size)}</Table.Cell>
                       <Table.Cell data-column-id="lastModified">
                         {formatFileDateTime(item.lastModified)}
                       </Table.Cell>
@@ -373,4 +369,3 @@ export const DataStoragePage: React.FC = () => {
     </Flex>
   )
 }
-

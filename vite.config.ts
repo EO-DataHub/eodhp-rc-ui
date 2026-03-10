@@ -8,6 +8,7 @@ import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfil
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd())
+  const devProxyTarget = env.VITE_DEV_PROXY_TARGET || 'http://127.0.0.1:8080'
 
   return {
     plugins: [
@@ -27,6 +28,12 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '127.0.0.1',
       port: 5173,
+      proxy: {
+        '/api': {
+          target: devProxyTarget,
+          changeOrigin: true,
+        },
+      },
     },
     resolve: {
       alias: {

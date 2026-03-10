@@ -120,3 +120,59 @@
     text-align: center;
   }
 }
+
+.filesTable {
+  th[data-column-id="fileName"],
+  td[data-column-id="fileName"] {
+    min-width: 240px;
+  }
+
+  th[data-column-id="storeType"],
+  td[data-column-id="storeType"] {
+    width: 120px;
+    min-width: 100px;
+    max-width: 140px;
+  }
+
+  th[data-column-id="size"],
+  td[data-column-id="size"] {
+    width: 110px;
+    min-width: 90px;
+    max-width: 120px;
+  }
+
+  th[data-column-id="lastModified"],
+  td[data-column-id="lastModified"] {
+    width: 180px;
+    min-width: 150px;
+    max-width: 220px;
+  }
+
+  th[data-column-id="delete"],
+  td[data-column-id="delete"] {
+    width: 110px;
+    min-width: 90px;
+    max-width: 120px;
+    text-align: center;
+  }
+}
+
+.dropzone {
+  border: 2px dashed var(--gray-6);
+  border-radius: var(--radius-3);
+  padding: 24px;
+  text-align: center;
+  background: var(--gray-1);
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.dropzoneActive {
+  border-color: var(--accent-8);
+  background: var(--accent-2);
+}
+
+.dropzoneDisabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
