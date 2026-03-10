@@ -51,10 +51,10 @@ export function useWorkflowLaunch({
   // Retrieve AOI from store
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  const collectionName = collection?.id
+  const collectionUrl = collection ? getSelfLinkHref(collection) : undefined
 
   const loadWorkflows = useCallback(async () => {
-    if (!item || !collectionName) {
+    if (!item || !collectionUrl) {
       setWorkflows([])
       setWorkflowsError(null)
       return
@@ -65,7 +65,7 @@ export function useWorkflowLaunch({
 
     const { data, error } = await fetchItems({
       type: 'workflow',
-      applicableCollections: collectionName,
+      applicableCollections: collectionUrl,
       page: 1,
       pageSize: 50,
     })
@@ -83,7 +83,7 @@ export function useWorkflowLaunch({
     setWorkflows(items)
     setWorkflowsError(null)
     setSelectedWorkflow(null)
-  }, [item, collectionName])
+  }, [item, collectionUrl])
 
   useEffect(() => {
     void loadWorkflows()

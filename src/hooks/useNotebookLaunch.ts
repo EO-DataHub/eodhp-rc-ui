@@ -44,10 +44,10 @@ export function useNotebookLaunch({
   // Retrieve AOI from store
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
-  const collectionName = collection?.id
+  const collectionUrl = collection ? getSelfLinkHref(collection) : undefined
 
   const loadNotebooks = useCallback(async () => {
-    if (!item || !collectionName) {
+    if (!item || !collectionUrl) {
       setNotebooks([])
       setNotebooksError(null)
       return
@@ -58,7 +58,7 @@ export function useNotebookLaunch({
 
     const { data, error } = await fetchItems({
       type: 'notebook',
-      applicableCollections: collectionName,
+      applicableCollections: collectionUrl,
       page: 1,
       pageSize: 50,
     })
@@ -76,7 +76,7 @@ export function useNotebookLaunch({
     setNotebooks(items)
     setNotebooksError(null)
     setSelectedNotebook(null)
-  }, [item, collectionName])
+  }, [item, collectionUrl])
 
   useEffect(() => {
     void loadNotebooks()

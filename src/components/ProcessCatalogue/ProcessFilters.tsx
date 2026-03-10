@@ -3,6 +3,7 @@ import { Flex, Text, Select, TextField, Button } from '@radix-ui/themes'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import type { TypeFilter } from '@/hooks/useProcessCatalogue'
 import { useCollections } from '@/hooks/useCollections'
+import { getSelfLinkHref } from '@/library/integrationTools'
 
 export interface ProcessFiltersProps {
   searchValue: string
@@ -31,7 +32,7 @@ export const ProcessFilters: React.FC<ProcessFiltersProps> = ({
     const seen = new Set<string>()
 
     return sortedCollections.reduce<{ value: string; label: string }[]>((acc, collection) => {
-      const value = collection.id
+      const value = getSelfLinkHref(collection) ?? collection.id
 
       if (!value || seen.has(value)) {
         return acc
