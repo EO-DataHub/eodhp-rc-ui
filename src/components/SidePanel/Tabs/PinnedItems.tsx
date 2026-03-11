@@ -1,9 +1,11 @@
 import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
-import { CopyIcon } from '@radix-ui/react-icons'
+import { Share1Icon } from '@radix-ui/react-icons'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { useCopyPermalink } from '@/hooks/useCopyPermalink'
+import { usePermalink } from '@/hooks/useCopyPermalink'
+import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 import { Cross2Icon } from '@radix-ui/react-icons'
@@ -42,29 +44,40 @@ function getPrimaryCollectionId(
 
 const ShareViewButton = () => {
   const { collectionId } = useParams<{ collectionId: string }>()
+  const [isShareOpen, setIsShareOpen] = useState(false)
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
   const primaryCollectionId = getPrimaryCollectionId(collectionId, pinnedItems)
-  const {
-    copyLink,
-    canCopy: canShare,
-    tooltip,
-  } = useCopyPermalink(primaryCollectionId, pinnedItems, { useLimit: true })
+  const { url, itemsIncluded, canShare, tooltip } = usePermalink(primaryCollectionId, pinnedItems, {
+    useLimit: true,
+  })
 
   return (
-    <Tooltip content={tooltip}>
-      <Flex width="fit-content" px="2">
-        <Button
-          variant="ghost"
-          size="2"
-          onClick={copyLink}
-          disabled={!canShare}
-          aria-label="Copy link"
-        >
-          <CopyIcon width="16px" height="16px" />
-          <Text>Copy link</Text>
-        </Button>
-      </Flex>
-    </Tooltip>
+    <>
+      <Tooltip content={tooltip}>
+        <Flex width="fit-content" px="2">
+          <Button
+            variant="ghost"
+            size="2"
+            onClick={() => setIsShareOpen(true)}
+            disabled={!canShare || !url}
+            aria-label="Share view"
+          >
+            <Share1Icon width="16px" height="16px" />
+            <Text>Share view</Text>
+          </Button>
+        </Flex>
+      </Tooltip>
+      {url && (
+        <SharePermalinkModal
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          url={url}
+          itemsIncluded={itemsIncluded}
+          totalItems={pinnedItems.length}
+          description="This link will open the map with these pinned items and the current map view."
+        />
+      )}
+    </>
   )
 }
 
