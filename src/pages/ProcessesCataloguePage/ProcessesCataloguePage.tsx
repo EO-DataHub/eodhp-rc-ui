@@ -35,6 +35,7 @@ export const ProcessesCataloguePage: React.FC = () => {
   return (
     <ProcessCatalogueView
       title="Processes Catalogue"
+      subtitle="This catalogue lists processes, such as workflows and Jupyter notebooks, that you can run on data in the hub. Select a process to view its description and launch it with your chosen dataset."
       filters={
         <ProcessFilters
           searchValue={searchInput}

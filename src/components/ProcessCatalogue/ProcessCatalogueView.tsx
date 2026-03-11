@@ -6,6 +6,8 @@ import styles from './ProcessCatalogueView.module.scss'
 
 export interface ProcessCatalogueViewProps {
   title?: string
+  /** Optional short description or subtitle shown below the title */
+  subtitle?: string
   headerActions?: React.ReactNode
   filters?: React.ReactNode
   items: ProcessRecord[]
@@ -27,6 +29,7 @@ export interface ProcessCatalogueViewProps {
  */
 export const ProcessCatalogueView: React.FC<ProcessCatalogueViewProps> = ({
   title = 'Processes Catalogue',
+  subtitle,
   headerActions,
   filters,
   items,
@@ -73,11 +76,18 @@ export const ProcessCatalogueView: React.FC<ProcessCatalogueViewProps> = ({
 
   return (
     <Container align="center" maxWidth="1640px">
-      <Flex p="5" align="center" justify="between" width="100%">
-        <Text size="7" weight="medium">
-          {title}
-        </Text>
-        {headerActions}
+      <Flex p="5" direction="column" gap="1" width="100%">
+        <Flex align="center" justify="between" width="100%">
+          <Text size="7" weight="medium">
+            {title}
+          </Text>
+          {headerActions}
+        </Flex>
+        {subtitle ? (
+          <Text size="2" color="gray">
+            {subtitle}
+          </Text>
+        ) : null}
       </Flex>
       <Separator style={{ width: '100%' }} />
       {filters ? (
