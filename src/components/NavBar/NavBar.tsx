@@ -56,9 +56,7 @@ export const NavBar: React.FC = () => {
   const location = useLocation()
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
-  const isPurchasedDataActive = location.pathname.startsWith('/my-data/purchased')
-  const isWorkflowOutputsActive = location.pathname.startsWith('/my-data/workflow-outputs')
-  const isDataStorageActive = location.pathname.startsWith('/my-data/data-storage')
+  const isMyDataActive = location.pathname.startsWith('/my-data')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
@@ -143,12 +141,7 @@ export const NavBar: React.FC = () => {
                 <Link to="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
                   Browse
                 </Link>
-                <Link
-                  to="/catalogue/processes"
-                  className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
-                >
-                  Processes Catalogue
-                </Link>
+
                 <Link
                   to="/finder/sentinel2_ard"
                   className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
@@ -156,33 +149,19 @@ export const NavBar: React.FC = () => {
                   Maps
                 </Link>
                 {isAuthenticated && (
-                  <div className={styles.myDataSubmenu}>
-                    <button type="button" className={styles.myDataToggle}>
-                      <span>My Data</span>
-                      <ArrowIcon className={styles.myDataArrow} />
-                    </button>
-                    <div className={styles.myDataMenu}>
-                      <Link
-                        to="/my-data/purchased"
-                        className={`${styles.link} ${isPurchasedDataActive ? styles.active : ''}`}
-                      >
-                        Purchased data
-                      </Link>
-                      <Link
-                        to="/my-data/workflow-outputs"
-                        className={`${styles.link} ${isWorkflowOutputsActive ? styles.active : ''}`}
-                      >
-                        Workflow outputs
-                      </Link>
-                      <Link
-                        to="/my-data/data-storage"
-                        className={`${styles.link} ${isDataStorageActive ? styles.active : ''}`}
-                      >
-                        Data storage
-                      </Link>
-                    </div>
-                  </div>
+                  <Link
+                    to="/my-data/purchased"
+                    className={`${styles.link} ${isMyDataActive ? styles.active : ''}`}
+                  >
+                    My Data
+                  </Link>
                 )}
+                <Link
+                  to="/catalogue/processes"
+                  className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
+                >
+                  Processes
+                </Link>
               </>
             )}
           />

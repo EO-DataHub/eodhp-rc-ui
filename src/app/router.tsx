@@ -9,6 +9,7 @@ import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
 import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
+import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -56,23 +57,29 @@ const routes = [
     children: [
       {
         path: '',
-        element: <Navigate to="purchased" replace />,
-      },
-      {
-        path: 'purchased',
-        element: <PurchasedDataPage />,
-      },
-      {
-        path: 'workflow-outputs',
-        element: <WorkflowOutputsPage />,
-      },
-      {
-        path: 'workflow-outputs/:workspace/:jobId',
-        element: <WorkflowOutputsPage />,
-      },
-      {
-        path: 'data-storage',
-        element: <DataStoragePage />,
+        element: <MyDataPage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to="purchased" replace />,
+          },
+          {
+            path: 'purchased',
+            element: <PurchasedDataPage />,
+          },
+          {
+            path: 'workflow-outputs',
+            element: <WorkflowOutputsPage />,
+          },
+          {
+            path: 'workflow-outputs/:workspace/:jobId',
+            element: <WorkflowOutputsPage />,
+          },
+          {
+            path: 'data-storage',
+            element: <DataStoragePage />,
+          },
+        ],
       },
     ],
   },
