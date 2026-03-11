@@ -25,7 +25,10 @@ export const WorkflowOutputsPage: React.FC = () => {
   const [searchText, setSearchText] = useState('')
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
     const stored = localStorage.getItem('workflowOutputsPageSelectedWorkspace')
-    return stored ?? currentWorkspace ?? 'all'
+    if (stored && stored !== 'all') {
+      return stored
+    }
+    return currentWorkspace ?? ''
   })
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
@@ -70,7 +73,7 @@ export const WorkflowOutputsPage: React.FC = () => {
   const handleResetFilters = () => {
     setSelectedStatus('all')
     setSearchText('')
-    const resetWorkspace = currentWorkspace ?? 'all'
+    const resetWorkspace = currentWorkspace ?? ''
     localStorage.setItem('workflowOutputsPageSelectedWorkspace', resetWorkspace)
     setSelectedWorkspace(resetWorkspace)
   }
@@ -110,7 +113,7 @@ export const WorkflowOutputsPage: React.FC = () => {
       allWorkspaces.forEach((ws) => ws.name && workspaceSet.add(ws.name))
     }
     if (currentWorkspace) workspaceSet.add(currentWorkspace)
-    return ['all', ...Array.from(workspaceSet).sort()]
+    return Array.from(workspaceSet).sort()
   }, [allWorkspaces, currentWorkspace])
 
   const filteredJobs = useMemo(() => {
@@ -185,14 +188,11 @@ export const WorkflowOutputsPage: React.FC = () => {
                 <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
                 <Select.Content position="popper">
                   <Select.Group>
-                    <Select.Item value="all">All Workspaces</Select.Item>
-                    {workspaceOptions
-                      .filter((w) => w !== 'all')
-                      .map((workspace) => (
-                        <Select.Item key={workspace} value={workspace}>
-                          {workspace}
-                        </Select.Item>
-                      ))}
+                    {workspaceOptions.map((workspace) => (
+                      <Select.Item key={workspace} value={workspace}>
+                        {workspace}
+                      </Select.Item>
+                    ))}
                   </Select.Group>
                 </Select.Content>
               </Select.Root>
