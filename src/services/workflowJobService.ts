@@ -109,8 +109,7 @@ export const fetchJobById = async (
     throw new Error(`Failed to fetch job: ${response.status} ${response.statusText}`)
   }
 
-  const data = (await response.json()) as WorkflowJob
-  return data
+  return (await response.json()) as WorkflowJob
 }
 
 /**
