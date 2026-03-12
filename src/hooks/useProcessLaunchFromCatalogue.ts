@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { Collection, Item, ProcessDetail } from '@/types'
 import { fetchItems as fetchCollectionItems, fetchCollectionByUrl } from '@/services/itemService'
+import { useCollections } from '@/hooks/useCollections'
+import { getSelfLinkHref } from '@/library/integrationTools'
 
 interface UseProcessLaunchFromCatalogueParams {
   process: ProcessDetail
@@ -27,13 +29,35 @@ interface UseProcessLaunchFromCatalogueResult {
 export function useProcessLaunchFromCatalogue(
   params: UseProcessLaunchFromCatalogueParams,
 ): UseProcessLaunchFromCatalogueResult {
-  const applicableCollections = params.process.properties?.applicableCollections ?? []
+  const { sortedCollections } = useCollections()
 
-  const collections = applicableCollections.map((value) => ({
-    id: value,
-    label: value,
-    url: value,
-  }))
+  const collections = useMemo(
+    () =>
+      (params.process.properties?.applicableCollections ?? [])
+        .map((value) => {
+          const matchedCollection = sortedCollections.find((c) => c.id === value)
+
+          if (!matchedCollection) {
+            return null
+          }
+
+          const url = getSelfLinkHref(matchedCollection)
+          if (!url) {
+            return null
+          }
+
+          const labelBase =
+            matchedCollection.displayedTitle ?? matchedCollection.title ?? matchedCollection.id
+
+          return {
+            id: matchedCollection.id,
+            label: labelBase,
+            url,
+          }
+        })
+        .filter((c): c is { id: string; label: string; url: string } => c !== null),
+    [params.process.properties?.applicableCollections, sortedCollections],
+  )
 
   const [selectedCollectionUrl, setSelectedCollectionUrlState] = useState<string | null>(null)
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null)
