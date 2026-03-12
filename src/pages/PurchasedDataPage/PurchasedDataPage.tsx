@@ -341,7 +341,7 @@ export const PurchasedDataPage: React.FC = () => {
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <Flex direction="column" gap="3">
         <Text size="7" weight="medium">
-          Orders Dashboard
+          Purchased Data
         </Text>
         <Text size="3" color="gray">
           View all your orders across all workspaces

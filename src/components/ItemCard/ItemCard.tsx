@@ -3,7 +3,6 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
-  CopyIcon,
   Cross2Icon,
   DrawingPinIcon,
   EyeOpenIcon,
@@ -11,6 +10,7 @@ import {
   InfoCircledIcon,
   ZoomInIcon,
   HamburgerMenuIcon,
+  Share1Icon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
@@ -20,7 +20,8 @@ import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
-import { useCopyPermalink } from '@/hooks/useCopyPermalink'
+import { usePermalink } from '@/hooks/useCopyPermalink'
+import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
 import {
   collectionCategorization,
   isValidCollectionId,
@@ -94,8 +95,9 @@ const ActionButton = React.forwardRef<
     onClick: () => void
     active?: boolean
     disabled?: boolean
+    'aria-label'?: string
   }
->(({ children, onClick, active, disabled }, ref) => {
+>(({ children, onClick, active, disabled, 'aria-label': ariaLabel }, ref) => {
   return (
     <IconButton
       ref={ref}
@@ -105,6 +107,7 @@ const ActionButton = React.forwardRef<
       className={`${styles.iconButton} ${active ? styles.active : ''}`}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
     >
       {children}
     </IconButton>
@@ -140,10 +143,11 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionId = collection?.id
   const {
-    copyLink: handleCopyLink,
-    canCopy: canCopyLink,
+    url: shareUrl,
+    itemsIncluded,
+    canShare: canCopyLink,
     tooltip: copyLinkTooltip,
-  } = useCopyPermalink(collectionId ?? undefined, item?.id ? [item] : [], { useLimit: false })
+  } = usePermalink(collectionId ?? undefined, item?.id ? [item] : [], { useLimit: false })
 
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
@@ -324,6 +328,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isQueryCard = type === 'query-item'
 
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
@@ -516,11 +521,25 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 </Tooltip>
               </ActionButton>
             )}
-            <Tooltip content={copyLinkTooltip}>
-              <ActionButton onClick={handleCopyLink} disabled={!canCopyLink}>
-                <CopyIcon />
-              </ActionButton>
-            </Tooltip>
+            <ActionButton
+              onClick={() => setIsShareOpen(true)}
+              disabled={!canCopyLink || !shareUrl}
+              aria-label="Share this item"
+            >
+              <Tooltip content={copyLinkTooltip}>
+                <Share1Icon />
+              </Tooltip>
+            </ActionButton>
+            {shareUrl && (
+              <SharePermalinkModal
+                open={isShareOpen}
+                onOpenChange={setIsShareOpen}
+                url={shareUrl}
+                itemsIncluded={itemsIncluded}
+                totalItems={1}
+                description="This link will open the map with this item pinned and the current map view."
+              />
+            )}
             <ActionButton
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}

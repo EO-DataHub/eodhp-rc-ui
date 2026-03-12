@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useSelector } from '@xstate/store/react'
 import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -22,6 +22,75 @@ export interface UseCopyPermalinkOptions {
   useLimit?: boolean
 }
 
+interface PermalinkComputationResult {
+  url: string | null
+  itemsIncluded: number | null
+  canShare: boolean
+  tooltip: string
+}
+
+function computePermalink(
+  primaryCollectionId: string | undefined,
+  items: Item[],
+  mapInstance: { getBounds: () => LngLatBounds } | null | undefined,
+  useLimit: boolean,
+): PermalinkComputationResult {
+  const canShare = !!primaryCollectionId && items.length > 0 && !!mapInstance
+
+  const tooltip =
+    items.length === 0
+      ? 'Pin items to share a link'
+      : !primaryCollectionId
+        ? 'Open a collection to share a link'
+        : !mapInstance
+          ? 'Map loading…'
+          : 'Share link'
+
+  if (!canShare || !primaryCollectionId || !mapInstance) {
+    return {
+      url: null,
+      itemsIncluded: null,
+      canShare,
+      tooltip,
+    }
+  }
+
+  const mapBounds = getMapBounds(mapInstance)
+
+  if (useLimit) {
+    const { url, itemsIncluded } = buildPermalinkUrlWithLimit(primaryCollectionId, items, mapBounds)
+    return {
+      url,
+      itemsIncluded,
+      canShare,
+      tooltip,
+    }
+  }
+
+  const url = buildPermalinkUrl(primaryCollectionId, items, mapBounds)
+
+  return {
+    url,
+    itemsIncluded: items.length,
+    canShare,
+    tooltip,
+  }
+}
+
+export function usePermalink(
+  primaryCollectionId: string | undefined,
+  items: Item[],
+  options: UseCopyPermalinkOptions = {},
+): PermalinkComputationResult {
+  const { useLimit = false } = options
+  const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+
+  return useMemo(
+    () => computePermalink(primaryCollectionId, items, mapInstance, useLimit),
+    [primaryCollectionId, items, mapInstance, useLimit],
+  )
+}
+
 export function useCopyPermalink(
   primaryCollectionId: string | undefined,
   items: Item[],
@@ -34,16 +103,12 @@ export function useCopyPermalink(
   const { useLimit = false } = options
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
 
-  const canCopy = !!primaryCollectionId && items.length > 0 && !!mapInstance
-
-  const tooltip =
-    items.length === 0
-      ? 'Pin items to share a link'
-      : !primaryCollectionId
-        ? 'Open a collection to share a link'
-        : !mapInstance
-          ? 'Map loading…'
-          : 'Copy link'
+  const {
+    url,
+    itemsIncluded,
+    canShare: canCopy,
+    tooltip,
+  } = usePermalink(primaryCollectionId, items, { useLimit })
 
   const copyLink = useCallback(() => {
     if (!primaryCollectionId || items.length === 0) {
@@ -55,14 +120,8 @@ export function useCopyPermalink(
       return
     }
 
-    const mapBounds = getMapBounds(mapInstance)
-
     if (useLimit) {
-      const { url, itemsIncluded } = buildPermalinkUrlWithLimit(
-        primaryCollectionId,
-        items,
-        mapBounds,
-      )
+      if (!url || itemsIncluded == null) return
       navigator.clipboard.writeText(url).then(
         () => {
           const omitted = items.length - itemsIncluded
@@ -80,13 +139,13 @@ export function useCopyPermalink(
         () => toast.error('Failed to copy link'),
       )
     } else {
-      const url = buildPermalinkUrl(primaryCollectionId, items, mapBounds)
+      if (!url) return
       navigator.clipboard.writeText(url).then(
         () => toast.success('Link copied to clipboard'),
         () => toast.error('Failed to copy link'),
       )
     }
-  }, [primaryCollectionId, items, mapInstance, useLimit])
+  }, [primaryCollectionId, items, mapInstance, useLimit, url, itemsIncluded])
 
   return { copyLink, canCopy, tooltip }
 }
