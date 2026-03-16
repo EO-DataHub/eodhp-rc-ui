@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
-import { fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { fetchJobsForWorkspace, fetchJobsForSharedWorkspace } from '@/services/workflowJobService'
 import { transformJobForDisplay, sortJobsByCreated } from '@/library/jobUtils'
 import { WorkflowJob, JobsApiResponse } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -85,17 +85,65 @@ export const WorkflowOutputsPage: React.FC = () => {
     enabled: !!token,
   })
 
+  const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
+
   const {
     data: jobsResponse,
     isLoading: isLoadingJobs,
     error: jobsError,
   } = useQuery<JobsApiResponse>({
-    queryKey: ['WorkflowJobs', workflowWorkspace, token],
-    queryFn: (): Promise<JobsApiResponse> => {
+    queryKey: ['WorkflowJobs', workflowWorkspace, sharedResultsWorkspaceName, token],
+    queryFn: async (): Promise<JobsApiResponse> => {
       if (!token || !workflowWorkspace) {
         return Promise.resolve({ jobs: [], links: [], numberTotal: 0 })
       }
-      return fetchJobsForWorkspace(workflowWorkspace, token)
+
+      const primary = await fetchJobsForWorkspace(workflowWorkspace, token)
+
+      if (!sharedResultsWorkspaceName) {
+        // No shared workspace configured; behave as before
+        return {
+          ...primary,
+          jobs: primary.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
+        }
+      }
+
+      try {
+        const shared = await fetchJobsForSharedWorkspace(
+          sharedResultsWorkspaceName,
+          workflowWorkspace,
+          token,
+        )
+
+        const annotatedPrimaryJobs = primary.jobs.map((job) => ({
+          ...job,
+          workspace: workflowWorkspace,
+        }))
+
+        const annotatedSharedJobs = shared.jobs.map((job) => ({
+          ...job,
+          workspace: sharedResultsWorkspaceName,
+        }))
+
+        return {
+          jobs: [...annotatedPrimaryJobs, ...annotatedSharedJobs],
+          links: primary.links,
+          numberTotal: primary.numberTotal + shared.numberTotal,
+        }
+      } catch (error) {
+        // If shared workspace fetching fails, fall back to primary workspace jobs only
+        // while still annotating them with their workspace.
+        const annotatedPrimaryJobs = primary.jobs.map((job) => ({
+          ...job,
+          workspace: workflowWorkspace,
+        }))
+
+        return {
+          jobs: annotatedPrimaryJobs,
+          links: primary.links,
+          numberTotal: primary.numberTotal,
+        }
+      }
     },
     refetchOnWindowFocus: false,
     enabled: !!token && !!workflowWorkspace,
@@ -265,6 +313,7 @@ export const WorkflowOutputsPage: React.FC = () => {
                     <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Created Date</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Finished Date</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -295,6 +344,7 @@ export const WorkflowOutputsPage: React.FC = () => {
                         <Table.Cell>{displayJob.status}</Table.Cell>
                         <Table.Cell>{displayJob.createdFormatted}</Table.Cell>
                         <Table.Cell>{displayJob.finishedFormatted}</Table.Cell>
+                        <Table.Cell>{displayJob.workspace}</Table.Cell>
                       </Table.Row>
                     )
                   })}

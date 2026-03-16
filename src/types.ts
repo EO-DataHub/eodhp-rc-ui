@@ -389,6 +389,8 @@ export interface WorkflowJob {
   jobID: string
   type: 'process'
   processID: string
+  // Optional client-side annotation to record which workspace a job belongs to
+  workspace?: string
   created: string
   started: string
   finished: string | null
