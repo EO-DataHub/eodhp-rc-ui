@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useDropzone } from 'react-dropzone'
 import { MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { fetchWorkspaceTokens, fetchWorkspaces } from '@/services/workspaceTokenService'
 import {
   deleteWorkspaceFile,
   listWorkspaceFiles,
@@ -81,6 +81,17 @@ export const DataStoragePage: React.FC = () => {
     setDataWorkspace(workspace)
   }
 
+  const resolveWorkspaceAccessToken = async (): Promise<string> => {
+    if (!token) {
+      throw new Error('You must be signed in to access workspace files.')
+    }
+    if (!dataWorkspace) {
+      throw new Error('Select a workspace to access files.')
+    }
+    const workspaceTokens = await fetchWorkspaceTokens(dataWorkspace, token)
+    return workspaceTokens.access
+  }
+
   const storeParam = dataStoreFilter === 'all' ? undefined : dataStoreFilter
 
   const {
@@ -90,7 +101,10 @@ export const DataStoragePage: React.FC = () => {
     refetch: refetchFiles,
   } = useQuery<WorkspaceFileListResponse>({
     queryKey: ['WorkspaceFiles', dataWorkspace, dataStoreFilter, token],
-    queryFn: () => listWorkspaceFiles(dataWorkspace, token ?? '', storeParam),
+    queryFn: async () => {
+      const accessToken = await resolveWorkspaceAccessToken()
+      return listWorkspaceFiles(dataWorkspace, accessToken, storeParam)
+    },
     refetchOnWindowFocus: false,
     enabled: Boolean(token && dataWorkspace),
   })
@@ -136,8 +150,13 @@ export const DataStoragePage: React.FC = () => {
     setUploadProgress(0)
 
     try {
-      await uploadWorkspaceFiles(dataWorkspace, token, dataStoreFilter, acceptedFiles, (progress) =>
-        setUploadProgress(progress),
+      const accessToken = await resolveWorkspaceAccessToken()
+      await uploadWorkspaceFiles(
+        dataWorkspace,
+        accessToken,
+        dataStoreFilter,
+        acceptedFiles,
+        (progress) => setUploadProgress(progress),
       )
       setUploadSuccess(
         `Uploaded ${acceptedFiles.length} file${acceptedFiles.length === 1 ? '' : 's'}.`,
@@ -167,7 +186,8 @@ export const DataStoragePage: React.FC = () => {
     setDeletingFileKey(deletingKey)
 
     try {
-      await deleteWorkspaceFile(dataWorkspace, token, item.storeType, item.fileName)
+      const accessToken = await resolveWorkspaceAccessToken()
+      await deleteWorkspaceFile(dataWorkspace, accessToken, item.storeType, item.fileName)
       setUploadSuccess(`Deleted ${item.fileName}`)
       await refetchFiles()
     } catch (error) {
