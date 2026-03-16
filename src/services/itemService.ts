@@ -2,7 +2,7 @@ import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
-import { isHubOriginUrl, resolveApiUrl } from './apiUrlUtils'
+import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -169,7 +169,8 @@ export const fetchItemByUrl = async ({
     Accept: 'application/json',
   }
 
-  if (workspaceToken && isHubOriginUrl(url)) {
+  // Always attach Authorization for HTTPS URLs when a workspace token is present
+  if (workspaceToken && url.protocol === 'https:') {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 

@@ -1,6 +1,6 @@
 import { JobsApiResponse, WorkflowJob } from '@/types'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
-import { isHubOriginUrl, resolveApiUrl } from './apiUrlUtils'
+import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -200,8 +200,8 @@ export const fetchJobResults = async (
     Accept: 'application/json, application/geo+json, text/plain;q=0.9, */*;q=0.8',
   }
 
-  // Only attach Authorization when talking to the hub origin
-  if (isHubOriginUrl(url)) {
+  // Always attach Authorization for HTTPS URLs when a workspace token is present
+  if (url.protocol === 'https:' && workspaceToken) {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 
@@ -245,8 +245,8 @@ export const fetchJobLog = async (logUrl: string, workspaceToken: string): Promi
     Accept: 'text/plain, */*',
   }
 
-  // Only attach Authorization when talking to the hub origin
-  if (isHubOriginUrl(url)) {
+  // Always attach Authorization for HTTPS URLs when a workspace token is present
+  if (url.protocol === 'https:' && workspaceToken) {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 

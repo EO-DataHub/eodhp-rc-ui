@@ -4,7 +4,7 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchJobResults, fetchJobLog } from '@/services/workflowJobService'
 import { fetchItemByUrl } from '@/services/itemService'
-import { isHubOriginUrl, resolveApiUrl } from '@/services/apiUrlUtils'
+import { resolveApiUrl } from '@/services/apiUrlUtils'
 import type { WorkflowJob, JobLink, Item } from '@/types'
 
 interface UseWorkflowJobDetailsParams {
@@ -140,8 +140,8 @@ export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDeta
       const url = resolveApiUrl(href)
 
       const headers: HeadersInit = {}
-      // Only attach Authorization when talking to the hub origin
-      if (isHubOriginUrl(url)) {
+      // Always attach Authorization for HTTPS URLs when a workspace token is present
+      if (url.protocol === 'https:' && workspaceTokens.access) {
         headers.Authorization = `Bearer ${workspaceTokens.access}`
       }
 
