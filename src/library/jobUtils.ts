@@ -22,7 +22,7 @@ export const transformJobForDisplay = (
     finishedDate,
     createdFormatted: formatOrderDate(job.created),
     finishedFormatted: job.finished ? formatOrderDate(job.finished) : 'N/A',
-    workspace,
+    workspace: job.workspace ?? workspace,
   }
 }
 

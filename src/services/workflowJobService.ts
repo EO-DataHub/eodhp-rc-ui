@@ -1,6 +1,6 @@
 import { JobsApiResponse, WorkflowJob } from '@/types'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
-import { isHubOriginUrl, resolveApiUrl } from './apiUrlUtils'
+import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
@@ -72,6 +72,74 @@ export const fetchJobsForWorkspace = async (
 }
 
 /**
+ * Fetches workflow execution jobs for a shared results workspace, using a
+ * workspace-scoped token obtained for the currently selected workspace.
+ * @param sharedWorkspaceName - The shared results workspace name
+ * @param tokenWorkspaceName - The workspace name used to obtain the scoped token (typically the currently selected workspace)
+ * @param token - User authentication token
+ * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
+ */
+export const fetchJobsForSharedWorkspace = async (
+  sharedWorkspaceName: string,
+  tokenWorkspaceName: string,
+  token: string,
+): Promise<JobsApiResponse> => {
+  if (!token || !sharedWorkspaceName || !tokenWorkspaceName) {
+    return {
+      jobs: [],
+      links: [],
+      numberTotal: 0,
+    }
+  }
+
+  try {
+    // Get workspace-scoped token for the selected workspace
+    let workspaceTokens
+    try {
+      workspaceTokens = await fetchWorkspaceTokens(tokenWorkspaceName, token)
+    } catch (tokenError) {
+      throw new Error(
+        `Failed to obtain workspace-scoped token for ${tokenWorkspaceName}. Please ensure you have access to this workspace.`,
+      )
+    }
+
+    // Fetch jobs for the shared workspace using the selected workspace token
+    const response = await fetch(
+      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${sharedWorkspaceName}/jobs`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${workspaceTokens.access}`,
+        },
+      },
+    )
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error(
+          `Unauthorized: Unable to access workflow jobs for shared workspace "${sharedWorkspaceName}". Please check your workspace permissions.`,
+        )
+      }
+      throw new Error(`Failed to fetch jobs: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    return {
+      jobs: data.jobs || [],
+      links: data.links || [],
+      numberTotal: data.numberTotal ?? 0,
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error('Failed to fetch workflow jobs for shared workspace')
+  }
+}
+
+/**
  * Fetches details for a single workflow job using a workspace-scoped token
  * @param workspaceName - The workspace name
  * @param jobId - The job identifier
@@ -132,8 +200,8 @@ export const fetchJobResults = async (
     Accept: 'application/json, application/geo+json, text/plain;q=0.9, */*;q=0.8',
   }
 
-  // Only attach Authorization when talking to the hub origin
-  if (isHubOriginUrl(url)) {
+  // Always attach Authorization for HTTPS URLs when a workspace token is present
+  if (url.protocol === 'https:' && workspaceToken) {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 
@@ -177,8 +245,8 @@ export const fetchJobLog = async (logUrl: string, workspaceToken: string): Promi
     Accept: 'text/plain, */*',
   }
 
-  // Only attach Authorization when talking to the hub origin
-  if (isHubOriginUrl(url)) {
+  // Always attach Authorization for HTTPS URLs when a workspace token is present
+  if (url.protocol === 'https:' && workspaceToken) {
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 
