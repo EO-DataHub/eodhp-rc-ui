@@ -45,7 +45,7 @@ export const MyDataPage: React.FC = () => {
           >
             Workflow outputs
           </NavLink>
-          {/* <NavLink
+          {/* Uncomment to enable data storage tab<NavLink
             to="data-storage"
             className={({ isActive }) =>
               `${styles.tabLink} ${
