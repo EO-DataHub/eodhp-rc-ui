@@ -1,11 +1,9 @@
 /* eslint-disable react/prop-types */
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Flex, Box, Text, Container, Button, Badge } from '@radix-ui/themes'
 import { fetchItemById } from '@/services/processCatalogueService'
 import type { ProcessDetail } from '@/types'
-import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { ProcessLaunchModal } from '@/components/ProcessCatalogue/ProcessLaunchModal'
 
 export const ProcessDetailPage: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>()
@@ -13,9 +11,6 @@ export const ProcessDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isLaunchOpen, setIsLaunchOpen] = useState(false)
-
-  const { isAuthenticated } = useContext(AuthenticationContext)
 
   useEffect(() => {
     if (!itemId) {
@@ -103,11 +98,10 @@ export const ProcessDetailPage: React.FC = () => {
   const contacts = props?.contacts ?? []
   const links = data.links ?? []
 
-  const isLaunchable =
-    (type === 'workflow' || type === 'notebook') && Array.isArray(applicableCollections)
-      ? applicableCollections.length > 0
-      : false
-  const isLaunchDisabled = !isAuthenticated || !isLaunchable
+  const launchGuidanceMessage =
+    type === 'notebook'
+      ? 'To launch this notebook, go to the Data Catalogue, find your data, open Integration tools, and then select the Notebook tab.'
+      : 'To run this workflow, go to the Data Catalogue, find your data, open Integration tools, and then select the Workflow tab.'
 
   return (
     <Container align="center" maxWidth="1640px">
@@ -212,31 +206,18 @@ export const ProcessDetailPage: React.FC = () => {
           </Box>
         ) : null}
 
+        <Box>
+          <Text size="2" color="gray">
+            {launchGuidanceMessage}
+          </Text>
+        </Box>
         <Flex gap="3" align="center">
           <Link to="/catalogue/processes">
             <Button variant="soft" size="2">
               Back to Processes Catalogue
             </Button>
           </Link>
-          <Button
-            variant="solid"
-            size="2"
-            color={isLaunchDisabled ? 'gray' : 'blue'}
-            disabled={isLaunchDisabled}
-            onClick={() => setIsLaunchOpen(true)}
-            title={
-              !isAuthenticated
-                ? 'Log in to launch processes.'
-                : !isLaunchable
-                  ? 'This process cannot be launched from the catalogue.'
-                  : undefined
-            }
-          >
-            Launch {type === 'notebook' ? 'notebook' : 'workflow'}
-          </Button>
         </Flex>
-
-        <ProcessLaunchModal open={isLaunchOpen} onOpenChange={setIsLaunchOpen} process={data} />
       </Flex>
     </Container>
   )
