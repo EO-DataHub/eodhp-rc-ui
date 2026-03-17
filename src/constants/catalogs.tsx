@@ -3,4 +3,5 @@ export const catalogs = [
   'commercial/catalogs/airbus',
   'public/catalogs/ceda-stac-catalogue',
   'commercial/catalogs/planet',
+  'commercial/catalogs/opencosmos',
 ]
