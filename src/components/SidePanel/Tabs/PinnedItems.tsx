@@ -1,6 +1,11 @@
-import { Button, Flex, Grid, Text } from '@radix-ui/themes'
+import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
+import { Share1Icon } from '@radix-ui/react-icons'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { usePermalink } from '@/hooks/useCopyPermalink'
+import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 import { Cross2Icon } from '@radix-ui/react-icons'
@@ -20,6 +25,62 @@ const ClearAllButton = () => {
   )
 }
 
+/** Route collection id for permalink: current route or derived from first pin (with my- prefix for user collections). */
+function getPrimaryCollectionId(
+  collectionId: string | undefined,
+  pinnedItems: {
+    collectionRef?: { id: string } | null
+    collection?: string
+    isUserCollection?: boolean
+  }[],
+): string | undefined {
+  if (collectionId) return collectionId
+  if (pinnedItems.length === 0) return undefined
+  const first = pinnedItems[0]
+  const rawId = first.collectionRef?.id ?? first.collection ?? ''
+  if (!rawId) return undefined
+  return first.isUserCollection ? `my-${rawId}` : rawId
+}
+
+const ShareViewButton = () => {
+  const { collectionId } = useParams<{ collectionId: string }>()
+  const [isShareOpen, setIsShareOpen] = useState(false)
+  const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
+  const primaryCollectionId = getPrimaryCollectionId(collectionId, pinnedItems)
+  const { url, itemsIncluded, canShare, tooltip } = usePermalink(primaryCollectionId, pinnedItems, {
+    useLimit: true,
+  })
+
+  return (
+    <>
+      <Tooltip content={tooltip}>
+        <Flex width="fit-content" px="2">
+          <Button
+            variant="ghost"
+            size="2"
+            onClick={() => setIsShareOpen(true)}
+            disabled={!canShare || !url}
+            aria-label="Share view"
+          >
+            <Share1Icon width="16px" height="16px" />
+            <Text>Share view</Text>
+          </Button>
+        </Flex>
+      </Tooltip>
+      {url && (
+        <SharePermalinkModal
+          open={isShareOpen}
+          onOpenChange={setIsShareOpen}
+          url={url}
+          itemsIncluded={itemsIncluded}
+          totalItems={pinnedItems.length}
+          description="This link will open the map with these pinned items and the current map view."
+        />
+      )}
+    </>
+  )
+}
+
 const PinnedItemsTab = () => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
@@ -35,7 +96,12 @@ const PinnedItemsTab = () => {
         paddingTop: 'var(--space-3)',
       }}
     >
-      {!isEmpty && <ClearAllButton />}
+      {!isEmpty && (
+        <Flex gap="2" wrap="wrap" align="center">
+          <ClearAllButton />
+          <ShareViewButton />
+        </Flex>
+      )}
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
           cardType="pinned-item"

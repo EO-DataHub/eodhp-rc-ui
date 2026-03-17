@@ -5,6 +5,7 @@ import { Dialog, Button, Flex, Text, Badge } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { getCollectionFinderUrl } from '@/library/catalogUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
@@ -44,11 +45,8 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
 
-    if (collection.isUserCollection) {
-      void navigate(`/finder/my-${collection.id}`)
-    } else {
-      void navigate(`/finder/${collection.id}`)
-    }
+    const finderUrl = getCollectionFinderUrl(collection)
+    void navigate(finderUrl)
   }
 
   return (

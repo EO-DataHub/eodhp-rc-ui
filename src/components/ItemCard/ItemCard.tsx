@@ -10,6 +10,7 @@ import {
   InfoCircledIcon,
   ZoomInIcon,
   HamburgerMenuIcon,
+  Share1Icon,
 } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Button, Tooltip, Slider } from '@radix-ui/themes'
 import { TiffViewer } from '@/components/TiffViewer/TiffViewer'
@@ -19,6 +20,8 @@ import { convertDateToUTCString } from '@/library/dateUtils'
 import dataFinderStore, { getPinnedItemId } from '@/pages/DataFinderPage/useFinderStore'
 
 import { useNavigate } from 'react-router-dom'
+import { usePermalink } from '@/hooks/useCopyPermalink'
+import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
 import {
   collectionCategorization,
   isValidCollectionId,
@@ -34,6 +37,8 @@ import {
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
 
@@ -90,8 +95,9 @@ const ActionButton = React.forwardRef<
     onClick: () => void
     active?: boolean
     disabled?: boolean
+    'aria-label'?: string
   }
->(({ children, onClick, active, disabled }, ref) => {
+>(({ children, onClick, active, disabled, 'aria-label': ariaLabel }, ref) => {
   return (
     <IconButton
       ref={ref}
@@ -101,6 +107,7 @@ const ActionButton = React.forwardRef<
       className={`${styles.iconButton} ${active ? styles.active : ''}`}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
     >
       {children}
     </IconButton>
@@ -133,13 +140,22 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 }
 
 const ItemCard = ({ item, type }: ItemCardProps) => {
+  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionId = collection?.id
+  const {
+    url: shareUrl,
+    itemsIncluded,
+    canShare: canCopyLink,
+    tooltip: copyLinkTooltip,
+  } = usePermalink(collectionId ?? undefined, item?.id ? [item] : [], { useLimit: false })
+
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
   }, [item?.links])
 
   const navigate = useNavigate()
-  const { isAuthenticated, login } = useContext(AuthenticationContext)
+  const { isAuthenticated, login, token } = useContext(AuthenticationContext)
 
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
@@ -149,7 +165,6 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     infoPanelItem?.id === item.id && secondaryPanel === 'integration-tools'
   const isAnyPanelSelected = infoPanelItem?.id === item.id
 
-  const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const collectionRender = useSelector(dataFinderStore, ({ context }) => context.collectionRender)
   const collectionRenderOptions = useSelector(
@@ -176,12 +191,18 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
 
   const [itemRender, setItemRender] = useState(collectionRender)
 
+  // Determine if collection is a job collection
+  const isJobCollection = collection?.isJobCollection ?? false
+
   // Check if the collection requires authentication for thumbnails
   const requiresThumbnailAuth = useMemo(() => {
+    // Job collections always require authentication
+    if (isJobCollection) return true
+
     const configKey = getCollectionConfigKey(item.collection, itemBelongsToUserCollection)
     const collectionConfig = collectionRenderingConfig[configKey]
     return requiresThumbnailAuthentication(collectionConfig, itemBelongsToUserCollection)
-  }, [item.collection, itemBelongsToUserCollection])
+  }, [item.collection, itemBelongsToUserCollection, isJobCollection])
 
   // Get thumbnail URL using configured asset with fallback
   const thumbnailUrl = useMemo(() => {
@@ -195,12 +216,31 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     return requiresThumbnailAuth && !isAuthenticated
   }, [requiresThumbnailAuth, isAuthenticated])
 
+  // Extract workspace from collection for job collections
+  const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
+
+  // Fetch workspace tokens for job collections
+  const { data: jobWorkspaceTokensData } = useQuery({
+    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
+    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
+  })
+
   // temporarily fetching item details
   const { data } = useQuery({
-    queryKey: ['Items', item?.collection, item?.id],
-    queryFn: () => fetchItem({ collectionUrl: collectionUrl, itemId: item?.id }),
+    queryKey: ['Items', item?.collection, item?.id, isJobCollection],
+    queryFn: () =>
+      fetchItem({
+        collectionUrl: collectionUrl,
+        itemId: item?.id,
+        workspaceToken: isJobCollection ? jobWorkspaceTokensData?.access : undefined,
+      }),
     refetchOnWindowFocus: false,
-    enabled: !!item && !isUserCollection,
+    enabled:
+      !!item &&
+      (!isUserCollection || isJobCollection) &&
+      (!isJobCollection || !!jobWorkspaceTokensData),
   })
 
   // In order to determine if the item is already pinned, we need a unique ID
@@ -288,6 +328,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const isQueryCard = type === 'query-item'
 
   const [displayOpacitySelector, setOpacitySelectorVisible] = useState(false)
+  const [isShareOpen, setIsShareOpen] = useState(false)
 
   const handlePurchase = async () => {
     if (isAuthenticated) {
@@ -333,6 +374,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
             className={styles.thumbnail}
             requiresAuth={requiresThumbnailAuth}
             isUserCollection={itemBelongsToUserCollection}
+            isJobCollection={isJobCollection}
+            workspaceToken={isJobCollection ? jobWorkspaceTokensData?.access : undefined}
           />
         )}
         <div className={styles.overlay}>
@@ -479,6 +522,25 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </ActionButton>
             )}
             <ActionButton
+              onClick={() => setIsShareOpen(true)}
+              disabled={!canCopyLink || !shareUrl}
+              aria-label="Share this item"
+            >
+              <Tooltip content={copyLinkTooltip}>
+                <Share1Icon />
+              </Tooltip>
+            </ActionButton>
+            {shareUrl && (
+              <SharePermalinkModal
+                open={isShareOpen}
+                onOpenChange={setIsShareOpen}
+                url={shareUrl}
+                itemsIncluded={itemsIncluded}
+                totalItems={1}
+                description="This link will open the map with this item pinned and the current map view."
+              />
+            )}
+            <ActionButton
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
             >
@@ -486,11 +548,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 <InfoCircledIcon />
               </Tooltip>
             </ActionButton>
-            {isLicenseProprietary && !itemBelongsToUserCollection && (
-              <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
-                Purchase
-              </Button>
-            )}
+            {isLicenseProprietary &&
+              !itemBelongsToUserCollection &&
+              !collection?.isJobCollection && (
+                <Button variant="ghost" className={styles.button} onClick={() => handlePurchase()}>
+                  Purchase
+                </Button>
+              )}
           </Flex>
         </Flex>
       </Flex>

@@ -1,0 +1,20 @@
+.dialogContent {
+  max-width: 520px;
+  width: 100%;
+}
+
+.flexContainer {
+  gap: var(--space-3);
+}
+
+.dialogTitle {
+  font-size: var(--font-size-4);
+  font-weight: 500;
+}
+
+.closeButton {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+}
+

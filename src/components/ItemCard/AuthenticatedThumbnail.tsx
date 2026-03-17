@@ -10,6 +10,8 @@ interface AuthenticatedThumbnailProps {
   className?: string
   requiresAuth?: boolean
   isUserCollection?: boolean
+  isJobCollection?: boolean
+  workspaceToken?: string
 }
 
 const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
@@ -17,10 +19,14 @@ const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
   className,
   requiresAuth = false,
   isUserCollection = false,
+  isJobCollection = false,
+  workspaceToken,
 }) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
 
-  const needsWorkspaceToken = requiresAuth && isUserCollection
+  // For job collections, use provided workspaceToken if available
+  // For user collections, fetch workspace tokens
+  const needsWorkspaceToken = requiresAuth && isUserCollection && !isJobCollection
 
   // Fetch workspace tokens for user collection thumbnail requests
   const { data: workspaceTokensData } = useQuery({
@@ -31,12 +37,21 @@ const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
   })
 
   // Determine which token to use
-  const authToken = needsWorkspaceToken ? workspaceTokensData?.access : token
-  const isTokenReady = needsWorkspaceToken
-    ? !!workspaceTokensData?.access
-    : requiresAuth
-      ? !!token
-      : true
+  // Priority: workspaceToken prop (for job collections) > workspaceTokensData (for user collections) > token
+  const authToken =
+    isJobCollection && workspaceToken
+      ? workspaceToken
+      : needsWorkspaceToken
+        ? workspaceTokensData?.access
+        : token
+
+  const isTokenReady = isJobCollection
+    ? !!workspaceToken
+    : needsWorkspaceToken
+      ? !!workspaceTokensData?.access
+      : requiresAuth
+        ? !!token
+        : true
 
   const { data: imageUrl, error } = useQuery<string | undefined>({
     queryKey: ['thumbnail', thumbnailUrl, authToken],

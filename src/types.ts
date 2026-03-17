@@ -92,6 +92,8 @@ export interface Collection {
   }
   // unique key to differentiate between public collections and user collections
   isUserCollection?: boolean
+  // flag to differentiate job collections from processing results
+  isJobCollection?: boolean
   displayedTitle?: string
 }
 
@@ -198,6 +200,47 @@ export interface QuickFilter {
   timePeriod?: string
   license?: string
   qa?: string
+}
+
+// OGC API Records – Process Catalogue (workflows/notebooks)
+export interface ProcessRecord {
+  id: string
+  type: string
+  properties: {
+    type: 'workflow' | 'notebook'
+    title: string
+    description: string | null
+    keywords?: string[]
+    created?: string
+    updated?: string
+    applicableCollections?: string[]
+    contacts?: unknown[]
+  }
+}
+
+/** Single input parameter entry from process catalogue (e.g. for notebooks). Used for variable form UI. */
+export interface InputParameterEntry {
+  type?: string
+  label?: string
+  description?: string
+  default?: unknown
+  variableRef?: string // Platform variable name to resolve (e.g., "STAC_ITEM_LINK", "STAC_COLLECTION_NAME", "AOI")
+}
+
+export interface ProcessDetail extends ProcessRecord {
+  links?: { href: string; rel: string; type?: string; title?: string }[]
+  properties: ProcessRecord['properties'] & {
+    contacts?: { name: string; organization?: string; roles?: string[] }[]
+    inputParameters?: Record<string, InputParameterEntry>
+  }
+}
+
+export interface PaginatedProcessResponse {
+  items: ProcessRecord[]
+  total_items: number
+  page: number
+  total_pages: number
+  page_size: number
 }
 
 export interface DocumentQA {
@@ -331,4 +374,51 @@ export interface DocumentRadiometricOutput {
   contact_point: string
   publisher: string
   eodh_qa_check_version: number
+}
+
+// Workflow Job Types
+export interface JobLink {
+  title?: string
+  rel: string
+  type?: string
+  href: string
+}
+
+export interface WorkflowJob {
+  id: string
+  jobID: string
+  type: 'process'
+  processID: string
+  // Optional client-side annotation to record which workspace a job belongs to
+  workspace?: string
+  created: string
+  started: string
+  finished: string | null
+  updated: string
+  status: 'successful' | 'failed' | 'running'
+  message: string
+  links: JobLink[]
+}
+
+export interface JobsApiResponse {
+  jobs: WorkflowJob[]
+  links: JobLink[]
+  numberTotal: number
+}
+
+export interface WorkflowJobFilterState {
+  selectedWorkspace: string
+  selectedStatus: 'all' | 'successful' | 'failed' | 'running'
+  searchText: string
+}
+
+export interface WorkflowJobDisplayData {
+  id: string
+  processID: string
+  status: 'successful' | 'failed' | 'running'
+  createdDate: Date
+  finishedDate: Date | null
+  createdFormatted: string
+  finishedFormatted: string
+  workspace: string
 }

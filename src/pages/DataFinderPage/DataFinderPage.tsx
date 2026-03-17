@@ -1,5 +1,5 @@
-import React, { useEffect, useContext } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useContext, useRef, useMemo } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
@@ -7,19 +7,33 @@ import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { fetchCollections, fetchUserCollections } from '@/services/collectionService'
+import {
+  fetchCollections,
+  fetchUserCollections,
+  fetchJobCollection,
+} from '@/services/collectionService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { catalogs } from '@/constants/catalogs'
 import { useSelector } from '@xstate/store/react'
+import { parseCollectionPath } from '@/library/catalogUtils'
 import dataFinderStore from './useFinderStore'
+import { parsePermalinkParams } from '@/utils/permalink'
+import {
+  restoreFromPermalinkMultiCollection,
+  restoreFromPermalinkSingleCollection,
+} from './permalinkRestore'
 
 import styles from './DataFinderPage.module.scss'
 
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
     useContext(AuthenticationContext)
-  const { collectionId } = useParams<{ collectionId: string }>()
+  // Use catch-all route parameter '*' to capture full path
+  const params = useParams<{ '*': string }>()
+  const collectionPath = params['*'] ?? ''
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const permalinkRestoreDoneRef = useRef(false)
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
@@ -54,6 +68,50 @@ export const DataFinderPage: React.FC = () => {
     enabled: !!currentWorkspace && !!workspaceTokensData,
   })
 
+  // Parse the collection path to determine type (memoized to prevent infinite loops)
+  const parsedPath = useMemo(
+    () => (collectionPath ? parseCollectionPath(collectionPath) : null),
+    [collectionPath],
+  )
+
+  const collectionId = parsedPath?.collectionId
+
+  // Determine workspace to use: from URL if present, otherwise currentWorkspace
+  const targetWorkspace = parsedPath?.workspace ?? currentWorkspace
+
+  // Fetch workspace tokens for job collections (use workspace from URL if available)
+  const jobWorkspaceTokensQuery = useQuery({
+    queryKey: ['WorkspaceTokens', targetWorkspace, token],
+    queryFn: () => {
+      return fetchWorkspaceTokens(targetWorkspace!, token!)
+    },
+    refetchOnWindowFocus: false,
+    enabled:
+      !!parsedPath && parsedPath.type === 'job' && !!targetWorkspace && !!token && isAuthenticated,
+  })
+
+  // Fetch job collection if needed
+  const jobCollectionQuery = useQuery({
+    queryKey: ['JobCollection', targetWorkspace, parsedPath?.jobPath],
+    queryFn: () => {
+      if (!parsedPath?.jobPath || !targetWorkspace || !jobWorkspaceTokensQuery.data?.access) {
+        return null
+      }
+      return fetchJobCollection(
+        targetWorkspace,
+        parsedPath.jobPath,
+        jobWorkspaceTokensQuery.data.access,
+      )
+    },
+    refetchOnWindowFocus: false,
+    enabled:
+      !!parsedPath &&
+      parsedPath.type === 'job' &&
+      !!targetWorkspace &&
+      !!jobWorkspaceTokensQuery.data &&
+      isAuthenticated,
+  })
+
   const findCollectionById = (
     collections: Collection[] | undefined,
     id: string | undefined,
@@ -63,17 +121,39 @@ export const DataFinderPage: React.FC = () => {
 
   // Collection selection and redirection if not found
   useEffect(() => {
-    if (!collectionId || isAuthenticating) return
+    if (!collectionPath || isAuthenticating) return
 
-    const isUserCollectionId = collectionId.startsWith('my-')
-    const collectionIdWithoutPrefix = isUserCollectionId
-      ? collectionId.replace(/^my-/, '')
-      : collectionId
+    if (!parsedPath) {
+      // Invalid path, redirect to home
+      void navigate('/')
+      return
+    }
 
-    if (isUserCollectionId) {
-      // search only in user collections
+    if (parsedPath.type === 'job') {
+      // Handle job collections
+      if (isAuthenticated && jobCollectionQuery.isFetched) {
+        const jobCollection = jobCollectionQuery.data
+        if (jobCollection) {
+          dataFinderStore.send({
+            type: 'setCollection',
+            collection: jobCollection,
+            isUserCollection: false, // Job collections are not user collections
+          })
+          dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
+          return
+        }
+        // Job collection not found, redirect
+        void navigate('/')
+        return
+      }
+      // Still loading job collection
+      return
+    }
+
+    if (parsedPath.type === 'purchased') {
+      // Handle purchased collections (existing logic)
       if (isAuthenticated && userCollectionQuery.isFetched) {
-        const foundUser = findCollectionById(userCollectionQuery.data, collectionIdWithoutPrefix)
+        const foundUser = findCollectionById(userCollectionQuery.data, parsedPath.collectionId)
         if (foundUser) {
           dataFinderStore.send({
             type: 'setCollection',
@@ -83,11 +163,18 @@ export const DataFinderPage: React.FC = () => {
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: true })
           return
         }
+        // Collection not found, redirect
+        void navigate('/')
+        return
       }
-    } else {
-      // search only in public collections
+      // Still loading user collections
+      return
+    }
+
+    // Handle public collections (existing logic)
+    if (parsedPath.type === 'public') {
       if (collectionQueries.isFetched) {
-        const foundPublic = findCollectionById(collectionQueries.data, collectionIdWithoutPrefix)
+        const foundPublic = findCollectionById(collectionQueries.data, parsedPath.collectionId)
         if (foundPublic) {
           dataFinderStore.send({
             type: 'setCollection',
@@ -97,25 +184,24 @@ export const DataFinderPage: React.FC = () => {
           dataFinderStore.send({ type: 'setIsUserCollection', isUserCollection: false })
           return
         }
+        // Collection not found, redirect
+        void navigate('/')
+        return
       }
-    }
-
-    // redirect if collection not found
-    const allFetched = isUserCollectionId
-      ? userCollectionQuery.isFetched
-      : collectionQueries.isFetched
-
-    if (allFetched) {
-      void navigate('/')
+      // Still loading public collections
+      return
     }
   }, [
-    collectionId,
+    collectionPath,
+    parsedPath,
     isAuthenticating,
     isAuthenticated,
     collectionQueries.data,
     collectionQueries.isFetched,
     userCollectionQuery.data,
     userCollectionQuery.isFetched,
+    jobCollectionQuery.data,
+    jobCollectionQuery.isFetched,
     navigate,
   ])
 
@@ -189,6 +275,87 @@ export const DataFinderPage: React.FC = () => {
       localStorage.removeItem('itemToPin')
     }
   }, [collection, currentWorkspace, collectionRender])
+
+  // Restore from permalink URL: pin item(s) from URL as the only pinned items, apply bounds
+  useEffect(() => {
+    if (!collection || !collectionId) return
+
+    const { itemIds, itemsByCollection, bounds } = parsePermalinkParams(searchParams)
+    const useMultiCollection = itemsByCollection.length > 0
+    const hasItemsToRestore = useMultiCollection || itemIds.length > 0
+
+    if (permalinkRestoreDoneRef.current) return
+    if (!hasItemsToRestore && !bounds) return
+
+    const isUserCollection = collectionId.startsWith('my-')
+    if (hasItemsToRestore && isUserCollection && !workspaceTokensData?.access) return
+
+    if (bounds) {
+      dataFinderStore.send({ type: 'setInitialBounds', bounds })
+    }
+
+    if (useMultiCollection) {
+      const needsUserCollections = itemsByCollection.some((r) => r.collectionId.startsWith('my-'))
+      if (needsUserCollections && !userCollectionQuery.isFetched) return
+      if (!collectionQueries.isFetched) return
+
+      localStorage.setItem('openPinnedItemsTab', '1')
+      dataFinderStore.send({ type: 'clearAllPinnedItems' })
+
+      const publicCollections = collectionQueries.data ?? []
+      const userCollections = userCollectionQuery.data ?? []
+      const resolveCollection = (cid: string) => {
+        if (cid.startsWith('my-')) {
+          const found = findCollectionById(userCollections, cid.replace(/^my-/, ''))
+          return found ? { collection: found, isUserCollection: true } : null
+        }
+        const found = findCollectionById(publicCollections, cid)
+        return found ? { collection: found, isUserCollection: false } : null
+      }
+
+      void restoreFromPermalinkMultiCollection({
+        itemsByCollection,
+        resolveCollection,
+        workspaceTokenForUser: workspaceTokensData?.access,
+      }).then(() => {
+        permalinkRestoreDoneRef.current = true
+      })
+      return
+    }
+
+    if (itemIds.length > 0) {
+      const collectionUrl = collection.links.find((l) => l.rel === 'self')?.href
+      if (!collectionUrl || !collectionRender) {
+        permalinkRestoreDoneRef.current = true
+        return
+      }
+
+      localStorage.setItem('openPinnedItemsTab', '1')
+      dataFinderStore.send({ type: 'clearAllPinnedItems' })
+
+      void restoreFromPermalinkSingleCollection({
+        itemIds,
+        collection,
+        collectionRender,
+        isUserCollection,
+        workspaceTokenForUser: workspaceTokensData?.access,
+      }).then(() => {
+        permalinkRestoreDoneRef.current = true
+      })
+    } else {
+      permalinkRestoreDoneRef.current = true
+    }
+  }, [
+    collection,
+    collectionId,
+    collectionRender,
+    searchParams,
+    workspaceTokensData?.access,
+    collectionQueries.data,
+    collectionQueries.isFetched,
+    userCollectionQuery.data,
+    userCollectionQuery.isFetched,
+  ])
 
   return (
     <Box height="var(--content-height)" position="relative">

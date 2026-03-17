@@ -6,6 +6,7 @@ import styles from './UserCollectionCard.module.scss'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { getCollectionFinderUrl } from '@/library/catalogUtils'
 
 interface UserCollectionCardProps {
   collection: Collection
@@ -27,7 +28,8 @@ export const UserCollectionCard: React.FC<UserCollectionCardProps> = ({ collecti
   const handleOpenCollection = () => {
     // See: ItemPanel.tsx ~ln 50
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-    void navigate(`/finder/my-${collection.id}`)
+    const finderUrl = getCollectionFinderUrl(collection)
+    void navigate(finderUrl)
   }
 
   return (

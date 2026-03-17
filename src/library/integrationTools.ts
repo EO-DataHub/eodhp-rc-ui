@@ -1,5 +1,77 @@
+import type { ProcessRecord } from '@/types'
 import { Item, StacRender } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
+
+/**
+ * Extracts the notebook template URL from a ProcessDetail's links.
+ * The catalogue API uses rel="template" for the notebook template file.
+ * Falls back to legacy rel types for backward compatibility.
+ *
+ * @see specs/001-launch-notebook-integration/contracts/catalogue-notebooks.md
+ */
+export function getNotebookTemplateUrl(
+  record: ProcessRecord & { links?: { rel?: string; href?: string; type?: string }[] },
+): string | undefined {
+  const links = record.links
+  if (!Array.isArray(links)) return undefined
+
+  // Primary: Look for rel="template" (custom extension rel type for notebook templates)
+  const template = links.find(
+    (l) =>
+      l.rel === 'template' &&
+      typeof l.href === 'string' &&
+      (l.type?.includes('ipynb') ?? l.href.endsWith('.ipynb')),
+  )
+  if (template?.href) return template.href
+
+  // Fallback 1: Legacy support for rel="application"
+  const application = links.find(
+    (l) =>
+      l.rel === 'application' &&
+      typeof l.href === 'string' &&
+      (l.type?.includes('ipynb') ?? l.href.endsWith('.ipynb')),
+  )
+  if (application?.href) return application.href
+
+  // Fallback 2: Legacy support for rel="enclosure"
+  const enclosure = links.find(
+    (l) =>
+      (l.rel === 'enclosure' &&
+        typeof l.href === 'string' &&
+        (l.type?.includes('json') ?? false)) ||
+      (l.type?.includes('ipynb') ?? false),
+  )
+  if (enclosure?.href) return enclosure.href
+
+  // Fallback 3: Any link ending with .ipynb
+  const ipynb = links.find((l) => typeof l.href === 'string' && l.href.endsWith('.ipynb'))
+  return ipynb?.href
+}
+
+/**
+ * Extracts the workflow execution URL from a ProcessDetail's links.
+ * The catalogue API uses rel="application-platform" for the workflow execution endpoint.
+ * The execution URL is constructed by appending "/execution" to the application-platform link href.
+ *
+ * @see specs/001-workflow-integration/contracts/workflow-execution-api.md
+ */
+export function getWorkflowExecutionUrl(
+  record: ProcessRecord & { links?: { rel?: string; href?: string; type?: string }[] },
+): string | undefined {
+  const links = record.links
+  if (!Array.isArray(links)) return undefined
+
+  // Look for rel="application-platform" link
+  const applicationPlatform = links.find(
+    (l) => l.rel === 'application-platform' && typeof l.href === 'string',
+  )
+
+  if (!applicationPlatform?.href) return undefined
+
+  // Remove trailing slash if present, then append /execution
+  const baseUrl = applicationPlatform.href.replace(/\/$/, '')
+  return `${baseUrl}/execution`
+}
 
 /**
  * Gets the COG asset href from an item
@@ -157,7 +229,8 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
     renderId,
   }
 
-  const apiUrl = import.meta.env.VITE_QLR_API_URL || 'http://127.0.0.1:8000/qlr'
+  const baseUrl = import.meta.env.VITE_RC_SUPPORT_UTILS_URL || 'http://127.0.0.1:8000'
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}/qlr`
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {

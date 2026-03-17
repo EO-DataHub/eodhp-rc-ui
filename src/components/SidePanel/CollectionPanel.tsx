@@ -14,6 +14,7 @@ import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
 import { Callout } from '../Callout/Callout'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
+import { getCollectionFinderUrl } from '@/library/catalogUtils'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
@@ -116,11 +117,8 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     setSelectedCollectionInfo(null)
     setIsFilterOpen(false)
 
-    if (collection.isUserCollection) {
-      void navigate(`/finder/my-${collection.id}`)
-    } else {
-      void navigate(`/finder/${collection.id}`)
-    }
+    const finderUrl = getCollectionFinderUrl(collection)
+    void navigate(finderUrl)
     trackCollectionVisualization(collection)
   }
 
