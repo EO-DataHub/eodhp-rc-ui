@@ -6,6 +6,7 @@ export const fetchQuicklookImage = async ({
   token?: string
 }): Promise<string> => {
   const response = await fetch(url, {
+    cache: 'no-cache',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!response.ok) throw new Error('Failed to fetch image')
