@@ -45,7 +45,7 @@ export const MyDataPage: React.FC = () => {
           >
             Workflow outputs
           </NavLink>
-          {/* <NavLink
+          <NavLink
             to="data-storage"
             className={({ isActive }) =>
               `${styles.tabLink} ${
@@ -56,7 +56,7 @@ export const MyDataPage: React.FC = () => {
             aria-selected={activeTab === 'data-storage'}
           >
             Data storage
-          </NavLink> */}
+          </NavLink>
         </Flex>
       </Box>
 
