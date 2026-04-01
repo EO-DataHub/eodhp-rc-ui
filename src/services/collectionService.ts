@@ -3,7 +3,10 @@ import { Collection, DocumentQA } from '@/types'
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
 export const fetchCollections = async (catalog: string, limit = 20): Promise<Collection[]> => {
-  const url = `${API_URL}/api/catalogue/stac/catalogs/${catalog}/collections?limit=${limit}`
+  const url =
+    catalog.startsWith('http://') || catalog.startsWith('https://')
+      ? `${catalog}/collections?limit=${limit}`
+      : `${API_URL}/api/catalogue/stac/catalogs/${catalog}/collections?limit=${limit}`
 
   const response = await fetch(url, {
     method: 'GET',

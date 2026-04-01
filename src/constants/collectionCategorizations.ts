@@ -208,6 +208,16 @@ const collectionCategorization = {
     qa: 'sentinel-2_l1c_qa',
     additionalFieldsToDisplay: [],
   },
+  'sentinel-2-l2a': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.ESA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
   sentinel1: {
     dataCategory: [DataCategory.Radar],
     resolution: [Resolution.From_10m_To_100m],
