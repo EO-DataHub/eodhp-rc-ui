@@ -155,7 +155,7 @@
     "thumbnail_auth": true,
     "thumbnail_asset": "thumbnail"
   },
-  "my-platero-l1C-cogs": {
+  "my-platero-l1c-cogs": {
     "renders": {
       "preview": {
         "title": "True Color (RGB)",
@@ -167,18 +167,7 @@
     },
     "thumbnail_auth": true
   },
-  "platero-l1C-cogs": {
-    "renders": {
-      "preview": {
-        "title": "True Color (RGB)",
-        "assets": ["TCI"],
-        "bidx": [1, 2, 3],
-        "nodata": 0,
-        "auth": true
-      }
-    }
-  },
-  "my-mantis_l1d-cogs": {
+  "my-mantis-l1d-cogs": {
     "renders": {
       "preview": {
         "title": "True Color (RGB)",
@@ -190,18 +179,7 @@
     },
     "thumbnail_auth": true
   },
-  "mantis_l1d-cogs": {
-    "renders": {
-      "preview": {
-        "title": "True Color (RGB)",
-        "assets": ["TCI"],
-        "bidx": [1, 2, 3],
-        "nodata": 0,
-        "auth": true
-      }
-    }
-  },
-  "my-hammer-l1C-cogs": {
+  "my-hammer-l1c-cogs": {
     "renders": {
       "preview": {
         "title": "True Color (RGB)",
@@ -212,17 +190,6 @@
       }
     },
     "thumbnail_auth": true
-  },
-  "hammer-l1C-cogs": {
-    "renders": {
-      "preview": {
-        "title": "True Color (RGB)",
-        "assets": ["TCI"],
-        "bidx": [1, 2, 3],
-        "nodata": 0,
-        "auth": true
-      }
-    }
   },
   "SkySatScene": {
     "renders": {
