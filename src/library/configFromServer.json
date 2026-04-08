@@ -191,6 +191,18 @@
     },
     "thumbnail_auth": true
   },
+  "my-menut-l1c-cogs": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": ["TCI"],
+        "bidx": [1, 2, 3],
+        "nodata": 0,
+        "auth": true
+      }
+    },
+    "thumbnail_auth": true
+  },
   "SkySatScene": {
     "renders": {
       "preview": {
