@@ -535,7 +535,7 @@ const collectionCategorization = {
     additionalFieldsToDisplay: [],
   },
   'hammer-l1c-cogs': {
-    dataCategory: [DataCategory.Optical_Multispectral],
+    dataCategory: [DataCategory.Hyperspectral],
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Open_Cosmos],
     location: [Location.Global],
