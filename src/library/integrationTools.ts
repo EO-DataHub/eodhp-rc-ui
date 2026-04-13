@@ -49,28 +49,23 @@ export function getNotebookTemplateUrl(
 }
 
 /**
- * Extracts the workflow execution URL from a ProcessDetail's links.
- * The catalogue API uses rel="application-platform" for the workflow execution endpoint.
- * The execution URL is constructed by appending "/execution" to the application-platform link href.
+ * Builds the workflow execution URL from environment configuration and the workflow id.
+ * The execution endpoint is always the configured workflow process URL with "/execution" appended.
  *
  * @see specs/001-workflow-integration/contracts/workflow-execution-api.md
  */
-export function getWorkflowExecutionUrl(
-  record: ProcessRecord & { links?: { rel?: string; href?: string; type?: string }[] },
-): string | undefined {
-  const links = record.links
-  if (!Array.isArray(links)) return undefined
+export function getWorkflowExecutionUrl(record: ProcessRecord): string | undefined {
+  const hubBaseUrl = import.meta.env.VITE_HUB_BASE_URL as string | undefined
+  const workflowWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME as
+    | string
+    | undefined
 
-  // Look for rel="application-platform" link
-  const applicationPlatform = links.find(
-    (l) => l.rel === 'application-platform' && typeof l.href === 'string',
-  )
+  if (!hubBaseUrl || !workflowWorkspaceName || !record.id) return undefined
 
-  if (!applicationPlatform?.href) return undefined
+  const baseUrl = hubBaseUrl.replace(/\/$/, '')
+  const processId = encodeURIComponent(record.id)
 
-  // Remove trailing slash if present, then append /execution
-  const baseUrl = applicationPlatform.href.replace(/\/$/, '')
-  return `${baseUrl}/execution`
+  return `${baseUrl}/api/catalogue/stac/catalogs/user/catalogs/${workflowWorkspaceName}/processes/${processId}/execution`
 }
 
 /**
