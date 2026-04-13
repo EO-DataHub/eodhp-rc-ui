@@ -2,6 +2,8 @@ import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
+import { resolveStacSearchStrategy } from '@/library/stacSearchConfig'
+import { toQueryExtensionFilters } from '@/library/stacQueryTransform'
 import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
@@ -40,6 +42,8 @@ interface StacQueryBodyParams {
   limit: number
   intersects?: GeoJSON.Geometry
   bbox?: MapBounds
+  datetime?: string
+  query?: Record<string, Record<string, string | number | boolean>>
 }
 
 interface FetchItemParams {
@@ -88,7 +92,22 @@ export const fetchItems = async ({
     }
   }
 
-  const body = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+  const searchStrategy = resolveStacSearchStrategy(catalog)
+  let body: object = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+
+  if (searchStrategy.searchMode === 'query-extension') {
+    const transformedFilters = toQueryExtensionFilters(queryFilter)
+    const queryExtensionBaseBody = Object.fromEntries(
+      Object.entries(baseBody).filter(([key]) => key !== 'catalog_paths'),
+    )
+
+    body = {
+      ...queryExtensionBaseBody,
+      ...(transformedFilters.datetime ? { datetime: transformedFilters.datetime } : {}),
+      ...(transformedFilters.query ? { query: transformedFilters.query } : {}),
+    }
+  }
+
   const response = await fetch(fetchUrl, {
     method: 'POST',
     headers: {
