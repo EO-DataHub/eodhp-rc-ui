@@ -208,7 +208,7 @@ const collectionCategorization = {
     qa: 'sentinel-2_l1c_qa',
     additionalFieldsToDisplay: [],
   },
-  'sentinel-2-l2a': {
+  'sentinel-2-c1-l2a': {
     dataCategory: [DataCategory.Optical_Multispectral],
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.ESA],
@@ -545,7 +545,7 @@ const collectionCategorization = {
     additionalFieldsToDisplay: [],
   },
   'hammer-l1c-cogs': {
-    dataCategory: [DataCategory.Optical_Multispectral],
+    dataCategory: [DataCategory.Hyperspectral],
     resolution: [Resolution.From_1m_To_10m],
     provider: [Provider.Open_Cosmos],
     location: [Location.Global],

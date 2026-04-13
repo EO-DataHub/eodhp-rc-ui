@@ -23,7 +23,7 @@ const rjsfCollections: Record<string, JSONSchema> = {
   sentinel1: sentinel1_schema,
   sentinel1_ard: sentinel1_ard_schema,
   sentinel2_ard: sentinel2_ard_schema,
-  'sentinel-2-l2a': sentinel2_ard_schema,
+  'sentinel-2-c1-l2a': sentinel2_ard_schema,
   airbus_sar_data: airbus_sar_schema,
   airbus_spot_data: airbus_spot_schema,
   airbus_pneo_data: airbus_pneo_schema,
