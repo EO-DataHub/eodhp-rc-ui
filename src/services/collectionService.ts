@@ -1,12 +1,14 @@
 import { Collection, DocumentQA } from '@/types'
+import serverConfig from '@/library/configFromServer.json'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
+const EXTERNAL_STAC_COLLECTION_ALLOWLIST = new Set(Object.keys(serverConfig))
 
 export const fetchCollections = async (catalog: string, limit = 20): Promise<Collection[]> => {
-  const url =
-    catalog.startsWith('http://') || catalog.startsWith('https://')
-      ? `${catalog}/collections?limit=${limit}`
-      : `${API_URL}/api/catalogue/stac/catalogs/${catalog}/collections?limit=${limit}`
+  const isExternalCatalog = catalog.startsWith('http://') || catalog.startsWith('https://')
+  const url = isExternalCatalog
+    ? `${catalog}/collections?limit=${limit}`
+    : `${API_URL}/api/catalogue/stac/catalogs/${catalog}/collections?limit=${limit}`
 
   const response = await fetch(url, {
     method: 'GET',
@@ -20,7 +22,14 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
   }
 
   const data = await response.json()
-  return data.collections as Collection[]
+  const collections = data.collections as Collection[]
+
+  if (!isExternalCatalog) {
+    return collections
+  }
+
+  // External STAC catalogs are allowlisted by local rendering config.
+  return collections.filter((collection) => EXTERNAL_STAC_COLLECTION_ALLOWLIST.has(collection.id))
 }
 
 export const fetchUserCollections = async (
