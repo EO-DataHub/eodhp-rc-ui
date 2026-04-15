@@ -41,6 +41,7 @@ import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 interface ItemCardProps {
   item: Item
@@ -176,8 +177,8 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     if (item.isLicenseProprietary !== undefined) {
       return item.isLicenseProprietary
     }
-    return collection?.license === 'proprietary'
-  }, [collection?.license, item.isLicenseProprietary])
+    return isCollectionPurchasable(collection)
+  }, [collection, item.isLicenseProprietary])
 
   const itemBelongsToUserCollection = useMemo(() => {
     if (item.isUserCollection !== undefined) {
@@ -274,7 +275,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
       dataFinderStore.send({
         type: 'addPinnedItem',
         item,
-        isLicenseProprietary: collection?.license === 'proprietary',
+        isLicenseProprietary: isCollectionPurchasable(collection),
         isUserCollection: isUserCollection,
         collectionName: collection?.title ?? collection?.id ?? '',
         collection,

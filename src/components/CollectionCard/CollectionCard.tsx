@@ -6,6 +6,7 @@ import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?re
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 interface CollectionCardProps {
   collection: Collection
@@ -25,7 +26,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     e.currentTarget.src = DefaultThumbnail
   }
 
-  const isLicenseProprietary = collection?.license === 'proprietary'
+  const isLicenseProprietary = isCollectionPurchasable(collection)
 
   const handleOpenDetailsCard = () => {
     setIsDetailsCardOpen(true)
