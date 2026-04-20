@@ -92,6 +92,16 @@
   }
 }
 
+.dropdown__labelButton,
+.dropdown__arrowButton {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+}
+
 .dropdown__menu {
   display: flex;
   flex-direction: column;

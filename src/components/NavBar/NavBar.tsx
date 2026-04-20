@@ -13,6 +13,8 @@ const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 
 interface DropdownMenuProps {
   label: string
+  labelTo?: string
+  labelHref?: string
   shouldOpen: boolean
   renderMenuItem: () => React.ReactNode
   onClick: () => void
@@ -20,6 +22,8 @@ interface DropdownMenuProps {
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({
   label,
+  labelTo,
+  labelHref,
   shouldOpen,
   renderMenuItem,
   onClick,
@@ -44,8 +48,28 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
 
   return (
     <div ref={ref} className={`${styles.menu__item} ${shouldOpen ? styles.open : ''}`}>
-      <div className={styles.dropdown__toggle} onClick={onClick}>
-        {label} <ArrowIcon className={styles.arrow} />
+      <div className={styles.dropdown__toggle}>
+        {labelHref ? (
+          <a href={labelHref} className={styles.parentLink}>
+            {label}
+          </a>
+        ) : labelTo ? (
+          <Link to={labelTo} className={styles.parentLink}>
+            {label}
+          </Link>
+        ) : (
+          <button type="button" className={styles.dropdown__labelButton} onClick={onClick}>
+            {label}
+          </button>
+        )}
+        <button
+          type="button"
+          className={styles.dropdown__arrowButton}
+          aria-label={`Toggle ${label} menu`}
+          onClick={onClick}
+        >
+          <ArrowIcon className={styles.arrow} />
+        </button>
       </div>
       {shouldOpen && <div className={styles.dropdown__menu}>{renderMenuItem()}</div>}
     </div>
@@ -91,6 +115,7 @@ export const NavBar: React.FC = () => {
 
           <DropdownMenu
             label="About"
+            labelHref={`${HUB_BASE_URL}/about`}
             shouldOpen={openMenu === 'about'}
             onClick={() => toggleMenu('about')}
             renderMenuItem={() => (
@@ -103,6 +128,7 @@ export const NavBar: React.FC = () => {
 
           <DropdownMenu
             label="Data"
+            labelHref={`${HUB_BASE_URL}/data`}
             shouldOpen={openMenu === 'data'}
             onClick={() => toggleMenu('data')}
             renderMenuItem={() => (
@@ -116,14 +142,13 @@ export const NavBar: React.FC = () => {
 
           <DropdownMenu
             label="Getting Started"
+            labelHref={`${HUB_BASE_URL}/docs`}
             shouldOpen={openMenu === 'getting-started'}
             onClick={() => toggleMenu('getting-started')}
             renderMenuItem={() => (
               <>
                 <a href={`${HUB_BASE_URL}/case-studies`}>Case Studies</a>
-                <a href={`${HUB_BASE_URL}/docs/account-setup`}>Account Setup</a>
-                <a href={`${HUB_BASE_URL}/docs/faqs`}>FAQs</a>
-                <a href={`${HUB_BASE_URL}/docs/documentation`}>Documentation</a>
+                <a href={`https://eo-datahub.github.io/eodh-userdocs`}>Documentation</a>
               </>
             )}
           />
