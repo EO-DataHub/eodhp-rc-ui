@@ -8,6 +8,7 @@ import { Navigate } from 'react-router-dom'
 import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
 import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
+import { WorkspaceCostPage } from '@/pages/WorkspaceCostPage/WorkspaceCostPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 
@@ -78,6 +79,10 @@ const routes = [
           {
             path: 'data-storage',
             element: <DataStoragePage />,
+          },
+          {
+            path: 'workspace-cost',
+            element: <WorkspaceCostPage />,
           },
         ],
       },

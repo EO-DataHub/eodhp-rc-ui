@@ -5,12 +5,15 @@ import styles from './MyDataPage.module.scss'
 
 const getActiveTabFromPathname = (
   pathname: string,
-): 'purchased' | 'workflow-outputs' | 'data-storage' => {
+): 'purchased' | 'workflow-outputs' | 'data-storage' | 'workspace-cost' => {
   if (pathname.includes('/my-data/workflow-outputs')) {
     return 'workflow-outputs'
   }
   if (pathname.includes('/my-data/data-storage')) {
     return 'data-storage'
+  }
+  if (pathname.includes('/my-data/workspace-cost')) {
+    return 'workspace-cost'
   }
   return 'purchased'
 }
@@ -56,6 +59,16 @@ export const MyDataPage: React.FC = () => {
             aria-selected={activeTab === 'data-storage'}
           >
             Data storage
+          </NavLink>
+          <NavLink
+            to="workspace-cost"
+            className={({ isActive }) =>
+              `${styles.tabLink} ${activeTab === 'workspace-cost' || isActive ? styles.tabLinkActive : ''}`
+            }
+            role="tab"
+            aria-selected={activeTab === 'workspace-cost'}
+          >
+            Workspace cost
           </NavLink>
         </Flex>
       </Box>
