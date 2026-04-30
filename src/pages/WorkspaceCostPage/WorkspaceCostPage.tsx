@@ -1,9 +1,13 @@
-import React, { useContext, useMemo, useState } from 'react'
-import { Box, Button, Flex, Select, Table, Text } from '@radix-ui/themes'
+import React, { useContext, useEffect, useLayoutEffect, useMemo } from 'react'
+import { Box, Button, Flex, Table, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
-import { fetchWorkspaceCost, WorkspaceCostSummary } from '@/services/workspaceCostService'
+import {
+  fetchWorkspaceCost,
+  fetchWorkspacesCostOverview,
+  WorkspaceCostSummary,
+} from '@/services/workspaceCostService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import sharedStyles from '../MyDataPage/MyDataPage.module.scss'
@@ -39,59 +43,91 @@ const formatCurrency = (value: number): string =>
   }).format(value)
 
 export const WorkspaceCostPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(
-    () => localStorage.getItem('workspaceCostSelectedWorkspace') ?? '',
-  )
-  const [startDate, setStartDate] = useState<string>(
-    () => localStorage.getItem('workspaceCostStartDate') ?? getDefaultStartDate(),
-  )
-  const [endDate, setEndDate] = useState<string>(
-    () => localStorage.getItem('workspaceCostEndDate') ?? getDateInputValue(new Date()),
-  )
+  const { token } = useContext(AuthenticationContext)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const { data: allWorkspaces } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: !!token,
-  })
-
-  const workspaceOptions = useMemo(() => {
-    const workspaceSet = new Set<string>()
-    if (allWorkspaces) {
-      allWorkspaces.forEach((workspace) => {
-        if (workspace.name) workspaceSet.add(workspace.name)
-      })
+  useLayoutEffect(() => {
+    const next = new URLSearchParams(searchParams)
+    let changed = false
+    if (!next.get('start')) {
+      next.set('start', localStorage.getItem('workspaceCostStartDate') ?? getDefaultStartDate())
+      changed = true
     }
-    if (currentWorkspace) workspaceSet.add(currentWorkspace)
-    return Array.from(workspaceSet).sort()
-  }, [allWorkspaces, currentWorkspace])
+    if (!next.get('end')) {
+      next.set('end', localStorage.getItem('workspaceCostEndDate') ?? getDateInputValue(new Date()))
+      changed = true
+    }
+    if (changed) {
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
-  const onWorkspaceChange = (workspace: string) => {
-    localStorage.setItem('workspaceCostSelectedWorkspace', workspace)
-    setSelectedWorkspace(workspace)
+  const startDate =
+    searchParams.get('start') ??
+    localStorage.getItem('workspaceCostStartDate') ??
+    getDefaultStartDate()
+  const endDate =
+    searchParams.get('end') ??
+    localStorage.getItem('workspaceCostEndDate') ??
+    getDateInputValue(new Date())
+  const selectedWorkspace = searchParams.get('workspace') ?? ''
+
+  useEffect(() => {
+    localStorage.setItem('workspaceCostStartDate', startDate)
+    localStorage.setItem('workspaceCostEndDate', endDate)
+    if (selectedWorkspace) {
+      localStorage.setItem('workspaceCostSelectedWorkspace', selectedWorkspace)
+    } else {
+      localStorage.removeItem('workspaceCostSelectedWorkspace')
+    }
+  }, [startDate, endDate, selectedWorkspace])
+
+  const updateSearchParams = (mutate: (p: URLSearchParams) => void) => {
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev)
+        mutate(p)
+        return p
+      },
+      { replace: true },
+    )
+  }
+
+  const clearWorkspaceSelection = () => {
+    updateSearchParams((p) => {
+      p.delete('workspace')
+    })
+  }
+
+  const onWorkspaceRowActivate = (workspaceId: string) => {
+    updateSearchParams((p) => {
+      p.set('workspace', workspaceId)
+    })
   }
 
   const onResetFilters = () => {
     localStorage.removeItem('workspaceCostSelectedWorkspace')
     localStorage.removeItem('workspaceCostStartDate')
     localStorage.removeItem('workspaceCostEndDate')
-    setSelectedWorkspace('')
-    setStartDate(getDefaultStartDate())
-    setEndDate(getDateInputValue(new Date()))
+    const next = new URLSearchParams(searchParams)
+    next.delete('workspace')
+    next.set('start', getDefaultStartDate())
+    next.set('end', getDateInputValue(new Date()))
+    setSearchParams(next, { replace: true })
   }
 
   const onStartDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextStartDate = event.target.value
-    localStorage.setItem('workspaceCostStartDate', nextStartDate)
-    setStartDate(nextStartDate)
+    updateSearchParams((p) => {
+      p.set('start', nextStartDate)
+    })
   }
 
   const onEndDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const nextEndDate = event.target.value
-    localStorage.setItem('workspaceCostEndDate', nextEndDate)
-    setEndDate(nextEndDate)
+    updateSearchParams((p) => {
+      p.set('end', nextEndDate)
+    })
   }
 
   const dayCount = getInclusiveDayCount(startDate, endDate)
@@ -104,10 +140,34 @@ export const WorkspaceCostPage: React.FC = () => {
       ? `Date range cannot exceed ${MAX_RANGE_DAYS} days.`
       : null
 
+  const datesInUrl = Boolean(searchParams.get('start') && searchParams.get('end'))
+  const costQueryReady = Boolean(token && startDate && endDate && isRangeValid && datesInUrl)
+
+  const {
+    data: overview,
+    isLoading: isOverviewLoading,
+    error: overviewError,
+  } = useQuery({
+    queryKey: ['WorkspacesCostOverview', startDate, endDate, token],
+    queryFn: async () =>
+      fetchWorkspacesCostOverview({
+        start: toUtcStartIso(startDate),
+        end: toUtcEndIso(endDate),
+        token: token!,
+      }),
+    refetchOnWindowFocus: false,
+    enabled: costQueryReady,
+  })
+
+  const sortedOverviewRows = useMemo(() => {
+    if (!overview?.workspaces?.length) return []
+    return [...overview.workspaces].sort((a, b) => b.totalCost - a.totalCost)
+  }, [overview])
+
   const {
     data: costSummary,
-    isLoading,
-    error,
+    isLoading: isDetailLoading,
+    error: detailError,
   } = useQuery<WorkspaceCostSummary>({
     queryKey: ['WorkspaceCost', selectedWorkspace, startDate, endDate, token],
     queryFn: async () =>
@@ -118,7 +178,7 @@ export const WorkspaceCostPage: React.FC = () => {
         token: token!,
       }),
     refetchOnWindowFocus: false,
-    enabled: Boolean(token && selectedWorkspace && startDate && endDate && isRangeValid),
+    enabled: costQueryReady && Boolean(selectedWorkspace),
   })
 
   const breakdownRows = useMemo(() => {
@@ -155,21 +215,6 @@ export const WorkspaceCostPage: React.FC = () => {
           overflow="auto"
         >
           <Box flexGrow="0" width="220px" flexShrink="0">
-            <Select.Root size="3" value={selectedWorkspace} onValueChange={onWorkspaceChange}>
-              <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
-              <Select.Content position="popper">
-                <Select.Group>
-                  {workspaceOptions.map((workspace) => (
-                    <Select.Item key={workspace} value={workspace}>
-                      {workspace}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
-              </Select.Content>
-            </Select.Root>
-          </Box>
-
-          <Box flexGrow="0" width="220px" flexShrink="0">
             <input
               type="date"
               value={startDate}
@@ -197,7 +242,12 @@ export const WorkspaceCostPage: React.FC = () => {
             />
           </Box>
 
-          <Box flexGrow="0" flexShrink="0" ml="auto">
+          <Flex flexGrow="0" flexShrink="0" ml="auto" gap="2" align="center">
+            {selectedWorkspace ? (
+              <Button size="3" variant="ghost" color="gray" onClick={clearWorkspaceSelection}>
+                Clear workspace
+              </Button>
+            ) : null}
             <Button
               size="3"
               variant="soft"
@@ -207,33 +257,112 @@ export const WorkspaceCostPage: React.FC = () => {
             >
               Reset Filters
             </Button>
-          </Box>
+          </Flex>
         </Flex>
+
+        {rangeValidationMessage && <Callout type="error" message={rangeValidationMessage} />}
 
         {!selectedWorkspace && (
           <Callout
             type="info"
-            message="Select a workspace to view cost details for the selected date range."
+            message="Select a workspace in the table below to view a detailed cost breakdown."
           />
         )}
-        {selectedWorkspace && rangeValidationMessage && (
-          <Callout type="error" message={rangeValidationMessage} />
-        )}
 
-        {isLoading && selectedWorkspace && isRangeValid && <LoadingIndicator size="3" />}
+        {costQueryReady && isOverviewLoading && <LoadingIndicator size="3" />}
 
-        {error && selectedWorkspace && (
+        {overviewError && (
           <Callout
             type="error"
             message={
-              error instanceof Error
-                ? error.message
+              overviewError instanceof Error
+                ? overviewError.message
+                : 'Unable to load workspace cost overview. Please try again later.'
+            }
+          />
+        )}
+
+        {overview && !isOverviewLoading && !overviewError && (
+          <Flex className={styles.sectionCard} direction="column" gap="3">
+            <Flex justify="between" align="start" gap="4" wrap="wrap">
+              <Flex direction="column" gap="1">
+                <Text size="4" weight="medium">
+                  All workspaces
+                </Text>
+                <Text size="2" color="gray">
+                  Total across your workspaces from {startDate} to {endDate} ({dayCount} day
+                  {dayCount === 1 ? '' : 's'})
+                </Text>
+              </Flex>
+              <Flex direction="column" gap="1" align="end">
+                <Text size="2" color="gray">
+                  Combined total
+                </Text>
+                <Text size="6" weight="bold">
+                  {formatCurrency(overview.totalCost)}
+                </Text>
+              </Flex>
+            </Flex>
+
+            {sortedOverviewRows.length === 0 ? (
+              <Text size="2" color="gray">
+                No workspace cost data for this period.
+              </Text>
+            ) : (
+              <Table.Root className={sharedStyles.ordersTable}>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell style={{ textAlign: 'right' }}>
+                      Total cost
+                    </Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {sortedOverviewRows.map((row) => (
+                    <Table.Row
+                      key={row.workspaceId}
+                      className={`${styles.overviewRow} ${row.workspaceId === selectedWorkspace ? styles.overviewRowSelected : ''}`}
+                      onClick={() => onWorkspaceRowActivate(row.workspaceId)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault()
+                          onWorkspaceRowActivate(row.workspaceId)
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`View cost details for ${row.workspaceId}`}
+                      aria-selected={row.workspaceId === selectedWorkspace}
+                    >
+                      <Table.Cell>
+                        <Text weight="medium">{row.workspaceId}</Text>
+                      </Table.Cell>
+                      <Table.Cell style={{ textAlign: 'right' }}>
+                        {formatCurrency(row.totalCost)}
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            )}
+          </Flex>
+        )}
+
+        {isDetailLoading && selectedWorkspace && isRangeValid && <LoadingIndicator size="3" />}
+
+        {detailError && selectedWorkspace && (
+          <Callout
+            type="error"
+            message={
+              detailError instanceof Error
+                ? detailError.message
                 : 'Unable to load workspace cost details. Please try again later.'
             }
           />
         )}
 
-        {costSummary && !isLoading && !error && (
+        {costSummary && !isDetailLoading && !detailError && selectedWorkspace && (
           <Flex direction="column" gap="4">
             <Flex className={styles.totalCard} direction="column" gap="2">
               <Text size="2" color="gray">
