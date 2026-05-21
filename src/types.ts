@@ -243,138 +243,71 @@ export interface PaginatedProcessResponse {
   page_size: number
 }
 
-export interface DocumentQA {
-  type: 'FeatureCollection'
-  features: {
-    type: 'Feature'
-    stac_version: string
-    stac_extensions: string[]
-    id: string
-    collection: string
-    bbox: [number, number, number, number]
-    geometry: GeoJSON.Geometry
-    properties: {
-      [key: string]: never
-    }
-    links: {
-      rel: string
-      type: string
-      href: string
-    }[]
-    assets: {
-      [key: string]: {
-        roles?: string[]
-        description?: string
-        href: string
-        type?: string
-        title?: string
-      }
-    }
+/** Leaf row in collection `qa_documentation` asset JSON (`qa_check_results` tree). */
+export interface CollectionDocumentationQALeaf {
+  value: string
+  links: {
+    rel?: string
+    type?: string
+    href: string
+    title?: string
   }[]
+}
+
+export interface CollectionDocumentationQAResults {
+  product_information: Record<string, CollectionDocumentationQALeaf>
+  metrology: Record<string, CollectionDocumentationQALeaf>
+  product_generation: Record<string, CollectionDocumentationQALeaf>
+}
+
+/** Payload fetched from collection `assets.qa_documentation` (application/json). */
+export interface CollectionDocumentationQAPayload {
+  qa_check_results: CollectionDocumentationQAResults
+  eodh_data_collection?: string
+  qa_check_name?: string
+  qa_check_datetime?: string
+  publisher?: string
+  eodh_qa_check_version?: number
+  information?: string
+}
+
+/** Radiometric table block inside one validity window payload. */
+export interface CollectionRadiometricUncertaintyBlock {
+  metric: string
+  value: [string, string[]]
+  stated_value: string[]
   links: {
     rel: string
     type: string
     href: string
+    title: string
   }[]
-  numReturned: number
-  numMatched: number
 }
 
-export type DocumentQAMetric =
-  | 'not assessed'
-  | 'not assessable'
-  | 'basic'
-  | 'good'
-  | 'excellent'
-  | 'ideal'
-  | 'not_public'
-
-export interface DocumentQAOutput {
-  data_collection: string
-  data_id_field: string
-  uuid: string
-  check_name: string
-  results: {
-    product_information: {
-      [key: string]: {
-        metric: DocumentQAMetric
-        value: string
-        links: {
-          rel: string
-          type: string
-          href: string
-          title: string
-        }[]
-      }
-    }
-    metrology: {
-      [key: string]: {
-        metric: DocumentQAMetric
-        value: string
-        links: {
-          rel: string
-          type: string
-          href: string
-          title: string
-        }[]
-      }
-    }
-    product_generation: {
-      [key: string]: {
-        metric: DocumentQAMetric
-        value: string
-        links: {
-          rel: string
-          type: string
-          href: string
-          title: string
-        }[]
-      }
-    }
-  }
-  result_vocab: string
-  check_datetime: string
-  check_datetime_validity_start: string
-  check_datetime_validity_end: string
-  check_creator: string
-  contact_point: string
-  publisher: string
-  eodh_qa_check_version: number
-}
-
-export interface DocumentRadiometricOutput {
-  data_collection: string
-  data_id_field: string
-  uuid: string
-  check_name: string
+/** Payload for one time window inside collection `qa_radiometric` aggregate asset. */
+export interface CollectionRadiometricQAPeriodPayload {
+  data_collection?: string
+  data_id_field?: string
+  uuid?: string
+  check_name?: string
   results: {
     'data validation': {
-      'radiometric uncertainty': {
-        metric: string
-        value: [string, string[]]
-        stated_value: string[]
-        links: {
-          rel: string
-          type: string
-          href: string
-          title: string
-        }[]
-      }
+      'radiometric uncertainty': CollectionRadiometricUncertaintyBlock
     }
   }
-  result_vocab: {
-    pass: string
-    'partial pass': string
-    fail: string
-  }
-  check_datetime: string
-  check_datetime_validity_start: string
-  check_datetime_validity_end: string
-  check_creator: string
-  contact_point: string
-  publisher: string
-  eodh_qa_check_version: number
+  result_vocab: Record<string, string>
+  check_datetime?: string
+  check_datetime_validity_start?: string
+  check_datetime_validity_end?: string
+  publisher?: string
+  eodh_qa_check_version?: number
 }
+
+/** Map from validity window keys (e.g. `2017-11-01,2017-11-30`) to per-window payloads. */
+export type CollectionRadiometricAggregatePayload = Record<
+  string,
+  CollectionRadiometricQAPeriodPayload
+>
 
 // Workflow Job Types
 export interface JobLink {
