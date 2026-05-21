@@ -11,6 +11,7 @@ import { useContext, useMemo, useState } from 'react'
 import { isCollectionMatchingSearch } from '@/library/collectionUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { collectionHasQAIndicators } from '@/library/collectionQuality'
 
 export const GROUP_BY_KEY = 'groupBy'
 
@@ -108,11 +109,20 @@ export const useCollections = () => {
       for (const [filterKey, filterValue] of filterEntries) {
         if (filterKey === 'groupBy') continue
         if (!isValidCollectionId(collection.id)) {
-          // this is to handle the case where new collection is added, but not in collectionCategorization
-          // therefore, only filter those new collections out if the filterValue is not 'uncategorised'
+          if (filterKey === 'qa' && filterValue !== 'lic:my-data') {
+            const listed = collectionHasQAIndicators(collection)
+            if (filterValue === 'qa:available' && !listed) {
+              return false
+            }
+            if (filterValue === 'qa:unavailable' && listed) {
+              return false
+            }
+            continue
+          }
           if (filterValue !== 'uncategorised') {
             return false
           }
+          continue
         } else {
           const categorizationData = collectionCategorization[collection.id]
 
@@ -132,10 +142,11 @@ export const useCollections = () => {
             }
 
             if (filterKey === 'qa') {
-              if (filterValue === 'qa:available' && !categorizationData[filterKey]) {
+              const listed = collectionHasQAIndicators(collection)
+              if (filterValue === 'qa:available' && !listed) {
                 return false
               }
-              if (filterValue === 'qa:unavailable' && categorizationData[filterKey]) {
+              if (filterValue === 'qa:unavailable' && listed) {
                 return false
               }
             }
@@ -172,15 +183,23 @@ export const useCollections = () => {
         category,
         collections: filteredCollections.filter((collection) => {
           if (!isValidCollectionId(collection.id)) {
+            if (groupBy === 'qa') {
+              const listed = collectionHasQAIndicators(collection)
+              return (
+                (category.value === 'qa:available' && listed) ||
+                (category.value === 'qa:unavailable' && !listed)
+              )
+            }
             return category.value === 'uncategorised'
           }
 
           const categorizationData = collectionCategorization[collection.id]
 
           if (groupBy === 'qa') {
+            const listed = collectionHasQAIndicators(collection)
             return (
-              (category.value === 'qa:available' && categorizationData[groupBy] !== null) ||
-              (category.value === 'qa:unavailable' && categorizationData[groupBy] === null)
+              (category.value === 'qa:available' && listed) ||
+              (category.value === 'qa:unavailable' && !listed)
             )
           }
 

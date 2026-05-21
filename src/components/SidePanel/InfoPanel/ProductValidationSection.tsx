@@ -1,24 +1,29 @@
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import {
-  collectionCategorization,
-  isValidCollectionId,
-} from '@/constants/collectionCategorizations'
-import { fetchDocumentQA } from '@/services/collectionService'
-import { Collection, DocumentRadiometricOutput } from '@/types'
+import { fetchCollectionQAJsonAsset } from '@/services/collectionService'
+import { Collection, CollectionRadiometricAggregatePayload } from '@/types'
 import { CheckCircledIcon } from '@radix-ui/react-icons'
 import { Badge, Flex, Heading, Link, Select, Table, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-function formatCustomDate(timestamp: string | undefined) {
-  if (!timestamp) {
-    return ''
+function formatWindowKeyLabel(key: string) {
+  const [start, end] = key.split(',')
+  const fmtIso = (iso: string) => {
+    const parts = iso.trim().split('-')
+    if (parts.length !== 3) return iso.trim()
+    const [year, month, day] = parts
+    return `${day}/${month}/${year}`
   }
-  const year = timestamp.substring(0, 4)
-  const month = timestamp.substring(4, 6)
-  const day = timestamp.substring(6, 8)
+  const startLabel = start ? fmtIso(start) : ''
+  const endLabel = end ? fmtIso(end) : ''
+  return endLabel ? `${startLabel} - ${endLabel}` : startLabel
+}
 
-  return `${day}/${month}/${year}`
+function sortRadiometricWindowKeys(keys: string[]): string[] {
+  return [...keys].sort((a, b) => {
+    const parseStart = (k: string) => new Date(k.split(',')[0]?.trim() ?? 0).getTime()
+    return parseStart(b) - parseStart(a)
+  })
 }
 
 const statusMapping = {
@@ -46,59 +51,36 @@ const renderStatusCell = (status: Status) => {
 }
 
 export const ProductValidationSection = ({ collection }: { collection: Collection }) => {
-  const prevCollectionId = useRef<string | undefined>()
-  const qaDocumentExists =
-    isValidCollectionId(collection.id) && collectionCategorization[collection.id].qa
-
-  const [qaOutputUrl, setQaOutputUrl] = useState<string | undefined>()
+  const radiometricHref = collection.assets?.qa_radiometric?.href
 
   const { data, isLoading } = useQuery({
-    queryKey: ['CollectionQARadiometric', collection.id],
+    queryKey: ['CollectionRadiometricQA', collection.id, radiometricHref],
     queryFn: () => {
-      if (!isValidCollectionId(collection.id)) return null
-
-      const qaCatalog = collectionCategorization[collection.id].qa
-      return fetchDocumentQA(qaCatalog, 'qa_radiometric')
+      if (!radiometricHref) return null
+      return fetchCollectionQAJsonAsset<CollectionRadiometricAggregatePayload>(radiometricHref)
     },
     refetchOnWindowFocus: false,
     retry: 1,
-    enabled: isValidCollectionId(collection.id),
+    enabled: Boolean(radiometricHref),
   })
 
-  const selectOptions = useMemo(() => {
-    return data?.features.map((feature) => {
-      const label = `${formatCustomDate(feature.properties.check_validity_start_datetime)} - ${formatCustomDate(feature.properties.check_validity_end_datetime)}`
-      return {
-        label,
-        value: feature.assets?.['qa-outputs'].href,
-      }
-    })
-  }, [data?.features])
+  const sortedKeys = useMemo(() => sortRadiometricWindowKeys(Object.keys(data ?? {})), [data])
 
-  const {
-    data: output,
-    isLoading: isOutputQueryLoading,
-    status,
-  } = useQuery<DocumentRadiometricOutput>({
-    queryKey: ['CollectionQARadiometricOutput', collection.id, qaOutputUrl],
-    queryFn: async () => {
-      if (!qaOutputUrl) {
-        return null
-      }
-      const response = await fetch(qaOutputUrl)
-      return response.json()
-    },
-    refetchOnWindowFocus: false,
-  })
+  const [selectedKey, setSelectedKey] = useState<string | null>(null)
 
   useEffect(() => {
-    if ((status === 'success' && !qaOutputUrl) || prevCollectionId.current !== collection.id) {
-      setQaOutputUrl(data?.features?.[0].assets?.['qa-outputs'].href)
-      prevCollectionId.current = collection.id
-    }
-  }, [collection.id, data?.features, qaOutputUrl, status])
+    setSelectedKey(null)
+  }, [collection.id, radiometricHref])
 
-  if (!qaDocumentExists) {
+  const activeKey = useMemo(() => {
+    if (sortedKeys.length === 0) return null
+    if (selectedKey && sortedKeys.includes(selectedKey)) return selectedKey
+    return sortedKeys[0]
+  }, [sortedKeys, selectedKey])
+
+  const output = activeKey && data?.[activeKey] ? data[activeKey] : undefined
+
+  if (!radiometricHref) {
     return 'Product validation metrics not available for this collection.'
   }
 
@@ -111,11 +93,11 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
     )
   }
 
-  if (!output && !isOutputQueryLoading) {
+  if (!output || sortedKeys.length === 0) {
     return 'Product validation metrics not available for this collection.'
   }
 
-  const tableData = output?.results['data validation']['radiometric uncertainty']
+  const tableData = output.results['data validation']['radiometric uncertainty']
   const metrics = tableData?.stated_value.map((item) => item.split('%')[0])
   const bands = tableData?.stated_value.map((item) => {
     const match = item.match(/\((.*?)\)/)
@@ -138,73 +120,66 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
         </Heading>
         <Flex align="center" gap="2">
           <Text weight="medium">Time Period: </Text>
-          <Select.Root value={qaOutputUrl} onValueChange={setQaOutputUrl}>
+          <Select.Root value={activeKey ?? undefined} onValueChange={(v) => setSelectedKey(v)}>
             <Select.Trigger placeholder="Choose Time Period" />
             <Select.Content>
-              {selectOptions?.map(({ label, value }) => (
-                <Select.Item value={value} key={value}>
-                  {label}
+              {sortedKeys.map((key) => (
+                <Select.Item value={key} key={key}>
+                  {formatWindowKeyLabel(key)}
                 </Select.Item>
               ))}
             </Select.Content>
           </Select.Root>
         </Flex>
 
-        {isOutputQueryLoading ? (
-          <Flex gap="3" align="center">
-            <LoadingIndicator size="3" />
-            <Text>Loading data...</Text>
-          </Flex>
-        ) : (
-          <>
-            <Badge
-              radius="full"
-              size="3"
-              color={statusColorMapping[overallStatus] as 'green' | 'red' | 'orange'}
-            >
-              <CheckCircledIcon />
-              Status: {statusMapping[overallStatus]}
-            </Badge>
-            <Table.Root variant="surface" layout="fixed" style={{ maxWidth: 500 }}>
-              <Table.Header>
-                <Table.Row>
-                  <Table.ColumnHeaderCell>Bands</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Metric</Table.ColumnHeaderCell>
-                  <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+        <>
+          <Badge
+            radius="full"
+            size="3"
+            color={statusColorMapping[overallStatus] as 'green' | 'red' | 'orange'}
+          >
+            <CheckCircledIcon />
+            Status: {statusMapping[overallStatus]}
+          </Badge>
+          <Table.Root variant="surface" layout="fixed" style={{ maxWidth: 500 }}>
+            <Table.Header>
+              <Table.Row>
+                <Table.ColumnHeaderCell>Bands</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Metric</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+              </Table.Row>
+            </Table.Header>
+
+            <Table.Body>
+              {rows?.map((row, index) => (
+                <Table.Row key={index}>
+                  <Table.RowHeaderCell>{row.band}</Table.RowHeaderCell>
+                  <Table.Cell>{row.metric}%</Table.Cell>
+                  {renderStatusCell(row.status as 'pass' | 'fail' | 'partial pass')}
                 </Table.Row>
-              </Table.Header>
+              ))}
+            </Table.Body>
+          </Table.Root>
 
-              <Table.Body>
-                {rows?.map((row, index) => (
-                  <Table.Row key={index}>
-                    <Table.RowHeaderCell>{row.band}</Table.RowHeaderCell>
-                    <Table.Cell>{row.metric}%</Table.Cell>
-                    {renderStatusCell(row.status as 'pass' | 'fail' | 'partial pass')}
-                  </Table.Row>
-                ))}
-              </Table.Body>
-            </Table.Root>
-
-            <Flex direction="column" align="start">
-              <Heading as="h3" size="4" mb="2" weight="medium">
-                Additional Information
-              </Heading>
-              <Flex direction="column" gap="2">
-                {tableData?.links.map((data) => (
-                  <Link
-                    key={data.rel}
-                    href={data.href}
-                    target="_blank"
-                    underline="always"
-                    weight="medium"
-                  >
-                    {data.title}
-                  </Link>
-                ))}
-              </Flex>
+          <Flex direction="column" align="start">
+            <Heading as="h3" size="4" mb="2" weight="medium">
+              Additional Information
+            </Heading>
+            <Flex direction="column" gap="2">
+              {tableData?.links.map((link, index) => (
+                <Link
+                  key={`${link.rel}-${link.href}-${index}`}
+                  href={link.href}
+                  target="_blank"
+                  underline="always"
+                  weight="medium"
+                >
+                  {link.title}
+                </Link>
+              ))}
             </Flex>
-          </>
-        )}
+          </Flex>
+        </>
       </Flex>
     </Flex>
   )
