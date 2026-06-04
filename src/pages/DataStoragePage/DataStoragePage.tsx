@@ -8,6 +8,7 @@ import { fetchWorkspaceTokens, fetchWorkspaces } from '@/services/workspaceToken
 import {
   deleteWorkspaceFile,
   listWorkspaceFiles,
+  uploadObjectStoreFilePresigned,
   uploadWorkspaceFiles,
   StoreType,
   WorkspaceFileItem,
@@ -151,13 +152,27 @@ export const DataStoragePage: React.FC = () => {
 
     try {
       const accessToken = await resolveWorkspaceAccessToken()
-      await uploadWorkspaceFiles(
-        dataWorkspace,
-        accessToken,
-        dataStoreFilter,
-        acceptedFiles,
-        (progress) => setUploadProgress(progress),
-      )
+      if (dataStoreFilter === 'object') {
+        for (let i = 0; i < acceptedFiles.length; i++) {
+          await uploadObjectStoreFilePresigned(
+            dataWorkspace,
+            accessToken,
+            acceptedFiles[i],
+            (fileProgress) => {
+              const overall = Math.round(((i + fileProgress / 100) / acceptedFiles.length) * 100)
+              setUploadProgress(overall)
+            },
+          )
+        }
+      } else {
+        await uploadWorkspaceFiles(
+          dataWorkspace,
+          accessToken,
+          dataStoreFilter,
+          acceptedFiles,
+          (progress) => setUploadProgress(progress),
+        )
+      }
       setUploadSuccess(
         `Uploaded ${acceptedFiles.length} file${acceptedFiles.length === 1 ? '' : 's'}.`,
       )
