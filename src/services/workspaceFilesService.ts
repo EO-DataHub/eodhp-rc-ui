@@ -80,6 +80,54 @@ export const uploadWorkspaceFiles = (
   })
 }
 
+export const uploadObjectStoreFilePresigned = async (
+  workspaceId: string,
+  token: string,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<void> => {
+  if (file.name.includes('/')) {
+    throw new Error(`File name must not contain '/': ${file.name}`)
+  }
+  const SIX_GB = 6 * 1024 * 1024 * 1024
+  if (file.size > SIX_GB) {
+    throw new Error(`File exceeds the 6 GB upload limit: ${file.name}`)
+  }
+  const urlResponse = await fetch(
+    `${HUB_BASE_URL}/api/workspaces/${workspaceId}/files/object/upload-url?file=${encodeURIComponent(file.name)}&size=${file.size}`,
+    {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  )
+  if (!urlResponse.ok) {
+    throw new Error(`Failed to get upload URL: ${urlResponse.status} ${urlResponse.statusText}`)
+  }
+  const { url } = await urlResponse.json()
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    xhr.open('PUT', url)
+    if (file.type) xhr.setRequestHeader('Content-Type', file.type)
+    xhr.setRequestHeader('Content-Length', String(file.size))
+
+    xhr.upload.onprogress = (event: ProgressEvent<EventTarget>) => {
+      if (!onProgress || !event.lengthComputable) return
+      const percent = Math.round((event.loaded / event.total) * 100)
+      onProgress(percent)
+    }
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve()
+        return
+      }
+      reject(new Error(`Upload failed: ${xhr.status}`))
+    }
+    xhr.onerror = () => reject(new Error('Upload failed: network error'))
+    xhr.send(file)
+  })
+}
+
 export interface WorkspaceFileDeleteResponse {
   workspace: string
   deleted: string[]
