@@ -5,6 +5,7 @@ import { AuthenticationContext, KeycloakUserInfo } from '@/context/Authenticatio
 import { getAuthenticatedAxios } from '../library/axios'
 import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
+import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
 
@@ -26,9 +27,9 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
   const workspaceUserName = userInfo?.preferred_username
-  const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(() => {
-    return localStorage.getItem('selectedWorkspace') ?? workspaceUserName
-  })
+  const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(
+    () => localStorage.getItem('selectedWorkspace') ?? undefined,
+  )
 
   const updateCurrentWorkspace = (workspace: string) => {
     localStorage.setItem('selectedWorkspace', workspace)
@@ -37,7 +38,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
 
   const clearCurrentWorkspace = () => {
     localStorage.removeItem('selectedWorkspace')
-    setCurrentWorkspace(workspaceUserName)
+    setCurrentWorkspace(undefined)
   }
 
   const login = () => {
@@ -45,7 +46,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
     return authenticationInstance.login()
   }
   const logout = () => {
-    clearCurrentWorkspace()
+    setCurrentWorkspace(undefined)
     return authenticationInstance.logout()
   }
 
@@ -104,10 +105,6 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       })
       .then((userInfo) => {
         setUserInfo(userInfo as KeycloakUserInfo)
-        const defaultWorkspace = (userInfo as KeycloakUserInfo)?.preferred_username
-        if (!localStorage.getItem('selectedWorkspace')) {
-          setCurrentWorkspace(defaultWorkspace)
-        }
       })
       .catch((error) => {
         setIsAuthenticationServiceError(true)
@@ -118,6 +115,27 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         setIsAuthenticating(false)
       })
   }, [])
+
+  useEffect(
+    function initializeDefaultWorkspace() {
+      if (!token) return
+      const stored = localStorage.getItem('selectedWorkspace')
+      if (stored) {
+        setCurrentWorkspace(stored)
+        return
+      }
+      fetchWorkspaces(token)
+        .then((workspaces) => {
+          if (workspaces.length > 0) {
+            updateCurrentWorkspace(workspaces[0].name)
+          }
+        })
+        .catch(() => {
+          /* workspace fetch errors are non-critical */
+        })
+    },
+    [token],
+  )
 
   useEffect(
     function initializeAuthenticatedAxios() {
