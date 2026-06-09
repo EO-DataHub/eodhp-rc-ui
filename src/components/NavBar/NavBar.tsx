@@ -12,6 +12,7 @@ import styles from './NavBar.module.scss'
 const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 
 interface DropdownMenuProps {
+  id: string
   label: string
   labelTo?: string
   labelHref?: string
@@ -21,6 +22,7 @@ interface DropdownMenuProps {
 }
 
 export const DropdownMenu: React.FC<DropdownMenuProps> = ({
+  id,
   label,
   labelTo,
   labelHref,
@@ -37,41 +39,50 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({
       }
     }
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClick()
+      }
+    }
+
     if (shouldOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('keydown', handleKeyDown)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [shouldOpen, onClick])
 
   return (
     <div ref={ref} className={`${styles.menu__item} ${shouldOpen ? styles.open : ''}`}>
-      <div className={styles.dropdown__toggle}>
-        {labelHref ? (
-          <a href={labelHref} className={styles.parentLink}>
-            {label}
-          </a>
-        ) : labelTo ? (
-          <Link to={labelTo} className={styles.parentLink}>
-            {label}
-          </Link>
-        ) : (
-          <button type="button" className={styles.dropdown__labelButton} onClick={onClick}>
-            {label}
-          </button>
-        )}
-        <button
-          type="button"
-          className={styles.dropdown__arrowButton}
-          aria-label={`Toggle ${label} menu`}
-          onClick={onClick}
-        >
-          <ArrowIcon className={styles.arrow} />
-        </button>
-      </div>
-      {shouldOpen && <div className={styles.dropdown__menu}>{renderMenuItem()}</div>}
+      <button
+        type="button"
+        className={styles.dropdown__toggle}
+        aria-expanded={shouldOpen}
+        aria-controls={id}
+        onClick={onClick}
+      >
+        <span className={styles.dropdown__label}>{label}</span>
+        <ArrowIcon className={styles.arrow} aria-hidden={true} />
+      </button>
+      {shouldOpen && (
+        <div className={styles.dropdown__menu} id={id}>
+          {labelHref && (
+            <a className={styles.dropdown__parentLink} href={labelHref}>
+              {label}
+            </a>
+          )}
+          {labelTo && (
+            <Link className={styles.dropdown__parentLink} to={labelTo}>
+              {label}
+            </Link>
+          )}
+          {renderMenuItem()}
+        </div>
+      )}
     </div>
   )
 }
@@ -114,6 +125,7 @@ export const NavBar: React.FC = () => {
           </a>
 
           <DropdownMenu
+            id="about-menu"
             label="About"
             labelHref={`${HUB_BASE_URL}/about`}
             shouldOpen={openMenu === 'about'}
@@ -127,6 +139,7 @@ export const NavBar: React.FC = () => {
           />
 
           <DropdownMenu
+            id="data-menu"
             label="Data"
             labelHref={`${HUB_BASE_URL}/data`}
             shouldOpen={openMenu === 'data'}
@@ -141,6 +154,7 @@ export const NavBar: React.FC = () => {
           />
 
           <DropdownMenu
+            id="getting-started-menu"
             label="Getting Started"
             labelHref={`${HUB_BASE_URL}/docs`}
             shouldOpen={openMenu === 'getting-started'}
@@ -148,7 +162,7 @@ export const NavBar: React.FC = () => {
             renderMenuItem={() => (
               <>
                 <a href={`${HUB_BASE_URL}/case-studies`}>Case Studies</a>
-                <a href={`https://eo-datahub.github.io/eodh-userdocs`}>Documentation</a>
+                <a href="https://docs.eodatahub.org.uk/">Documentation</a>
               </>
             )}
           />
@@ -158,6 +172,7 @@ export const NavBar: React.FC = () => {
             Notebooks
           </a>
           <DropdownMenu
+            id="catalogue-menu"
             label="Catalogue"
             shouldOpen={openMenu === 'catalogue'}
             onClick={() => toggleMenu('catalogue')}
@@ -192,6 +207,7 @@ export const NavBar: React.FC = () => {
           />
 
           <DropdownMenu
+            id="workspaces-menu"
             label="Workspaces"
             shouldOpen={openMenu === 'workspaces'}
             onClick={() => toggleMenu('workspaces')}
