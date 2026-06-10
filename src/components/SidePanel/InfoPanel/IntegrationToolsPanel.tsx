@@ -10,9 +10,7 @@ import {
   Tabs,
   RadioGroup,
   Checkbox,
-  Select,
 } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
 import styles from './InfoPanel.module.scss'
 import type { Collection, Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -29,7 +27,6 @@ import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { WorkflowLaunchModal } from '@/components/WorkflowLaunchModal/WorkflowLaunchModal'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
 interface IntegrationToolsPanelProps {
   item: Item | null
@@ -383,17 +380,6 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const username = userInfo?.preferred_username
 
-  const { data: workspacesData, isLoading: isLoadingWorkspaces } = useQuery({
-    queryKey: ['Workspaces'],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: !!token,
-  })
-
-  const [launchWorkspace, setLaunchWorkspace] = useState<string | undefined>(
-    localStorage.getItem('selectedWorkspace') ?? undefined,
-  )
-
   // Retrieve AOI from store
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
@@ -419,12 +405,12 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     item,
     collection,
     token,
-    currentWorkspace: launchWorkspace,
+    currentWorkspace,
     username,
   })
 
   const canLaunch =
-    isAuthenticated && !!launchWorkspace && !!item && !!selectedNotebook && !isLaunching
+    isAuthenticated && !!currentWorkspace && !!item && !!selectedNotebook && !isLaunching
   const showContent = isAuthenticated && !!currentWorkspace && !!item
   const hasNotebooks = notebooks.length > 0
   const isEmpty = !isLoadingNotebooks && !notebooksError && notebooks.length === 0
@@ -456,33 +442,6 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
             Launch Jupyter notebooks with this data already loaded and ready for analysis. Select a
             notebook below and click Launch.
           </Text>
-
-          <Flex direction="column" gap="1">
-            <Text size="2" weight="medium">
-              Workspace
-            </Text>
-            <Select.Root size="2" value={launchWorkspace} onValueChange={setLaunchWorkspace}>
-              <Select.Trigger
-                style={{ width: '100%' }}
-                placeholder={isLoadingWorkspaces ? 'Loading workspaces…' : 'Select a workspace'}
-                disabled={isLoadingWorkspaces}
-              />
-              <Select.Content position="popper">
-                <Select.Group>
-                  {workspacesData?.map((workspace) => (
-                    <Select.Item key={workspace.id} value={workspace.name}>
-                      {workspace.name ?? workspace.id}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
-              </Select.Content>
-            </Select.Root>
-            {!launchWorkspace && (
-              <Text size="2" color="gray">
-                Select a workspace to launch notebooks.
-              </Text>
-            )}
-          </Flex>
 
           {isLoadingNotebooks && (
             <Flex pt="4" pb="4">
