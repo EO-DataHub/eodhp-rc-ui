@@ -101,6 +101,14 @@ export const fetchItems = async ({
       Object.entries(baseBody).filter(([key]) => key !== 'catalog_paths'),
     )
 
+    if (transformedFilters.unhandledConditions.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[fetchItems] The following filter conditions could not be translated to query-extension format and were dropped:',
+        transformedFilters.unhandledConditions,
+      )
+    }
+
     body = {
       ...queryExtensionBaseBody,
       ...(transformedFilters.datetime ? { datetime: transformedFilters.datetime } : {}),

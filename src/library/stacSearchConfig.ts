@@ -1,3 +1,5 @@
+export const ELEMENT84_EARTH_SEARCH_URL = 'https://earth-search.aws.element84.com/v1'
+
 export type StacSearchMode = 'cql2' | 'query-extension' | 'auto'
 
 export interface StacSearchStrategy {
@@ -11,7 +13,7 @@ const DEFAULT_STRATEGY: StacSearchStrategy = {
 }
 
 const STRATEGY_BY_CATALOG: Record<string, StacSearchStrategy> = {
-  'https://earth-search.aws.element84.com/v1': {
+  [ELEMENT84_EARTH_SEARCH_URL]: {
     searchMode: 'query-extension',
   },
 }

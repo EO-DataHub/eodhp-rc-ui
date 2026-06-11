@@ -175,7 +175,7 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: 'airbus_phr_qa',
+    qa: true,
     additionalFieldsToDisplay: [],
   },
   airbus_data_example: {
@@ -205,7 +205,7 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: 'sentinel-2_l1c_qa',
+    qa: true,
     additionalFieldsToDisplay: [],
   },
   'sentinel-2-c1-l2a': {
@@ -435,7 +435,7 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: 'planet_psscene_qa',
+    qa: true,
     additionalFieldsToDisplay: [],
   },
   cordex: {

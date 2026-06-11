@@ -3,12 +3,8 @@ import styles from './DataQualitySection.module.scss'
 import React, { PropsWithChildren } from 'react'
 import { LockClosedIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
-import { Collection, DocumentQAOutput } from '@/types'
-import { fetchDocumentQA } from '@/services/collectionService'
-import {
-  collectionCategorization,
-  isValidCollectionId,
-} from '@/constants/collectionCategorizations'
+import { Collection, CollectionDocumentationQAPayload } from '@/types'
+import { fetchCollectionQAJsonAsset } from '@/services/collectionService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
 const metricLabelMapping = {
@@ -79,40 +75,24 @@ const Cell: React.FC<PropsWithChildren<CellProps>> = ({
 )
 
 export const DataQualitySection = ({ collection }: { collection: Collection }) => {
-  const qaDocumentExists =
-    isValidCollectionId(collection.id) && collectionCategorization[collection.id].qa
+  const documentationHref = collection.assets?.qa_documentation?.href
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['CollectionQA', collection.id],
+  const { data: output, isLoading } = useQuery({
+    queryKey: ['CollectionDocumentationQA', collection.id, documentationHref],
     queryFn: () => {
-      if (!isValidCollectionId(collection.id)) return null
-
-      const qaCatalog = collectionCategorization[collection.id].qa
-      return fetchDocumentQA(qaCatalog, 'qa_documentation')
+      if (!documentationHref) return null
+      return fetchCollectionQAJsonAsset<CollectionDocumentationQAPayload>(documentationHref)
     },
     refetchOnWindowFocus: false,
     retry: 1,
-    enabled: isValidCollectionId(collection.id),
+    enabled: Boolean(documentationHref),
   })
 
-  const qaOutputUrl = data?.features?.[0].assets?.['qa-outputs'].href
-
-  const { data: output, isLoading: isOutputQueryLoading } = useQuery<DocumentQAOutput>({
-    queryKey: ['CollectionQAOutput', collection.id],
-    queryFn: async () => {
-      if (!qaOutputUrl) return null
-      const response = await fetch(qaOutputUrl)
-      return response.json()
-    },
-    refetchOnWindowFocus: false,
-    enabled: !!qaOutputUrl,
-  })
-
-  if (!qaDocumentExists) {
+  if (!documentationHref) {
     return 'Document quality assurance not available for this collection.'
   }
 
-  if (isLoading || isOutputQueryLoading) {
+  if (isLoading) {
     return (
       <Flex gap="3" align="center">
         <LoadingIndicator size="3" />
@@ -121,11 +101,11 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
     )
   }
 
-  if (!output) {
+  if (!output?.qa_check_results) {
     return 'Document quality assurance not available for this collection.'
   }
 
-  const documentReview = output.results || {}
+  const documentReview = output.qa_check_results
 
   const rowCount = Math.max(
     ...Object.values(documentReview).map((category) => Object.keys(category).length),
@@ -159,19 +139,22 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
                   >
                     {labelMapping[categoryKey] || categoryKey}
                   </Cell>
-                  {Object.entries(categoryValue).map(([subKey, data], subKeyIndex) => (
-                    <Cell
-                      key={subKey}
-                      className={styles.bodyCell}
-                      style={{
-                        backgroundColor:
-                          metricColorMapping[data.value as keyof typeof metricColorMapping],
-                      }}
-                      hasBorderBottom={subKeyIndex < rowCount - 1}
-                    >
-                      {labelMapping[subKey] || subKey}
-                    </Cell>
-                  ))}
+                  {Object.keys(categoryValue).map((subKey, subKeyIndex) => {
+                    const data = categoryValue[subKey]
+                    return (
+                      <Cell
+                        key={subKey}
+                        className={styles.bodyCell}
+                        style={{
+                          backgroundColor:
+                            metricColorMapping[data.value as keyof typeof metricColorMapping],
+                        }}
+                        hasBorderBottom={subKeyIndex < rowCount - 1}
+                      >
+                        {labelMapping[subKey] || subKey}
+                      </Cell>
+                    )
+                  })}
                 </Flex>
               ))}
             </Flex>
@@ -210,20 +193,23 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
               <Heading as="h4" size="3" weight="medium">
                 {labelMapping[categoryKey] || categoryKey}
               </Heading>
-              {Object.entries(categoryValue).map(
-                ([subKey, data]) =>
-                  data.links.length > 0 && (
-                    <Link
-                      key={subKey}
-                      href={data.links[0].href}
-                      target="_blank"
-                      underline="always"
-                      weight="medium"
-                    >
-                      {labelMapping[subKey] || subKey}
-                    </Link>
-                  ),
-              )}
+              {Object.keys(categoryValue).map((subKey) => {
+                const data = categoryValue[subKey]
+                if (data.links.length === 0) {
+                  return null
+                }
+                return (
+                  <Link
+                    key={subKey}
+                    href={data.links[0].href}
+                    target="_blank"
+                    underline="always"
+                    weight="medium"
+                  >
+                    {labelMapping[subKey] || subKey}
+                  </Link>
+                )
+              })}
             </Flex>
           ))}
         </Flex>

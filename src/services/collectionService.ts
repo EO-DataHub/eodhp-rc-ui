@@ -1,8 +1,25 @@
-import { Collection, DocumentQA } from '@/types'
+import { Collection } from '@/types'
 import serverConfig from '@/library/configFromServer.json'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const EXTERNAL_STAC_COLLECTION_ALLOWLIST = new Set(Object.keys(serverConfig))
+
+export async function fetchCollectionQAJsonAsset<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch collection QA asset: ${response.status} ${response.statusText}`,
+    )
+  }
+
+  return response.json() as Promise<T>
+}
 
 export const fetchCollections = async (catalog: string, limit = 20): Promise<Collection[]> => {
   const isExternalCatalog = catalog.startsWith('http://') || catalog.startsWith('https://')
@@ -105,23 +122,4 @@ export const fetchJobCollection = async (
   // Mark as job collection
   collection.isJobCollection = true
   return collection
-}
-
-export const fetchDocumentQA = async (catalog: string | null, collection: string) => {
-  const url = `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/npl/catalogs/processing-results/catalogs/qa-workflow/catalogs/${catalog}/collections/${collection}/items`
-
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch user Collections')
-  }
-
-  const data = await response.json()
-  return data as DocumentQA
 }
