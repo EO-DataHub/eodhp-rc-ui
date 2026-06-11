@@ -1,7 +1,3 @@
-interface Cql2PropertyRef {
-  property?: string
-}
-
 interface Cql2Condition {
   op?: string
   args?: unknown[]
@@ -17,7 +13,6 @@ interface Cql2Filter {
 interface QueryExtensionTransformResult {
   datetime?: string
   query?: Record<string, Record<string, string | number | boolean>>
-  hasSupportedFilters: boolean
   unhandledConditions: Cql2Condition[]
 }
 
@@ -41,23 +36,13 @@ const normalizeIsoDateTimeBoundary = (value: string, boundary: 'start' | 'end'):
   return value
 }
 
-const getConditionProperty = (condition: Cql2Condition): string | null => {
-  const conditionArgs = condition.args
-  if (!Array.isArray(conditionArgs) || conditionArgs.length < 2) {
-    return null
-  }
-
-  const leftArg = conditionArgs[0] as Cql2PropertyRef
-  return leftArg?.property ?? null
-}
-
-const getConditionValue = (condition: Cql2Condition): unknown => {
-  const conditionArgs = condition.args
-  if (!Array.isArray(conditionArgs) || conditionArgs.length < 2) {
-    return null
-  }
-
-  return conditionArgs[1]
+const getConditionParts = (
+  condition: Cql2Condition,
+): { property: string; value: unknown } | null => {
+  const args = condition.args
+  if (!Array.isArray(args) || args.length < 2) return null
+  const property = (args[0] as { property?: string })?.property
+  return property != null ? { property, value: args[1] } : null
 }
 
 export const toQueryExtensionFilters = (
@@ -73,14 +58,15 @@ export const toQueryExtensionFilters = (
   const unhandledConditions: Cql2Condition[] = []
 
   for (const condition of conditions) {
-    const property = getConditionProperty(condition)
-    const value = getConditionValue(condition)
+    const parts = getConditionParts(condition)
     const op = condition.op
 
-    if (!property || op == null || value == null) {
+    if (!parts || op == null || parts.value == null) {
       unhandledConditions.push(condition)
       continue
     }
+
+    const { property, value } = parts
 
     if (DATE_TIME_PROPERTIES.has(property)) {
       if (op === '>=') {
@@ -112,10 +98,11 @@ export const toQueryExtensionFilters = (
   const datetime =
     startDate != null || endDate != null ? `${startDate ?? '..'}/${endDate ?? '..'}` : undefined
 
+  const hasQuery = Object.keys(query).length > 0
+
   return {
     datetime,
-    query: Object.keys(query).length > 0 ? query : undefined,
-    hasSupportedFilters: Boolean(datetime) || Object.keys(query).length > 0,
+    query: hasQuery ? query : undefined,
     unhandledConditions,
   }
 }

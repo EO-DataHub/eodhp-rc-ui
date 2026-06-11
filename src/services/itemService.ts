@@ -97,9 +97,7 @@ export const fetchItems = async ({
 
   if (searchStrategy.searchMode === 'query-extension') {
     const transformedFilters = toQueryExtensionFilters(queryFilter)
-    const queryExtensionBaseBody = Object.fromEntries(
-      Object.entries(baseBody).filter(([key]) => key !== 'catalog_paths'),
-    )
+    const { catalog_paths: _, ...queryExtensionBaseBody } = baseBody // eslint-disable-line @typescript-eslint/no-unused-vars
 
     if (transformedFilters.unhandledConditions.length > 0) {
       // eslint-disable-next-line no-console
@@ -109,11 +107,10 @@ export const fetchItems = async ({
       )
     }
 
-    body = {
-      ...queryExtensionBaseBody,
-      ...(transformedFilters.datetime ? { datetime: transformedFilters.datetime } : {}),
-      ...(transformedFilters.query ? { query: transformedFilters.query } : {}),
-    }
+    const queryExtBody: Record<string, unknown> = { ...queryExtensionBaseBody }
+    if (transformedFilters.datetime) queryExtBody.datetime = transformedFilters.datetime
+    if (transformedFilters.query) queryExtBody.query = transformedFilters.query
+    body = queryExtBody
   }
 
   const response = await fetch(fetchUrl, {

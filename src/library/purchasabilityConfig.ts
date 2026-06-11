@@ -9,10 +9,5 @@ export const isCollectionPurchasable = (collection?: Collection): boolean => {
     return false
   }
 
-  const override = PURCHASABILITY_OVERRIDES[collection.id]
-  if (override !== undefined) {
-    return override
-  }
-
-  return collection.license === 'proprietary'
+  return PURCHASABILITY_OVERRIDES[collection.id] ?? collection.license === 'proprietary'
 }

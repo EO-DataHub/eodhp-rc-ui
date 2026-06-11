@@ -41,12 +41,10 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
   const data = await response.json()
   const collections = data.collections as Collection[]
 
-  if (!isExternalCatalog) {
-    return collections
-  }
-
   // External STAC catalogs are allowlisted by local rendering config.
-  return collections.filter((collection) => EXTERNAL_STAC_COLLECTION_ALLOWLIST.has(collection.id))
+  return isExternalCatalog
+    ? collections.filter((collection) => EXTERNAL_STAC_COLLECTION_ALLOWLIST.has(collection.id))
+    : collections
 }
 
 export const fetchUserCollections = async (
