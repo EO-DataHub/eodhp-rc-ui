@@ -22,6 +22,7 @@ import {
   restoreFromPermalinkMultiCollection,
   restoreFromPermalinkSingleCollection,
 } from './permalinkRestore'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 import styles from './DataFinderPage.module.scss'
 
@@ -242,7 +243,7 @@ export const DataFinderPage: React.FC = () => {
         type: 'addPinnedItem',
         item: item,
         collectionRender,
-        isLicenseProprietary: collection.license === 'proprietary',
+        isLicenseProprietary: isCollectionPurchasable(collection),
         isUserCollection: true,
         collectionName: collectionTitle,
         collection: collection,
