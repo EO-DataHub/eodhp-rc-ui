@@ -110,6 +110,8 @@ export const fetchItems = async ({
     const queryExtBody: Record<string, unknown> = { ...queryExtensionBaseBody }
     if (transformedFilters.datetime) queryExtBody.datetime = transformedFilters.datetime
     if (transformedFilters.query) queryExtBody.query = transformedFilters.query
+    const sortby = (queryFilter as Record<string, unknown>)?.sortby
+    if (sortby) queryExtBody.sortby = sortby
     body = queryExtBody
   }
 

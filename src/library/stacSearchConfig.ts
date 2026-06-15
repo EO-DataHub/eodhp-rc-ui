@@ -21,5 +21,6 @@ export const resolveStacSearchStrategy = (catalogUrl: string | null): StacSearch
     return DEFAULT_STRATEGY
   }
 
-  return STRATEGY_BY_CATALOG[catalogUrl] ?? DEFAULT_STRATEGY
+  const normalized = catalogUrl.replace(/\/+$/, '')
+  return STRATEGY_BY_CATALOG[normalized] ?? DEFAULT_STRATEGY
 }
