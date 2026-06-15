@@ -71,7 +71,8 @@ export const fetchItems = async ({
   queryFilter,
 }: FetchItemsParams): Promise<Item[]> => {
   const catalog = selectedCollection ? getCatalog(selectedCollection) : null
-  const fetchUrl = `${catalog}/search`
+  const isPlanetCatalog = catalog?.includes('/catalogs/planet') ?? false
+  const fetchUrl = isPlanetCatalog ? `${catalog}/search?minimal_assets=true` : `${catalog}/search`
 
   const catalogPaths = selectedCollection ? extractCatalogPaths(selectedCollection) : []
 
@@ -84,8 +85,8 @@ export const fetchItems = async ({
   if (aoi) {
     baseBody.intersects = aoi.geometry
   } else if (mapBounds) {
-    // Planet proxy doesn’t support search by bbox, so we are using intersects instead.
-    if (catalog === 'planet') {
+    // Planet proxy requires intersects geometry rather than bbox.
+    if (isPlanetCatalog) {
       baseBody.intersects = bboxToPolygon(mapBounds)
     } else {
       baseBody.bbox = mapBounds
@@ -115,21 +116,41 @@ export const fetchItems = async ({
     body = queryExtBody
   }
 
-  const response = await fetch(fetchUrl, {
-    method: 'POST',
-    headers: {
-      Accept: 'application/geo+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(body),
-  })
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch items')
+  const postToSearch = async (requestBody: object) => {
+    const response = await fetch(fetchUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/geo+json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+    })
+    if (!response.ok) {
+      throw new Error('Failed to fetch items')
+    }
+    return response.json()
   }
 
-  const data = await response.json()
-  return data.features as Item[]
+  const allItems: Item[] = []
+  let currentBody: object = body
+
+  // Planet proxy paginates via POST next links carrying a token; repeat the original body so
+  // spatial/collection context is preserved across pages.
+  while (allItems.length < limit) {
+    const data = await postToSearch(currentBody)
+    const features = (data.features ?? []) as Item[]
+    allItems.push(...features)
+    if (!features.length) break
+
+    const nextLink = (
+      data.links as { rel: string; method?: string; body?: { token: string } }[]
+    )?.find((l) => l.rel === 'next' && l.method === 'POST')
+    if (!nextLink?.body?.token) break
+
+    currentBody = { ...body, token: nextLink.body.token }
+  }
+
+  return allItems.slice(0, limit)
 }
 
 export const fetchItemFromCollection = async ({
