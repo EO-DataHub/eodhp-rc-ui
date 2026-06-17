@@ -580,6 +580,12 @@ const isValidCollectionId = (id: string): id is keyof typeof collectionCategoriz
   return id in collectionCategorization
 }
 
+const getCollectionLocation = (id: string): string | null => {
+  if (!isValidCollectionId(id)) return null
+  const locs = collectionCategorization[id].location
+  return locs.length > 0 ? locs[0] : null
+}
+
 const itemCardFieldsToDisplay = {
   [DataCategory.Climate_Data]: [],
   [DataCategory.Climate_Projections]: [
@@ -619,4 +625,6 @@ export {
   itemCardFieldsToDisplay,
   filterMapping,
   isValidCollectionId,
+  getCollectionLocation,
+  Location,
 }
