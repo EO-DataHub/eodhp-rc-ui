@@ -49,13 +49,18 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
           <Flex justify="end" gap="2" position="absolute" right="16px" top="-12px">
             {isGlobal && (
               <div className={styles.badge}>
-                <GlobeIcon width="12" height="12" />
+                <GlobeIcon width="12" height="12" role="img" aria-label="Global coverage" />
               </div>
             )}
             {isUK && <div className={styles.ukBadge}>UK</div>}
             {hasQA && (
               <div className={styles.badge}>
-                <CheckCircledIcon width="12" height="12" />
+                <CheckCircledIcon
+                  width="12"
+                  height="12"
+                  role="img"
+                  aria-label="Quality assessment available"
+                />
               </div>
             )}
             {isLicenseProprietary && (
