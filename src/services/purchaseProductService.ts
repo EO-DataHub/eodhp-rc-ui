@@ -50,7 +50,9 @@ export const purchaseProduct = async ({
 
   const requestBody: Record<string, unknown> = {}
 
-  if (provider !== 'opencosmos') {
+  if (provider === 'opencosmos') {
+    requestBody.productBundle = 'General Use'
+  } else {
     requestBody.productBundle = productBundle
   }
 
