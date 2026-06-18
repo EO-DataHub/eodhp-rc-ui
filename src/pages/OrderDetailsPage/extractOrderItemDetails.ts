@@ -133,6 +133,39 @@ export const extractSAROrderItemDetails = (metadata: MetadataItem[]): SAROrderIt
   }
 }
 
+export const extractOpenCosmosOrderItemDetails = (
+  properties: Record<string, string | number | boolean | null>,
+): Record<string, string | number> => {
+  const result: Record<string, string | number> = {}
+
+  const add = (label: string, value: string | number | boolean | null | undefined) => {
+    if (value !== undefined && value !== null) {
+      result[label] = typeof value === 'boolean' ? String(value) : value
+    }
+  }
+
+  if (properties.datetime && typeof properties.datetime === 'string') {
+    add('Date', formatDateToMMDDYEAR(properties.datetime))
+  }
+  add('Platform', properties.platform)
+  add('Processing Level', properties['processing:level'])
+  add('Ground Sample Distance', properties.gsd !== undefined ? `${properties.gsd}m` : null)
+  add(
+    'Cloud Cover',
+    properties['eo:cloud_cover'] !== undefined ? `${properties['eo:cloud_cover']}%` : null,
+  )
+  add(
+    'Data Area',
+    properties['opencosmos:data_area_km2'] !== undefined &&
+      properties['opencosmos:data_area_km2'] !== null
+      ? `${(properties['opencosmos:data_area_km2'] as number).toFixed(2)} km²`
+      : null,
+  )
+  add('Source', properties['opencosmos:source'])
+
+  return result
+}
+
 export const extractPlanetOrderItemDetails = (
   properties: Record<string, string | number | boolean | null>,
 ): Record<string, string | number> => {

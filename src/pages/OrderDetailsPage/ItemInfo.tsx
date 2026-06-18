@@ -8,6 +8,7 @@ import {
   extractOpticalOrderItemDetails,
   extractSAROrderItemDetails,
   extractPlanetOrderItemDetails,
+  extractOpenCosmosOrderItemDetails,
 } from '@/pages/OrderDetailsPage/extractOrderItemDetails'
 import parse from 'html-react-parser'
 import { ItemMap } from './ItemMap/ItemMap'
@@ -16,7 +17,7 @@ interface ItemInfoProps {
   item: Item
   isOptical: boolean
   aoiGeojson?: GeoJSON.FeatureCollection
-  providerType: 'airbus_optical' | 'airbus_sar' | 'planet'
+  providerType: 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos'
 }
 
 export const ItemInfo: React.FC<ItemInfoProps> = ({
@@ -33,9 +34,14 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({
   const orderItemDetails = useMemo(() => {
     if (!metadata.length) return {}
 
-    // planet's structure is already flat so we don't need to pass in metadata
     if (providerType === 'planet') {
       return extractPlanetOrderItemDetails(
+        item?.properties as Record<string, string | number | boolean | null>,
+      )
+    }
+
+    if (providerType === 'opencosmos') {
+      return extractOpenCosmosOrderItemDetails(
         item?.properties as Record<string, string | number | boolean | null>,
       )
     }

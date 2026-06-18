@@ -43,7 +43,8 @@ export const OrderDetailsPage: React.FC = () => {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [isFullScene, setIsFullScene] = useState(false)
 
-  const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' => {
+  const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos' => {
+    if (catalog?.includes('opencosmos')) return 'opencosmos'
     if (catalog?.includes('planet')) return 'planet'
     if (catalog?.includes('airbus')) return isOpticalData ? 'airbus_optical' : 'airbus_sar'
     // fallback if unknown
@@ -107,6 +108,9 @@ export const OrderDetailsPage: React.FC = () => {
   }, [selectedWorkspace, currentWorkspace, updateCurrentWorkspace])
 
   const isPlaceOrderDisabled = useMemo(() => {
+    if (providerType === 'opencosmos') {
+      return mutation.isPending || !termsAccepted || !selectedWorkspace
+    }
     const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
     const isResolutionVariantDisabled =
       providerType === 'airbus_sar' && orderSelections.productBundle === 'SSC'
@@ -150,7 +154,10 @@ export const OrderDetailsPage: React.FC = () => {
       item,
       provider: providerType,
       productBundle: orderSelections.productBundle,
-      coordinates: providerType !== 'airbus_sar' && aoiCoordinates ? aoiCoordinates : undefined,
+      coordinates:
+        providerType !== 'airbus_sar' && providerType !== 'opencosmos' && aoiCoordinates
+          ? aoiCoordinates
+          : undefined,
       licence: orderSelections.licence,
       radarOptions,
       endUserCountry: orderSelections.endUserCountry,
@@ -176,7 +183,7 @@ export const OrderDetailsPage: React.FC = () => {
   })
 
   const coordinates = useMemo((): number[][][] | undefined => {
-    if (providerType === 'airbus_sar') return undefined
+    if (providerType === 'airbus_sar' || providerType === 'opencosmos') return undefined
 
     if (aoiData?.geometry?.type === 'Polygon') {
       return aoiData.geometry.coordinates
@@ -213,7 +220,9 @@ export const OrderDetailsPage: React.FC = () => {
         licence: orderSelections.licence,
       }),
     enabled:
-      !!item && (providerType === 'planet' || !!orderSelections.licence) && !!selectedWorkspace,
+      !!item &&
+      (providerType === 'planet' || providerType === 'opencosmos' || !!orderSelections.licence) &&
+      !!selectedWorkspace,
     refetchOnWindowFocus: false,
   })
 
@@ -272,7 +281,7 @@ export const OrderDetailsPage: React.FC = () => {
             <Flex direction="column" gap="2" style={{ maxWidth: 400 }}>
               {/* Workspace selector moved to OrderSelections */}
             </Flex>
-            {hasInitialAoi && providerType !== 'airbus_sar' ? (
+            {hasInitialAoi && providerType !== 'airbus_sar' && providerType !== 'opencosmos' ? (
               <PartialSceneSelect
                 checked={isFullScene}
                 onChange={(checked) => setIsFullScene(checked)}
@@ -287,7 +296,8 @@ export const OrderDetailsPage: React.FC = () => {
               isWorkspacesLoading={isWorkspacesLoading}
             />
             <Text size="4" weight="bold" className={styles.cost}>
-              {providerType !== 'planet' && !orderSelections.licence
+              {(providerType === 'airbus_optical' || providerType === 'airbus_sar') &&
+              !orderSelections.licence
                 ? 'Select a licence type to get a quote.'
                 : isQuoteLoading
                   ? 'Fetching cost...'

@@ -3,7 +3,7 @@ import { Flex, Text, Checkbox, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 
 interface TermsAndConditionsProps {
-  provider: 'planet' | 'airbus_optical' | 'airbus_sar'
+  provider: 'planet' | 'airbus_optical' | 'airbus_sar' | 'opencosmos'
   onTermsChange: (allChecked: boolean) => void
 }
 
@@ -25,7 +25,7 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
     },
   ]
 
-  if (provider !== 'planet') {
+  if (provider === 'airbus_optical' || provider === 'airbus_sar') {
     baseTerms.unshift(
       { text: 'I have read and understand the product license.', link: airbusLicenseLink },
       {
@@ -34,6 +34,7 @@ export const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
       },
     )
   }
+  // TODO: add Open Cosmos T&C link when available
 
   const [checkedTerms, setCheckedTerms] = useState<Record<number, boolean>>({})
 

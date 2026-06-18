@@ -10,8 +10,8 @@ export interface RadarOptions {
 export interface PurchaseRequest {
   workspace: string | undefined
   token: string | undefined
-  provider: 'airbus_optical' | 'airbus_sar' | 'planet'
-  productBundle: string
+  provider: 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos'
+  productBundle?: string
   coordinates?: number[][][]
   radarOptions?: RadarOptions
   endUserCountry?: string
@@ -48,8 +48,10 @@ export const purchaseProduct = async ({
 
   const purchaseApiUrl = `${itemLink}/order`
 
-  const requestBody: Record<string, unknown> = {
-    productBundle,
+  const requestBody: Record<string, unknown> = {}
+
+  if (provider !== 'opencosmos') {
+    requestBody.productBundle = productBundle
   }
 
   // Only add coordinates if applicable (Airbus Optical & Planet)
