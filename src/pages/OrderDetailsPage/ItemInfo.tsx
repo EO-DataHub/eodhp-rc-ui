@@ -17,7 +17,7 @@ interface ItemInfoProps {
   item: Item
   isOptical: boolean
   aoiGeojson?: GeoJSON.FeatureCollection
-  providerType: 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos'
+  providerType: 'airbus_optical' | 'airbus_sar' | 'planet' | 'open-cosmos'
 }
 
 export const ItemInfo: React.FC<ItemInfoProps> = ({
@@ -40,7 +40,7 @@ export const ItemInfo: React.FC<ItemInfoProps> = ({
       )
     }
 
-    if (providerType === 'opencosmos') {
+    if (providerType === 'open-cosmos') {
       return extractOpenCosmosOrderItemDetails(
         item?.properties as Record<string, string | number | boolean | null>,
       )

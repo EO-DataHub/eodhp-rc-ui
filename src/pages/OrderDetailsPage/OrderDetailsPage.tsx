@@ -43,8 +43,8 @@ export const OrderDetailsPage: React.FC = () => {
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [isFullScene, setIsFullScene] = useState(false)
 
-  const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos' => {
-    if (catalog?.includes('opencosmos')) return 'opencosmos'
+  const providerType = useMemo((): 'airbus_optical' | 'airbus_sar' | 'planet' | 'open-cosmos' => {
+    if (catalog?.includes('open-cosmos')) return 'open-cosmos'
     if (catalog?.includes('planet')) return 'planet'
     if (catalog?.includes('airbus')) return isOpticalData ? 'airbus_optical' : 'airbus_sar'
     // fallback if unknown
@@ -108,7 +108,7 @@ export const OrderDetailsPage: React.FC = () => {
   }, [selectedWorkspace, currentWorkspace, updateCurrentWorkspace])
 
   const isPlaceOrderDisabled = useMemo(() => {
-    if (providerType === 'opencosmos') {
+    if (providerType === 'open-cosmos') {
       return mutation.isPending || !termsAccepted || !selectedWorkspace
     }
     const baseInvalid = !orderSelections.productBundle || mutation.isPending || !termsAccepted
@@ -155,7 +155,7 @@ export const OrderDetailsPage: React.FC = () => {
       provider: providerType,
       productBundle: orderSelections.productBundle,
       coordinates:
-        providerType !== 'airbus_sar' && providerType !== 'opencosmos' && aoiCoordinates
+        providerType !== 'airbus_sar' && providerType !== 'open-cosmos' && aoiCoordinates
           ? aoiCoordinates
           : undefined,
       licence: orderSelections.licence,
@@ -183,7 +183,7 @@ export const OrderDetailsPage: React.FC = () => {
   })
 
   const coordinates = useMemo((): number[][][] | undefined => {
-    if (providerType === 'airbus_sar' || providerType === 'opencosmos') return undefined
+    if (providerType === 'airbus_sar' || providerType === 'open-cosmos') return undefined
 
     if (aoiData?.geometry?.type === 'Polygon') {
       return aoiData.geometry.coordinates
@@ -221,7 +221,7 @@ export const OrderDetailsPage: React.FC = () => {
       }),
     enabled:
       !!item &&
-      (providerType === 'planet' || providerType === 'opencosmos' || !!orderSelections.licence) &&
+      (providerType === 'planet' || providerType === 'open-cosmos' || !!orderSelections.licence) &&
       !!selectedWorkspace,
     refetchOnWindowFocus: false,
   })
@@ -281,7 +281,7 @@ export const OrderDetailsPage: React.FC = () => {
             <Flex direction="column" gap="2" style={{ maxWidth: 400 }}>
               {/* Workspace selector moved to OrderSelections */}
             </Flex>
-            {hasInitialAoi && providerType !== 'airbus_sar' && providerType !== 'opencosmos' ? (
+            {hasInitialAoi && providerType !== 'airbus_sar' && providerType !== 'open-cosmos' ? (
               <PartialSceneSelect
                 checked={isFullScene}
                 onChange={(checked) => setIsFullScene(checked)}

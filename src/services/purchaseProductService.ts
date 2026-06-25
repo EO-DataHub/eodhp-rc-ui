@@ -10,7 +10,7 @@ export interface RadarOptions {
 export interface PurchaseRequest {
   workspace: string | undefined
   token: string | undefined
-  provider: 'airbus_optical' | 'airbus_sar' | 'planet' | 'opencosmos'
+  provider: 'airbus_optical' | 'airbus_sar' | 'planet' | 'open-cosmos'
   productBundle?: string
   coordinates?: number[][][]
   radarOptions?: RadarOptions
@@ -50,7 +50,7 @@ export const purchaseProduct = async ({
 
   const requestBody: Record<string, unknown> = {}
 
-  if (provider === 'opencosmos') {
+  if (provider === 'open-cosmos') {
     requestBody.productBundle = 'General Use'
   } else {
     requestBody.productBundle = productBundle

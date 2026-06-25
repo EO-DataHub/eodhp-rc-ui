@@ -5,7 +5,7 @@ const PURCHASABILITY_OVERRIDES: Record<string, boolean> = {
 }
 
 const isOpenCosmosCollection = (collection: Collection): boolean =>
-  collection.links.some((l) => l.rel === 'parent' && l.href.includes('/catalogs/opencosmos'))
+  collection.links.some((l) => l.rel === 'parent' && l.href.includes('/catalogs/open-cosmos'))
 
 export const isCollectionPurchasable = (collection?: Collection): boolean => {
   if (!collection) {

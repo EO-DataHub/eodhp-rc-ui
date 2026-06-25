@@ -156,12 +156,12 @@ export const extractOpenCosmosOrderItemDetails = (
   )
   add(
     'Data Area',
-    properties['opencosmos:data_area_km2'] !== undefined &&
-      properties['opencosmos:data_area_km2'] !== null
-      ? `${(properties['opencosmos:data_area_km2'] as number).toFixed(2)} km²`
+    properties['open-cosmos:data_area_km2'] !== undefined &&
+      properties['open-cosmos:data_area_km2'] !== null
+      ? `${(properties['open-cosmos:data_area_km2'] as number).toFixed(2)} km²`
       : null,
   )
-  add('Source', properties['opencosmos:source'])
+  add('Source', properties['open-cosmos:source'])
 
   return result
 }

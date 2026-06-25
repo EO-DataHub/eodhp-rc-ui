@@ -3,7 +3,7 @@ import { Flex, Text, Checkbox, Link } from '@radix-ui/themes'
 import styles from './OrderDetailsPage.module.scss'
 
 interface TermsAndConditionsProps {
-  provider: 'planet' | 'airbus_optical' | 'airbus_sar' | 'opencosmos'
+  provider: 'planet' | 'airbus_optical' | 'airbus_sar' | 'open-cosmos'
   onTermsChange: (allChecked: boolean) => void
 }
 
