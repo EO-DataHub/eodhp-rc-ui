@@ -6,5 +6,5 @@ export const catalogs = [
   'public/catalogs/ceda-stac-catalogue',
   ELEMENT84_EARTH_SEARCH_URL,
   'commercial/catalogs/planet',
-  'commercial/catalogs/opencosmos',
+  'commercial/catalogs/open-cosmos',
 ]

@@ -51,7 +51,7 @@ enum Provider {
   EOCS = 'pro:eocis',
   JNCC = 'pro:jncc',
   Multiple_Contributors = 'pro:multiple_contributors',
-  Open_Cosmos = 'pro:opencosmos',
+  Open_Cosmos = 'pro:open-cosmos',
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
