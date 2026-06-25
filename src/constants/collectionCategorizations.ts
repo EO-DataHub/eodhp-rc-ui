@@ -53,7 +53,7 @@ enum Provider {
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
-  Open_Cosmos = 'pro:opencosmos',
+  Open_Cosmos = 'pro:open-cosmos',
   Uncategorised = 'uncategorised',
 }
 
