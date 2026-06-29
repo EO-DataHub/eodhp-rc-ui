@@ -27,6 +27,8 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
 
   const dateInterval = collection?.extent?.temporal?.interval[0] ?? []
 
+  const citeAsLink = collection.links?.find((l) => l.rel === 'cite-as')
+
   const thumbnailUrl = collection.assets?.thumbnail?.href
     ? collection.assets.thumbnail.href
     : DefaultThumbnail
@@ -98,7 +100,17 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
                 ))}
               </Flex>
             </Flex>
-            <Flex justify="end" mt="4">
+            <Flex justify="between" align="center" mt="4">
+              {citeAsLink?.title ? (
+                <Text size="1" color="gray">
+                  <Text size="1" weight="bold">
+                    Attribution:{' '}
+                  </Text>
+                  {citeAsLink.title}
+                </Text>
+              ) : (
+                <span />
+              )}
               <Button onClick={handleOpenCollection} className={styles.button}>
                 Open Collection
               </Button>
