@@ -58,16 +58,20 @@
       "Natural Color": {
         "title": "Natural Color",
         "assets": ["red", "green", "blue"],
-        "color_formula": "Gamma RGB 6 Saturation 0.8 Sigmoidal RGB 25 0.35",
+        "rescale": [
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
+        ],
         "nodata": 0
       },
       "Color infrared": {
         "title": "Color infrared",
         "assets": ["nir", "red", "green"],
         "rescale": [
-          [0, 0.3],
-          [0, 0.3],
-          [0, 0.3]
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
         ],
         "nodata": 0
       },
@@ -75,19 +79,11 @@
         "title": "Shortwave infrared",
         "assets": ["swir22", "nir", "red"],
         "rescale": [
-          [0, 0.3],
-          [0, 0.3],
-          [0, 0.3]
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
         ],
         "nodata": 0
-      },
-      "NDVI": {
-        "title": "Normalized difference vegetation index (NDVI)",
-        "assets": ["nir", "red"],
-        "colormap_name": "rdylgn",
-        "expression": "(nir-red)/(nir+red)",
-        "nodata": 0,
-        "rescale": [[-1, 1]]
       }
     }
   },
