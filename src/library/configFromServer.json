@@ -49,6 +49,44 @@
       }
     }
   },
+  "sentinel-2-c1-l2a": {
+    "renders": {
+      "True Color": {
+        "title": "True Color",
+        "assets": ["visual"]
+      },
+      "Natural Color": {
+        "title": "Natural Color",
+        "assets": ["red", "green", "blue"],
+        "rescale": [
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
+        ],
+        "nodata": 0
+      },
+      "Color infrared": {
+        "title": "Color infrared",
+        "assets": ["nir", "red", "green"],
+        "rescale": [
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
+        ],
+        "nodata": 0
+      },
+      "Shortwave infrared": {
+        "title": "Shortwave infrared",
+        "assets": ["swir22", "nir", "red"],
+        "rescale": [
+          [1000, 4000],
+          [1000, 4000],
+          [1000, 4000]
+        ],
+        "nodata": 0
+      }
+    }
+  },
   "sentinel1": {
     "renders": {
       "preview": {

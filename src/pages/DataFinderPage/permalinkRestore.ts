@@ -9,6 +9,7 @@ import {
   collectionRenderingConfig,
   getCollectionConfigKey,
 } from '@/library/collectionRenderingConfig'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import type { Collection, Item, StacRender } from '@/types'
 import type { ItemByCollection } from '@/utils/permalink'
 
@@ -71,7 +72,7 @@ export function restoreFromPermalinkMultiCollection(params: {
             type: 'addPinnedItems',
             items,
             collectionRender: render,
-            isLicenseProprietary: col.license === 'proprietary',
+            isLicenseProprietary: isCollectionPurchasable(col),
             isUserCollection: isUser,
             collectionName,
             collection: col,
@@ -110,7 +111,7 @@ export function restoreFromPermalinkSingleCollection(params: {
         type: 'addPinnedItems',
         items,
         collectionRender,
-        isLicenseProprietary: collection.license === 'proprietary',
+        isLicenseProprietary: isCollectionPurchasable(collection),
         isUserCollection,
         collectionName,
         collection,

@@ -2,6 +2,8 @@ import { MapBounds } from '@/pages/DataFinderPage/useFinderStore'
 import { Collection, Item } from '@/types'
 import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
+import { resolveStacSearchStrategy } from '@/library/stacSearchConfig'
+import { toQueryExtensionFilters } from '@/library/stacQueryTransform'
 import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
@@ -40,6 +42,8 @@ interface StacQueryBodyParams {
   limit: number
   intersects?: GeoJSON.Geometry
   bbox?: MapBounds
+  datetime?: string
+  query?: Record<string, Record<string, string | number | boolean>>
 }
 
 interface FetchItemParams {
@@ -88,7 +92,31 @@ export const fetchItems = async ({
     }
   }
 
-  const body = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+  const searchStrategy = resolveStacSearchStrategy(catalog)
+  let body: object = queryFilter ? { ...baseBody, ...queryFilter } : baseBody
+
+  if (searchStrategy.searchMode === 'query-extension') {
+    const transformedFilters = toQueryExtensionFilters(queryFilter)
+    const { catalog_paths: _, ...queryExtensionBaseBody } = baseBody // eslint-disable-line @typescript-eslint/no-unused-vars
+
+    if (transformedFilters.unhandledConditions.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        '[fetchItems] The following filter conditions could not be translated to query-extension format and were dropped:',
+        transformedFilters.unhandledConditions,
+      )
+    }
+
+    const queryExtBody: Record<string, unknown> = { ...queryExtensionBaseBody }
+    if (transformedFilters.datetime) queryExtBody.datetime = transformedFilters.datetime
+    if (transformedFilters.query) queryExtBody.query = transformedFilters.query
+    const sortby = (queryFilter as Record<string, unknown>)?.sortby ?? [
+      { field: 'properties.datetime', direction: 'desc' },
+    ]
+    queryExtBody.sortby = sortby
+    body = queryExtBody
+  }
+
   const response = await fetch(fetchUrl, {
     method: 'POST',
     headers: {

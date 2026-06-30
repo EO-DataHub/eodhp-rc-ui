@@ -1,11 +1,15 @@
 import React, { useState } from 'react'
 import { Collection } from '@/types'
 import { Flex, Text, Inset } from '@radix-ui/themes'
+import { GlobeIcon, CheckCircledIcon } from '@radix-ui/react-icons'
 import styles from './CollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetailsCard'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { collectionHasQAIndicators } from '@/library/collectionQuality'
+import { getCollectionLocation, Location } from '@/constants/collectionCategorizations'
 
 interface CollectionCardProps {
   collection: Collection
@@ -25,7 +29,11 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
     e.currentTarget.src = DefaultThumbnail
   }
 
-  const isLicenseProprietary = collection?.license === 'proprietary'
+  const isLicenseProprietary = isCollectionPurchasable(collection)
+  const location = getCollectionLocation(collection.id)
+  const isGlobal = location === Location.Global
+  const isUK = location === Location.United_Kingdom
+  const hasQA = collectionHasQAIndicators(collection)
 
   const handleOpenDetailsCard = () => {
     setIsDetailsCardOpen(true)
@@ -39,11 +47,27 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
         </Inset>
         <Flex direction="column" p="4" justify="center" flexGrow="1" position="relative">
           <Flex justify="end" gap="2" position="absolute" right="16px" top="-12px">
-            {isLicenseProprietary ? (
+            {isGlobal && (
+              <div className={styles.badge}>
+                <GlobeIcon width="12" height="12" role="img" aria-label="Global coverage" />
+              </div>
+            )}
+            {isUK && <div className={styles.ukBadge}>UK</div>}
+            {hasQA && (
+              <div className={styles.badge}>
+                <CheckCircledIcon
+                  width="12"
+                  height="12"
+                  role="img"
+                  aria-label="Quality assessment available"
+                />
+              </div>
+            )}
+            {isLicenseProprietary && (
               <div className={styles.poundSign}>
                 <PoundSterlingSymbolIcon width="12" height="12" />
               </div>
-            ) : null}
+            )}
           </Flex>
           <Text as="p" size="3" weight="medium" className={styles.text}>
             {collection.displayedTitle}

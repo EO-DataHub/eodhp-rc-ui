@@ -12,6 +12,7 @@ import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { IntegrationToolsPanel } from './InfoPanel/IntegrationToolsPanel'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import Tabs from './Tabs/Tabs'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 interface ItemPanelProps {
   collection?: Collection
@@ -42,7 +43,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
     return x
   }, [infoPanelItem, collection])
 
-  const isLicenseProprietary = collection?.license === 'proprietary'
+  const isLicenseProprietary = isCollectionPurchasable(collection)
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 

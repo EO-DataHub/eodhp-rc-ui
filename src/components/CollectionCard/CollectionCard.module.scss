@@ -3,7 +3,8 @@
   border-radius: 4px;
   overflow: hidden;
 
-  .poundSign {
+  .poundSign,
+  .badge {
     background-color: var(--app-background-dark-2);
     border: 2px solid white;
     border-radius: 100%;
@@ -12,10 +13,27 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    color: white;
 
-    :hover {
+    &:hover {
       cursor: default;
     }
+  }
+
+  .ukBadge {
+    background-color: var(--app-background-dark-2);
+    border: 2px solid white;
+    border-radius: 10px;
+    height: 20px;
+    min-width: 20px;
+    padding: 0 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: white;
+    line-height: 1;
   }
 
   .text {

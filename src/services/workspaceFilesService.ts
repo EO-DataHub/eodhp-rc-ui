@@ -109,7 +109,6 @@ export const uploadObjectStoreFilePresigned = async (
     const xhr = new XMLHttpRequest()
     xhr.open('PUT', url)
     if (file.type) xhr.setRequestHeader('Content-Type', file.type)
-    xhr.setRequestHeader('Content-Length', String(file.size))
 
     xhr.upload.onprogress = (event: ProgressEvent<EventTarget>) => {
       if (!onProgress || !event.lengthComputable) return

@@ -46,14 +46,15 @@ enum Provider {
   Airbus = 'pro:airbus',
   CEDA = 'pro:ceda',
   DEFRA = 'pro:defra',
+  ECMWF = 'pro:ecmwf',
   ESA = 'pro:esa',
   EOCS = 'pro:eocis',
   JNCC = 'pro:jncc',
   Multiple_Contributors = 'pro:multiple_contributors',
+  Open_Cosmos = 'pro:open-cosmos',
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
-  Open_Cosmos = 'pro:open-cosmos',
   Uncategorised = 'uncategorised',
 }
 
@@ -61,14 +62,15 @@ enum ProviderLabel {
   Airbus = 'Airbus',
   CEDA = 'Centre for Environmental Data Analysis',
   DEFRA = 'Department for Environment, Food & Rural Affairs',
+  ECMWF = 'European Centre for Medium-Range Weather Forecasts',
   ESA = 'European Space Agency',
   EOCS = 'Earth Observation Climate Information Service',
   JNCC = 'Joint Nature Conservation Committee',
   Multiple_Contributors = 'Multiple Contributors',
+  Open_Cosmos = 'Open Cosmos',
   Planet = 'Planet',
   UK_Met_Office = 'UK Met Office',
   UOL_LST = 'University of Leicester (LST)',
-  Open_Cosmos = 'Open Cosmos',
   Uncategorised = 'Uncategorised Provider',
 }
 
@@ -208,11 +210,21 @@ const collectionCategorization = {
     qa: true,
     additionalFieldsToDisplay: [],
   },
+  'sentinel-2-c1-l2a': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.ESA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
   sentinel1: {
     dataCategory: [DataCategory.Radar],
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.ESA, Provider.CEDA],
-    location: [Location.Global],
+    location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
     qa: null,
@@ -222,7 +234,7 @@ const collectionCategorization = {
     dataCategory: [DataCategory.Radar],
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.ESA, Provider.CEDA],
-    location: [Location.Global],
+    location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
     qa: null,
@@ -554,6 +566,106 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
+  ceda_flights: {
+    dataCategory: [],
+    resolution: [],
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-land-vegetation-fapar': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-geospatial-builtarea': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-geospatial-elevation': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-geospatial-landclass': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_100m_To_1km],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-geospatial-landcover': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-land-vegetation-lai': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-chuk-geospatial': {
+    dataCategory: [],
+    resolution: [],
+    provider: [],
+    location: [],
+    timePeriod: [],
+    license: [],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  'eocis-soil-moisture-africa': {
+    dataCategory: [DataCategory.Climate_Data],
+    resolution: [Resolution.From_10km_To_100km],
+    provider: [Provider.EOCS],
+    location: [Location.Continental],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
+  era5_repack: {
+    dataCategory: [DataCategory.Climate_Data],
+    resolution: [Resolution.From_10km_To_100km],
+    provider: [Provider.ECMWF],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
 }
 
 const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[]> = {
@@ -568,6 +680,12 @@ const filterMapping: Record<keyof QuickFilter, { label: string; value: string }[
 
 const isValidCollectionId = (id: string): id is keyof typeof collectionCategorization => {
   return id in collectionCategorization
+}
+
+const getCollectionLocation = (id: string): Location | null => {
+  if (!isValidCollectionId(id)) return null
+  const locs = collectionCategorization[id].location
+  return locs.length > 0 ? locs[0] : null
 }
 
 const itemCardFieldsToDisplay = {
@@ -609,4 +727,6 @@ export {
   itemCardFieldsToDisplay,
   filterMapping,
   isValidCollectionId,
+  getCollectionLocation,
+  Location,
 }

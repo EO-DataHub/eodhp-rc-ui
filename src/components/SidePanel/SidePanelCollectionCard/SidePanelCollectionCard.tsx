@@ -8,6 +8,7 @@ import styles from './SidePanelCollectionCard.module.scss'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 interface CollectionCardProps {
   collection: Collection
@@ -32,7 +33,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
     e.currentTarget.src = DefaultThumbnail
   }
 
-  const isLicenseProprietary = collection?.license === 'proprietary'
+  const isLicenseProprietary = isCollectionPurchasable(collection)
 
   return (
     <Flex
