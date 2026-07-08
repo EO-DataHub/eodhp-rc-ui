@@ -25,7 +25,7 @@ const Field: React.FC<FieldProps> = ({ label, children, required = false }) => (
 )
 
 interface OrderSelectionsProps {
-  provider: 'planet' | 'airbus_optical' | 'airbus_sar'
+  provider: 'planet' | 'airbus_optical' | 'airbus_sar' | 'open-cosmos'
   onSelectionChange: (selectedValues: Record<string, string>) => void
   workspaces: Workspace[]
   selectedWorkspace: string | undefined
@@ -172,8 +172,8 @@ export const OrderSelections: React.FC<OrderSelectionsProps> = ({
           </Select.Content>
         </Select.Root>
       </Field>
-      {/* Product Bundle - Required for all providers */}
-      {renderSelect('productBundle', 'Product Bundle')}
+      {/* Product Bundle - Not applicable for OpenCosmos */}
+      {provider !== 'open-cosmos' && renderSelect('productBundle', 'Product Bundle')}
 
       {/* End User Country - Required for Airbus */}
       {(provider === 'airbus_optical' || provider === 'airbus_sar') && (
