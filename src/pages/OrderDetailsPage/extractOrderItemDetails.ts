@@ -149,10 +149,15 @@ export const extractOpenCosmosOrderItemDetails = (
   }
   add('Platform', properties.platform)
   add('Processing Level', properties['processing:level'])
-  add('Ground Sample Distance', properties.gsd !== undefined ? `${properties.gsd}m` : null)
+  add(
+    'Ground Sample Distance',
+    properties.gsd !== undefined && properties.gsd !== null ? `${properties.gsd}m` : null,
+  )
   add(
     'Cloud Cover',
-    properties['eo:cloud_cover'] !== undefined ? `${properties['eo:cloud_cover']}%` : null,
+    properties['eo:cloud_cover'] !== undefined && properties['eo:cloud_cover'] !== null
+      ? `${properties['eo:cloud_cover']}%`
+      : null,
   )
   add(
     'Data Area',
