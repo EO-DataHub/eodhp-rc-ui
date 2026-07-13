@@ -1,8 +1,13 @@
 import { Collection } from '@/types'
 import serverConfig from '@/library/configFromServer.json'
+import { ELEMENT84_CATALOG_PATH } from '@/library/stacSearchConfig'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 const EXTERNAL_STAC_COLLECTION_ALLOWLIST = new Set(Object.keys(serverConfig))
+
+// Proxied catalogs that still need the allowlist because they surface upstream
+// collections we haven't necessarily built local render config for.
+const ALLOWLISTED_PROXY_CATALOGS = new Set([ELEMENT84_CATALOG_PATH])
 
 export async function fetchCollectionQAJsonAsset<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -41,8 +46,8 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
   const data = await response.json()
   const collections = data.collections as Collection[]
 
-  // External STAC catalogs are allowlisted by local rendering config.
-  return isExternalCatalog
+  // External STAC catalogs (and allowlisted proxied ones) are filtered by local rendering config.
+  return isExternalCatalog || ALLOWLISTED_PROXY_CATALOGS.has(catalog)
     ? collections.filter((collection) => EXTERNAL_STAC_COLLECTION_ALLOWLIST.has(collection.id))
     : collections
 }

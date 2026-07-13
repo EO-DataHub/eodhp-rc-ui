@@ -1,4 +1,10 @@
-export const ELEMENT84_EARTH_SEARCH_URL = 'https://earth-search.aws.element84.com/v1'
+const API_URL = import.meta.env.VITE_HUB_BASE_URL
+
+// Element84's Earth Search is reverse-proxied through the hub at this path rather than
+// imported as an external catalog, so it needs its own hub-relative path constant.
+export const ELEMENT84_CATALOG_PATH = 'public/catalogs/element84'
+
+const ELEMENT84_CATALOG_URL = `${API_URL}/api/catalogue/stac/catalogs/${ELEMENT84_CATALOG_PATH}`
 
 export type StacSearchMode = 'cql2' | 'query-extension' | 'auto'
 
@@ -11,7 +17,9 @@ const DEFAULT_STRATEGY: StacSearchStrategy = {
 }
 
 const STRATEGY_BY_CATALOG: Record<string, StacSearchStrategy> = {
-  [ELEMENT84_EARTH_SEARCH_URL]: {
+  // The element84 proxy is a plain reverse-proxy to earth-search.aws.element84.com,
+  // which doesn't support the hub's CQL2 filtering, so it still needs query-extension.
+  [ELEMENT84_CATALOG_URL]: {
     searchMode: 'query-extension',
   },
 }
