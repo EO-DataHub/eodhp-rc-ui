@@ -1,4 +1,4 @@
-import { Text } from '@radix-ui/themes'
+import { Text, Tooltip } from '@radix-ui/themes'
 import { Tabs as T } from 'radix-ui'
 import styles from './Tabs.module.scss'
 import QueryItemsTab from './QueryItems'
@@ -36,12 +36,16 @@ const Tabs = ({
       }}
     >
       <T.List className={styles.TabsList}>
-        <T.Trigger className={styles.TabsTrigger} value="query-items-tab">
-          <Text>Items</Text>
-        </T.Trigger>
-        <T.Trigger className={styles.TabsTrigger} value="pinned-items-tab">
-          <Text>{pinnedItemsLabel}</Text>
-        </T.Trigger>
+        <Tooltip content="Search results within collection">
+          <T.Trigger className={styles.TabsTrigger} value="query-items-tab">
+            <Text>Items</Text>
+          </T.Trigger>
+        </Tooltip>
+        <Tooltip content="Selected items (shown on the map interface)">
+          <T.Trigger className={styles.TabsTrigger} value="pinned-items-tab">
+            <Text>{pinnedItemsLabel}</Text>
+          </T.Trigger>
+        </Tooltip>
       </T.List>
       <TabsContent value="query-items-tab">
         <QueryItemsTab />

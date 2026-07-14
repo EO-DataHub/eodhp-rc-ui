@@ -56,7 +56,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
             </IconButton>
           )}
 
-          <Tooltip content="View Metadata">
+          <Tooltip content="View Collection Metadata">
             <IconButton
               radius="full"
               variant="solid"

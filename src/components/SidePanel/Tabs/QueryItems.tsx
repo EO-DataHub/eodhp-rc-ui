@@ -1,4 +1,4 @@
-import { Flex, Grid, IconButton, Select, Text } from '@radix-ui/themes'
+import { Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
@@ -118,11 +118,19 @@ const QueryItemsTab = () => {
           </Flex>
         )}
         {!isUserCollection && (
-          <Flex gap="2" align="center">
-            <IconButton size="2" color="gray" variant="outline" onClick={toggleQueryFiltersPanel}>
-              <FilterAltOutlined />
-            </IconButton>
-          </Flex>
+          <Tooltip content="Filter the current collection by its properties">
+            <Flex
+              gap="2"
+              align="center"
+              onClick={toggleQueryFiltersPanel}
+              style={{ cursor: 'pointer' }}
+            >
+              <Text size="2">Filter</Text>
+              <IconButton size="2" color="gray" variant="outline">
+                <FilterAltOutlined />
+              </IconButton>
+            </Flex>
+          </Tooltip>
         )}
       </Flex>
 
