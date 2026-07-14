@@ -97,8 +97,11 @@ const ActionButton = React.forwardRef<
     active?: boolean
     disabled?: boolean
     'aria-label'?: string
-  }
->(({ children, onClick, active, disabled, 'aria-label': ariaLabel }, ref) => {
+  } & Pick<
+    React.ComponentPropsWithoutRef<'button'>,
+    'onFocus' | 'onBlur' | 'onPointerMove' | 'onPointerLeave' | 'onPointerDown' | 'onPointerEnter'
+  >
+>(({ children, onClick, active, disabled, 'aria-label': ariaLabel, ...rest }, ref) => {
   return (
     <IconButton
       ref={ref}
@@ -109,6 +112,7 @@ const ActionButton = React.forwardRef<
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
+      {...rest}
     >
       {children}
     </IconButton>
@@ -262,7 +266,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
     if (requiresThumbnailAuth && !isAuthenticated) {
       return 'Log in to pin'
     }
-    return isAlreadyPinned ? 'Unpin Item' : 'Pin Item'
+    return isAlreadyPinned ? 'Unpin Item' : 'Pin / Add to map'
   }, [requiresThumbnailAuth, isAuthenticated, isAlreadyPinned])
 
   const unpinItem = useCallback(

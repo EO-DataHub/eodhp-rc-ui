@@ -39,7 +39,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
                 <PoundSterlingSymbolIcon width="6" height="9" />
               </IconButton>
             )}
-            <Tooltip content="View Metadata">
+            <Tooltip content="View Collection Metadata">
               <IconButton radius="full" variant="solid" className={styles.infoButton}>
                 <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />
               </IconButton>

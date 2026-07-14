@@ -3,7 +3,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 
 const HOVERED_ITEM_LINE_PAINT_STYLE = {
-  'line-color': 'rgba(25, 118, 210, 0.4)',
+  'line-color': 'rgba(255, 23, 68, 0.8)',
   'line-width': 6,
   'line-blur': 3,
 }
