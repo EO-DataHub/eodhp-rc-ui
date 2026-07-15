@@ -63,7 +63,7 @@ export const LoginButton = ({
         <LogoutMenu />
       ) : (
         <button onClick={login} className={styles.loginButton}>
-          Log in
+          Sign in
         </button>
       )}
     </div>
