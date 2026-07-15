@@ -46,10 +46,13 @@ const ShareViewButton = () => {
   const { collectionId } = useParams<{ collectionId: string }>()
   const [isShareOpen, setIsShareOpen] = useState(false)
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
-  const primaryCollectionId = getPrimaryCollectionId(collectionId, pinnedItems)
-  const { url, itemsIncluded, canShare, tooltip } = usePermalink(primaryCollectionId, pinnedItems, {
-    useLimit: true,
-  })
+  const orderedPinnedItems = [...pinnedItems].reverse()
+  const primaryCollectionId = getPrimaryCollectionId(collectionId, orderedPinnedItems)
+  const { url, itemsIncluded, canShare, tooltip } = usePermalink(
+    primaryCollectionId,
+    orderedPinnedItems,
+    { useLimit: true },
+  )
 
   return (
     <>
@@ -105,7 +108,7 @@ const PinnedItemsTab = () => {
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
           cardType="pinned-item"
-          items={pinnedItems}
+          items={[...pinnedItems].reverse()}
           renderItem={(item) => <ItemCard key={item.pinId} item={item} type="pinned-item" />}
         />
       </Flex>

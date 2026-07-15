@@ -1,21 +1,13 @@
 .listContainer {
   flex: 1;
-  overflow-y: auto;
   width: 100%;
+  overflow-y: auto;
+  // Reserves space for the scrollbar track regardless of whether the
+  // browser/OS uses an overlay or classic scrollbar, so it never draws on
+  // top of content (e.g. the action icons on the rightmost edge of a card).
+  scrollbar-gutter: stable;
 
-  /* hide scrollbar for Chrome or extensions */
-  &::-webkit-scrollbar {
-    width: 0px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  /* hide scrollbar for Firefox */
-  scrollbar-width: none;
-
-  /* hide scrollbar for Internet Explorer/Edge */
-  -ms-overflow-styl ul {
+  ul {
     list-style-type: none;
     padding-left: 1rem;
   }
