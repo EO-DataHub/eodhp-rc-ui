@@ -15,6 +15,7 @@ import styles from './InfoPanel.module.scss'
 import type { Collection, Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import {
+  downloadLyrxForItem,
   downloadQlrForItem,
   getTitilerXyzUrl,
   supportsIntegrationTools,
@@ -33,9 +34,10 @@ interface IntegrationToolsPanelProps {
   onClose: () => void
 }
 
-// QGIS Tab Component
-const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
-  const [isDownloading, setIsDownloading] = useState(false)
+// Desktop GIS Tab Component (QGIS + ArcGIS Pro)
+const DesktopGisTab: React.FC<{ item: Item }> = ({ item }) => {
+  const [isDownloadingQlr, setIsDownloadingQlr] = useState(false)
+  const [isDownloadingLyrx, setIsDownloadingLyrx] = useState(false)
   const [isCopied, setIsCopied] = useState(false)
 
   // Get the selected render from the store
@@ -76,14 +78,44 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
       return
     }
 
-    setIsDownloading(true)
+    setIsDownloadingQlr(true)
     try {
       await downloadQlrForItem(item, renderId)
       toast.success('QGIS layer file downloaded successfully')
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to download QGIS layer file')
     } finally {
-      setIsDownloading(false)
+      setIsDownloadingQlr(false)
+    }
+  }
+
+  const handleDownloadLyrx = async () => {
+    if (!item) return
+
+    // Use the effective render ID
+    const renderId = effectiveRender?.id
+    if (!renderId) {
+      toast.error('No render configuration available for this item')
+      return
+    }
+
+    // Check if Titiler URL is available before attempting download
+    const titilerUrl = getTitilerXyzUrl(item, renderId)
+    if (!titilerUrl) {
+      toast.error('Titiler URL not available for this item')
+      return
+    }
+
+    setIsDownloadingLyrx(true)
+    try {
+      await downloadLyrxForItem(item, renderId)
+      toast.success('ArcGIS Pro layer file downloaded successfully')
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to download ArcGIS Pro layer file',
+      )
+    } finally {
+      setIsDownloadingLyrx(false)
     }
   }
 
@@ -154,9 +186,29 @@ const QgisTab: React.FC<{ item: Item }> = ({ item }) => {
             Download a QGIS layer file (.qlr) that can be directly loaded into QGIS for
             visualization and analysis.
           </Text>
-          <Button onClick={handleDownloadQlr} disabled={isDownloading} variant="soft" size="2">
+          <Button onClick={handleDownloadQlr} disabled={isDownloadingQlr} variant="soft" size="2">
             <DownloadIcon width="16" height="16" />
-            {isDownloading ? 'Generating...' : 'Download QLR File'}
+            {isDownloadingQlr ? 'Generating...' : 'Download QLR File'}
+          </Button>
+        </Flex>
+      </Card>
+
+      {/* ArcGIS Pro Layer Download */}
+      <Card>
+        <Flex direction="column" gap="3" p="4">
+          <Flex align="center" gap="2">
+            <DownloadIcon width="20" height="20" />
+            <Text weight="medium" size="3">
+              ArcGIS Pro Layer File
+            </Text>
+          </Flex>
+          <Text size="2" color="gray">
+            Download an ArcGIS Pro layer file (.lyrx) that can be directly loaded into ArcGIS Pro
+            for visualization and analysis.
+          </Text>
+          <Button onClick={handleDownloadLyrx} disabled={isDownloadingLyrx} variant="soft" size="2">
+            <DownloadIcon width="16" height="16" />
+            {isDownloadingLyrx ? 'Generating...' : 'Download LYRX File'}
           </Button>
         </Flex>
       </Card>
@@ -583,16 +635,16 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
           </Flex>
 
           <Box pt="6">
-            <Tabs.Root defaultValue="qgis">
+            <Tabs.Root defaultValue="desktop-gis">
               <Tabs.List>
-                <Tabs.Trigger value="qgis">QGIS</Tabs.Trigger>
+                <Tabs.Trigger value="desktop-gis">Desktop GIS</Tabs.Trigger>
                 <Tabs.Trigger value="workflows">Workflows</Tabs.Trigger>
                 <Tabs.Trigger value="jupyter">Jupyter</Tabs.Trigger>
               </Tabs.List>
 
-              <Tabs.Content value="qgis">
+              <Tabs.Content value="desktop-gis">
                 <Box pt="4">
-                  <QgisTab item={item} />
+                  <DesktopGisTab item={item} />
                 </Box>
               </Tabs.Content>
 

@@ -204,9 +204,13 @@ export function getTitilerXyzUrl(
 }
 
 /**
- * Downloads a QLR file for the given item with optional render configuration
+ * Downloads a desktop GIS layer file (QLR or LYRX) for the given item with optional render configuration
  */
-export async function downloadQlrForItem(item: Item, renderId?: string): Promise<void> {
+async function downloadLayerFileForItem(
+  item: Item,
+  renderId: string | undefined,
+  format: 'qlr' | 'lyrx',
+): Promise<void> {
   if (!item) {
     throw new Error('Item is required.')
   }
@@ -225,7 +229,7 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
   }
 
   const baseUrl = import.meta.env.VITE_RC_SUPPORT_UTILS_URL || 'http://127.0.0.1:8000'
-  const apiUrl = `${baseUrl.replace(/\/$/, '')}/qlr`
+  const apiUrl = `${baseUrl.replace(/\/$/, '')}/${format}`
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -236,14 +240,14 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
 
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(text || 'Failed to generate QLR file.')
+    throw new Error(text || `Failed to generate ${format.toUpperCase()} file.`)
   }
 
   const blob = await response.blob()
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `${item.id}.qlr`
+  a.download = `${item.id}.${format}`
   document.body.appendChild(a)
   a.click()
   a.remove()
@@ -251,7 +255,21 @@ export async function downloadQlrForItem(item: Item, renderId?: string): Promise
 }
 
 /**
- * Checks if an item supports integration tools (QGIS/XYZ)
+ * Downloads a QLR file for the given item with optional render configuration
+ */
+export async function downloadQlrForItem(item: Item, renderId?: string): Promise<void> {
+  return downloadLayerFileForItem(item, renderId, 'qlr')
+}
+
+/**
+ * Downloads a LYRX file for the given item with optional render configuration
+ */
+export async function downloadLyrxForItem(item: Item, renderId?: string): Promise<void> {
+  return downloadLayerFileForItem(item, renderId, 'lyrx')
+}
+
+/**
+ * Checks if an item supports integration tools (QGIS/ArcGIS Pro/XYZ)
  * Returns true if the collection has at least one render that isn't just a preview
  * For time-variable items, validates that a specific render is available
  * @param item The item to check
