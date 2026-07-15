@@ -105,10 +105,11 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
     return 'Document quality assurance not available for this collection.'
   }
 
-  const documentReview = output.qa_check_results
+  const { links: reportLinks, ...categories } = output.qa_check_results
+  const reportLink = reportLinks?.[0]
 
   const rowCount = Math.max(
-    ...Object.values(documentReview).map((category) => Object.keys(category).length),
+    ...Object.values(categories).map((category) => Object.keys(category).length),
   )
 
   const metricCount = Object.keys(metricLabelMapping).length
@@ -129,7 +130,7 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
           >
             <Cell className={styles.headerCell}>{labelMapping['documentation review']}</Cell>
             <Flex flexGrow="1">
-              {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
+              {Object.entries(categories).map(([categoryKey, categoryValue]) => (
                 <Flex direction="column" flexGrow="1" flexBasis="0" key={categoryKey}>
                   <Cell
                     className={styles.headerCell}
@@ -183,37 +184,49 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
         </Flex>
       </Flex>
 
-      <Flex direction="column" align="start">
-        <Heading as="h3" size="4" mb="2" weight="medium">
-          Referenced Documents
-        </Heading>
-        <Flex direction="column" gap="4" justify="start">
-          {Object.entries(documentReview).map(([categoryKey, categoryValue]) => (
-            <Flex direction="column" key={categoryKey} gap="1">
-              <Heading as="h4" size="3" weight="medium">
-                {labelMapping[categoryKey] || categoryKey}
-              </Heading>
-              {Object.keys(categoryValue).map((subKey) => {
-                const data = categoryValue[subKey]
-                if (data.links.length === 0) {
-                  return null
-                }
-                return (
-                  <Link
-                    key={subKey}
-                    href={data.links[0].href}
-                    target="_blank"
-                    underline="always"
-                    weight="medium"
-                  >
-                    {labelMapping[subKey] || subKey}
-                  </Link>
-                )
-              })}
-            </Flex>
-          ))}
+      {reportLink?.href ? (
+        <Flex direction="column" align="start">
+          <Heading as="h3" size="4" mb="2" weight="medium">
+            Full Report
+          </Heading>
+          <Link href={reportLink.href} target="_blank" underline="always" weight="medium">
+            {reportLink.title}
+          </Link>
         </Flex>
-      </Flex>
+      ) : (
+        // Fallback for collections not yet migrated to the single full-report link.
+        <Flex direction="column" align="start">
+          <Heading as="h3" size="4" mb="2" weight="medium">
+            Referenced Documents
+          </Heading>
+          <Flex direction="column" gap="4" justify="start">
+            {Object.entries(categories).map(([categoryKey, categoryValue]) => (
+              <Flex direction="column" key={categoryKey} gap="1">
+                <Heading as="h4" size="3" weight="medium">
+                  {labelMapping[categoryKey] || categoryKey}
+                </Heading>
+                {Object.keys(categoryValue).map((subKey) => {
+                  const data = categoryValue[subKey]
+                  if (data.links.length === 0) {
+                    return null
+                  }
+                  return (
+                    <Link
+                      key={subKey}
+                      href={data.links[0].href}
+                      target="_blank"
+                      underline="always"
+                      weight="medium"
+                    >
+                      {labelMapping[subKey] || subKey}
+                    </Link>
+                  )
+                })}
+              </Flex>
+            ))}
+          </Flex>
+        </Flex>
+      )}
     </Flex>
   )
 }
