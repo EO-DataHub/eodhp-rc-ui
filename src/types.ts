@@ -258,6 +258,13 @@ export interface CollectionDocumentationQAResults {
   product_information: Record<string, CollectionDocumentationQALeaf>
   metrology: Record<string, CollectionDocumentationQALeaf>
   product_generation: Record<string, CollectionDocumentationQALeaf>
+  /** Link to the full QPR report (PDF) covering all categories above. */
+  links?: {
+    rel?: string
+    type?: string
+    href: string
+    title?: string
+  }[]
 }
 
 /** Payload fetched from collection `assets.qa_documentation` (application/json). */
