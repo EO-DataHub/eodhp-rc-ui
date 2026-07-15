@@ -190,7 +190,7 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
             Full Report
           </Heading>
           <Link href={reportLink.href} target="_blank" underline="always" weight="medium">
-            {reportLink.title}
+            {reportLink.title ?? 'View Full Report'}
           </Link>
         </Flex>
       ) : (
