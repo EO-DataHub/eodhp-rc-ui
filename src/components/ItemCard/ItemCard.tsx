@@ -446,7 +446,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               </Text>
             </Flex>
           )}
-          <Flex justify="end" gap="3" align="center">
+          <Flex justify="end" gap="3" align="center" wrap="wrap">
             {isQueryCard && itemRender && (
               <>
                 {!isAlreadyPinned ? (
