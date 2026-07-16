@@ -49,6 +49,7 @@ const labelMapping: Record<string, string> = {
   retrieval_algorithm: 'Retrieval Algorithm',
   calibration_algorithm: 'Calibration Algorithm',
   mission_specific_processing: 'Mission-Specific Processing',
+  product_specific_processing: 'Product-Specific Processing',
 }
 
 interface CellProps {
