@@ -636,6 +636,16 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
+  'eocis-chuk-lst': {
+    dataCategory: [DataCategory.Climate_Data],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.EOCS, Provider.UOL_LST, Provider.CEDA],
+    location: [Location.United_Kingdom],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
   'eocis-chuk-geospatial': {
     dataCategory: [],
     resolution: [],
