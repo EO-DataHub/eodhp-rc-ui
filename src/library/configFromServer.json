@@ -253,6 +253,17 @@
     },
     "thumbnail_auth": true
   },
+  "my-nexos-iow-and-hants-rgbih_pm-10cm-1": {
+    "renders": {
+      "preview": {
+        "title": "True Color (RGB)",
+        "assets": ["image"],
+        "bidx": [1, 2, 3],
+        "auth": true
+      }
+    },
+    "thumbnail_auth": true
+  },
   "SkySatScene": {
     "renders": {
       "preview": {
