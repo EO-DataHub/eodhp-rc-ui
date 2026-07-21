@@ -283,7 +283,7 @@ const dataFinderStore = createStore({
       const pinnedItem = {
         ...event.item,
         pinId: pinnedItemId,
-        tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
+        tilesUrl: resolveTilesUrl(event.item, event.collectionRender, event.isUserCollection) ?? '',
         isLicenseProprietary: event.isLicenseProprietary,
         isUserCollection: event.isUserCollection,
         collectionName: event.collectionName,
@@ -328,7 +328,7 @@ const dataFinderStore = createStore({
         .map((item) => ({
           ...item,
           pinId: getPinnedItemId(item, event.collectionRender),
-          tilesUrl: resolveTilesUrl(item, event.collectionRender) ?? '',
+          tilesUrl: resolveTilesUrl(item, event.collectionRender, event.isUserCollection) ?? '',
           isLicenseProprietary: event.isLicenseProprietary,
           isUserCollection: event.isUserCollection,
           collectionName: event.collectionName,
