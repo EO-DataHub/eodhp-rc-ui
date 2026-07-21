@@ -2548,6 +2548,18 @@
       }
     }
   },
+  "eocis-chuk-lst": {
+    "renders": {
+      "lst": {
+        "title": "Land surface temperature (K)",
+        "assets": ["reference_file"],
+        "colormap_name": "coolwarm",
+        "variable": "lst",
+        "reference": true,
+        "rescale": [[260, 320]]
+      }
+    }
+  },
   "eocis-chuk-geospatial-builtarea": {
     "renders": {
       "urban_area": {
