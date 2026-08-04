@@ -526,16 +526,6 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
-  'platero-l1c-cogs': {
-    dataCategory: [DataCategory.Optical_Multispectral],
-    resolution: [Resolution.From_1m_To_10m],
-    provider: [Provider.Open_Cosmos],
-    location: [Location.Global],
-    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
-    license: [License.Commercial_Data],
-    qa: null,
-    additionalFieldsToDisplay: [],
-  },
   'mantis-l1d-cogs': {
     dataCategory: [DataCategory.Optical_Multispectral],
     resolution: [Resolution.From_1m_To_10m],
