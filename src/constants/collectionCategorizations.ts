@@ -250,6 +250,16 @@ const collectionCategorization = {
     qa: null,
     additionalFieldsToDisplay: [],
   },
+  'clms-lcm-global-10m-yearly-v1-cog': {
+    dataCategory: [DataCategory.Land_Cover],
+    resolution: [Resolution.From_1m_To_10m],
+    provider: [Provider.CEDA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic],
+    license: [License.Open_Data],
+    qa: null,
+    additionalFieldsToDisplay: [],
+  },
   'eocis-sst-cdrv3': {
     dataCategory: [DataCategory.Climate_Data],
     resolution: [Resolution.From_1km_To_10km],
