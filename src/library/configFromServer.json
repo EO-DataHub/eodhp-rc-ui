@@ -291,6 +291,30 @@
       }
     }
   },
+  "clms-lcm-global-10m-yearly-v1-cog": {
+    "renders": {
+      "Land Cover Map": {
+        "title": "Land Cover Map",
+        "assets": ["data"],
+        "nodata": 255,
+        "colormap": {
+          "10": "#006400",
+          "20": "#FFBB22",
+          "30": "#FFFF4C",
+          "40": "#F096FF",
+          "50": "#009696",
+          "60": "#00CF75",
+          "70": "#FAE6A0",
+          "80": "#B4B4B4",
+          "90": "#FA0000",
+          "100": "#0064C8",
+          "110": "#F0F0F0",
+          "254": "#0A0A0A",
+          "255": "#000000"
+        }
+      }
+    }
+  },
   "land_cover": {
     "renders": {
       "Land Cover Map": {
