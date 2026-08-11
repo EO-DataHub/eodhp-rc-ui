@@ -93,6 +93,8 @@ export const NavBar: React.FC = () => {
   const isMapsActive = location.pathname.startsWith('/finder')
   const isMyDataActive = location.pathname.startsWith('/my-data')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
+  const isMembersActive = location.pathname.startsWith('/members')
+  const isCredentialsActive = location.pathname.startsWith('/credentials')
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
@@ -115,6 +117,8 @@ export const NavBar: React.FC = () => {
   const workspaceHref = currentWorkspace
     ? `${HUB_BASE_URL}/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
     : `${HUB_BASE_URL}/workspaces/`
+
+  const workspacesMenuLabel = isAuthenticated && currentWorkspace ? currentWorkspace : 'Workspaces'
 
   return (
     <>
@@ -208,11 +212,29 @@ export const NavBar: React.FC = () => {
 
           <DropdownMenu
             id="workspaces-menu"
-            label="Workspaces"
+            label={workspacesMenuLabel}
             shouldOpen={openMenu === 'workspaces'}
             onClick={() => toggleMenu('workspaces')}
             renderMenuItem={() => (
               <>
+                {isAuthenticated && (
+                  <Link
+                    to="/members"
+                    className={`${styles.link} ${isMembersActive ? styles.active : ''}`}
+                    onClick={() => toggleMenu(null)}
+                  >
+                    Members
+                  </Link>
+                )}
+                {isAuthenticated && (
+                  <Link
+                    to="/credentials"
+                    className={`${styles.link} ${isCredentialsActive ? styles.active : ''}`}
+                    onClick={() => toggleMenu(null)}
+                  >
+                    Credentials
+                  </Link>
+                )}
                 {isAuthenticated && (
                   <button
                     type="button"

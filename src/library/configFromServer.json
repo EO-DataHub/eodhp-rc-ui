@@ -183,7 +183,7 @@
     "renders": {
       "preview": {
         "title": "Preview",
-        "assets": ["primaryAsset_2"],
+        "assets": ["primaryAsset_1"],
         "bidx": [6, 4, 2],
         "nodata": 0,
         "auth": true,

@@ -8,6 +8,8 @@ import { Navigate } from 'react-router-dom'
 import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
 import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
+import { MembersPage } from '@/pages/MembersPage/MembersPage'
+import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 
@@ -80,6 +82,26 @@ const routes = [
             element: <DataStoragePage />,
           },
         ],
+      },
+    ],
+  },
+  {
+    path: '/members',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <MembersPage />,
+      },
+    ],
+  },
+  {
+    path: '/credentials',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <CredentialsPage />,
       },
     ],
   },
