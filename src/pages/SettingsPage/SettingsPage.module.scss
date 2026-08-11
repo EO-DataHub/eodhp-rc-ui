@@ -1,0 +1,38 @@
+.container {
+  width: 100%;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--gray-5);
+  background-color: var(--gray-1);
+}
+
+.content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebarLink {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-3);
+  color: var(--gray-11);
+  font-size: 14px;
+  text-decoration: none;
+
+  &:hover {
+    background-color: var(--gray-3);
+    color: var(--gray-12);
+  }
+}
+
+.sidebarLinkActive {
+  background-color: var(--accent-3);
+  color: var(--accent-11);
+  font-weight: 500;
+
+  &:hover {
+    background-color: var(--accent-3);
+  }
+}

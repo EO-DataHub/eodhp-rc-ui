@@ -1,5 +1,6 @@
 import { useContext } from 'react'
-import { Text, DropdownMenu } from '@radix-ui/themes'
+import { Text, DropdownMenu, Badge } from '@radix-ui/themes'
+import { Link } from 'react-router-dom'
 import { AuthenticationContext } from '../../context/AuthenticationContext'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 import styles from './LoginButton.module.scss'
@@ -12,8 +13,14 @@ export const LoginButton = ({
   isUserMenuOpen: boolean
   setIsUserMenuOpen: (isOpen: boolean) => void
 }) => {
-  const { isAuthenticated, isAuthenticating, isAuthenticationServiceError, login, logout } =
-    useContext(AuthenticationContext)
+  const {
+    isAuthenticated,
+    isAuthenticating,
+    isAuthenticationServiceError,
+    login,
+    logout,
+    workspaceUserName,
+  } = useContext(AuthenticationContext)
 
   if (isAuthenticationServiceError) {
     const errorText =
@@ -35,6 +42,46 @@ export const LoginButton = ({
           </div>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content className={styles.dropdownContent}>
+          {workspaceUserName && (
+            <>
+              <DropdownMenu.Label>{workspaceUserName}</DropdownMenu.Label>
+              <DropdownMenu.Separator />
+            </>
+          )}
+
+          <DropdownMenu.Item asChild>
+            <Link to="/settings/members">Workspace settings</Link>
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Accounting</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item disabled>
+                Invoices{' '}
+                <Badge ml="2" color="gray" variant="soft">
+                  Soon
+                </Badge>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Publishing</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item disabled>
+                Metadata Loader{' '}
+                <Badge ml="2" color="gray" variant="soft">
+                  Soon
+                </Badge>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/publisher">Publisher</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+
+          <DropdownMenu.Separator />
+
           {isAuthenticated && !isAuthenticating ? (
             <DropdownMenu.Item
               asChild
@@ -45,7 +92,7 @@ export const LoginButton = ({
               className={styles.logoutButton}
             >
               <div>
-                <Text className={styles.logoutText}>Log out</Text>{' '}
+                <Text className={styles.logoutText}>Sign out</Text>{' '}
                 <ExitIcon className={styles.icon} />
               </div>
             </DropdownMenu.Item>

@@ -1,8 +1,26 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Box, Button, Flex, Progress, Select, Table, Text, TextField } from '@radix-ui/themes'
+import {
+  AlertDialog,
+  Box,
+  Button,
+  Checkbox,
+  Flex,
+  Progress,
+  Select,
+  Table,
+  Text,
+  TextField,
+} from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useDropzone } from 'react-dropzone'
-import { MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
+import { useDebounce } from 'use-debounce'
+import {
+  CaretDownIcon,
+  CaretSortIcon,
+  CaretUpIcon,
+  MagnifyingGlassIcon,
+  UploadIcon,
+} from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchWorkspaceTokens, fetchWorkspaces } from '@/services/workspaceTokenService'
 import {
@@ -16,8 +34,16 @@ import {
 } from '@/services/workspaceFilesService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
+import { PublishModal } from '@/components/PublishModal/PublishModal'
 import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from '../MyDataPage/MyDataPage.module.scss'
+
+const FILES_PAGE_SIZE = 50
+
+type SortColumn = 'fileName' | 'storeType' | 'size' | 'lastModified'
+
+const getFileKey = (item: WorkspaceFileItem) => `${item.storeType}:${item.fileName}`
 
 export const DataStoragePage: React.FC = () => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
@@ -33,6 +59,13 @@ export const DataStoragePage: React.FC = () => {
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [deletingFileKey, setDeletingFileKey] = useState<string | null>(null)
+  const [sortColumn, setSortColumn] = useState<SortColumn>('lastModified')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+  const [isBatchDeleting, setIsBatchDeleting] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
+  const [debouncedSearchText] = useDebounce(searchText, 300)
 
   // Fetch all workspaces to populate dropdown
   const { data: allWorkspaces } = useQuery({
@@ -71,11 +104,17 @@ export const DataStoragePage: React.FC = () => {
     }
   }, [dataWorkspace, dataWorkspaceOptions])
 
-  // Clear stale upload messages when the workspace or store filter changes
+  // Clear stale upload messages and selection when the workspace or store filter changes
   useEffect(() => {
     setUploadSuccess(null)
     setUploadError(null)
+    setSelectedKeys(new Set())
   }, [dataWorkspace, dataStoreFilter])
+
+  // Reset to the first page whenever the filtered/sorted result set changes
+  useEffect(() => {
+    setCurrentPage(0)
+  }, [dataWorkspace, dataStoreFilter, debouncedSearchText, sortColumn, sortDirection])
 
   const handleDataWorkspaceChange = (workspace: string) => {
     localStorage.setItem('dataStorageSelectedWorkspace', workspace)
@@ -112,7 +151,7 @@ export const DataStoragePage: React.FC = () => {
 
   const filteredFiles = useMemo(() => {
     const items = filesResult?.items ?? []
-    const searchLower = searchText.trim().toLowerCase()
+    const searchLower = debouncedSearchText.trim().toLowerCase()
     let filtered = items
 
     if (dataStoreFilter !== 'all') {
@@ -122,11 +161,121 @@ export const DataStoragePage: React.FC = () => {
       filtered = filtered.filter((item) => item.fileName.toLowerCase().includes(searchLower))
     }
     return [...filtered].sort((a, b) => {
-      const dateA = a.lastModified ? new Date(a.lastModified).getTime() : 0
-      const dateB = b.lastModified ? new Date(b.lastModified).getTime() : 0
-      return dateB - dateA
+      let comparison = 0
+      switch (sortColumn) {
+        case 'fileName':
+          comparison = a.fileName.localeCompare(b.fileName)
+          break
+        case 'storeType':
+          comparison = a.storeType.localeCompare(b.storeType)
+          break
+        case 'size':
+          comparison = (a.size ?? 0) - (b.size ?? 0)
+          break
+        case 'lastModified': {
+          const dateA = a.lastModified ? new Date(a.lastModified).getTime() : 0
+          const dateB = b.lastModified ? new Date(b.lastModified).getTime() : 0
+          comparison = dateA - dateB
+          break
+        }
+      }
+      return sortDirection === 'asc' ? comparison : -comparison
     })
-  }, [filesResult, searchText, dataStoreFilter])
+  }, [filesResult, debouncedSearchText, dataStoreFilter, sortColumn, sortDirection])
+
+  const pageCount = Math.ceil(filteredFiles.length / FILES_PAGE_SIZE)
+  const paginatedFiles = useMemo(() => {
+    const startIndex = currentPage * FILES_PAGE_SIZE
+    return filteredFiles.slice(startIndex, startIndex + FILES_PAGE_SIZE)
+  }, [filteredFiles, currentPage])
+
+  // Guard against a stranded empty page after items are removed (e.g. batch delete)
+  useEffect(() => {
+    if (currentPage > 0 && currentPage >= pageCount) {
+      setCurrentPage(Math.max(0, pageCount - 1))
+    }
+  }, [pageCount, currentPage])
+
+  const selectedItemsInView = useMemo(
+    () => filteredFiles.filter((item) => selectedKeys.has(getFileKey(item))),
+    [filteredFiles, selectedKeys],
+  )
+
+  const allOnPageSelected =
+    paginatedFiles.length > 0 && paginatedFiles.every((item) => selectedKeys.has(getFileKey(item)))
+  const someOnPageSelected = paginatedFiles.some((item) => selectedKeys.has(getFileKey(item)))
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      setSortDirection((direction) => (direction === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  const renderSortIcon = (column: SortColumn) => {
+    if (sortColumn !== column) return <CaretSortIcon />
+    return sortDirection === 'asc' ? <CaretUpIcon /> : <CaretDownIcon />
+  }
+
+  const handleToggleSelectAllOnPage = (checked: boolean) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev)
+      paginatedFiles.forEach((item) => {
+        if (checked) {
+          next.add(getFileKey(item))
+        } else {
+          next.delete(getFileKey(item))
+        }
+      })
+      return next
+    })
+  }
+
+  const handleToggleSelectFile = (item: WorkspaceFileItem, checked: boolean) => {
+    setSelectedKeys((prev) => {
+      const next = new Set(prev)
+      if (checked) {
+        next.add(getFileKey(item))
+      } else {
+        next.delete(getFileKey(item))
+      }
+      return next
+    })
+  }
+
+  const handleBatchDelete = async () => {
+    if (!token || !dataWorkspace || selectedItemsInView.length === 0) return
+
+    setUploadError(null)
+    setUploadSuccess(null)
+    setIsBatchDeleting(true)
+
+    try {
+      const accessToken = await resolveWorkspaceAccessToken()
+      const results = await Promise.allSettled(
+        selectedItemsInView.map((item) =>
+          deleteWorkspaceFile(dataWorkspace, accessToken, item.storeType, item.fileName),
+        ),
+      )
+      const failedCount = results.filter((result) => result.status === 'rejected').length
+      const succeededCount = selectedItemsInView.length - failedCount
+
+      if (succeededCount > 0) {
+        setUploadSuccess(`Deleted ${succeededCount} file${succeededCount === 1 ? '' : 's'}.`)
+      }
+      if (failedCount > 0) {
+        setUploadError(`Failed to delete ${failedCount} file${failedCount === 1 ? '' : 's'}.`)
+      }
+      setSelectedKeys(new Set())
+      await refetchFiles()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Batch delete failed.')
+    } finally {
+      setIsBatchDeleting(false)
+    }
+  }
 
   const canUpload = Boolean(token && dataWorkspace && dataStoreFilter !== 'all')
 
@@ -338,69 +487,223 @@ export const DataStoragePage: React.FC = () => {
           <>
             <Flex justify="between" align="center" mb="3">
               <Text size="2" color="gray">
-                {filteredFiles.length === 1
-                  ? 'Showing 1 file'
-                  : `Showing ${filteredFiles.length} files`}
+                {pageCount > 1
+                  ? `Showing ${currentPage * FILES_PAGE_SIZE + 1}-${Math.min(
+                      (currentPage + 1) * FILES_PAGE_SIZE,
+                      filteredFiles.length,
+                    )} of ${filteredFiles.length} files`
+                  : filteredFiles.length === 1
+                    ? 'Showing 1 file'
+                    : `Showing ${filteredFiles.length} files`}
               </Text>
+              {selectedItemsInView.length > 0 && (
+                <Flex gap="2">
+                  <Button
+                    size="2"
+                    variant="soft"
+                    type="button"
+                    onClick={() => setIsPublishModalOpen(true)}
+                  >
+                    Publish selected ({selectedItemsInView.length})
+                  </Button>
+                  <AlertDialog.Root>
+                    <AlertDialog.Trigger>
+                      <Button
+                        size="2"
+                        variant="soft"
+                        color="red"
+                        type="button"
+                        disabled={isBatchDeleting}
+                      >
+                        Delete selected ({selectedItemsInView.length})
+                      </Button>
+                    </AlertDialog.Trigger>
+                    <AlertDialog.Content style={{ maxWidth: 420 }}>
+                      <AlertDialog.Title>Delete files</AlertDialog.Title>
+                      <AlertDialog.Description size="2">
+                        Delete <strong>{selectedItemsInView.length}</strong> selected file
+                        {selectedItemsInView.length === 1 ? '' : 's'}? This cannot be undone.
+                      </AlertDialog.Description>
+                      <Flex gap="3" mt="4" justify="end">
+                        <AlertDialog.Cancel>
+                          <Button variant="soft" color="gray">
+                            Cancel
+                          </Button>
+                        </AlertDialog.Cancel>
+                        <AlertDialog.Action>
+                          <Button
+                            variant="solid"
+                            color="red"
+                            onClick={() => void handleBatchDelete()}
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialog.Action>
+                      </Flex>
+                    </AlertDialog.Content>
+                  </AlertDialog.Root>
+                </Flex>
+              )}
             </Flex>
 
             {filteredFiles.length === 0 ? (
               <Callout type="info" message="No files found for this workspace." />
             ) : (
-              <Table.Root className={`${styles.ordersTable} ${styles.filesTable}`}>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeaderCell data-column-id="fileName">
-                      File name
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell data-column-id="storeType">
-                      Store
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell data-column-id="size">Size</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell data-column-id="lastModified">
-                      Last modified
-                    </Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell data-column-id="delete">Delete</Table.ColumnHeaderCell>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {filteredFiles.map((item: WorkspaceFileItem) => (
-                    <Table.Row key={`${item.storeType}-${item.fileName}`}>
-                      <Table.Cell data-column-id="fileName">
-                        <Text size="2" weight="medium">
-                          {item.fileName}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell data-column-id="storeType">
-                        {item.storeType === 'object' ? 'Object' : 'Block'}
-                      </Table.Cell>
-                      <Table.Cell data-column-id="size">{formatFileSize(item.size)}</Table.Cell>
-                      <Table.Cell data-column-id="lastModified">
-                        {formatFileDateTime(item.lastModified)}
-                      </Table.Cell>
-                      <Table.Cell data-column-id="delete">
-                        <Button
+              <>
+                <Table.Root className={`${styles.ordersTable} ${styles.filesTable}`}>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell data-column-id="select">
+                        <Checkbox
                           size="2"
-                          variant="soft"
-                          color="red"
-                          type="button"
-                          onClick={() => void handleDeleteFile(item)}
-                          disabled={Boolean(
-                            deletingFileKey === `${item.storeType}:${item.fileName}`,
-                          )}
-                          aria-label={`Delete ${item.fileName}`}
+                          checked={
+                            allOnPageSelected ? true : someOnPageSelected ? 'indeterminate' : false
+                          }
+                          onCheckedChange={(checked) =>
+                            handleToggleSelectAllOnPage(checked !== false)
+                          }
+                          aria-label="Select all files on this page"
+                        />
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="fileName">
+                        <Flex
+                          align="center"
+                          gap="1"
+                          className={styles.sortableHeader}
+                          onClick={() => handleSort('fileName')}
                         >
-                          Delete
-                        </Button>
-                      </Table.Cell>
+                          File name {renderSortIcon('fileName')}
+                        </Flex>
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="storeType">
+                        <Flex
+                          align="center"
+                          gap="1"
+                          className={styles.sortableHeader}
+                          onClick={() => handleSort('storeType')}
+                        >
+                          Store {renderSortIcon('storeType')}
+                        </Flex>
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="size">
+                        <Flex
+                          align="center"
+                          gap="1"
+                          className={styles.sortableHeader}
+                          onClick={() => handleSort('size')}
+                        >
+                          Size {renderSortIcon('size')}
+                        </Flex>
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="lastModified">
+                        <Flex
+                          align="center"
+                          gap="1"
+                          className={styles.sortableHeader}
+                          onClick={() => handleSort('lastModified')}
+                        >
+                          Last modified {renderSortIcon('lastModified')}
+                        </Flex>
+                      </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="delete">
+                        Delete
+                      </Table.ColumnHeaderCell>
                     </Table.Row>
-                  ))}
-                </Table.Body>
-              </Table.Root>
+                  </Table.Header>
+                  <Table.Body>
+                    {paginatedFiles.map((item: WorkspaceFileItem) => (
+                      <Table.Row key={`${item.storeType}-${item.fileName}`}>
+                        <Table.Cell data-column-id="select">
+                          <Checkbox
+                            size="2"
+                            checked={selectedKeys.has(getFileKey(item))}
+                            onCheckedChange={(checked) =>
+                              handleToggleSelectFile(item, checked !== false)
+                            }
+                            aria-label={`Select ${item.fileName}`}
+                          />
+                        </Table.Cell>
+                        <Table.Cell data-column-id="fileName">
+                          <Text size="2" weight="medium">
+                            {item.fileName}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell data-column-id="storeType">
+                          {item.storeType === 'object' ? 'Object' : 'Block'}
+                        </Table.Cell>
+                        <Table.Cell data-column-id="size">{formatFileSize(item.size)}</Table.Cell>
+                        <Table.Cell data-column-id="lastModified">
+                          {formatFileDateTime(item.lastModified)}
+                        </Table.Cell>
+                        <Table.Cell data-column-id="delete">
+                          <AlertDialog.Root>
+                            <AlertDialog.Trigger>
+                              <Button
+                                size="2"
+                                variant="soft"
+                                color="red"
+                                type="button"
+                                disabled={Boolean(
+                                  deletingFileKey === `${item.storeType}:${item.fileName}`,
+                                )}
+                                aria-label={`Delete ${item.fileName}`}
+                              >
+                                Delete
+                              </Button>
+                            </AlertDialog.Trigger>
+                            <AlertDialog.Content style={{ maxWidth: 420 }}>
+                              <AlertDialog.Title>Delete file</AlertDialog.Title>
+                              <AlertDialog.Description size="2">
+                                Delete <strong>{item.fileName}</strong>? This cannot be undone.
+                              </AlertDialog.Description>
+                              <Flex gap="3" mt="4" justify="end">
+                                <AlertDialog.Cancel>
+                                  <Button variant="soft" color="gray">
+                                    Cancel
+                                  </Button>
+                                </AlertDialog.Cancel>
+                                <AlertDialog.Action>
+                                  <Button
+                                    variant="solid"
+                                    color="red"
+                                    onClick={() => void handleDeleteFile(item)}
+                                  >
+                                    Delete
+                                  </Button>
+                                </AlertDialog.Action>
+                              </Flex>
+                            </AlertDialog.Content>
+                          </AlertDialog.Root>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+                {pageCount > 1 && (
+                  <Flex justify="center" mt="4">
+                    <PageSelector
+                      currentPageIndex={currentPage}
+                      nextDisabled={currentPage === pageCount - 1}
+                      onGoToPage={setCurrentPage}
+                      onNextClick={() => setCurrentPage(currentPage + 1)}
+                      onPreviousClick={() => setCurrentPage(currentPage - 1)}
+                      pageCount={pageCount}
+                      previousDisabled={currentPage === 0}
+                    />
+                  </Flex>
+                )}
+              </>
             )}
           </>
         )}
       </Flex>
+
+      <PublishModal
+        open={isPublishModalOpen}
+        onOpenChange={setIsPublishModalOpen}
+        files={selectedItemsInView}
+        workspace={dataWorkspace}
+      />
     </Flex>
   )
 }

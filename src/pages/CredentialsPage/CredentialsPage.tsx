@@ -1,5 +1,14 @@
 import React, { useContext, useState } from 'react'
-import { Flex, Table, Text, Button, Dialog, TextField, IconButton } from '@radix-ui/themes'
+import {
+  Flex,
+  Table,
+  Text,
+  Button,
+  Dialog,
+  TextField,
+  IconButton,
+  AlertDialog,
+} from '@radix-ui/themes'
 import { PlusIcon, CopyIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
@@ -247,17 +256,43 @@ export const CredentialsPage: React.FC = () => {
                       <Table.Cell>{formatFileDateTime(dataHubToken.created)}</Table.Cell>
                       <Table.Cell>{formatFileDateTime(dataHubToken.expiry)}</Table.Cell>
                       <Table.Cell>
-                        <Button
-                          size="2"
-                          variant="soft"
-                          color="red"
-                          type="button"
-                          onClick={() => void handleDelete(dataHubToken)}
-                          disabled={deletingTokenId === dataHubToken.id}
-                          aria-label={`Delete ${dataHubToken.name}`}
-                        >
-                          Delete
-                        </Button>
+                        <AlertDialog.Root>
+                          <AlertDialog.Trigger>
+                            <Button
+                              size="2"
+                              variant="soft"
+                              color="red"
+                              type="button"
+                              disabled={deletingTokenId === dataHubToken.id}
+                              aria-label={`Delete ${dataHubToken.name}`}
+                            >
+                              Delete
+                            </Button>
+                          </AlertDialog.Trigger>
+                          <AlertDialog.Content style={{ maxWidth: 420 }}>
+                            <AlertDialog.Title>Delete token</AlertDialog.Title>
+                            <AlertDialog.Description size="2">
+                              Delete <strong>{dataHubToken.name}</strong>? Anything using this API
+                              key will stop working immediately.
+                            </AlertDialog.Description>
+                            <Flex gap="3" mt="4" justify="end">
+                              <AlertDialog.Cancel>
+                                <Button variant="soft" color="gray">
+                                  Cancel
+                                </Button>
+                              </AlertDialog.Cancel>
+                              <AlertDialog.Action>
+                                <Button
+                                  variant="solid"
+                                  color="red"
+                                  onClick={() => void handleDelete(dataHubToken)}
+                                >
+                                  Delete
+                                </Button>
+                              </AlertDialog.Action>
+                            </Flex>
+                          </AlertDialog.Content>
+                        </AlertDialog.Root>
                       </Table.Cell>
                     </Table.Row>
                   ))}

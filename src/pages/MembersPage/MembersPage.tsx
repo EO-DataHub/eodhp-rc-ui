@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react'
-import { Flex, Table, Text, Button, Dialog, TextField } from '@radix-ui/themes'
+import { Flex, Table, Text, Button, Dialog, TextField, AlertDialog } from '@radix-ui/themes'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
@@ -168,17 +168,43 @@ export const MembersPage: React.FC = () => {
                       </Table.Cell>
                       <Table.Cell>{member.email ?? 'N/A'}</Table.Cell>
                       <Table.Cell>
-                        <Button
-                          size="2"
-                          variant="soft"
-                          color="red"
-                          type="button"
-                          onClick={() => void handleDelete(member)}
-                          disabled={deletingUsername === member.username}
-                          aria-label={`Remove ${member.username}`}
-                        >
-                          Remove
-                        </Button>
+                        <AlertDialog.Root>
+                          <AlertDialog.Trigger>
+                            <Button
+                              size="2"
+                              variant="soft"
+                              color="red"
+                              type="button"
+                              disabled={deletingUsername === member.username}
+                              aria-label={`Remove ${member.username}`}
+                            >
+                              Remove
+                            </Button>
+                          </AlertDialog.Trigger>
+                          <AlertDialog.Content style={{ maxWidth: 420 }}>
+                            <AlertDialog.Title>Remove member</AlertDialog.Title>
+                            <AlertDialog.Description size="2">
+                              Remove <strong>{member.username}</strong> from this workspace? They
+                              will lose access immediately.
+                            </AlertDialog.Description>
+                            <Flex gap="3" mt="4" justify="end">
+                              <AlertDialog.Cancel>
+                                <Button variant="soft" color="gray">
+                                  Cancel
+                                </Button>
+                              </AlertDialog.Cancel>
+                              <AlertDialog.Action>
+                                <Button
+                                  variant="solid"
+                                  color="red"
+                                  onClick={() => void handleDelete(member)}
+                                >
+                                  Remove
+                                </Button>
+                              </AlertDialog.Action>
+                            </Flex>
+                          </AlertDialog.Content>
+                        </AlertDialog.Root>
                       </Table.Cell>
                     </Table.Row>
                   ))}

@@ -10,6 +10,8 @@ import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputs
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { MembersPage } from '@/pages/MembersPage/MembersPage'
 import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
+import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
+import { PublisherPage } from '@/pages/PublisherPage/PublisherPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 
@@ -86,22 +88,36 @@ const routes = [
     ],
   },
   {
-    path: '/members',
+    path: '/settings/',
     element: <ProtectedRoute />,
     children: [
       {
         path: '',
-        element: <MembersPage />,
+        element: <SettingsPage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to="members" replace />,
+          },
+          {
+            path: 'members',
+            element: <MembersPage />,
+          },
+          {
+            path: 'credentials',
+            element: <CredentialsPage />,
+          },
+        ],
       },
     ],
   },
   {
-    path: '/credentials',
+    path: '/publisher',
     element: <ProtectedRoute />,
     children: [
       {
         path: '',
-        element: <CredentialsPage />,
+        element: <PublisherPage />,
       },
     ],
   },

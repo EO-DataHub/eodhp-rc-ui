@@ -153,6 +153,14 @@
 }
 
 .filesTable {
+  th[data-column-id="select"],
+  td[data-column-id="select"] {
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
+    text-align: center;
+  }
+
   th[data-column-id="fileName"],
   td[data-column-id="fileName"] {
     min-width: 240px;
@@ -186,6 +194,11 @@
     max-width: 120px;
     text-align: center;
   }
+}
+
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
 }
 
 .dropzone {

@@ -26,7 +26,11 @@ export async function fetchCollectionQAJsonAsset<T>(url: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
-export const fetchCollections = async (catalog: string, limit = 20): Promise<Collection[]> => {
+export const fetchCollections = async (
+  catalog: string,
+  limit = 20,
+  token?: string,
+): Promise<Collection[]> => {
   const isExternalCatalog = catalog.startsWith('http://') || catalog.startsWith('https://')
   const url = isExternalCatalog
     ? `${catalog}/collections?limit=${limit}`
@@ -36,6 +40,7 @@ export const fetchCollections = async (catalog: string, limit = 20): Promise<Col
     method: 'GET',
     headers: {
       Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   })
 

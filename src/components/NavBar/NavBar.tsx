@@ -1,10 +1,11 @@
 import React, { useState, useContext, useRef, useEffect } from 'react'
-import { Flex } from '@radix-ui/themes'
+import { Flex, Select } from '@radix-ui/themes'
+import { useQuery } from '@tanstack/react-query'
 import { LoginButton } from './LoginButton'
 import ArrowIcon from '@/assets/icons/arrow-down.svg?react'
 import { useLocation, Link } from 'react-router-dom'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { ChangeWorkspaceModal } from '@/components/ChangeWorkspaceModal/ChangeWorkspaceModal'
+import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
 import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
@@ -93,12 +94,17 @@ export const NavBar: React.FC = () => {
   const isMapsActive = location.pathname.startsWith('/finder')
   const isMyDataActive = location.pathname.startsWith('/my-data')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
-  const isMembersActive = location.pathname.startsWith('/members')
-  const isCredentialsActive = location.pathname.startsWith('/credentials')
-  const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
+  const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token } =
+    useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
-  const [isChangeWorkspaceModalOpen, setIsChangeWorkspaceModalOpen] = useState(false)
+
+  const { data: workspacesData } = useQuery({
+    queryKey: ['Workspaces', token],
+    queryFn: () => fetchWorkspaces(token),
+    refetchOnWindowFocus: false,
+    enabled: Boolean(isAuthenticated && token),
+  })
 
   const toggleMenu = (menuName: string | null) => {
     if (!menuName) {
@@ -114,152 +120,115 @@ export const NavBar: React.FC = () => {
     }
   }, [location.pathname])
 
-  const workspaceHref = currentWorkspace
-    ? `${HUB_BASE_URL}/workspaces/?workspace=${encodeURIComponent(currentWorkspace)}`
-    : `${HUB_BASE_URL}/workspaces/`
-
-  const workspacesMenuLabel = isAuthenticated && currentWorkspace ? currentWorkspace : 'Workspaces'
-
   return (
-    <>
-      <Flex px="6" py="2" align="center" justify="between" className={styles.container}>
-        <Flex className={styles.navLinks} width="50%">
-          <a href={`${HUB_BASE_URL}/`} className={styles.logo}>
-            <EarthObservationDataHubLogo style={{ width: '162px', height: '60px' }} />
-          </a>
+    <Flex px="6" py="2" align="center" justify="between" className={styles.container}>
+      <Flex className={styles.navLinks} width="50%">
+        <a href={`${HUB_BASE_URL}/`} className={styles.logo}>
+          <EarthObservationDataHubLogo style={{ width: '162px', height: '60px' }} />
+        </a>
 
-          <DropdownMenu
-            id="about-menu"
-            label="About"
-            labelHref={`${HUB_BASE_URL}/about`}
-            shouldOpen={openMenu === 'about'}
-            onClick={() => toggleMenu('about')}
-            renderMenuItem={() => (
-              <>
-                <a href={`${HUB_BASE_URL}/about/hub`}>Earth Observation Data Hub</a>
-                <a href={`${HUB_BASE_URL}/about/applications`}>Access Points</a>
-              </>
-            )}
-          />
+        <DropdownMenu
+          id="about-menu"
+          label="About"
+          labelHref={`${HUB_BASE_URL}/about`}
+          shouldOpen={openMenu === 'about'}
+          onClick={() => toggleMenu('about')}
+          renderMenuItem={() => (
+            <>
+              <a href={`${HUB_BASE_URL}/about/hub`}>Earth Observation Data Hub</a>
+              <a href={`${HUB_BASE_URL}/about/applications`}>Access Points</a>
+            </>
+          )}
+        />
 
-          <DropdownMenu
-            id="data-menu"
-            label="Data"
-            labelHref={`${HUB_BASE_URL}/data`}
-            shouldOpen={openMenu === 'data'}
-            onClick={() => toggleMenu('data')}
-            renderMenuItem={() => (
-              <>
-                <a href={`${HUB_BASE_URL}/data/open-access`}>Open Access</a>
-                <a href={`${HUB_BASE_URL}/data/commercial`}>Commercial</a>
-                <a href={`${HUB_BASE_URL}/data/quality-assurance`}>Quality Assurance</a>
-              </>
-            )}
-          />
+        <DropdownMenu
+          id="data-menu"
+          label="Data"
+          labelHref={`${HUB_BASE_URL}/data`}
+          shouldOpen={openMenu === 'data'}
+          onClick={() => toggleMenu('data')}
+          renderMenuItem={() => (
+            <>
+              <a href={`${HUB_BASE_URL}/data/open-access`}>Open Access</a>
+              <a href={`${HUB_BASE_URL}/data/commercial`}>Commercial</a>
+              <a href={`${HUB_BASE_URL}/data/quality-assurance`}>Quality Assurance</a>
+            </>
+          )}
+        />
 
-          <DropdownMenu
-            id="getting-started-menu"
-            label="Getting Started"
-            labelHref={`${HUB_BASE_URL}/docs`}
-            shouldOpen={openMenu === 'getting-started'}
-            onClick={() => toggleMenu('getting-started')}
-            renderMenuItem={() => (
-              <>
-                <a href={`${HUB_BASE_URL}/case-studies`}>Case Studies</a>
-                <a href="https://docs.eodatahub.org.uk/">Documentation</a>
-              </>
-            )}
-          />
-        </Flex>
-        <Flex gap="5" className={styles.navLinks}>
-          <a href="https://eodatahub-workspaces.org.uk/notebooks" className={styles.parentLink}>
-            Notebooks
-          </a>
-          <DropdownMenu
-            id="catalogue-menu"
-            label="Catalogue"
-            shouldOpen={openMenu === 'catalogue'}
-            onClick={() => toggleMenu('catalogue')}
-            renderMenuItem={() => (
-              <>
-                <Link to="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
-                  Browse
-                </Link>
-
-                <Link
-                  to="/finder/sentinel2_ard"
-                  className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
-                >
-                  Maps
-                </Link>
-                {isAuthenticated && (
-                  <Link
-                    to="/my-data/purchased"
-                    className={`${styles.link} ${isMyDataActive ? styles.active : ''}`}
-                  >
-                    My Data
-                  </Link>
-                )}
-                <Link
-                  to="/catalogue/processes"
-                  className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
-                >
-                  Processes
-                </Link>
-              </>
-            )}
-          />
-
-          <DropdownMenu
-            id="workspaces-menu"
-            label={workspacesMenuLabel}
-            shouldOpen={openMenu === 'workspaces'}
-            onClick={() => toggleMenu('workspaces')}
-            renderMenuItem={() => (
-              <>
-                {isAuthenticated && (
-                  <Link
-                    to="/members"
-                    className={`${styles.link} ${isMembersActive ? styles.active : ''}`}
-                    onClick={() => toggleMenu(null)}
-                  >
-                    Members
-                  </Link>
-                )}
-                {isAuthenticated && (
-                  <Link
-                    to="/credentials"
-                    className={`${styles.link} ${isCredentialsActive ? styles.active : ''}`}
-                    onClick={() => toggleMenu(null)}
-                  >
-                    Credentials
-                  </Link>
-                )}
-                {isAuthenticated && (
-                  <button
-                    type="button"
-                    aria-label="Change current workspace"
-                    onClick={() => {
-                      setIsChangeWorkspaceModalOpen(true)
-                      toggleMenu(null)
-                    }}
-                  >
-                    Change Workspace
-                  </button>
-                )}
-                <a href={workspaceHref} onClick={() => toggleMenu(null)}>
-                  View Workspace
-                </a>
-              </>
-            )}
-          />
-          <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
-        </Flex>
+        <DropdownMenu
+          id="getting-started-menu"
+          label="Getting Started"
+          labelHref={`${HUB_BASE_URL}/docs`}
+          shouldOpen={openMenu === 'getting-started'}
+          onClick={() => toggleMenu('getting-started')}
+          renderMenuItem={() => (
+            <>
+              <a href={`${HUB_BASE_URL}/case-studies`}>Case Studies</a>
+              <a href="https://docs.eodatahub.org.uk/">Documentation</a>
+            </>
+          )}
+        />
       </Flex>
-      <ChangeWorkspaceModal
-        isOpen={isChangeWorkspaceModalOpen}
-        onClose={() => setIsChangeWorkspaceModalOpen(false)}
-      />
-    </>
+      <Flex gap="5" className={styles.navLinks}>
+        <a href="https://eodatahub-workspaces.org.uk/notebooks" className={styles.parentLink}>
+          Notebooks
+        </a>
+        <DropdownMenu
+          id="catalogue-menu"
+          label="Catalogue"
+          shouldOpen={openMenu === 'catalogue'}
+          onClick={() => toggleMenu('catalogue')}
+          renderMenuItem={() => (
+            <>
+              <Link to="/" className={`${styles.link} ${isCatalogActive ? styles.active : ''}`}>
+                Browse
+              </Link>
+
+              <Link
+                to="/finder/sentinel2_ard"
+                className={`${styles.link} ${isMapsActive ? styles.active : ''}`}
+              >
+                Maps
+              </Link>
+              {isAuthenticated && (
+                <Link
+                  to="/my-data/purchased"
+                  className={`${styles.link} ${isMyDataActive ? styles.active : ''}`}
+                >
+                  My Data
+                </Link>
+              )}
+              <Link
+                to="/catalogue/processes"
+                className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
+              >
+                Processes
+              </Link>
+            </>
+          )}
+        />
+
+        {isAuthenticated && (
+          <Select.Root
+            size="2"
+            value={currentWorkspace ?? undefined}
+            onValueChange={(workspace) => updateCurrentWorkspace?.(workspace)}
+          >
+            <Select.Trigger placeholder="Workspace" />
+            <Select.Content position="popper">
+              <Select.Group>
+                {workspacesData?.map((workspace) => (
+                  <Select.Item key={workspace.id} value={workspace.name}>
+                    {workspace.name ?? workspace.id}
+                  </Select.Item>
+                ))}
+              </Select.Group>
+            </Select.Content>
+          </Select.Root>
+        )}
+        <LoginButton isUserMenuOpen={isUserMenuOpen} setIsUserMenuOpen={setUserIsMenuOpen} />
+      </Flex>
+    </Flex>
   )
 }
