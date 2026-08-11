@@ -147,12 +147,6 @@ const OpacitySelector = ({ item }: { item: Item }) => {
 const ItemCard = ({ item, type }: ItemCardProps) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionId = collection?.id
-  const {
-    url: shareUrl,
-    itemsIncluded,
-    canShare: canCopyLink,
-    tooltip: copyLinkTooltip,
-  } = usePermalink(collectionId ?? undefined, item?.id ? [item] : [], { useLimit: false })
 
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
@@ -195,6 +189,19 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // Attach the currently displayed render so shared links for not-yet-pinned items keep their visualisation too.
+  const shareItem = useMemo(
+    () =>
+      item?.id ? { ...item, render: item.render ?? itemRender ?? collectionRender } : undefined,
+    [item, itemRender, collectionRender],
+  )
+  const {
+    url: shareUrl,
+    itemsIncluded,
+    canShare: canCopyLink,
+    tooltip: copyLinkTooltip,
+  } = usePermalink(collectionId ?? undefined, shareItem ? [shareItem] : [], { useLimit: false })
 
   // Determine if collection is a job collection
   const isJobCollection = collection?.isJobCollection ?? false
