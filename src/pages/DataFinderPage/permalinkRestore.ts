@@ -22,12 +22,17 @@ const PLACEHOLDER_RENDER: StacRender = {
 export function getDefaultCollectionRender(
   collection: Collection,
   isUserCollection: boolean,
+  renderId?: string,
 ): StacRender {
   const configKey = getCollectionConfigKey(collection.id, isUserCollection)
   const collectionConfig = collectionRenderingConfig[configKey]
   const baseRenders = collectionConfig?.renders ?? {}
   const renders = { ...baseRenders, ...collection.renders }
   const options = Object.entries(renders).map(([id, render]) => ({ ...render, id }))
+  if (renderId) {
+    const match = options.find((option) => option.id === renderId)
+    if (match) return match
+  }
   return options.length > 0 ? options[0] : PLACEHOLDER_RENDER
 }
 
@@ -42,42 +47,52 @@ export function restoreFromPermalinkMultiCollection(params: {
 }): Promise<void> {
   const { itemsByCollection, resolveCollection, workspaceTokenForUser } = params
 
-  const byCollection = new Map<string, string[]>()
-  for (const { collectionId: cid, itemId } of itemsByCollection) {
-    const list = byCollection.get(cid) ?? []
-    list.push(itemId)
-    byCollection.set(cid, list)
+  const byCollection = new Map<string, ItemByCollection[]>()
+  for (const entry of itemsByCollection) {
+    const list = byCollection.get(entry.collectionId) ?? []
+    list.push(entry)
+    byCollection.set(entry.collectionId, list)
   }
 
   const promises: Promise<void>[] = []
-  byCollection.forEach((ids: string[], cid: string) => {
+  byCollection.forEach((entries: ItemByCollection[], cid: string) => {
     const resolved = resolveCollection(cid)
     if (!resolved) return
     const { collection: col, isUserCollection: isUser } = resolved
     const collectionUrl = col.links.find((l) => l.rel === 'self')?.href
     if (!collectionUrl) return
     const workspaceToken = isUser ? workspaceTokenForUser : undefined
-    const render = getDefaultCollectionRender(col, isUser)
     const collectionName = col.title ?? col.id
+    const renderIdByItemId = new Map(entries.map((e) => [e.itemId, e.renderId]))
 
     promises.push(
       Promise.allSettled(
-        ids.map((itemId: string) => fetchItem({ collectionUrl, itemId, workspaceToken })),
+        entries.map(({ itemId }) => fetchItem({ collectionUrl, itemId, workspaceToken })),
       ).then((results) => {
         const items = results
           .filter((r): r is PromiseFulfilledResult<Item> => r.status === 'fulfilled')
           .map((r) => r.value)
-        if (items.length > 0) {
+        if (items.length === 0) return
+
+        const itemsByRenderId = new Map<string | undefined, Item[]>()
+        for (const item of items) {
+          const renderId = renderIdByItemId.get(item.id)
+          const group = itemsByRenderId.get(renderId) ?? []
+          group.push(item)
+          itemsByRenderId.set(renderId, group)
+        }
+
+        itemsByRenderId.forEach((groupItems, renderId) => {
           dataFinderStore.send({
             type: 'addPinnedItems',
-            items,
-            collectionRender: render,
+            items: groupItems,
+            collectionRender: getDefaultCollectionRender(col, isUser, renderId),
             isLicenseProprietary: isCollectionPurchasable(col),
             isUserCollection: isUser,
             collectionName,
             collection: col,
           })
-        }
+        })
       }),
     )
   })

@@ -17,6 +17,8 @@ const BOUNDS_MAX_LAT = 90
 export interface ItemByCollection {
   collectionId: string
   itemId: string
+  /** Id of the render/visualisation the item was pinned with, so the recipient sees the same visualisation. */
+  renderId?: string
 }
 
 export interface ParsedPermalink {
@@ -43,12 +45,19 @@ function routeCollectionId(item: Item, primaryCollectionId: string): string {
   return item.isUserCollection ? `my-${rawId}` : rawId
 }
 
-/** Encode pinned items as "collectionId:encodeURIComponent(itemId)|..." so item ids can contain "/". */
+/**
+ * Encode pinned items as "collectionId:encodeURIComponent(itemId):encodeURIComponent(renderId)|..."
+ * so item ids can contain "/" and the recipient's link opens with the same visualisation the item was pinned with.
+ * The renderId segment is omitted when the item has no render.
+ */
 function encodeItemsParam(items: Item[], primaryCollectionId: string): string {
   return items
     .map((item) => {
       const cId = routeCollectionId(item, primaryCollectionId)
-      return `${cId}${COLLECTION_ITEM_DELIMITER}${encodeURIComponent(item.id)}`
+      const renderPart = item.render?.id
+        ? `${COLLECTION_ITEM_DELIMITER}${encodeURIComponent(item.render.id)}`
+        : ''
+      return `${cId}${COLLECTION_ITEM_DELIMITER}${encodeURIComponent(item.id)}${renderPart}`
     })
     .join(ITEM_IDS_DELIMITER)
 }
@@ -60,19 +69,23 @@ function encodeItemsParam(items: Item[], primaryCollectionId: string): string {
 export const MAX_PERMALINK_URL_LENGTH = 1800
 
 /**
- * Parse one segment into collectionId + itemId. Supports:
- * - New format "collectionId:encodedItemId" (decodeURIComponent on itemId so "/" is allowed).
+ * Parse one segment into collectionId + itemId (+ optional renderId). Supports:
+ * - New format "collectionId:encodedItemId[:encodedRenderId]" (decodeURIComponent so ids can contain "/").
  * - Legacy "collectionId/itemId" (itemId = rest after first "/").
  */
-function parseSegment(segment: string): { collectionId: string; itemId: string } | null {
+function parseSegment(segment: string): ItemByCollection | null {
   const colonIndex = segment.indexOf(COLLECTION_ITEM_DELIMITER)
   if (colonIndex !== -1) {
     const collectionId = segment.slice(0, colonIndex).trim()
-    const encoded = segment.slice(colonIndex + 1)
-    if (!collectionId || !encoded) return null
+    const rest = segment.slice(colonIndex + 1)
+    const nextColonIndex = rest.indexOf(COLLECTION_ITEM_DELIMITER)
+    const encodedItemId = nextColonIndex !== -1 ? rest.slice(0, nextColonIndex) : rest
+    const encodedRenderId = nextColonIndex !== -1 ? rest.slice(nextColonIndex + 1) : ''
+    if (!collectionId || !encodedItemId) return null
     try {
-      const itemId = decodeURIComponent(encoded)
-      return { collectionId, itemId }
+      const itemId = decodeURIComponent(encodedItemId)
+      const renderId = encodedRenderId ? decodeURIComponent(encodedRenderId) : undefined
+      return { collectionId, itemId, renderId }
     } catch {
       return null
     }
