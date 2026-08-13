@@ -1,5 +1,15 @@
 import React, { useContext, useState } from 'react'
-import { Flex, Table, Text, Button, Dialog, TextField, AlertDialog } from '@radix-ui/themes'
+import {
+  Flex,
+  Table,
+  Text,
+  Button,
+  Dialog,
+  TextField,
+  AlertDialog,
+  Badge,
+  Select,
+} from '@radix-ui/themes'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
@@ -12,16 +22,20 @@ import {
 } from '@/services/workspaceMembersService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
+import { useMockWorkspaceRoles } from './useMockWorkspaceRoles'
 import styles from './MembersPage.module.scss'
 
 export const MembersPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, workspaceUserName } = useContext(AuthenticationContext)
   const [deletingUsername, setDeletingUsername] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [newUsername, setNewUsername] = useState('')
   const [isAdding, setIsAdding] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [isTransferOpen, setIsTransferOpen] = useState(false)
+  const [transferTarget, setTransferTarget] = useState<string | null>(null)
+  const [transferConfirmText, setTransferConfirmText] = useState('')
 
   const {
     data: members,
@@ -34,6 +48,43 @@ export const MembersPage: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: Boolean(token && currentWorkspace),
   })
+
+  const { owner, admins, toggleAdmin, transferOwnership } = useMockWorkspaceRoles(
+    currentWorkspace,
+    members,
+    workspaceUserName,
+  )
+  const isCurrentUserOwner = Boolean(workspaceUserName) && owner === workspaceUserName
+  const transferCandidates = members?.filter((member) => member.username !== owner) ?? []
+
+  const handleTransferOwnership = () => {
+    if (!transferTarget) return
+    transferOwnership(transferTarget)
+    toast.success(`Ownership transferred to ${transferTarget}`)
+    setIsTransferOpen(false)
+    setTransferTarget(null)
+    setTransferConfirmText('')
+  }
+
+  const handlePromoteToAdmin = (username: string) => {
+    toggleAdmin(username)
+    const toastId = toast(
+      <Flex align="center" justify="between" gap="4">
+        <Text size="2">Made {username} an admin</Text>
+        <Button
+          size="1"
+          variant="ghost"
+          onClick={() => {
+            toggleAdmin(username)
+            toast.dismiss(toastId)
+          }}
+        >
+          Undo
+        </Button>
+      </Flex>,
+      { autoClose: 6000 },
+    )
+  }
 
   const handleDelete = async (member: WorkspaceMember) => {
     if (!token || !currentWorkspace) return
@@ -79,11 +130,87 @@ export const MembersPage: React.FC = () => {
             Manage the members of this workspace
           </Text>
         </Flex>
-        <Button size="3" onClick={() => setIsAddOpen(true)} disabled={!token || !currentWorkspace}>
-          <PlusIcon />
-          Add member
-        </Button>
+        <Flex gap="3">
+          {isCurrentUserOwner && (
+            <Button
+              size="3"
+              variant="soft"
+              color="gray"
+              onClick={() => setIsTransferOpen(true)}
+              disabled={transferCandidates.length === 0}
+            >
+              Transfer ownership
+            </Button>
+          )}
+          <Button
+            size="3"
+            onClick={() => setIsAddOpen(true)}
+            disabled={!token || !currentWorkspace}
+          >
+            <PlusIcon />
+            Add member
+          </Button>
+        </Flex>
       </Flex>
+
+      <Dialog.Root
+        open={isTransferOpen}
+        onOpenChange={(open) => {
+          setIsTransferOpen(open)
+          if (!open) {
+            setTransferTarget(null)
+            setTransferConfirmText('')
+          }
+        }}
+      >
+        <Dialog.Content style={{ maxWidth: 420 }}>
+          <Dialog.Title>Transfer ownership</Dialog.Title>
+          <Dialog.Description size="2" mb="4">
+            The new owner becomes the protected super-admin for this workspace. You will become a
+            regular admin.
+          </Dialog.Description>
+          <Flex direction="column" gap="3">
+            <Select.Root
+              value={transferTarget ?? undefined}
+              onValueChange={(value) => {
+                setTransferTarget(value)
+                setTransferConfirmText('')
+              }}
+            >
+              <Select.Trigger placeholder="Select a new owner" style={{ width: '100%' }} />
+              <Select.Content position="popper">
+                {transferCandidates.map((member) => (
+                  <Select.Item key={member.username} value={member.username}>
+                    {member.username}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            {transferTarget && (
+              <TextField.Root
+                placeholder={`Type "${transferTarget}" to confirm`}
+                value={transferConfirmText}
+                onChange={(e) => setTransferConfirmText(e.target.value)}
+                size="3"
+              />
+            )}
+          </Flex>
+          <Flex justify="end" gap="3" mt="4">
+            <Dialog.Close>
+              <Button color="gray" variant="soft">
+                Cancel
+              </Button>
+            </Dialog.Close>
+            <Button
+              color="red"
+              disabled={!transferTarget || transferConfirmText.trim() !== transferTarget}
+              onClick={handleTransferOwnership}
+            >
+              Transfer
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
 
       <Dialog.Root
         open={isAddOpen}
@@ -152,62 +279,94 @@ export const MembersPage: React.FC = () => {
                     <Table.ColumnHeaderCell>Username</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Remove</Table.ColumnHeaderCell>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  {members.map((member) => (
-                    <Table.Row key={member.username}>
-                      <Table.Cell>
-                        <Text size="2" weight="medium">
-                          {member.username}
-                        </Text>
-                      </Table.Cell>
-                      <Table.Cell>
-                        {[member.firstName, member.lastName].filter(Boolean).join(' ') || 'N/A'}
-                      </Table.Cell>
-                      <Table.Cell>{member.email ?? 'N/A'}</Table.Cell>
-                      <Table.Cell>
-                        <AlertDialog.Root>
-                          <AlertDialog.Trigger>
-                            <Button
-                              size="2"
-                              variant="soft"
-                              color="red"
-                              type="button"
-                              disabled={deletingUsername === member.username}
-                              aria-label={`Remove ${member.username}`}
+                  {members.map((member) => {
+                    const isOwner = member.username === owner
+                    const isAdmin = admins.includes(member.username)
+                    return (
+                      <Table.Row key={member.username}>
+                        <Table.Cell>
+                          <Text size="2" weight="medium">
+                            {member.username}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          {[member.firstName, member.lastName].filter(Boolean).join(' ') || 'N/A'}
+                        </Table.Cell>
+                        <Table.Cell>{member.email ?? 'N/A'}</Table.Cell>
+                        <Table.Cell>
+                          {isOwner ? (
+                            <Badge color="amber" variant="solid">
+                              Owner
+                            </Badge>
+                          ) : (
+                            <Select.Root
+                              value={isAdmin ? 'admin' : 'member'}
+                              onValueChange={(value) => {
+                                const nextIsAdmin = value === 'admin'
+                                if (nextIsAdmin === isAdmin) return
+                                if (nextIsAdmin) {
+                                  handlePromoteToAdmin(member.username)
+                                } else {
+                                  toggleAdmin(member.username)
+                                }
+                              }}
+                              size="1"
                             >
-                              Remove
-                            </Button>
-                          </AlertDialog.Trigger>
-                          <AlertDialog.Content style={{ maxWidth: 420 }}>
-                            <AlertDialog.Title>Remove member</AlertDialog.Title>
-                            <AlertDialog.Description size="2">
-                              Remove <strong>{member.username}</strong> from this workspace? They
-                              will lose access immediately.
-                            </AlertDialog.Description>
-                            <Flex gap="3" mt="4" justify="end">
-                              <AlertDialog.Cancel>
-                                <Button variant="soft" color="gray">
-                                  Cancel
-                                </Button>
-                              </AlertDialog.Cancel>
-                              <AlertDialog.Action>
-                                <Button
-                                  variant="solid"
-                                  color="red"
-                                  onClick={() => void handleDelete(member)}
-                                >
-                                  Remove
-                                </Button>
-                              </AlertDialog.Action>
-                            </Flex>
-                          </AlertDialog.Content>
-                        </AlertDialog.Root>
-                      </Table.Cell>
-                    </Table.Row>
-                  ))}
+                              <Select.Trigger variant="soft" />
+                              <Select.Content position="popper">
+                                <Select.Item value="member">Member</Select.Item>
+                                <Select.Item value="admin">Admin</Select.Item>
+                              </Select.Content>
+                            </Select.Root>
+                          )}
+                        </Table.Cell>
+                        <Table.Cell>
+                          <AlertDialog.Root>
+                            <AlertDialog.Trigger>
+                              <Button
+                                size="2"
+                                variant="soft"
+                                color="red"
+                                type="button"
+                                disabled={isOwner || deletingUsername === member.username}
+                                aria-label={`Remove ${member.username}`}
+                              >
+                                Remove
+                              </Button>
+                            </AlertDialog.Trigger>
+                            <AlertDialog.Content style={{ maxWidth: 420 }}>
+                              <AlertDialog.Title>Remove member</AlertDialog.Title>
+                              <AlertDialog.Description size="2">
+                                Remove <strong>{member.username}</strong> from this workspace? They
+                                will lose access immediately.
+                              </AlertDialog.Description>
+                              <Flex gap="3" mt="4" justify="end">
+                                <AlertDialog.Cancel>
+                                  <Button variant="soft" color="gray">
+                                    Cancel
+                                  </Button>
+                                </AlertDialog.Cancel>
+                                <AlertDialog.Action>
+                                  <Button
+                                    variant="solid"
+                                    color="red"
+                                    onClick={() => void handleDelete(member)}
+                                  >
+                                    Remove
+                                  </Button>
+                                </AlertDialog.Action>
+                              </Flex>
+                            </AlertDialog.Content>
+                          </AlertDialog.Root>
+                        </Table.Cell>
+                      </Table.Row>
+                    )
+                  })}
                 </Table.Body>
               </Table.Root>
             ) : (
