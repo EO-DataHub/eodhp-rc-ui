@@ -34,8 +34,8 @@ import {
 } from '@/services/workspaceFilesService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { MockVisibilitySelect } from '@/components/MockVisibilitySelect/MockVisibilitySelect'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { PublishModal } from '@/components/PublishModal/PublishModal'
 import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
@@ -64,7 +64,6 @@ export const DataStoragePage: React.FC = () => {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [isBatchDeleting, setIsBatchDeleting] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
-  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
   const [debouncedSearchText] = useDebounce(searchText, 300)
 
   // Fetch all workspaces to populate dropdown
@@ -498,14 +497,6 @@ export const DataStoragePage: React.FC = () => {
               </Text>
               {selectedItemsInView.length > 0 && (
                 <Flex gap="2">
-                  <Button
-                    size="2"
-                    variant="soft"
-                    type="button"
-                    onClick={() => setIsPublishModalOpen(true)}
-                  >
-                    Publish selected ({selectedItemsInView.length})
-                  </Button>
                   <AlertDialog.Root>
                     <AlertDialog.Trigger>
                       <Button
@@ -605,6 +596,9 @@ export const DataStoragePage: React.FC = () => {
                           Last modified {renderSortIcon('lastModified')}
                         </Flex>
                       </Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell data-column-id="visibility">
+                        Visibility
+                      </Table.ColumnHeaderCell>
                       <Table.ColumnHeaderCell data-column-id="delete">
                         Delete
                       </Table.ColumnHeaderCell>
@@ -634,6 +628,12 @@ export const DataStoragePage: React.FC = () => {
                         <Table.Cell data-column-id="size">{formatFileSize(item.size)}</Table.Cell>
                         <Table.Cell data-column-id="lastModified">
                           {formatFileDateTime(item.lastModified)}
+                        </Table.Cell>
+                        <Table.Cell data-column-id="visibility">
+                          <MockVisibilitySelect
+                            storageKey={`mockVisibility:${dataWorkspace}:file:${item.storeType}:${item.fileName}`}
+                            label={item.fileName}
+                          />
                         </Table.Cell>
                         <Table.Cell data-column-id="delete">
                           <AlertDialog.Root>
@@ -697,13 +697,6 @@ export const DataStoragePage: React.FC = () => {
           </>
         )}
       </Flex>
-
-      <PublishModal
-        open={isPublishModalOpen}
-        onOpenChange={setIsPublishModalOpen}
-        files={selectedItemsInView}
-        workspace={dataWorkspace}
-      />
     </Flex>
   )
 }

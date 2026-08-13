@@ -14,13 +14,12 @@ import { fetchWorkspaceProcesses } from '@/services/workspaceProcessesService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
-import { MockVisibilityToggle } from '@/components/MockVisibilityToggle/MockVisibilityToggle'
+import { MockVisibilitySelect } from '@/components/MockVisibilitySelect/MockVisibilitySelect'
 import { formatFileDateTime } from '@/library/fileUtils'
 import styles from './PublisherPage.module.scss'
 
 // #todo: there's no read or write API yet for a data file's visibility (public vs.
-// private) — unlike collections/workflows above, there isn't even a mock for this
-// yet. See "Redesign the data-publishing flow and APIs" task note for the plan.
+// private). See "Redesign the data-publishing flow and APIs" task note for the plan.
 const VISIBILITY_TODO_TOOLTIP = '#todo: visibility is not readable or changeable via the API yet'
 
 export const PublisherPage: React.FC = () => {
@@ -185,8 +184,9 @@ export const PublisherPage: React.FC = () => {
                                 </Text>
                               </Table.Cell>
                               <Table.Cell>
-                                <MockVisibilityToggle
+                                <MockVisibilitySelect
                                   storageKey={`mockVisibility:${currentWorkspace}:collection:${collectionsPath}:${collection.id}`}
+                                  label={collection.title ?? collection.id}
                                 />
                               </Table.Cell>
                             </Table.Row>
@@ -232,8 +232,9 @@ export const PublisherPage: React.FC = () => {
                           </Text>
                         </Table.Cell>
                         <Table.Cell>
-                          <MockVisibilityToggle
+                          <MockVisibilitySelect
                             storageKey={`mockVisibility:${currentWorkspace}:workflow:${process.id}`}
+                            label={process.title ?? process.id}
                           />
                         </Table.Cell>
                       </Table.Row>
