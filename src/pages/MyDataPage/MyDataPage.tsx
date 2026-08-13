@@ -55,7 +55,7 @@ export const MyDataPage: React.FC = () => {
             role="tab"
             aria-selected={activeTab === 'data-storage'}
           >
-            Data storage
+            Files
           </NavLink>
         </Flex>
       </Box>

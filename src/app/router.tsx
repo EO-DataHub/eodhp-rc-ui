@@ -10,7 +10,11 @@ import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputs
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { MembersPage } from '@/pages/MembersPage/MembersPage'
 import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
+import { CreditsPage } from '@/pages/CreditsPage/CreditsPage'
+import { BudgetPage } from '@/pages/BudgetPage/BudgetPage'
+import { UsagePage } from '@/pages/UsagePage/UsagePage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
+import { AccountingPage } from '@/pages/AccountingPage/AccountingPage'
 import { PublisherPage } from '@/pages/PublisherPage/PublisherPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
@@ -93,12 +97,12 @@ const routes = [
     children: [
       {
         path: '',
+        element: <Navigate to="members" replace />,
+      },
+      {
+        path: '',
         element: <SettingsPage />,
         children: [
-          {
-            path: '',
-            element: <Navigate to="members" replace />,
-          },
           {
             path: 'members',
             element: <MembersPage />,
@@ -106,6 +110,24 @@ const routes = [
           {
             path: 'credentials',
             element: <CredentialsPage />,
+          },
+        ],
+      },
+      {
+        path: '',
+        element: <AccountingPage />,
+        children: [
+          {
+            path: 'credits',
+            element: <CreditsPage />,
+          },
+          {
+            path: 'budget',
+            element: <BudgetPage />,
+          },
+          {
+            path: 'usage',
+            element: <UsagePage />,
           },
         ],
       },

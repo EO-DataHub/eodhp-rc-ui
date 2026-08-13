@@ -2,7 +2,6 @@ import React, { useMemo, useState, useContext, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { fetchJobsForWorkspace, fetchJobsForSharedWorkspace } from '@/services/workflowJobService'
 import { transformJobForDisplay, sortJobsByCreated } from '@/library/jobUtils'
 import { WorkflowJob, JobsApiResponse } from '@/types'
@@ -21,15 +20,8 @@ export const WorkflowOutputsPage: React.FC = () => {
     jobId?: string
   }>()
   const navigate = useNavigate()
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, updateCurrentWorkspace } = useContext(AuthenticationContext)
   const [searchText, setSearchText] = useState('')
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
-    const stored = localStorage.getItem('workflowOutputsPageSelectedWorkspace')
-    if (stored && stored !== 'all') {
-      return stored
-    }
-    return currentWorkspace ?? ''
-  })
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
   )
@@ -38,15 +30,12 @@ export const WorkflowOutputsPage: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<WorkflowJob | null>(null)
   const [isJobModalOpen, setIsJobModalOpen] = useState(false)
 
-  const workflowWorkspace = selectedWorkspace === 'all' ? currentWorkspace ?? '' : selectedWorkspace
-
-  // Sync selectedWorkspace from URL when navigating to a job details URL
+  // Sync the global current workspace from URL when navigating to a job details URL
   useEffect(() => {
-    if (workspaceParam && workspaceParam !== selectedWorkspace) {
-      setSelectedWorkspace(workspaceParam)
-      localStorage.setItem('workflowOutputsPageSelectedWorkspace', workspaceParam)
+    if (workspaceParam && workspaceParam !== currentWorkspace) {
+      updateCurrentWorkspace?.(workspaceParam)
     }
-  }, [workspaceParam, selectedWorkspace])
+  }, [workspaceParam, currentWorkspace, updateCurrentWorkspace])
 
   // When we have jobId in URL and jobs have loaded, open the job details modal
   useEffect(() => {
@@ -58,11 +47,6 @@ export const WorkflowOutputsPage: React.FC = () => {
     }
   }, [jobIdParam, allJobs])
 
-  const handleWorkspaceChange = (workspace: string) => {
-    localStorage.setItem('workflowOutputsPageSelectedWorkspace', workspace)
-    setSelectedWorkspace(workspace)
-  }
-
   const handleJobModalOpenChange = (open: boolean) => {
     setIsJobModalOpen(open)
     if (!open && jobIdParam) {
@@ -73,17 +57,7 @@ export const WorkflowOutputsPage: React.FC = () => {
   const handleResetFilters = () => {
     setSelectedStatus('all')
     setSearchText('')
-    const resetWorkspace = currentWorkspace ?? ''
-    localStorage.setItem('workflowOutputsPageSelectedWorkspace', resetWorkspace)
-    setSelectedWorkspace(resetWorkspace)
   }
-
-  const { data: allWorkspaces } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: !!token,
-  })
 
   const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
 
@@ -92,32 +66,32 @@ export const WorkflowOutputsPage: React.FC = () => {
     isLoading: isLoadingJobs,
     error: jobsError,
   } = useQuery<JobsApiResponse>({
-    queryKey: ['WorkflowJobs', workflowWorkspace, sharedResultsWorkspaceName, token],
+    queryKey: ['WorkflowJobs', currentWorkspace, sharedResultsWorkspaceName, token],
     queryFn: async (): Promise<JobsApiResponse> => {
-      if (!token || !workflowWorkspace) {
+      if (!token || !currentWorkspace) {
         return Promise.resolve({ jobs: [], links: [], numberTotal: 0 })
       }
 
-      const primary = await fetchJobsForWorkspace(workflowWorkspace, token)
+      const primary = await fetchJobsForWorkspace(currentWorkspace, token)
 
       if (!sharedResultsWorkspaceName) {
         // No shared workspace configured; behave as before
         return {
           ...primary,
-          jobs: primary.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
+          jobs: primary.jobs.map((job) => ({ ...job, workspace: currentWorkspace })),
         }
       }
 
       try {
         const shared = await fetchJobsForSharedWorkspace(
           sharedResultsWorkspaceName,
-          workflowWorkspace,
+          currentWorkspace,
           token,
         )
 
         const annotatedPrimaryJobs = primary.jobs.map((job) => ({
           ...job,
-          workspace: workflowWorkspace,
+          workspace: currentWorkspace,
         }))
 
         const annotatedSharedJobs = shared.jobs.map((job) => ({
@@ -135,7 +109,7 @@ export const WorkflowOutputsPage: React.FC = () => {
         // while still annotating them with their workspace.
         const annotatedPrimaryJobs = primary.jobs.map((job) => ({
           ...job,
-          workspace: workflowWorkspace,
+          workspace: currentWorkspace,
         }))
 
         return {
@@ -146,7 +120,7 @@ export const WorkflowOutputsPage: React.FC = () => {
       }
     },
     refetchOnWindowFocus: false,
-    enabled: !!token && !!workflowWorkspace,
+    enabled: !!token && !!currentWorkspace,
   })
 
   useEffect(() => {
@@ -154,15 +128,6 @@ export const WorkflowOutputsPage: React.FC = () => {
       setAllJobs(sortJobsByCreated(jobsResponse.jobs))
     }
   }, [jobsResponse])
-
-  const workspaceOptions = useMemo(() => {
-    const workspaceSet = new Set<string>()
-    if (allWorkspaces) {
-      allWorkspaces.forEach((ws) => ws.name && workspaceSet.add(ws.name))
-    }
-    if (currentWorkspace) workspaceSet.add(currentWorkspace)
-    return Array.from(workspaceSet).sort()
-  }, [allWorkspaces, currentWorkspace])
 
   const filteredJobs = useMemo(() => {
     let filtered = allJobs
@@ -183,9 +148,8 @@ export const WorkflowOutputsPage: React.FC = () => {
   }, [allJobs, searchText, selectedStatus])
 
   const displayJobs = useMemo(() => {
-    const workspace = workflowWorkspace || ''
-    return filteredJobs.map((job) => transformJobForDisplay(job, workspace))
-  }, [filteredJobs, workflowWorkspace])
+    return filteredJobs.map((job) => transformJobForDisplay(job, currentWorkspace ?? ''))
+  }, [filteredJobs, currentWorkspace])
 
   const workflowJobsPageCount = Math.ceil(displayJobs.length / PAGE_SIZE)
   const paginatedJobs = useMemo(() => {
@@ -195,7 +159,7 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   useEffect(() => {
     setWorkflowJobsPage(0)
-  }, [selectedStatus, searchText, selectedWorkspace])
+  }, [selectedStatus, searchText, currentWorkspace])
 
   return (
     <>
@@ -231,20 +195,6 @@ export const WorkflowOutputsPage: React.FC = () => {
             className={styles.filterContainer}
             overflow="auto"
           >
-            <Box flexGrow="1" width="160px" flexShrink="0">
-              <Select.Root size="3" value={selectedWorkspace} onValueChange={handleWorkspaceChange}>
-                <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
-                <Select.Content position="popper">
-                  <Select.Group>
-                    {workspaceOptions.map((workspace) => (
-                      <Select.Item key={workspace} value={workspace}>
-                        {workspace}
-                      </Select.Item>
-                    ))}
-                  </Select.Group>
-                </Select.Content>
-              </Select.Root>
-            </Box>
             <Box flexGrow="1" width="160px" flexShrink="0">
               <Select.Root
                 size="3"
@@ -287,6 +237,9 @@ export const WorkflowOutputsPage: React.FC = () => {
               {(selectedStatus !== 'all' || searchText.trim()) && ' (filtered)'}
             </Text>
           </Flex>
+          {token && !currentWorkspace && (
+            <Callout type="info" message="Select a workspace to view its workflow outputs." />
+          )}
           {isLoadingJobs ? (
             <LoadingIndicator size="3" />
           ) : (
@@ -326,9 +279,9 @@ export const WorkflowOutputsPage: React.FC = () => {
                           if (job) {
                             setSelectedJob(job)
                             setIsJobModalOpen(true)
-                            if (workflowWorkspace) {
+                            if (currentWorkspace) {
                               void navigate(
-                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}`,
+                                `/my-data/workflow-outputs/${currentWorkspace}/${job.id}`,
                               )
                             }
                           }
@@ -371,7 +324,7 @@ export const WorkflowOutputsPage: React.FC = () => {
         job={selectedJob}
         open={isJobModalOpen}
         onOpenChange={handleJobModalOpenChange}
-        workspaceName={workflowWorkspace}
+        workspaceName={currentWorkspace ?? ''}
       />
     </>
   )

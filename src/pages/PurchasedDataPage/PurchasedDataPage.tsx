@@ -2,13 +2,7 @@ import React, { useMemo, useState, useContext, useEffect } from 'react'
 import { Flex, Text, TextField, Box, Table, Select, Button, Checkbox } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import {
-  fetchAllOrders,
-  fetchOrdersForWorkspace,
-  fetchMoreOrders,
-  OrderFetchResult,
-} from '@/services/orderService'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { fetchOrdersForWorkspace, fetchMoreOrders, OrderFetchResult } from '@/services/orderService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
@@ -30,10 +24,6 @@ export const PurchasedDataPage: React.FC = () => {
   const { token, updateCurrentWorkspace, currentWorkspace } = useContext(AuthenticationContext)
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState('')
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string>(() => {
-    const stored = localStorage.getItem('ordersPageSelectedWorkspace')
-    return stored ?? currentWorkspace ?? 'all'
-  })
   const [selectedCollection, setSelectedCollection] = useState('all')
   const [includeFailedOrders, setIncludeFailedOrders] = useState(false)
   const [currentPage, setCurrentPage] = useState(0)
@@ -80,14 +70,7 @@ export const PurchasedDataPage: React.FC = () => {
     void navigate(getCollectionMapUrl(collectionId))
   }
 
-  const handleWorkspaceChange = (workspace: string) => {
-    localStorage.setItem('ordersPageSelectedWorkspace', workspace)
-    setSelectedWorkspace(workspace)
-  }
-
   const handleResetFilters = () => {
-    localStorage.removeItem('ordersPageSelectedWorkspace')
-    setSelectedWorkspace('all')
     setSelectedCollection('all')
     setIncludeFailedOrders(false)
     setSearchText('')
@@ -99,9 +82,9 @@ export const PurchasedDataPage: React.FC = () => {
     isLoading,
     error,
   } = useQuery<OrderFetchResult>({
-    queryKey: ['Orders', selectedWorkspace, token],
+    queryKey: ['Orders', currentWorkspace, token],
     queryFn: (): Promise<OrderFetchResult> => {
-      if (!token) {
+      if (!token || !currentWorkspace) {
         return Promise.resolve({
           orders: [],
           totalItemsMatched: null,
@@ -109,12 +92,10 @@ export const PurchasedDataPage: React.FC = () => {
           collectionMetadata: [],
         })
       }
-      return selectedWorkspace === 'all'
-        ? fetchAllOrders(token)
-        : fetchOrdersForWorkspace(selectedWorkspace, token)
+      return fetchOrdersForWorkspace(currentWorkspace, token)
     },
     refetchOnWindowFocus: false,
-    enabled: !!token,
+    enabled: Boolean(token && currentWorkspace),
   })
 
   useEffect(() => {
@@ -144,24 +125,7 @@ export const PurchasedDataPage: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [selectedWorkspace])
-
-  const { data: allWorkspaces } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: !!token,
-  })
-
-  const workspaceOptions = useMemo(() => {
-    const workspaceSet = new Set<string>()
-    if (allWorkspaces) {
-      allWorkspaces.forEach((ws) => ws.name && workspaceSet.add(ws.name))
-    }
-    allOrders.forEach((o) => o.workspace?.trim() && workspaceSet.add(o.workspace))
-    if (currentWorkspace) workspaceSet.add(currentWorkspace)
-    return ['all', ...Array.from(workspaceSet).sort()]
-  }, [allWorkspaces, allOrders, currentWorkspace])
+  }, [currentWorkspace])
 
   const collectionOptions = useMemo(() => {
     return [
@@ -176,9 +140,6 @@ export const PurchasedDataPage: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     let filtered = allOrders
-    if (selectedWorkspace !== 'all') {
-      filtered = filtered.filter((order) => order.workspace === selectedWorkspace)
-    }
     if (selectedCollection !== 'all') {
       filtered = filtered.filter((order) => order.collectionTitle === selectedCollection)
     }
@@ -204,7 +165,7 @@ export const PurchasedDataPage: React.FC = () => {
       const dateB = new Date(b.orderDate).getTime()
       return dateB - dateA
     })
-  }, [allOrders, searchText, selectedWorkspace, selectedCollection, includeFailedOrders])
+  }, [allOrders, searchText, selectedCollection, includeFailedOrders])
 
   const filteredTotalItemsMatched = useMemo(() => {
     if (includeFailedOrders || totalItemsMatched === null) return totalItemsMatched
@@ -344,7 +305,7 @@ export const PurchasedDataPage: React.FC = () => {
           Purchased Data
         </Text>
         <Text size="3" color="gray">
-          View all your orders across all workspaces
+          View your orders for this workspace
         </Text>
       </Flex>
       <Flex justify="between" align="center">
@@ -370,23 +331,6 @@ export const PurchasedDataPage: React.FC = () => {
           className={styles.filterContainer}
           overflow="auto"
         >
-          <Box flexGrow="1" width="160px" flexShrink="0">
-            <Select.Root size="3" value={selectedWorkspace} onValueChange={handleWorkspaceChange}>
-              <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
-              <Select.Content position="popper">
-                <Select.Group>
-                  <Select.Item value="all">All Workspaces</Select.Item>
-                  {workspaceOptions
-                    .filter((w) => w !== 'all')
-                    .map((workspace) => (
-                      <Select.Item key={workspace} value={workspace}>
-                        {workspace}
-                      </Select.Item>
-                    ))}
-                </Select.Group>
-              </Select.Content>
-            </Select.Root>
-          </Box>
           <Box flexGrow="1" width="160px" flexShrink="0">
             <Select.Root size="3" value={selectedCollection} onValueChange={setSelectedCollection}>
               <Select.Trigger style={{ width: '100%' }} placeholder="Collection" />
@@ -460,13 +404,13 @@ export const PurchasedDataPage: React.FC = () => {
               }
               return `Showing ${filteredOrders.length} orders`
             })()}
-            {(selectedWorkspace !== 'all' ||
-              selectedCollection !== 'all' ||
-              includeFailedOrders ||
-              searchText.trim()) &&
+            {(selectedCollection !== 'all' || includeFailedOrders || searchText.trim()) &&
               ' (filtered)'}
           </Text>
         </Flex>
+        {token && !currentWorkspace && (
+          <Callout type="info" message="Select a workspace to view its orders." />
+        )}
         {isLoading ? (
           <LoadingIndicator size="3" />
         ) : (

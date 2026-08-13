@@ -54,13 +54,16 @@ export const LoginButton = ({
           </DropdownMenu.Item>
 
           <DropdownMenu.Sub>
-            <DropdownMenu.SubTrigger>Accounting</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubTrigger>Accounting / Billing</DropdownMenu.SubTrigger>
             <DropdownMenu.SubContent>
-              <DropdownMenu.Item disabled>
-                Invoices{' '}
-                <Badge ml="2" color="gray" variant="soft">
-                  Soon
-                </Badge>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/credits">Credits</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/budget">Budget</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/usage">Usage</Link>
               </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
@@ -76,6 +79,21 @@ export const LoginButton = ({
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
                 <Link to="/publisher">Publisher</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>My data</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/purchased">Purchased data</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/workflow-outputs">Workflow outputs</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/data-storage">Files</Link>
               </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
