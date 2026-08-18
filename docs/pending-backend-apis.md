@@ -207,53 +207,112 @@ resets on refresh) until that lands. Real endpoints today, for reference:
   data.
 - `GET /api/accounting/prices` — current price per unit, **in pounds**, not credits.
 
-To make the mocked pages real:
+To make the mocked pages real, thought through page by page — a few things only surface
+once *quantity* (what's real today) is separated from *credits* (what nothing computes
+yet), and *"this month"* (what the UI shows) from *balance* (what the design actually
+tracks):
 
-1. **Credits page (balance + top-up)** — not previously covered in this doc. Needs a
-   balance-read endpoint once the credit-ledger work lands (e.g.
-   `GET /api/workspaces/:id/accounting/balance`). **Decided: top-up is `hub_admin`-only**,
-   matching the credits-ledger decisions doc's framing of credit grants as an administrative
-   action. The current mock doesn't reflect this yet — its "Buy more credits" button is
-   self-service and visible to any member, which is now a known UX gap to fix, not an open
-   question.
-2. **Usage page — user column, filter, per-user breakdown** — closer than previously
-   thought, but not free:
-   - `BillingEvent.user` (a Keycloak user UUID) **already exists** as a column
-     (`accounting_service/models.py:309`) and is captured on ingestion, but
-     `GET .../usage-data` doesn't return it today — `BillingEventAPIResult` has no `user`
-     field. Exposing it, and adding a `user` query filter alongside the existing
-     `start`/`end`/`limit`/`after`/`time-aggregation` ones, is a small, real change.
-   - **Aggregation currently discards it.** When `time-aggregation=day` or `month` is
-     requested, the aggregation query explicitly selects `NULL AS user` and groups only by
-     `(period, item, workspace)` (`models.py:391-413`) — per-user monthly/daily totals need
-     `user` added to both the `SELECT` and the `GROUP BY` there, not just exposed on raw
-     rows.
-   - **The API would return a UUID, not a username.** Per the credits-ledger decisions doc,
-     `accounting-service` deliberately holds no user identities — resolving that UUID to the
-     username the UI shows is Keycloak's or `eodhp-workspace-services`'s job, not a change to
-     this service alone.
-3. **Budget page — default + per-user overrides** — still entirely unbuilt (no `budget`
-   table or endpoint exists in `accounting-service` today — confirmed by grepping the repo).
-   Suggested paths, following the service's own `/accounting/` sub-path convention:
-   - `GET`/`PUT /api/workspaces/:id/accounting/budget` — the workspace-wide threshold(s),
-     the default-per-user value, and whether per-user budgets are switched on for this
-     workspace.
-   - `GET /api/workspaces/:id/accounting/budget/users` /
-     `PUT /api/workspaces/:id/accounting/budget/users/:username` — list and set per-user
-     overrides.
-   - Depends on item 2's user attribution existing on the read side before a per-user budget
-     can be enforced against anything.
-4. **Authorization** — `workspace_authz` in `app.py` already implements exactly the
-   owner/member/hub_admin split this doc keeps flagging as unresolved elsewhere: it reads
-   `workspaces_owned` and `workspaces` claims straight off the caller's JWT, with a
-   `require_owner` flag other endpoints already use. Budget endpoints would presumably set
-   `require_owner=True` the same way; whether a non-owner admin should also qualify is the
-   same open question as Members/Publisher above, now with a concrete mechanism to extend
-   once multi-admin support exists.
+### Credits page
 
-One loose end: `UsagePage.tsx`'s existing source comment ("No usage API exists yet") is now
-inaccurate — a real one does exist, it just doesn't return what the page needs yet. Worth
-fixing when this section's other changes land.
+1. **Balance read** — `GET /api/workspaces/:id/accounting/balance`, once the ledger exists.
+   Whole-pool (`item_id IS NULL`, per the schema doc's `credit_balance_snapshot`) is enough
+   for what's built; a per-SKU breakdown is there later if a richer view is wanted.
+2. **Burn-rate table** — currently hardcoded mock data. The real source for this **isn't**
+   `/api/accounting/prices` — that's pounds per unit, the old model. It's the pricing
+   policy's `credits_per_unit` per SKU (schema doc's `pricing_policy_rate`), which needs its
+   own read endpoint, e.g. `GET /api/accounting/pricing-policy` returning the current
+   version's rates and category multipliers. This is scoping task 3 ("expose pricing-policy
+   version history via an API"), just pointed at credits instead of pounds.
+3. **Top-up** — `POST /api/workspaces/:id/accounting/credits`, **`hub_admin`-only**
+   (decided). Whether this stays reachable from a member-facing "Buy more credits" button or
+   moves to an admin-only surface is a UI question flagged separately, not an API one.
+
+### Usage page
+
+This is where "credits used" and "quantity" genuinely diverge, and it changes what the
+real endpoint should be, not just what fields it returns.
+
+- **Short-term**: extending today's `GET .../usage-data` (`BillingEvent`-based) with `user`
+  — as already scoped below — only ever gives *quantity* per user, per SKU. That's enough
+  for the user-filter and table columns, but not enough for a meaningful "total credits" per
+  user, because summing raw quantity across different SKUs (CPU-seconds + GB-months + API
+  calls) means nothing without a price attached to each one first.
+- **Real target**: once the credit ledger exists, the Usage page should read from *it*, not
+  `BillingEvent` — each ledger row already carries a computed `credits` value (schema doc),
+  so a per-user total becomes a plain `SUM`. This needs a read endpoint over
+  `CreditLedgerTransaction` (extending `/usage-data` once ledger rows exist, or a new
+  `/api/workspaces/:id/accounting/ledger`) with the same `start`/`end`/`limit`/`user`/
+  `time-aggregation` filters as the existing endpoint.
+- **This is a schema gap, not just an API gap.** `CreditLedgerTransaction` as currently
+  designed (schema doc) has **no `user` column** — unlike `BillingEvent`, which has one
+  today (`models.py:309`). If the ledger is built as currently specified, the per-user
+  attribution that exists right now would be *lost*, not just missing an endpoint to expose
+  it. Worth raising directly: the ledger needs a `user: Mapped[UUID | None]` column, carried
+  through from `BillingEvent.user` at debit-ingestion time (task 2a) — otherwise the Usage
+  page's per-user requirement can't be met for real regardless of what the API layer does.
+- Either way, aggregation needs to preserve `user` in its `GROUP BY` — already flagged below
+  for the interim endpoint; the same requirement carries over once the ledger-based one
+  exists.
+- `BillingEvent.user`/the ledger's future `user` column are Keycloak user UUIDs, not
+  usernames — `accounting-service` deliberately holds no user identities (decisions doc),
+  so resolving that UUID to what the UI shows is Keycloak's or
+  `eodhp-workspace-services`'s job, not a change to this service alone.
+
+### Budget page
+
+Two decisions were open here; both are now settled.
+
+1. **Balance, not "used this month" — decided.** The mock's `usedThisMonth`/`threshold`/
+   `Alerts` group (a calendar-month quota that resets) is dropped. Nothing in the
+   credit-ledger design tracks a resetting period — it's balance-only, a running total
+   against a negative-balance limit (D4/D5) — so the Compute section moves to match that:
+   show the workspace's current balance against its negative-balance limit, with no
+   calendar-month framing. **No new backend concept needed** — this was a frontend-only
+   change. Storage is explicitly out of scope for this decision: it keeps its own separate
+   model in the mock (a fixed £/month plan, not a balance or a quota) — see "not resolved
+   here" below.
+2. **One combined "Compute" number, not per-SKU — decided.** `workspace_budget` (schema
+   doc) is keyed per resource type (`item_id`), which would give CPU and GPU separate
+   limits. The product decision is to keep one combined number instead, matching the
+   mock's current UI. This means the schema needs a new grouping concept it doesn't have
+   today — some way to express "CPU and GPU share one limit" rather than one row per
+   `item_id` — e.g. a shared `budget_group` the relevant SKUs point to, or a virtual
+   `item_id` representing "compute" as a whole. The `pricing_policy_rate`/burn-rate side
+   stays per-SKU regardless (Credits' burn-rate table is correct to show CPU and GPU
+   separately at different rates) — only the *budget/limit* side needs to combine them.
+   Same combined-number treatment applies to the per-user default and overrides.
+
+With both decided, the endpoint shapes are close to final — suggested paths, following the
+service's own `/accounting/` sub-path convention:
+
+- `GET`/`PUT /api/workspaces/:id/accounting/budget` — one workspace-wide balance-relative
+  limit covering compute as a whole (CPU + GPU combined, per decision 2), plus the
+  default-per-user value and whether per-user budgets are switched on for this workspace.
+- `GET /api/workspaces/:id/accounting/budget/users` /
+  `PUT /api/workspaces/:id/accounting/budget/users/:username` — list and set per-user
+  overrides, same combined-number shape.
+- Both still depend on the Usage page's user attribution existing on the read side first —
+  a per-user budget has nothing to enforce against otherwise.
+- Both still depend on the new compute-grouping concept from decision 2 existing in the
+  schema before either endpoint can be built against real data.
+
+### Authorization (all three pages)
+
+`workspace_authz` in `app.py` already implements exactly the owner/member/hub_admin split
+this doc keeps flagging as unresolved elsewhere: it reads `workspaces_owned` and
+`workspaces` claims straight off the caller's JWT, with a `require_owner` flag other
+endpoints already use. Budget endpoints would presumably set `require_owner=True` the same
+way; whether a non-owner admin should also qualify is the same open question as
+Members/Publisher above, now with a concrete mechanism to extend once multi-admin support
+exists.
+
+### Not resolved here, unchanged from before
+
+- Storage's fixed-plan-vs-metered-credits mismatch (see the "Credits ledger UX gaps" note
+  handed to the design's author) — a third open model question, alongside the two above.
+- `UsagePage.tsx`'s existing source comment ("No usage API exists yet") is now inaccurate —
+  a real one does exist, it just doesn't return what the page needs yet. Worth fixing when
+  this section's other changes land.
 
 ## Publishing-flow redesign (see "Redesign the data-publishing flow and APIs" task note)
 

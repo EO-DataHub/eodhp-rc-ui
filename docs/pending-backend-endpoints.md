@@ -7,7 +7,9 @@ mocked behaviour each row exists to replace, and the reasoning behind each choic
 quoted above each group below.
 
 **Status legend:** `New` — endpoint doesn't exist today. `Extend` — endpoint exists, needs a
-field or behaviour added. `TBD` — exact path not yet decided, only the shape is.
+field or behaviour added. `TBD` — exact path not yet decided, only the shape is. `Blocked`
+— shape is decided, but it depends on a schema/data-model change that doesn't exist yet
+(not just "someone needs to write this endpoint").
 
 Several rows share the same open authorization question, noted inline as **(open Q)**:
 whether only the workspace _owner_ can call them, or any _admin_ can too. Not resolved in
@@ -82,11 +84,13 @@ proposal, not implemented anywhere in this service yet.
 | GET     | `/api/workspaces/:id/accounting/usage-data`                 | –                                                    | raw consumption events (`event_start`, `event_end`, `item` SKU, `quantity`); `?time-aggregation=` (`day` or `month`) for totals | Any member (read)           | Real   |
 | GET     | `/api/accounting/skus`, `/api/accounting/skus/{sku}`         | –                                                    | resource catalogue (`sku`, `name`, `unit`) — what Credits' "Burn rate" table currently hardcodes | Any (read)                  | Real   |
 | GET     | `/api/accounting/prices`                                     | –                                                    | current price per unit, **in pounds**, not credits | Any (read)                  | Real   |
-| GET     | `/api/workspaces/:id/accounting/usage-data` (extend)         | –                                                    | expose the already-existing `user` column (`models.py:309`) per event, add a `user` query filter, and stop nulling `user` out of the day/month aggregation query (`models.py:391-413`) | Any member (read)           | Extend |
+| GET     | `/api/workspaces/:id/accounting/usage-data` (extend)         | –                                                    | interim only — expose the already-existing `user` column (`models.py:309`) per event, add a `user` query filter, stop nulling `user` out of the day/month aggregation (`models.py:391-413`). Gives quantity-per-user, not credits-per-user — see the ledger row below for the real target | Any member (read)           | Extend |
+| GET     | `/api/accounting/pricing-policy` (suggested — doesn't exist yet)   | –                                                    | current pricing policy's `credits_per_unit` per SKU + category multipliers, for Credits' "Burn rate" table. `/accounting/prices` above is £, not credits — this is a different endpoint, not an extension of it | Any (read)                  | New    |
+| GET     | credit-ledger read endpoint (path **TBD**, e.g. `/api/workspaces/:id/accounting/ledger`) | – | real target for the Usage page: same filters as `usage-data` (`start`/`end`/`limit`/`user`/`time-aggregation`) but returns `credits` per row/aggregate, not raw quantity. **Blocked**: `CreditLedgerTransaction` as currently designed has no `user` column (unlike `BillingEvent`, which has one today) — needs that added before this can serve per-user totals | Any member (read)           | Blocked |
 | GET     | credit-balance endpoint (path **TBD** — depends on credit-ledger work landing, e.g. `/api/workspaces/:id/accounting/balance`) | – | workspace's current credit balance, for the Credits page | Any member (read)           | New    |
 | POST    | credit top-up/grant endpoint (path **TBD**)                  | `{ amount: number }`                                 | 200; decided admin-only — the current mock's self-service "Buy more credits" (any member) doesn't match this and needs updating | `hub_admin` only            | New    |
-| GET/PUT | `/api/workspaces/:id/accounting/budget` (suggested)          | `{ enabled: boolean, defaultThreshold: number, workspaceThreshold: number }` | 200 | Owner **(open Q: or any admin?)** | New    |
-| GET/PUT | `/api/workspaces/:id/accounting/budget/users` / `.../budget/users/:username` (suggested) | `{ username, threshold, alertsEnabled }` | 200; list and set per-user overrides | Owner **(open Q: or any admin?)** | New    |
+| GET/PUT | `/api/workspaces/:id/accounting/budget` (suggested)          | `{ enabled: boolean, defaultUserThreshold: number, workspaceThreshold: number }` — one combined balance-relative limit for compute as a whole (decided: no calendar-month quota, no per-SKU split) | 200. **Blocked**: `workspace_budget` is keyed per `item_id`, so this needs a new grouping concept (e.g. a shared `budget_group`, or a virtual "compute" `item_id`) before CPU+GPU can share one limit | Owner **(open Q: or any admin?)** | Blocked |
+| GET/PUT | `/api/workspaces/:id/accounting/budget/users` / `.../budget/users/:username` (suggested) | `{ username, threshold, alertsEnabled }` — same combined-number shape as the row above, per user | 200; list and set per-user overrides | Owner **(open Q: or any admin?)** | Blocked |
 
 ---
 
