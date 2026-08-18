@@ -21,14 +21,17 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchWorkspaceMembers } from '@/services/workspaceMembersService'
 import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { useMockCreditBalance } from '@/pages/CreditsPage/useMockCreditBalance'
 import styles from './BudgetPage.module.scss'
 
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
-// No budget/plan API exists yet; usage figures, thresholds and plan prices below are illustrative.
+// No budget/plan API exists yet; thresholds and plan prices below are illustrative.
 //
-// Model: compute (CPU+GPU) is metered against the single credit pool from CreditsPage, so it
-// still gets a threshold/alert here. Storage is not credit-metered — it's a purchased plan
-// (like Google Drive), so it gets a plan picker with a fixed allowance instead of a threshold.
+// Model: compute (CPU+GPU) is metered against the single credit pool from CreditsPage — a
+// running balance, not a resetting monthly quota, so this page shows that same balance
+// against a block point (negative-balance allowance) and a warn point, both balance-relative.
+// Storage is not credit-metered — it's a purchased plan (like Google Drive), so it gets a
+// plan picker with a fixed allowance instead of a threshold.
 interface StoragePlan {
   id: string
   label: string
@@ -42,16 +45,11 @@ const STORAGE_PLANS: StoragePlan[] = [
   { id: 'plus', label: 'Plus — 500 GB to 1 TB', allowanceGb: 1000, pricePerMonth: 15 },
 ]
 
-const INITIAL_COMPUTE_BUDGET = {
-  usedThisMonth: 340,
-  threshold: 1000,
-  alertsEnabled: true,
-}
-
 const INITIAL_STORAGE_PLAN_ID = 'standard'
 const INITIAL_STORAGE_USED_GB = 412
 
 const INITIAL_NEGATIVE_BALANCE_ALLOWANCE = '50'
+const INITIAL_WARN_AT_CREDITS = '200'
 
 // Per-user budgets supplement (not replace) the workspace-wide threshold above — whichever
 // is hit first blocks further activity. Every member uses the default unless they have an
@@ -72,10 +70,11 @@ interface UserBudgetOverride {
 
 export const BudgetPage: React.FC = () => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
-  const [computeBudget, setComputeBudget] = useState(INITIAL_COMPUTE_BUDGET)
+  const [balance] = useMockCreditBalance()
   const [negativeBalanceAllowance, setNegativeBalanceAllowance] = useState(
     INITIAL_NEGATIVE_BALANCE_ALLOWANCE,
   )
+  const [warnAtCredits, setWarnAtCredits] = useState(INITIAL_WARN_AT_CREDITS)
   const [storagePlanId, setStoragePlanId] = useState(INITIAL_STORAGE_PLAN_ID)
   const [storageUsedGb] = useState(INITIAL_STORAGE_USED_GB)
   const [isChangePlanOpen, setIsChangePlanOpen] = useState(false)
@@ -142,8 +141,6 @@ export const BudgetPage: React.FC = () => {
   const currentPlan = STORAGE_PLANS.find((plan) => plan.id === storagePlanId) ?? STORAGE_PLANS[0]
   const storagePercentUsed =
     currentPlan.allowanceGb > 0 ? (storageUsedGb / currentPlan.allowanceGb) * 100 : 0
-  const computePercentUsed =
-    computeBudget.threshold > 0 ? (computeBudget.usedThisMonth / computeBudget.threshold) * 100 : 0
 
   const openChangePlan = () => {
     setPendingPlanId(storagePlanId)
@@ -175,6 +172,21 @@ export const BudgetPage: React.FC = () => {
             Compute
           </Text>
 
+          <Flex align="center" justify="between" className={styles.computeRow}>
+            <Flex direction="column" gap="1">
+              <Text size="2" weight="medium">
+                Current balance
+              </Text>
+              <Text size="1" color="gray">
+                Shared with the Credits page. New activity is blocked once this drops below −
+                {negativeBalanceAllowance || 0} credits.
+              </Text>
+            </Flex>
+            <Text size="6" weight="bold">
+              {balance} credits
+            </Text>
+          </Flex>
+
           <Flex direction="column" gap="2" className={styles.negativeBalanceSection}>
             <Text size="2" weight="medium">
               Allow negative balance up to
@@ -198,47 +210,28 @@ export const BudgetPage: React.FC = () => {
             </Box>
           </Flex>
 
-          <Flex align="center" justify="between" className={styles.computeRow}>
-            <Flex direction="column" gap="1" className={styles.usageCell}>
-              <Text size="2">
-                {computeBudget.usedThisMonth} / {computeBudget.threshold} credits used this month
-              </Text>
-              <Progress
-                value={Math.min(100, computePercentUsed)}
-                color={computePercentUsed >= 90 ? 'red' : undefined}
-                size="1"
-              />
-            </Flex>
-            <Flex align="center" gap="4">
-              <label>
-                <Text as="div" size="1" color="gray" mb="1">
-                  Threshold
-                </Text>
-                <TextField.Root
-                  type="number"
-                  min={0}
-                  value={String(computeBudget.threshold)}
-                  onChange={(e) => {
-                    setComputeBudget((prev) => ({ ...prev, threshold: Number(e.target.value) }))
-                    setIsDirty(true)
-                  }}
-                  size="2"
-                  style={{ width: 100 }}
-                />
-              </label>
-              <Flex direction="column" align="center" gap="1">
-                <Text size="1" color="gray">
-                  Alerts
-                </Text>
-                <Switch
-                  checked={computeBudget.alertsEnabled}
-                  onCheckedChange={(checked) => {
-                    setComputeBudget((prev) => ({ ...prev, alertsEnabled: checked }))
-                    setIsDirty(true)
-                  }}
-                />
-              </Flex>
-            </Flex>
+          <Flex direction="column" gap="2" className={styles.negativeBalanceSection}>
+            <Text size="2" weight="medium">
+              Warn when balance drops below
+            </Text>
+            <Text size="1" color="gray">
+              Shows a low-balance warning once the balance falls under this amount — activity
+              isn&apos;t blocked until the negative-balance limit above.
+            </Text>
+            <Box maxWidth="200px">
+              <TextField.Root
+                type="number"
+                min={0}
+                value={warnAtCredits}
+                onChange={(e) => {
+                  setWarnAtCredits(e.target.value)
+                  setIsDirty(true)
+                }}
+                size="2"
+              >
+                <TextField.Slot side="right">credits</TextField.Slot>
+              </TextField.Root>
+            </Box>
           </Flex>
         </Flex>
 

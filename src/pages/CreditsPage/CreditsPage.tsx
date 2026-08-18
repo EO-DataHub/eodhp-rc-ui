@@ -5,6 +5,7 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { getMockWorkspaceCategory } from '@/pages/MembersPage/useMockWorkspaceCategory'
+import { useMockCreditBalance } from './useMockCreditBalance'
 import styles from './CreditsPage.module.scss'
 
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
@@ -17,7 +18,6 @@ const BURN_RATES = [
   { label: 'GPU', creditsPerUnit: 10, unit: 'hour' },
 ]
 
-const INITIAL_BALANCE = 1200
 const LOW_BALANCE_THRESHOLD = 200
 const ILLUSTRATIVE_PRICE_PER_CREDIT = 0.05
 
@@ -28,7 +28,7 @@ const BUY_CREDITS_PREVIEW_NOTE = '(UI preview only — no credits API exists yet
 
 export const CreditsPage: React.FC = () => {
   const { currentWorkspace } = useContext(AuthenticationContext)
-  const [balance, setBalance] = useState(INITIAL_BALANCE)
+  const [balance, setBalance] = useMockCreditBalance()
   const [isBuyOpen, setIsBuyOpen] = useState(false)
   const [amount, setAmount] = useState('')
 
