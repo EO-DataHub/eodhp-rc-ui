@@ -20,6 +20,7 @@ import { PublishingPage } from '@/pages/PublishingPage/PublishingPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
+import { PlatformAdminUsagePage } from '@/pages/PlatformAdminUsagePage/PlatformAdminUsagePage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -100,6 +101,16 @@ const routes = [
       {
         path: '',
         element: <ProfilePage />,
+      },
+    ],
+  },
+  {
+    path: '/admin/usage',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <PlatformAdminUsagePage />,
       },
     ],
   },

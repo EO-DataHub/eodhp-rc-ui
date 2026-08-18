@@ -20,6 +20,7 @@ export const LoginButton = ({
     login,
     logout,
     workspaceUserName,
+    isHubAdmin,
   } = useContext(AuthenticationContext)
 
   if (isAuthenticationServiceError) {
@@ -101,6 +102,15 @@ export const LoginButton = ({
               </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
+
+          {isHubAdmin && (
+            <>
+              <DropdownMenu.Separator />
+              <DropdownMenu.Item asChild>
+                <Link to="/admin/usage">Platform admin</Link>
+              </DropdownMenu.Item>
+            </>
+          )}
 
           <DropdownMenu.Separator />
 

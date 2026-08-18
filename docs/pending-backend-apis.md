@@ -25,7 +25,7 @@ stored in `localStorage`. To make this real:
    existing add-member pattern.
 3. **Demote from admin** — `DELETE /api/workspaces/:id/admins/:username`.
 4. **Transfer ownership** — `POST /api/workspaces/:id/owner/transfer` with body
-   `{ newOwner: username }`. Must atomically set the new owner *and* move the previous
+   `{ newOwner: username }`. Must atomically set the new owner _and_ move the previous
    owner into `admins` (the mock demotes the outgoing owner to admin, not all the way to
    member).
 5. **Authorization gaps the mock doesn't enforce**:
@@ -65,9 +65,29 @@ mocked here, at two different levels of realism:
      `{ category: 'commercial' | 'research' }`, gated server-side on the caller holding the
      `hub_admin` realm role (the frontend's role check is real, but nothing stops a direct
      API call bypassing it — same caveat as every other client-side-only gate in this doc).
-   - Per the schema doc, this table deliberately keeps no history — the *ledger* rows record
+   - Per the schema doc, this table deliberately keeps no history — the _ledger_ rows record
      which category applied at charge-time, so recategorizing a workspace doesn't need to
      rewrite past charges.
+
+## Platform admin usage (`src/pages/PlatformAdminUsagePage`)
+
+A cross-workspace "which workspaces are using the most" leaderboard, gated on `isHubAdmin`
+(same real permission check as workspace category above — a hub_admin sees a "Platform
+admin" entry in the avatar menu, everyone else doesn't, and the route itself renders an
+access-denied `Callout` if hit directly without the role). Everything else here is mocked:
+
+1. **The workspace list is hardcoded**, not fetched. `fetchWorkspaces` (used everywhere
+   else in the app) is caller-scoped — it returns only the signed-in user's own workspaces,
+   not every workspace on the platform, so it can't be reused here. Making this real needs a
+   new admin-scoped endpoint, e.g. `GET /api/admin/workspaces` returning every workspace
+   regardless of the caller's membership, gated server-side on `hub_admin`.
+2. **The usage figures are the same illustrative mock data** as the per-workspace Usage
+   page, just relabelled by workspace instead of by user — see that page's entry above for
+   the underlying usage-ledger API gap. A real version of this page needs whatever that API
+   becomes, plus the ability to query/aggregate across workspaces rather than one at a time
+   (i.e. it can't just call the per-workspace endpoint once per workspace in a loop at scale).
+3. **Category per workspace** reads the same mocked `getMockWorkspaceCategory` as above —
+   once workspace category is real, this column falls out for free.
 
 ## Profile page (`src/pages/ProfilePage`)
 
