@@ -1,92 +1,86 @@
 # Pending backend endpoints — reference table
 
-A flat, scannable list of every backend endpoint `pending-backend-apis.md` says is needed —
-new or extended — grouped by the same pages. This table is the "what"; for the "why" (the
-mocked behaviour each row exists to replace, and the reasoning behind each choice), see
-[`pending-backend-apis.md`](./pending-backend-apis.md) and search for the section name
-quoted above each group below.
+A flat, scannable list of every backend endpoint grouped by the frontend pages it is needed by.
 
-**Status legend:** `New` — endpoint doesn't exist today. `Extend` — endpoint exists, needs a
-field or behaviour added. `TBD` — exact path not yet decided, only the shape is. `Blocked`
-— shape is decided, but it depends on a schema/data-model change that doesn't exist yet
-(not just "someone needs to write this endpoint").
-
-Several rows share the same open authorization question, noted inline as **(open Q)**:
-whether only the workspace _owner_ can call them, or any _admin_ can too. Not resolved in
-either doc.
+Two different kinds of "admin" appear below — don't conflate them. Owner/admin/member are roles _within one workspace_ (see the Members section). `hub_admin` is a separate, platform-wide role (assigned in Keycloak, not per-workspace) that can act across every workspace on the platform — it's what gates the Workspace category, Workspace integrations, and Platform admin usage endpoints.
 
 ## Members — "Members page"
 
-| Method | Path                                   | Request body             | Response / behaviour                                                        | Auth                                  | Status |
-| ------ | -------------------------------------- | ------------------------ | --------------------------------------------------------------------------- | ------------------------------------- | ------ |
-| GET    | `/api/workspaces/:id/users`            | –                        | add a `role` field (`owner` / `admin` / `member`) per member                | Any member (Q - or just admin?)       | Extend |
-| PUT    | `/api/workspaces/:id/admins/:username` | –                        | 200, promotes to admin                                                      | Owner **(open Q)**                    | New    |
-| DELETE | `/api/workspaces/:id/admins/:username` | –                        | 200, demotes to member                                                      | Owner **(open Q)**                    | New    |
-| POST   | `/api/workspaces/:id/owner/transfer`   | `{ newOwner: username }` | 200; atomically sets new owner _and_ moves the outgoing owner into `admins` | Current owner only                    | New    |
-| DELETE | `/api/workspaces/:id/users/:username`  | –                        | reject 403 if `:username` is the current owner                              | Owner (existing `mustBeAccountOwner`) | Extend |
+| Method | Path                                   | Request body             | Description                                                                        | Auth               |
+| ------ | -------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------- | ------------------ |
+| GET    | `/api/workspaces/:id/users`            | –                        | Add a `role` field (`owner` / `admin` / `member`) to each member                   | Any member         |
+| PUT    | `/api/workspaces/:id/admins/:username` | –                        | Promotes a member to admin                                                         | Owner              |
+| DELETE | `/api/workspaces/:id/admins/:username` | –                        | Demotes an admin back to member                                                    | Owner              |
+| POST   | `/api/workspaces/:id/owner/transfer`   | `{ newOwner: username }` | Transfers ownership: sets the new owner and moves the outgoing owner into `admins` | Current owner only |
+| DELETE | `/api/workspaces/:id/users/:username`  | –                        | Removes a member from the workspace; rejects if `:username` is the current owner   | Owner              |
 
 ## Workspace category — "Workspace category"
 
-| Method | Path                                                                | Request body                               | Response / behaviour                         | Auth              | Status     |
-| ------ | ------------------------------------------------------------------- | ------------------------------------------ | -------------------------------------------- | ----------------- | ---------- |
-| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/category`) | –                                          | `category` field (`commercial` / `research`) | Any member (read) | New/Extend |
-| PUT    | `/api/workspaces/:id/category`                                      | `{ category: 'commercial' \| 'research' }` | 200                                          | `hub_admin`       | New        |
+| Method | Path                                                                | Request body                               | Description                                                  | Auth        |
+| ------ | ------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ | ----------- |
+| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/category`) | –                                          | Returns the workspace's category (`commercial` / `research`) | Any member  |
+| PUT    | `/api/workspaces/:id/category`                                      | `{ category: 'commercial' \| 'research' }` | Sets the workspace's category                                | `hub_admin` |
 
 ## Workspace integrations — "Workspace integrations — Dask, GPU"
 
-| Method | Path                                                                    | Request body                                        | Response / behaviour                                        | Auth              | Status     |
-| ------ | ----------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------- | ----------------- | ---------- |
-| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/integrations`) | –                                                   | `dask_enabled`, `gpu_enabled` booleans                      | Any member (read) | New/Extend |
-| PUT    | `/api/workspaces/:id/integrations`                                      | `{ dask_enabled?: boolean, gpu_enabled?: boolean }` | 200; likely triggers real provisioning, not just a DB write | `hub_admin`       | New        |
+| Method | Path                                                                    | Request body                                        | Description                                                             | Auth        |
+| ------ | ----------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------- |
+| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/integrations`) | –                                                   | Returns whether Dask and GPU integrations are enabled for the workspace | Any member  |
+| PUT    | `/api/workspaces/:id/integrations`                                      | `{ dask_enabled?: boolean, gpu_enabled?: boolean }` | Enables/disables Dask and/or GPU integration for the workspace          | `hub_admin` |
 
 ## Platform admin usage — "Platform admin usage"
 
-| Method | Path                    | Request body | Response / behaviour                                                       | Auth        | Status |
-| ------ | ----------------------- | ------------ | -------------------------------------------------------------------------- | ----------- | ------ |
-| GET    | `/api/admin/workspaces` | –            | every workspace on the platform, regardless of the caller's own membership | `hub_admin` | New    |
+| Method | Path                    | Request body | Description                                                                        | Auth        |
+| ------ | ----------------------- | ------------ | ---------------------------------------------------------------------------------- | ----------- |
+| GET    | `/api/admin/workspaces` | –            | Returns every workspace on the platform, regardless of the caller's own membership | `hub_admin` |
 
-`GET /api/accounts/:accountId/accounting/usage-data` already exists and does most of this
-for one billing account at a time (see the Accounting group below) — this row is really
-"loop that across every account" plus the workspace-listing endpoint above, not a wholly new
-usage-aggregation mechanism.
+Combined with the existing `GET /api/accounts/:accountId/accounting/usage-data` (see the
+Accounting group below), this is what powers the platform-wide usage view.
 
 ## Profile — "Profile page"
 
-| Method | Path                                                                                   | Request body | Response / behaviour                                                                                                        | Auth                      | Status |
-| ------ | -------------------------------------------------------------------------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------ |
-| DELETE | account-deletion endpoint — Keycloak itself or a wrapper in front of it (path **TBD**) | –            | reject 403/409, with the list of workspaces needing an ownership transfer first, if the caller currently owns any workspace | Authenticated user (self) | New    |
+| Method | Path                                                                                   | Request body | Description                                                                                                                                 | Auth                      |
+| ------ | -------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| DELETE | account-deletion endpoint — Keycloak itself or a wrapper in front of it (path **TBD**) | –            | Deletes the caller's own account; rejects with the list of workspaces needing an ownership transfer first, if the caller currently owns any | Authenticated user (self) |
 
 ## Publisher — visibility — "Publisher page"
 
-| Method | Path                              | Request body                            | Response / behaviour                                                    | Auth                        | Status |
-| ------ | --------------------------------- | --------------------------------------- | ----------------------------------------------------------------------- | --------------------------- | ------ |
-| GET    | `.../catalogs/.../collections`    | –                                       | add a `visibility` field per collection                                 | Any member (read)           | Extend |
-| PUT    | `.../collections/{id}/visibility` | `{ visibility: 'public' \| 'private' }` | 200; should be safe to retry (a slow confirm click could double-submit) | Owner or admin **(open Q)** | New    |
-| GET    | `.../catalogs/.../processes`      | –                                       | add a `visibility` field per workflow                                   | Any member (read)           | Extend |
-| PUT    | `.../processes/{id}/visibility`   | `{ visibility: 'public' \| 'private' }` | 200; same retry-safety note                                             | Owner or admin **(open Q)** | New    |
+"Collections" are the entries listed under the Publisher page's Catalogue tab; "processes"
+are the entries listed under its Workflows tab. Both are STAC terms already used by the
+existing catalogue API, not new concepts.
+
+| Method | Path                              | Request body                            | Description                                 | Auth           |
+| ------ | --------------------------------- | --------------------------------------- | ------------------------------------------- | -------------- |
+| GET    | `.../catalogs/.../collections`    | –                                       | Add a `visibility` field to each collection | Any member     |
+| PUT    | `.../collections/{id}/visibility` | `{ visibility: 'public' \| 'private' }` | Sets a collection's visibility              | Owner or admin |
+| GET    | `.../catalogs/.../processes`      | –                                       | Add a `visibility` field to each workflow   | Any member     |
+| PUT    | `.../processes/{id}/visibility`   | `{ visibility: 'public' \| 'private' }` | Sets a workflow's visibility                | Owner or admin |
 
 ## Files — visibility — "Files page"
 
-| Method | Path                                        | Request body                            | Response / behaviour              | Auth                        | Status |
-| ------ | ------------------------------------------- | --------------------------------------- | --------------------------------- | --------------------------- | ------ |
-| GET    | `/api/workspaces/:id/files`                 | –                                       | add a `visibility` field per file | Any member (read)           | Extend |
-| PUT    | `.../files/:storeType/:fileName/visibility` | `{ visibility: 'public' \| 'private' }` | 200                               | Owner or admin **(open Q)** | New    |
+`:storeType` is `object` or `block` — which underlying storage backend the file lives in,
+shown as the "Store" column on the Files page.
+
+| Method | Path                                        | Request body                            | Description                           | Auth           |
+| ------ | ------------------------------------------- | --------------------------------------- | ------------------------------------- | -------------- |
+| GET    | `/api/workspaces/:id/files`                 | –                                       | Add a `visibility` field to each file | Any member     |
+| PUT    | `.../files/:storeType/:fileName/visibility` | `{ visibility: 'public' \| 'private' }` | Sets a file's visibility              | Owner or admin |
 
 ## Accounting — usage, credits & budgets — "Accounting / Billing — usage, credits & budgets"
 
-Confirmed repo: `accounting-service`, routes in `accounting_service/app/app.py`. Rows below
-marked `Real` already exist today — but bill in raw quantity/£, not credits; the whole
-credit-pool concept (balance, top-up, per-resource budgets) is still just the design docs'
-proposal, not implemented anywhere in this service yet.
+The billing backend (`accounting-service`, routes in `accounting_service/app/app.py`) already
+has real endpoints for usage and pricing today — but only in raw quantity and pounds (£),
+with no concept of "credits" at all. Every row below is a credit-based endpoint on top of
+that.
 
-| Method  | Path                                                                         | Request body                                                                                                                                  | Response / behaviour                                                                                                                                                                                            | Auth                              | Status  |
-| ------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ------- |
-| GET     | `/api/accounting/pricing-policy`                                             | –                                                                                                                                             | credit cost per unit for each billable resource (e.g. CPU, GPU), plus the commercial/research multiplier applied to it — the per-resource pricing shown on the Credits page                                    | Any (read)                        | New     |
-| GET     | credit-ledger read endpoint `/api/workspaces/:id/accounting/ledger`          | –                                                                                                                                             | real target for the Usage page: same filters as `usage-data` (`start`/`end`/`limit`/`user`/`time-aggregation`) but returns `credits` per row/aggregate, not raw quantity.                                       | Any member (read)                 | Blocked |
-| GET     | credit-balance endpoint `/api/workspaces/:id/accounting/balance`             | –                                                                                                                                             | workspace's current credit balance, for the Credits page                                                                                                                                                        | Any member (read)                 | New     |
-| POST    | credit top-up/grant endpoint `/api/workspaces/:id/accounting/balance`        | `{ amount: number }`                                                                                                                          | 200                                                                                                                                                                                                             | `hub_admin` only                  | New     |
-| GET/PUT | `/api/workspaces/:id/accounting/budget`                                      | `{ enabled: boolean, defaultUserThreshold: number, workspaceThreshold: number }` — one combined balance-relative limit for compute as a whole | 200. this needs a new grouping concept (e.g. a shared `budget_group`, or a virtual "compute" `item_id`) before CPU+GPU can share one limit                                                                      | Owner                             | Blocked |
-| GET/PUT | `/api/workspaces/:id/accounting/budget/users` / `.../budget/users/:username` | `{ username, threshold, alertsEnabled }` — same combined-number shape as the row above, per user                                              | 200; list and set per-user overrides                                                                                                                                                                            | Owner **(open Q: or any admin?)** | Blocked |
+| Method  | Path                                                                         | Request body                                                                     | Description                                                                                                                                                                                              | Auth             |
+| ------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| GET     | `/api/accounting/pricing-policy`                                             | –                                                                                | Credit cost per unit for each billable resource (e.g. CPU, GPU), plus the commercial/research multiplier — the per-resource pricing shown on the Credits page                                            | Any              |
+| GET     | credit-ledger read endpoint `/api/workspaces/:id/accounting/ledger`          | –                                                                                | Same filters as today's raw-quantity usage endpoint (date range, limit, per-user, aggregation period) but returns `credits` per row/aggregate — real target for the Usage page                           | Any member       |
+| GET     | credit-balance endpoint `/api/workspaces/:id/accounting/balance`             | –                                                                                | Workspace's current credit balance, for the Credits page                                                                                                                                                 | Any member       |
+| POST    | credit top-up/grant endpoint `/api/workspaces/:id/accounting/balance`        | `{ amount: number }`                                                             | Tops up/grants credits to the workspace                                                                                                                                                                  | `hub_admin` only |
+| GET/PUT | `/api/workspaces/:id/accounting/budget`                                      | `{ enabled: boolean, defaultUserThreshold: number, workspaceThreshold: number }` | Reads/sets one combined spending limit covering CPU + GPU together, matching the Budget page's single "compute" number, plus the default per-user threshold and whether per-user budgets are switched on | Owner            |
+| GET/PUT | `/api/workspaces/:id/accounting/budget/users` / `.../budget/users/:username` | `{ username, threshold, alertsEnabled }`                                         | Lists/sets per-user budget overrides, same combined-number shape as the row above                                                                                                                        | Owner            |
 
 ---
 
