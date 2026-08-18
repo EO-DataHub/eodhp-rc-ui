@@ -44,7 +44,11 @@ export const LoginButton = ({
         <DropdownMenu.Content className={styles.dropdownContent}>
           {workspaceUserName && (
             <>
-              <DropdownMenu.Label>{workspaceUserName}</DropdownMenu.Label>
+              <DropdownMenu.Item asChild>
+                <Link to="/profile">
+                  <Text weight="bold">{workspaceUserName}</Text>
+                </Link>
+              </DropdownMenu.Item>
               <DropdownMenu.Separator />
             </>
           )}

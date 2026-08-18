@@ -23,6 +23,15 @@ const writeStored = (workspace: string, roles: StoredRoles) => {
 }
 
 /**
+ * Standalone read of a workspace's mock owner, for callers (e.g. ProfilePage's account
+ * deletion gate) that need to check ownership without rendering the full Members page.
+ * Returns null both when there's no owner and when the workspace's mock roles have
+ * never been seeded (i.e. its Members page hasn't been visited yet).
+ */
+export const getMockWorkspaceOwner = (workspace: string): string | null =>
+  readStored(workspace).owner
+
+/**
  * There's no real workspace_admins/owner API yet (see the "Implement multi-admin
  * permission-model support" task note) — role state is stored in localStorage per
  * workspace so the Members page can demo the intended UX without calling any API.
