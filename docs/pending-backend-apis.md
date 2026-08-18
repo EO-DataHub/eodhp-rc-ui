@@ -1,9 +1,9 @@
 # Pending backend APIs: roles, ownership, visibility & accounting
 
-The Members, Publisher, Files, Profile, and Accounting/Billing pages currently mock several
-controls purely client-side (`localStorage` or in-memory React state, no server calls)
-because the real APIs don't exist yet. This doc lists what would need to be built for those
-controls to become real. Grouped by page.
+The Members, Publisher, Files, Profile, Accounting/Billing, and Platform admin usage pages
+currently mock several controls purely client-side (`localStorage` or in-memory React
+state, no server calls) because the real APIs don't exist yet. This doc lists what would
+need to be built for those controls to become real. Grouped by page.
 
 ## Members page (`src/pages/MembersPage`)
 
