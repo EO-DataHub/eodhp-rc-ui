@@ -12,139 +12,109 @@
   width: 100%;
 }
 
-.tabLink {
-  padding: 0 0 0.5rem 0;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--gray-11);
-  font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
-  background-color: transparent;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.tabLink:hover {
-  color: var(--gray-12);
-}
-
-.tabLinkActive {
-  border-bottom-color: var(--accent-9);
-  color: var(--accent-11);
-}
-
-.tabsHeader {
-  border-bottom: 1px solid var(--gray-5);
-}
-
-.tabsList {
-  margin-bottom: -1px; /* so active underline sits on top of border */
-}
-
 .ordersTable {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
-  
-  th, td {
+
+  th,
+  td {
     padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid var(--gray-6);
   }
-  
+
   th {
     background-color: var(--gray-2);
     font-weight: 600;
     color: var(--gray-12);
   }
-  
+
   tr:hover {
     background-color: var(--gray-2);
   }
-  
+
   // Column width constraints based on data-column-id attribute
-  th[data-column-id="workspace"],
-  td[data-column-id="workspace"] {
+  th[data-column-id='workspace'],
+  td[data-column-id='workspace'] {
     width: 120px;
     min-width: 120px;
     max-width: 120px;
   }
-  
-  th[data-column-id="collection"],
-  td[data-column-id="collection"] {
+
+  th[data-column-id='collection'],
+  td[data-column-id='collection'] {
     width: 180px;
     min-width: 150px;
     max-width: 250px;
   }
-  
-  th[data-column-id="orderDate"],
-  td[data-column-id="orderDate"] {
+
+  th[data-column-id='orderDate'],
+  td[data-column-id='orderDate'] {
     width: 120px;
     min-width: 100px;
     max-width: 150px;
   }
-  
-  th[data-column-id="orderStatus"],
-  td[data-column-id="orderStatus"] {
+
+  th[data-column-id='orderStatus'],
+  td[data-column-id='orderStatus'] {
     width: 180px;
     min-width: 150px;
     max-width: 200px;
   }
-  
-  th[data-column-id="bundle"],
-  td[data-column-id="bundle"] {
+
+  th[data-column-id='bundle'],
+  td[data-column-id='bundle'] {
     width: 100px;
     min-width: 80px;
     max-width: 120px;
   }
-  
-  th[data-column-id="country"],
-  td[data-column-id="country"] {
+
+  th[data-column-id='country'],
+  td[data-column-id='country'] {
     width: 100px;
     min-width: 80px;
     max-width: 120px;
   }
-  
-  th[data-column-id="license"],
-  td[data-column-id="license"] {
+
+  th[data-column-id='license'],
+  td[data-column-id='license'] {
     width: 120px;
     min-width: 100px;
     max-width: 150px;
   }
-  
-  th[data-column-id="title"],
-  td[data-column-id="title"] {
+
+  th[data-column-id='title'],
+  td[data-column-id='title'] {
     min-width: 200px;
     // Allow title column to grow to fill remaining space
   }
-  
-  th[data-column-id="description"],
-  td[data-column-id="description"] {
+
+  th[data-column-id='description'],
+  td[data-column-id='description'] {
     min-width: 200px;
     max-width: 400px;
     // Allow description column to grow but limit max width
   }
-  
-  th[data-column-id="orderId"],
-  td[data-column-id="orderId"] {
+
+  th[data-column-id='orderId'],
+  td[data-column-id='orderId'] {
     width: 250px;
     min-width: 200px;
     max-width: 300px;
     font-family: monospace;
     font-size: 12px;
   }
-  
-  th[data-column-id="date"],
-  td[data-column-id="date"] {
+
+  th[data-column-id='date'],
+  td[data-column-id='date'] {
     width: 120px;
     min-width: 100px;
     max-width: 150px;
   }
-  
-  th[data-column-id="view"],
-  td[data-column-id="view"] {
+
+  th[data-column-id='view'],
+  td[data-column-id='view'] {
     width: 120px;
     min-width: 100px;
     max-width: 120px;
@@ -153,42 +123,42 @@
 }
 
 .filesTable {
-  th[data-column-id="select"],
-  td[data-column-id="select"] {
+  th[data-column-id='select'],
+  td[data-column-id='select'] {
     width: 40px;
     min-width: 40px;
     max-width: 40px;
     text-align: center;
   }
 
-  th[data-column-id="fileName"],
-  td[data-column-id="fileName"] {
+  th[data-column-id='fileName'],
+  td[data-column-id='fileName'] {
     min-width: 240px;
   }
 
-  th[data-column-id="storeType"],
-  td[data-column-id="storeType"] {
+  th[data-column-id='storeType'],
+  td[data-column-id='storeType'] {
     width: 120px;
     min-width: 100px;
     max-width: 140px;
   }
 
-  th[data-column-id="size"],
-  td[data-column-id="size"] {
+  th[data-column-id='size'],
+  td[data-column-id='size'] {
     width: 110px;
     min-width: 90px;
     max-width: 120px;
   }
 
-  th[data-column-id="lastModified"],
-  td[data-column-id="lastModified"] {
+  th[data-column-id='lastModified'],
+  td[data-column-id='lastModified'] {
     width: 180px;
     min-width: 150px;
     max-width: 220px;
   }
 
-  th[data-column-id="delete"],
-  td[data-column-id="delete"] {
+  th[data-column-id='delete'],
+  td[data-column-id='delete'] {
     width: 110px;
     min-width: 90px;
     max-width: 120px;
@@ -208,7 +178,9 @@
   text-align: center;
   background: var(--gray-1);
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .dropzoneActive {

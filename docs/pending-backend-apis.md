@@ -1,6 +1,6 @@
-# Pending backend APIs: roles, ownership & visibility
+c# Pending backend APIs: roles, ownership & visibility
 
-The Members, Publisher, and Data storage pages currently mock several controls purely
+The Members, Publisher, and Files pages currently mock several controls purely
 client-side (`localStorage`, no server calls) because the real APIs don't exist yet. This
 doc lists what would need to be built for those controls to become real. Grouped by page.
 
@@ -70,10 +70,10 @@ that requires confirmation before a change takes effect. To make this real:
    since a slow confirm click could plausibly double-submit.
 
 Visibility model is deliberately binary (`public`/`private`) everywhere it's mocked —
-Catalogue, Workflows, and Data storage (below) all use the same two-tier model, so there's
+Catalogue, Workflows, and Files (below) all use the same two-tier model, so there's
 no model choice left open here.
 
-## Data storage page (`src/pages/DataStoragePage`)
+## Files page (`src/pages/DataStoragePage`, labelled "Files" in the UI)
 
 Today's real endpoints (`workspaceFilesService.ts`):
 
@@ -103,7 +103,7 @@ phases (upload STAC Item → separately upload data + hand-edit asset hrefs → 
 freeform access-policy JSON). Its recommendation was **B + A**, with E as the resulting UI:
 
 - **Option B — visibility as a resource property** is now the one actually built (as the
-  binary dropdown described above, across Catalogue, Workflows, and Data storage).
+  binary dropdown described above, across Catalogue, Workflows, and Files).
 - **Option A — combined upload endpoint** is not currently demonstrated by anything in the
   UI (the `PublishModal` prototype that stood in for it was removed — see above). It's
   still the recommended direction for the "hand-constructed asset href" problem, just not

@@ -16,6 +16,7 @@ import { UsagePage } from '@/pages/UsagePage/UsagePage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { AccountingPage } from '@/pages/AccountingPage/AccountingPage'
 import { PublisherPage } from '@/pages/PublisherPage/PublisherPage'
+import { PublishingPage } from '@/pages/PublishingPage/PublishingPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 
@@ -139,7 +140,13 @@ const routes = [
     children: [
       {
         path: '',
-        element: <PublisherPage />,
+        element: <PublishingPage />,
+        children: [
+          {
+            path: '',
+            element: <PublisherPage />,
+          },
+        ],
       },
     ],
   },

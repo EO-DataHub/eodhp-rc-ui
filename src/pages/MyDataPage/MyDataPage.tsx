@@ -1,66 +1,43 @@
 import React from 'react'
-import { Flex, Box } from '@radix-ui/themes'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import styles from './MyDataPage.module.scss'
-
-const getActiveTabFromPathname = (
-  pathname: string,
-): 'purchased' | 'workflow-outputs' | 'data-storage' => {
-  if (pathname.includes('/my-data/workflow-outputs')) {
-    return 'workflow-outputs'
-  }
-  if (pathname.includes('/my-data/data-storage')) {
-    return 'data-storage'
-  }
-  return 'purchased'
-}
+import { Flex, Box, Text } from '@radix-ui/themes'
+import { NavLink, Outlet } from 'react-router-dom'
+import styles from '../SettingsPage/SettingsPage.module.scss'
 
 export const MyDataPage: React.FC = () => {
-  const location = useLocation()
-  const activeTab = getActiveTabFromPathname(location.pathname)
-
   return (
-    <Flex direction="column" gap="4" height="100vh" className={styles.mainContainer}>
-      <Box className={styles.tabsHeader}>
-        <Flex gap="4" role="tablist" aria-label="My data sections" className={styles.tabsList}>
+    <Flex height="100vh" className={styles.container}>
+      <Box className={styles.sidebar}>
+        <Flex direction="column" gap="1" p="4">
+          <Text size="2" weight="bold" color="gray" mb="2">
+            My data
+          </Text>
           <NavLink
             to="purchased"
             className={({ isActive }) =>
-              `${styles.tabLink} ${activeTab === 'purchased' || isActive ? styles.tabLinkActive : ''}`
+              `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
             }
-            role="tab"
-            aria-selected={activeTab === 'purchased'}
           >
             Purchased data
           </NavLink>
           <NavLink
             to="workflow-outputs"
             className={({ isActive }) =>
-              `${styles.tabLink} ${
-                activeTab === 'workflow-outputs' || isActive ? styles.tabLinkActive : ''
-              }`
+              `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
             }
-            role="tab"
-            aria-selected={activeTab === 'workflow-outputs'}
           >
             Workflow outputs
           </NavLink>
           <NavLink
             to="data-storage"
             className={({ isActive }) =>
-              `${styles.tabLink} ${
-                activeTab === 'data-storage' || isActive ? styles.tabLinkActive : ''
-              }`
+              `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
             }
-            role="tab"
-            aria-selected={activeTab === 'data-storage'}
           >
             Files
           </NavLink>
         </Flex>
       </Box>
-
-      <Box mt="4">
+      <Box className={styles.content}>
         <Outlet />
       </Box>
     </Flex>
