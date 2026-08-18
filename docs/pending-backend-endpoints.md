@@ -43,8 +43,10 @@ either doc.
 | ------ | ----------------------- | ------------ | -------------------------------------------------------------------------- | ----------- | ------ |
 | GET    | `/api/admin/workspaces` | –            | every workspace on the platform, regardless of the caller's own membership | `hub_admin` | New    |
 
-Also depends on the usage-ledger endpoint below (same gap as the per-workspace Usage page,
-just aggregated across workspaces instead of by user within one).
+`GET /api/accounts/:accountId/accounting/usage-data` already exists and does most of this
+for one billing account at a time (see the Accounting group below) — this row is really
+"loop that across every account" plus the workspace-listing endpoint above, not a wholly new
+usage-aggregation mechanism.
 
 ## Profile — "Profile page"
 
@@ -68,13 +70,23 @@ just aggregated across workspaces instead of by user within one).
 | GET    | `/api/workspaces/:id/files`                 | –                                       | add a `visibility` field per file | Any member (read)           | Extend |
 | PUT    | `.../files/:storeType/:fileName/visibility` | `{ visibility: 'public' \| 'private' }` | 200                               | Owner or admin **(open Q)** | New    |
 
-## Accounting — usage & budgets — "Accounting / Billing — per-user usage & budgets"
+## Accounting — usage, credits & budgets — "Accounting / Billing — usage, credits & budgets"
 
-| Method  | Path                                                     | Request body                                        | Response / behaviour                                                                                             | Auth                        | Status |
-| ------- | -------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------- | ------ |
-| GET     | usage-ledger endpoint (path **TBD** — doesn't exist yet) | –                                                   | usage records including a `user` field; ideally a server-side per-user aggregate rather than client-side summing | Any member (read)           | New    |
-| GET/PUT | default per-user budget for a workspace (path **TBD**)   | `{ enabled: boolean, defaultThreshold: number }`    | 200                                                                                                              | Owner or admin **(open Q)** | New    |
-| GET/PUT | per-user budget overrides (path **TBD**)                 | `{ workspace, username, threshold, alertsEnabled }` | 200                                                                                                              | Owner or admin **(open Q)** | New    |
+Confirmed repo: `accounting-service`, routes in `accounting_service/app/app.py`. Rows below
+marked `Real` already exist today — but bill in raw quantity/£, not credits; the whole
+credit-pool concept (balance, top-up, per-resource budgets) is still just the design docs'
+proposal, not implemented anywhere in this service yet.
+
+| Method  | Path                                                       | Request body                                        | Response / behaviour                                                                                                                          | Auth                        | Status |
+| ------- | ----------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ------ |
+| GET     | `/api/workspaces/:id/accounting/usage-data`                 | –                                                    | raw consumption events (`event_start`, `event_end`, `item` SKU, `quantity`); `?time-aggregation=` (`day` or `month`) for totals | Any member (read)           | Real   |
+| GET     | `/api/accounting/skus`, `/api/accounting/skus/{sku}`         | –                                                    | resource catalogue (`sku`, `name`, `unit`) — what Credits' "Burn rate" table currently hardcodes | Any (read)                  | Real   |
+| GET     | `/api/accounting/prices`                                     | –                                                    | current price per unit, **in pounds**, not credits | Any (read)                  | Real   |
+| GET     | `/api/workspaces/:id/accounting/usage-data` (extend)         | –                                                    | expose the already-existing `user` column (`models.py:309`) per event, add a `user` query filter, and stop nulling `user` out of the day/month aggregation query (`models.py:391-413`) | Any member (read)           | Extend |
+| GET     | credit-balance endpoint (path **TBD** — depends on credit-ledger work landing, e.g. `/api/workspaces/:id/accounting/balance`) | – | workspace's current credit balance, for the Credits page | Any member (read)           | New    |
+| POST    | credit top-up/grant endpoint (path **TBD**)                  | `{ amount: number }`                                 | 200; decided admin-only — the current mock's self-service "Buy more credits" (any member) doesn't match this and needs updating | `hub_admin` only            | New    |
+| GET/PUT | `/api/workspaces/:id/accounting/budget` (suggested)          | `{ enabled: boolean, defaultThreshold: number, workspaceThreshold: number }` | 200 | Owner **(open Q: or any admin?)** | New    |
+| GET/PUT | `/api/workspaces/:id/accounting/budget/users` / `.../budget/users/:username` (suggested) | `{ username, threshold, alertsEnabled }` | 200; list and set per-user overrides | Owner **(open Q: or any admin?)** | New    |
 
 ---
 

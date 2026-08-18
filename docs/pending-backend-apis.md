@@ -184,31 +184,76 @@ metadata upload, and a three-tier visibility picker. That wizard has been remove
 of the plain per-file dropdown described above — deliberately no batch flow, no modal, no
 metadata/catalogue step. See the note below for what that leaves unresolved.
 
-## Accounting / Billing — per-user usage & budgets (`UsagePage`, `BudgetPage`)
+## Accounting / Billing — usage, credits & budgets (`CreditsPage`, `UsagePage`, `BudgetPage`)
 
-Both pages are still fully illustrative (in-memory React state that resets on refresh — no
-persistence at all, mock or otherwise, unlike the `localStorage`-backed mocks above).
-Recently extended toward per-user granularity:
+These map to `accounting-service` (confirmed —
+`/Users/sgdowd/Documents/Projects/EODH/repos/accounting-service`, routes defined in
+`accounting_service/app/app.py`). Today's real API bills in raw quantity + £ per SKU —
+**`credits` as a unit don't exist anywhere in the live system yet**; the whole credit-pool
+model (balance, burn rate, top-up, per-resource budgets) is still only the proposal in the
+credits-ledger design docs. All three pages stay fully illustrative (in-memory React state,
+resets on refresh) until that lands. Real endpoints today, for reference:
 
-- **Usage page** — each mock usage record now has a `user` field; a "User" filter `Select`
-  sits alongside the existing month filter, and a "Usage by user" breakdown table above the
-  main table always shows every user's total for the selected month, independent of the user
-  filter. To make this real: the usage-ledger endpoint (doesn't exist yet — see the existing
-  "No usage API exists yet" note in the page itself) needs a `user` field per record, and
-  ideally a server-side per-user aggregate so the by-user breakdown doesn't require fetching
-  and summing every raw record client-side.
-- **Budget page** — a new "Per-user budgets" toggle (off by default, so workspaces with no
-  need for it never see the section) reveals a default per-user compute threshold plus an
-  "Overrides" list: most members share the default; specific members can get a custom
-  threshold via a dialog backed by the real `fetchWorkspaceMembers`. Per-user budgets
-  supplement, not replace, the existing workspace-wide threshold — whichever is hit first
-  blocks activity. To make this real:
-  1. **Read/write the default per-user threshold** for a workspace, plus whether the
-     per-user-budgets feature is enabled at all.
-  2. **Read/write per-user overrides** — effectively a small table of
-     `{ workspace, username, threshold, alertsEnabled }`.
-  3. **Authorization** — same open question as Members/Publisher above: who can set these,
-     the owner only or any admin?
+- `GET /api/workspaces/:id/accounting/usage-data` — raw consumption events for a workspace
+  (`event_start`, `event_end`, `item` (SKU), `quantity`), optionally aggregated by day/month
+  via `?time-aggregation=`. No credits, no price — quantity only.
+- `GET /api/accounts/:accountId/accounting/usage-data` — the same, across every workspace in
+  one billing account, already callable by a `hub_admin` for any account (`account_authz`'s
+  `allow_hub_admin` bypass in `app.py`) — a real, partial answer to the Platform Admin Usage
+  page's cross-workspace need, though scoped to one account at a time rather than literally
+  every workspace on the platform.
+- `GET /api/accounting/skus` / `GET /api/accounting/skus/{sku}` — the resource catalogue
+  (`sku`, `name`, `unit`) the Credits page's "Burn rate" table currently hardcodes as mock
+  data.
+- `GET /api/accounting/prices` — current price per unit, **in pounds**, not credits.
+
+To make the mocked pages real:
+
+1. **Credits page (balance + top-up)** — not previously covered in this doc. Needs a
+   balance-read endpoint once the credit-ledger work lands (e.g.
+   `GET /api/workspaces/:id/accounting/balance`). **Decided: top-up is `hub_admin`-only**,
+   matching the credits-ledger decisions doc's framing of credit grants as an administrative
+   action. The current mock doesn't reflect this yet — its "Buy more credits" button is
+   self-service and visible to any member, which is now a known UX gap to fix, not an open
+   question.
+2. **Usage page — user column, filter, per-user breakdown** — closer than previously
+   thought, but not free:
+   - `BillingEvent.user` (a Keycloak user UUID) **already exists** as a column
+     (`accounting_service/models.py:309`) and is captured on ingestion, but
+     `GET .../usage-data` doesn't return it today — `BillingEventAPIResult` has no `user`
+     field. Exposing it, and adding a `user` query filter alongside the existing
+     `start`/`end`/`limit`/`after`/`time-aggregation` ones, is a small, real change.
+   - **Aggregation currently discards it.** When `time-aggregation=day` or `month` is
+     requested, the aggregation query explicitly selects `NULL AS user` and groups only by
+     `(period, item, workspace)` (`models.py:391-413`) — per-user monthly/daily totals need
+     `user` added to both the `SELECT` and the `GROUP BY` there, not just exposed on raw
+     rows.
+   - **The API would return a UUID, not a username.** Per the credits-ledger decisions doc,
+     `accounting-service` deliberately holds no user identities — resolving that UUID to the
+     username the UI shows is Keycloak's or `eodhp-workspace-services`'s job, not a change to
+     this service alone.
+3. **Budget page — default + per-user overrides** — still entirely unbuilt (no `budget`
+   table or endpoint exists in `accounting-service` today — confirmed by grepping the repo).
+   Suggested paths, following the service's own `/accounting/` sub-path convention:
+   - `GET`/`PUT /api/workspaces/:id/accounting/budget` — the workspace-wide threshold(s),
+     the default-per-user value, and whether per-user budgets are switched on for this
+     workspace.
+   - `GET /api/workspaces/:id/accounting/budget/users` /
+     `PUT /api/workspaces/:id/accounting/budget/users/:username` — list and set per-user
+     overrides.
+   - Depends on item 2's user attribution existing on the read side before a per-user budget
+     can be enforced against anything.
+4. **Authorization** — `workspace_authz` in `app.py` already implements exactly the
+   owner/member/hub_admin split this doc keeps flagging as unresolved elsewhere: it reads
+   `workspaces_owned` and `workspaces` claims straight off the caller's JWT, with a
+   `require_owner` flag other endpoints already use. Budget endpoints would presumably set
+   `require_owner=True` the same way; whether a non-owner admin should also qualify is the
+   same open question as Members/Publisher above, now with a concrete mechanism to extend
+   once multi-admin support exists.
+
+One loose end: `UsagePage.tsx`'s existing source comment ("No usage API exists yet") is now
+inaccurate — a real one does exist, it just doesn't return what the page needs yet. Worth
+fixing when this section's other changes land.
 
 ## Publishing-flow redesign (see "Redesign the data-publishing flow and APIs" task note)
 
