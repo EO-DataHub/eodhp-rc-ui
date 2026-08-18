@@ -15,6 +15,7 @@ import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { MockVisibilitySelect } from '@/components/MockVisibilitySelect/MockVisibilitySelect'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { formatFileDateTime } from '@/library/fileUtils'
 import styles from './PublisherPage.module.scss'
 
@@ -88,15 +89,10 @@ export const PublisherPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Publisher
-        </Text>
-        <Text size="3" color="gray">
-          Browse your workspace&apos;s catalogue, workflows and data, and control what&apos;s
-          public.
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Publisher"
+        subtitle="Browse your workspace's catalogue, workflows and data, and control what's public."
+      />
 
       {!token && <Callout type="info" message="Sign in to view publishing options." />}
       {token && !currentWorkspace && (

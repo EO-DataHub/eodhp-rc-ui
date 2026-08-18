@@ -22,6 +22,7 @@ import {
 } from '@/services/workspaceMembersService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { useMockWorkspaceRoles } from './useMockWorkspaceRoles'
 import styles from './MembersPage.module.scss'
 
@@ -122,14 +123,7 @@ export const MembersPage: React.FC = () => {
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <Flex justify="between" align="start">
-        <Flex direction="column" gap="3">
-          <Text size="7" weight="medium">
-            Members
-          </Text>
-          <Text size="3" color="gray">
-            Manage the members of this workspace
-          </Text>
-        </Flex>
+        <PageHeading title="Members" subtitle="Manage the members of this workspace" />
         <Flex gap="3">
           {isCurrentUserOwner && (
             <Button

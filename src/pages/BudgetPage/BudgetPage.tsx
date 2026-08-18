@@ -12,6 +12,7 @@ import {
   TextField,
 } from '@radix-ui/themes'
 import { toast } from 'react-toastify'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from './BudgetPage.module.scss'
 
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
@@ -80,14 +81,10 @@ export const BudgetPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Budget
-        </Text>
-        <Text size="3" color="gray">
-          Compute credit alerts and your storage plan for this workspace
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Budget"
+        subtitle="Compute credit alerts and your storage plan for this workspace"
+      />
 
       <Flex direction="column" gap="6">
         <Flex direction="column" gap="3">

@@ -21,6 +21,7 @@ import {
 } from '@/services/dataHubTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { formatFileDateTime } from '@/library/fileUtils'
 import styles from './CredentialsPage.module.scss'
 
@@ -102,14 +103,7 @@ export const CredentialsPage: React.FC = () => {
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <Flex justify="between" align="start">
-        <Flex direction="column" gap="3">
-          <Text size="7" weight="medium">
-            Credentials
-          </Text>
-          <Text size="3" color="gray">
-            Manage DataHub API tokens for this workspace
-          </Text>
-        </Flex>
+        <PageHeading title="Credentials" subtitle="Manage DataHub API tokens for this workspace" />
         <Button
           size="3"
           onClick={() => setIsCreateOpen(true)}

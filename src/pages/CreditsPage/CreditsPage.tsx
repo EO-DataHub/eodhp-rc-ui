@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Badge, Box, Button, Dialog, Flex, Table, Text, TextField } from '@radix-ui/themes'
 import { toast } from 'react-toastify'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from './CreditsPage.module.scss'
 
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
@@ -44,14 +45,10 @@ export const CreditsPage: React.FC = () => {
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <Flex justify="between" align="start">
-        <Flex direction="column" gap="3">
-          <Text size="7" weight="medium">
-            Credits
-          </Text>
-          <Text size="3" color="gray">
-            Shared compute credit balance for this workspace — used for CPU and GPU
-          </Text>
-        </Flex>
+        <PageHeading
+          title="Credits"
+          subtitle="Shared compute credit balance for this workspace — used for CPU and GPU"
+        />
         <Button size="3" onClick={() => setIsBuyOpen(true)}>
           Buy more credits
         </Button>

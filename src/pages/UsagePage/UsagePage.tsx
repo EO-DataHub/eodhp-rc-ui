@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Flex, Select, Table, Text } from '@radix-ui/themes'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import styles from './UsagePage.module.scss'
 
@@ -111,14 +112,10 @@ export const UsagePage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Usage
-        </Text>
-        <Text size="3" color="gray">
-          Compute usage history for this workspace — storage usage is on the Budget page
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Usage"
+        subtitle="Compute usage history for this workspace — storage usage is on the Budget page"
+      />
 
       <Flex direction="column" gap="5">
         <Flex p="5" direction="row" gap="2" align="center" className={styles.filterContainer}>

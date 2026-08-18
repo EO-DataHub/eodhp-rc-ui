@@ -35,6 +35,7 @@ import {
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { MockVisibilitySelect } from '@/components/MockVisibilitySelect/MockVisibilitySelect'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from '../MyDataPage/MyDataPage.module.scss'
@@ -321,14 +322,7 @@ export const DataStoragePage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Files
-        </Text>
-        <Text size="3" color="gray">
-          Manage files stored in this workspace
-        </Text>
-      </Flex>
+      <PageHeading title="Files" subtitle="Manage files stored in this workspace" />
 
       <Flex direction="column" gap="5">
         <Flex
