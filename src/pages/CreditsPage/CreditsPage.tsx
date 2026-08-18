@@ -19,6 +19,11 @@ const INITIAL_BALANCE = 1200
 const LOW_BALANCE_THRESHOLD = 200
 const ILLUSTRATIVE_PRICE_PER_CREDIT = 0.05
 
+const CREDITS_PREVIEW_NOTE =
+  '(UI preview only — balance, burn rate and price are illustrative, not real. Storage is ' +
+  'billed separately as a purchased plan — see Budget.)'
+const BUY_CREDITS_PREVIEW_NOTE = '(UI preview only — no credits API exists yet; nothing is bought.)'
+
 export const CreditsPage: React.FC = () => {
   const [balance, setBalance] = useState(INITIAL_BALANCE)
   const [isBuyOpen, setIsBuyOpen] = useState(false)
@@ -60,9 +65,12 @@ export const CreditsPage: React.FC = () => {
       >
         <Dialog.Content style={{ maxWidth: 420 }}>
           <Dialog.Title>Buy more credits</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+          <Dialog.Description size="2" mb="2">
             Top up your workspace&apos;s compute credit balance.
           </Dialog.Description>
+          <Text size="1" color="red" mb="4" as="p">
+            {BUY_CREDITS_PREVIEW_NOTE}
+          </Text>
           <Flex direction="column" gap="3">
             <label>
               <Text as="div" size="2" mb="1" weight="medium">
@@ -143,9 +151,8 @@ export const CreditsPage: React.FC = () => {
         </Flex>
 
         <Box>
-          <Text size="1" color="gray">
-            (UI preview only — balance, burn rate and price are illustrative, not real. Storage is
-            billed separately as a purchased plan — see Budget.)
+          <Text size="1" color="red">
+            {CREDITS_PREVIEW_NOTE}
           </Text>
         </Box>
       </Flex>

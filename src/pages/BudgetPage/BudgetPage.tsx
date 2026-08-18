@@ -58,6 +58,12 @@ const INITIAL_NEGATIVE_BALANCE_ALLOWANCE = '50'
 // override below; overrides start empty since most members are expected to just share it.
 const INITIAL_DEFAULT_USER_BUDGET = '100'
 
+const BUDGET_PREVIEW_NOTE =
+  '(UI preview only — usage figures and plan prices are illustrative, nothing is saved to a ' +
+  'real API.)'
+const CHANGE_PLAN_PREVIEW_NOTE = '(UI preview only — no plan-change API exists yet.)'
+const BUDGET_OVERRIDE_PREVIEW_NOTE = '(UI preview only — no budget-override API exists yet.)'
+
 interface UserBudgetOverride {
   username: string
   threshold: string
@@ -394,9 +400,8 @@ export const BudgetPage: React.FC = () => {
         </Flex>
 
         <Flex justify="between" align="center">
-          <Text size="1" color="gray">
-            (UI preview only — usage figures and plan prices are illustrative, nothing is saved to a
-            real API.)
+          <Text size="1" color="red">
+            {BUDGET_PREVIEW_NOTE}
           </Text>
           <Button onClick={handleSave} disabled={!isDirty}>
             Save changes
@@ -407,9 +412,12 @@ export const BudgetPage: React.FC = () => {
       <Dialog.Root open={isChangePlanOpen} onOpenChange={setIsChangePlanOpen}>
         <Dialog.Content style={{ maxWidth: 480 }}>
           <Dialog.Title>Change storage plan</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+          <Dialog.Description size="2" mb="2">
             Your storage allowance is fixed by your plan — usage beyond it needs an upgrade.
           </Dialog.Description>
+          <Text size="1" color="red" mb="4" as="p">
+            {CHANGE_PLAN_PREVIEW_NOTE}
+          </Text>
           <RadioCards.Root value={pendingPlanId} onValueChange={setPendingPlanId} columns="1">
             {STORAGE_PLANS.map((plan) => (
               <RadioCards.Item key={plan.id} value={plan.id}>
@@ -436,9 +444,12 @@ export const BudgetPage: React.FC = () => {
       <Dialog.Root open={isAddOverrideOpen} onOpenChange={setIsAddOverrideOpen}>
         <Dialog.Content style={{ maxWidth: 420 }}>
           <Dialog.Title>Add budget override</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+          <Dialog.Description size="2" mb="2">
             Set a custom compute threshold for one member instead of the default above.
           </Dialog.Description>
+          <Text size="1" color="red" mb="4" as="p">
+            {BUDGET_OVERRIDE_PREVIEW_NOTE}
+          </Text>
           <Select.Root
             value={newOverrideUsername ?? undefined}
             onValueChange={setNewOverrideUsername}

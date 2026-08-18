@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
-import { AlertDialog, Button, Flex, Select } from '@radix-ui/themes'
+import { AlertDialog, Button, Flex, Select, Text } from '@radix-ui/themes'
 
 type Visibility = 'public' | 'private'
+
+const VISIBILITY_PREVIEW_NOTE = '(UI preview only — visibility will not actually change.)'
 
 const readStored = (storageKey: string): Visibility =>
   localStorage.getItem(storageKey) === 'public' ? 'public' : 'private'
@@ -50,12 +52,15 @@ export const MockVisibilitySelect: React.FC<{ storageKey: string; label: string 
       >
         <AlertDialog.Content style={{ maxWidth: 420 }}>
           <AlertDialog.Title>Change visibility</AlertDialog.Title>
-          <AlertDialog.Description size="2">
+          <AlertDialog.Description size="2" mb="2">
             Make <strong>{label}</strong> {pendingVisibility}?{' '}
             {pendingVisibility === 'public'
               ? 'Anyone will be able to access it.'
               : 'It will no longer be accessible outside this workspace.'}
           </AlertDialog.Description>
+          <Text size="1" color="red" as="p">
+            {VISIBILITY_PREVIEW_NOTE}
+          </Text>
           <Flex gap="3" mt="4" justify="end">
             <AlertDialog.Cancel>
               <Button variant="soft" color="gray">

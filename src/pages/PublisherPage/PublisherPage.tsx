@@ -19,9 +19,11 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { formatFileDateTime } from '@/library/fileUtils'
 import styles from './PublisherPage.module.scss'
 
-// #todo: there's no read or write API yet for a data file's visibility (public vs.
-// private). See "Redesign the data-publishing flow and APIs" task note for the plan.
-const VISIBILITY_TODO_TOOLTIP = '#todo: visibility is not readable or changeable via the API yet'
+// UI preview only — there's no read or write API yet for collection/workflow/data-file
+// visibility (public vs. private). See "Redesign the data-publishing flow and APIs" task
+// note for the plan.
+const VISIBILITY_PREVIEW_NOTE =
+  '(UI preview only — visibility is not readable or changeable via a real API yet.)'
 
 export const PublisherPage: React.FC = () => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
@@ -164,31 +166,36 @@ export const PublisherPage: React.FC = () => {
                         }
                       />
                     ) : collections && collections.length > 0 ? (
-                      <Table.Root className={styles.table}>
-                        <Table.Header>
-                          <Table.Row>
-                            <Table.ColumnHeaderCell>Collection</Table.ColumnHeaderCell>
-                            <Table.ColumnHeaderCell>Visibility</Table.ColumnHeaderCell>
-                          </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                          {collections.map((collection) => (
-                            <Table.Row key={collection.id}>
-                              <Table.Cell>
-                                <Text size="2" weight="medium">
-                                  {collection.title ?? collection.id}
-                                </Text>
-                              </Table.Cell>
-                              <Table.Cell>
-                                <MockVisibilitySelect
-                                  storageKey={`mockVisibility:${currentWorkspace}:collection:${collectionsPath}:${collection.id}`}
-                                  label={collection.title ?? collection.id}
-                                />
-                              </Table.Cell>
+                      <Flex direction="column" gap="2">
+                        <Table.Root className={styles.table}>
+                          <Table.Header>
+                            <Table.Row>
+                              <Table.ColumnHeaderCell>Collection</Table.ColumnHeaderCell>
+                              <Table.ColumnHeaderCell>Visibility</Table.ColumnHeaderCell>
                             </Table.Row>
-                          ))}
-                        </Table.Body>
-                      </Table.Root>
+                          </Table.Header>
+                          <Table.Body>
+                            {collections.map((collection) => (
+                              <Table.Row key={collection.id}>
+                                <Table.Cell>
+                                  <Text size="2" weight="medium">
+                                    {collection.title ?? collection.id}
+                                  </Text>
+                                </Table.Cell>
+                                <Table.Cell>
+                                  <MockVisibilitySelect
+                                    storageKey={`mockVisibility:${currentWorkspace}:collection:${collectionsPath}:${collection.id}`}
+                                    label={collection.title ?? collection.id}
+                                  />
+                                </Table.Cell>
+                              </Table.Row>
+                            ))}
+                          </Table.Body>
+                        </Table.Root>
+                        <Text size="1" color="red">
+                          {VISIBILITY_PREVIEW_NOTE}
+                        </Text>
+                      </Flex>
                     ) : (
                       <Callout type="info" message="No collections found in this catalogue." />
                     )}
@@ -212,31 +219,36 @@ export const PublisherPage: React.FC = () => {
                   }
                 />
               ) : processes && processes.length > 0 ? (
-                <Table.Root className={styles.table}>
-                  <Table.Header>
-                    <Table.Row>
-                      <Table.ColumnHeaderCell>Workflow</Table.ColumnHeaderCell>
-                      <Table.ColumnHeaderCell>Visibility</Table.ColumnHeaderCell>
-                    </Table.Row>
-                  </Table.Header>
-                  <Table.Body>
-                    {processes.map((process) => (
-                      <Table.Row key={process.id}>
-                        <Table.Cell>
-                          <Text size="2" weight="medium">
-                            {process.title ?? process.id}
-                          </Text>
-                        </Table.Cell>
-                        <Table.Cell>
-                          <MockVisibilitySelect
-                            storageKey={`mockVisibility:${currentWorkspace}:workflow:${process.id}`}
-                            label={process.title ?? process.id}
-                          />
-                        </Table.Cell>
+                <Flex direction="column" gap="2">
+                  <Table.Root className={styles.table}>
+                    <Table.Header>
+                      <Table.Row>
+                        <Table.ColumnHeaderCell>Workflow</Table.ColumnHeaderCell>
+                        <Table.ColumnHeaderCell>Visibility</Table.ColumnHeaderCell>
                       </Table.Row>
-                    ))}
-                  </Table.Body>
-                </Table.Root>
+                    </Table.Header>
+                    <Table.Body>
+                      {processes.map((process) => (
+                        <Table.Row key={process.id}>
+                          <Table.Cell>
+                            <Text size="2" weight="medium">
+                              {process.title ?? process.id}
+                            </Text>
+                          </Table.Cell>
+                          <Table.Cell>
+                            <MockVisibilitySelect
+                              storageKey={`mockVisibility:${currentWorkspace}:workflow:${process.id}`}
+                              label={process.title ?? process.id}
+                            />
+                          </Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table.Root>
+                  <Text size="1" color="red">
+                    {VISIBILITY_PREVIEW_NOTE}
+                  </Text>
+                </Flex>
               ) : (
                 <Callout type="info" message="No workflows owned by this workspace." />
               )}
@@ -246,7 +258,7 @@ export const PublisherPage: React.FC = () => {
               <Flex direction="column" gap="3">
                 <Callout
                   type="info"
-                  message={`Manage your workspace's data files on the Data Storage page. ${VISIBILITY_TODO_TOOLTIP}`}
+                  message={`Manage your workspace's data files on the Files page. ${VISIBILITY_PREVIEW_NOTE}`}
                 />
                 <Box>
                   <Button asChild variant="soft">

@@ -410,7 +410,7 @@ export const UsagePage: React.FC = () => {
         )}
 
         <Box>
-          <Text size="1" color="gray">
+          <Text size="1" color="red">
             (UI preview only — usage figures are illustrative, not real.)
           </Text>
         </Box>

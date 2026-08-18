@@ -116,9 +116,13 @@ export const ProfilePage: React.FC = () => {
             </Dialog.Trigger>
             <Dialog.Content style={{ maxWidth: 420 }}>
               <Dialog.Title>Delete account</Dialog.Title>
-              <Dialog.Description size="2" mb="4">
+              <Dialog.Description size="2" mb="2">
                 This permanently deletes your EODH account. This cannot be undone.
               </Dialog.Description>
+              <Text size="1" color="red" mb="4" as="p">
+                (UI preview only — no account-deletion API exists yet; nothing will actually be
+                deleted.)
+              </Text>
               <TextField.Root
                 placeholder={`Type "${workspaceUserName}" to confirm`}
                 value={confirmText}
@@ -142,7 +146,7 @@ export const ProfilePage: React.FC = () => {
             </Dialog.Content>
           </Dialog.Root>
         </Box>
-        <Text size="1" color="gray">
+        <Text size="1" color="red">
           (UI preview only — no account-deletion API exists yet; nothing is actually deleted.)
         </Text>
       </Flex>

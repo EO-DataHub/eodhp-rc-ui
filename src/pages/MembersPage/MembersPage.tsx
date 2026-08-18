@@ -26,6 +26,11 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { useMockWorkspaceRoles } from './useMockWorkspaceRoles'
 import styles from './MembersPage.module.scss'
 
+// UI preview only — see docs/pending-backend-apis.md. No admin/owner API exists yet;
+// role changes and ownership transfer below are stored in localStorage, not a real API.
+const ROLE_PREVIEW_NOTE =
+  '(UI preview only — role changes and ownership transfers are not saved to a real API.)'
+
 export const MembersPage: React.FC = () => {
   const { token, currentWorkspace, workspaceUserName } = useContext(AuthenticationContext)
   const [deletingUsername, setDeletingUsername] = useState<string | null>(null)
@@ -61,7 +66,7 @@ export const MembersPage: React.FC = () => {
   const handleTransferOwnership = () => {
     if (!transferTarget) return
     transferOwnership(transferTarget)
-    toast.success(`Ownership transferred to ${transferTarget}`)
+    toast.success(`Ownership transferred to ${transferTarget} (preview only)`)
     setIsTransferOpen(false)
     setTransferTarget(null)
     setTransferConfirmText('')
@@ -71,7 +76,7 @@ export const MembersPage: React.FC = () => {
     toggleAdmin(username)
     const toastId = toast(
       <Flex align="center" justify="between" gap="4">
-        <Text size="2">Made {username} an admin</Text>
+        <Text size="2">Made {username} an admin (preview only)</Text>
         <Button
           size="1"
           variant="ghost"
@@ -159,10 +164,13 @@ export const MembersPage: React.FC = () => {
       >
         <Dialog.Content style={{ maxWidth: 420 }}>
           <Dialog.Title>Transfer ownership</Dialog.Title>
-          <Dialog.Description size="2" mb="4">
+          <Dialog.Description size="2" mb="2">
             The new owner becomes the protected super-admin for this workspace. You will become a
             regular admin.
           </Dialog.Description>
+          <Text size="1" color="red" mb="4" as="p">
+            {ROLE_PREVIEW_NOTE}
+          </Text>
           <Flex direction="column" gap="3">
             <Select.Root
               value={transferTarget ?? undefined}
@@ -267,102 +275,107 @@ export const MembersPage: React.FC = () => {
         {!isLoading && !error && currentWorkspace && (
           <>
             {members && members.length > 0 ? (
-              <Table.Root className={styles.membersTable}>
-                <Table.Header>
-                  <Table.Row>
-                    <Table.ColumnHeaderCell>Username</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
-                    <Table.ColumnHeaderCell>Remove</Table.ColumnHeaderCell>
-                  </Table.Row>
-                </Table.Header>
-                <Table.Body>
-                  {members.map((member) => {
-                    const isOwner = member.username === owner
-                    const isAdmin = admins.includes(member.username)
-                    return (
-                      <Table.Row key={member.username}>
-                        <Table.Cell>
-                          <Text size="2" weight="medium">
-                            {member.username}
-                          </Text>
-                        </Table.Cell>
-                        <Table.Cell>
-                          {[member.firstName, member.lastName].filter(Boolean).join(' ') || 'N/A'}
-                        </Table.Cell>
-                        <Table.Cell>{member.email ?? 'N/A'}</Table.Cell>
-                        <Table.Cell>
-                          {isOwner ? (
-                            <Badge color="amber" variant="solid">
-                              Owner
-                            </Badge>
-                          ) : (
-                            <Select.Root
-                              value={isAdmin ? 'admin' : 'member'}
-                              onValueChange={(value) => {
-                                const nextIsAdmin = value === 'admin'
-                                if (nextIsAdmin === isAdmin) return
-                                if (nextIsAdmin) {
-                                  handlePromoteToAdmin(member.username)
-                                } else {
-                                  toggleAdmin(member.username)
-                                }
-                              }}
-                              size="1"
-                            >
-                              <Select.Trigger variant="soft" />
-                              <Select.Content position="popper">
-                                <Select.Item value="member">Member</Select.Item>
-                                <Select.Item value="admin">Admin</Select.Item>
-                              </Select.Content>
-                            </Select.Root>
-                          )}
-                        </Table.Cell>
-                        <Table.Cell>
-                          <AlertDialog.Root>
-                            <AlertDialog.Trigger>
-                              <Button
-                                size="2"
-                                variant="soft"
-                                color="red"
-                                type="button"
-                                disabled={isOwner || deletingUsername === member.username}
-                                aria-label={`Remove ${member.username}`}
+              <>
+                <Table.Root className={styles.membersTable}>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell>Username</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Email</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Role</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Remove</Table.ColumnHeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {members.map((member) => {
+                      const isOwner = member.username === owner
+                      const isAdmin = admins.includes(member.username)
+                      return (
+                        <Table.Row key={member.username}>
+                          <Table.Cell>
+                            <Text size="2" weight="medium">
+                              {member.username}
+                            </Text>
+                          </Table.Cell>
+                          <Table.Cell>
+                            {[member.firstName, member.lastName].filter(Boolean).join(' ') || 'N/A'}
+                          </Table.Cell>
+                          <Table.Cell>{member.email ?? 'N/A'}</Table.Cell>
+                          <Table.Cell>
+                            {isOwner ? (
+                              <Badge color="amber" variant="solid">
+                                Owner
+                              </Badge>
+                            ) : (
+                              <Select.Root
+                                value={isAdmin ? 'admin' : 'member'}
+                                onValueChange={(value) => {
+                                  const nextIsAdmin = value === 'admin'
+                                  if (nextIsAdmin === isAdmin) return
+                                  if (nextIsAdmin) {
+                                    handlePromoteToAdmin(member.username)
+                                  } else {
+                                    toggleAdmin(member.username)
+                                  }
+                                }}
+                                size="1"
                               >
-                                Remove
-                              </Button>
-                            </AlertDialog.Trigger>
-                            <AlertDialog.Content style={{ maxWidth: 420 }}>
-                              <AlertDialog.Title>Remove member</AlertDialog.Title>
-                              <AlertDialog.Description size="2">
-                                Remove <strong>{member.username}</strong> from this workspace? They
-                                will lose access immediately.
-                              </AlertDialog.Description>
-                              <Flex gap="3" mt="4" justify="end">
-                                <AlertDialog.Cancel>
-                                  <Button variant="soft" color="gray">
-                                    Cancel
-                                  </Button>
-                                </AlertDialog.Cancel>
-                                <AlertDialog.Action>
-                                  <Button
-                                    variant="solid"
-                                    color="red"
-                                    onClick={() => void handleDelete(member)}
-                                  >
-                                    Remove
-                                  </Button>
-                                </AlertDialog.Action>
-                              </Flex>
-                            </AlertDialog.Content>
-                          </AlertDialog.Root>
-                        </Table.Cell>
-                      </Table.Row>
-                    )
-                  })}
-                </Table.Body>
-              </Table.Root>
+                                <Select.Trigger variant="soft" />
+                                <Select.Content position="popper">
+                                  <Select.Item value="member">Member</Select.Item>
+                                  <Select.Item value="admin">Admin</Select.Item>
+                                </Select.Content>
+                              </Select.Root>
+                            )}
+                          </Table.Cell>
+                          <Table.Cell>
+                            <AlertDialog.Root>
+                              <AlertDialog.Trigger>
+                                <Button
+                                  size="2"
+                                  variant="soft"
+                                  color="red"
+                                  type="button"
+                                  disabled={isOwner || deletingUsername === member.username}
+                                  aria-label={`Remove ${member.username}`}
+                                >
+                                  Remove
+                                </Button>
+                              </AlertDialog.Trigger>
+                              <AlertDialog.Content style={{ maxWidth: 420 }}>
+                                <AlertDialog.Title>Remove member</AlertDialog.Title>
+                                <AlertDialog.Description size="2">
+                                  Remove <strong>{member.username}</strong> from this workspace?
+                                  They will lose access immediately.
+                                </AlertDialog.Description>
+                                <Flex gap="3" mt="4" justify="end">
+                                  <AlertDialog.Cancel>
+                                    <Button variant="soft" color="gray">
+                                      Cancel
+                                    </Button>
+                                  </AlertDialog.Cancel>
+                                  <AlertDialog.Action>
+                                    <Button
+                                      variant="solid"
+                                      color="red"
+                                      onClick={() => void handleDelete(member)}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </AlertDialog.Action>
+                                </Flex>
+                              </AlertDialog.Content>
+                            </AlertDialog.Root>
+                          </Table.Cell>
+                        </Table.Row>
+                      )
+                    })}
+                  </Table.Body>
+                </Table.Root>
+                <Text size="1" color="red">
+                  {ROLE_PREVIEW_NOTE}
+                </Text>
+              </>
             ) : (
               <Callout type="info" message="No members found for this workspace." />
             )}

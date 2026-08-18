@@ -40,6 +40,11 @@ import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
+// UI preview only — there's no read or write API yet for a data file's visibility. See
+// "Redesign the data-publishing flow and APIs" task note for the plan.
+const VISIBILITY_PREVIEW_NOTE =
+  '(UI preview only — visibility is not readable or changeable via a real API yet.)'
+
 const FILES_PAGE_SIZE = 50
 
 type SortColumn = 'fileName' | 'storeType' | 'size' | 'lastModified'
@@ -615,6 +620,9 @@ export const DataStoragePage: React.FC = () => {
                     ))}
                   </Table.Body>
                 </Table.Root>
+                <Text size="1" color="red">
+                  {VISIBILITY_PREVIEW_NOTE}
+                </Text>
                 {pageCount > 1 && (
                   <Flex justify="center" mt="4">
                     <PageSelector

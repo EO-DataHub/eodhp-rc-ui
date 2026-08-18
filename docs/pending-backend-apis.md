@@ -1,8 +1,9 @@
-c# Pending backend APIs: roles, ownership & visibility
+# Pending backend APIs: roles, ownership, visibility & accounting
 
-The Members, Publisher, and Files pages currently mock several controls purely
-client-side (`localStorage`, no server calls) because the real APIs don't exist yet. This
-doc lists what would need to be built for those controls to become real. Grouped by page.
+The Members, Publisher, Files, Profile, and Accounting/Billing pages currently mock several
+controls purely client-side (`localStorage` or in-memory React state, no server calls)
+because the real APIs don't exist yet. This doc lists what would need to be built for those
+controls to become real. Grouped by page.
 
 ## Members page (`src/pages/MembersPage`)
 
@@ -40,6 +41,28 @@ stored in `localStorage`. To make this real:
 Backing data model (recommended there): a new `workspace_admins` table (`workspace_id`,
 `username`, `added_by`, `created_at`) plus a nullable `owner` column, replacing/extending
 today's single account-scoped `account_owner` column.
+
+## Profile page (`src/pages/ProfilePage`)
+
+Account details and identity-provider linking both deep-link out to Keycloak's own Account
+Console (`{KEYCLOAK_URL}/realms/{REALM}/account` and its `account-security/linked-accounts`
+sub-page) — these already work for real today, since Keycloak natively handles both. No new
+API needed for either.
+
+Account deletion is fully mocked — there's no account-deletion endpoint at all, and deleting
+is blocked client-side by checking `getMockWorkspaceOwner` (the same per-workspace mock role
+data the Members page writes to `localStorage`) against every workspace the user belongs to
+(`fetchWorkspaces`). To make this real:
+
+1. **Delete account** — an endpoint (Keycloak itself, or a wrapper in front of it) that
+   actually deletes the user's account.
+2. **Block on workspace ownership, server-side** — the mock's ownership check only catches
+   workspaces whose Members page has actually been visited in this browser (no stored data =
+   treated as not-owned). The real endpoint needs to reject deletion (403/409, with the list
+   of workspaces that need a transfer first) if the caller is the current owner of any
+   workspace. This can't be a client-side-only check — Keycloak's own account-deletion API
+   has no concept of workspace ownership and could be called directly, bypassing whatever the
+   frontend enforces.
 
 ## Publisher page (`src/pages/PublisherPage`, Catalogue + Workflows tabs)
 
@@ -95,6 +118,32 @@ Option E from the redesign note below) batching several files through collection
 metadata upload, and a three-tier visibility picker. That wizard has been removed in favour
 of the plain per-file dropdown described above — deliberately no batch flow, no modal, no
 metadata/catalogue step. See the note below for what that leaves unresolved.
+
+## Accounting / Billing — per-user usage & budgets (`UsagePage`, `BudgetPage`)
+
+Both pages are still fully illustrative (in-memory React state that resets on refresh — no
+persistence at all, mock or otherwise, unlike the `localStorage`-backed mocks above).
+Recently extended toward per-user granularity:
+
+- **Usage page** — each mock usage record now has a `user` field; a "User" filter `Select`
+  sits alongside the existing month filter, and a "Usage by user" breakdown table above the
+  main table always shows every user's total for the selected month, independent of the user
+  filter. To make this real: the usage-ledger endpoint (doesn't exist yet — see the existing
+  "No usage API exists yet" note in the page itself) needs a `user` field per record, and
+  ideally a server-side per-user aggregate so the by-user breakdown doesn't require fetching
+  and summing every raw record client-side.
+- **Budget page** — a new "Per-user budgets" toggle (off by default, so workspaces with no
+  need for it never see the section) reveals a default per-user compute threshold plus an
+  "Overrides" list: most members share the default; specific members can get a custom
+  threshold via a dialog backed by the real `fetchWorkspaceMembers`. Per-user budgets
+  supplement, not replace, the existing workspace-wide threshold — whichever is hit first
+  blocks activity. To make this real:
+  1. **Read/write the default per-user threshold** for a workspace, plus whether the
+     per-user-budgets feature is enabled at all.
+  2. **Read/write per-user overrides** — effectively a small table of
+     `{ workspace, username, threshold, alertsEnabled }`.
+  3. **Authorization** — same open question as Members/Publisher above: who can set these,
+     the owner only or any admin?
 
 ## Publishing-flow redesign (see "Redesign the data-publishing flow and APIs" task note)
 
