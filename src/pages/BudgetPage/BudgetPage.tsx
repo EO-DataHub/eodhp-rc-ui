@@ -1,17 +1,25 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import {
   Badge,
   Box,
   Button,
   Dialog,
   Flex,
+  IconButton,
   Progress,
   RadioCards,
+  Select,
   Switch,
+  Table,
   Text,
   TextField,
 } from '@radix-ui/themes'
+import { Cross2Icon } from '@radix-ui/react-icons'
+import { useQuery } from '@tanstack/react-query'
 import { toast } from 'react-toastify'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { fetchWorkspaceMembers } from '@/services/workspaceMembersService'
+import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from './BudgetPage.module.scss'
 
@@ -45,7 +53,19 @@ const INITIAL_STORAGE_USED_GB = 412
 
 const INITIAL_NEGATIVE_BALANCE_ALLOWANCE = '50'
 
+// Per-user budgets supplement (not replace) the workspace-wide threshold above — whichever
+// is hit first blocks further activity. Every member uses the default unless they have an
+// override below; overrides start empty since most members are expected to just share it.
+const INITIAL_DEFAULT_USER_BUDGET = '100'
+
+interface UserBudgetOverride {
+  username: string
+  threshold: string
+  alertsEnabled: boolean
+}
+
 export const BudgetPage: React.FC = () => {
+  const { token, currentWorkspace } = useContext(AuthenticationContext)
   const [computeBudget, setComputeBudget] = useState(INITIAL_COMPUTE_BUDGET)
   const [negativeBalanceAllowance, setNegativeBalanceAllowance] = useState(
     INITIAL_NEGATIVE_BALANCE_ALLOWANCE,
@@ -55,6 +75,63 @@ export const BudgetPage: React.FC = () => {
   const [isChangePlanOpen, setIsChangePlanOpen] = useState(false)
   const [pendingPlanId, setPendingPlanId] = useState(INITIAL_STORAGE_PLAN_ID)
   const [isDirty, setIsDirty] = useState(false)
+
+  const [isPerUserBudgetsEnabled, setIsPerUserBudgetsEnabled] = useState(false)
+  const [defaultUserBudget, setDefaultUserBudget] = useState(INITIAL_DEFAULT_USER_BUDGET)
+  const [overrides, setOverrides] = useState<UserBudgetOverride[]>([])
+  const [isAddOverrideOpen, setIsAddOverrideOpen] = useState(false)
+  const [newOverrideUsername, setNewOverrideUsername] = useState<string | null>(null)
+
+  const { data: members } = useQuery({
+    queryKey: ['WorkspaceMembers', currentWorkspace, token],
+    queryFn: () => fetchWorkspaceMembers(currentWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: Boolean(token && currentWorkspace),
+  })
+
+  const overriddenUsernames = new Set(overrides.map((override) => override.username))
+  const overrideCandidates = (members ?? []).filter(
+    (member) => !overriddenUsernames.has(member.username),
+  )
+
+  const openAddOverride = () => {
+    setNewOverrideUsername(null)
+    setIsAddOverrideOpen(true)
+  }
+
+  const handleAddOverride = () => {
+    if (!newOverrideUsername) return
+    setOverrides((prev) => [
+      ...prev,
+      { username: newOverrideUsername, threshold: defaultUserBudget, alertsEnabled: true },
+    ])
+    setIsAddOverrideOpen(false)
+    setNewOverrideUsername(null)
+    setIsDirty(true)
+  }
+
+  const handleRemoveOverride = (username: string) => {
+    setOverrides((prev) => prev.filter((override) => override.username !== username))
+    setIsDirty(true)
+  }
+
+  const handleOverrideThresholdChange = (username: string, threshold: string) => {
+    setOverrides((prev) =>
+      prev.map((override) =>
+        override.username === username ? { ...override, threshold } : override,
+      ),
+    )
+    setIsDirty(true)
+  }
+
+  const handleOverrideAlertsChange = (username: string, alertsEnabled: boolean) => {
+    setOverrides((prev) =>
+      prev.map((override) =>
+        override.username === username ? { ...override, alertsEnabled } : override,
+      ),
+    )
+    setIsDirty(true)
+  }
 
   const currentPlan = STORAGE_PLANS.find((plan) => plan.id === storagePlanId) ?? STORAGE_PLANS[0]
   const storagePercentUsed =
@@ -161,6 +238,131 @@ export const BudgetPage: React.FC = () => {
 
         <Flex direction="column" gap="3">
           <Flex justify="between" align="center">
+            <Flex direction="column" gap="1">
+              <Text size="4" weight="medium">
+                Per-user budgets
+              </Text>
+              <Text size="1" color="gray">
+                Give each member their own compute budget instead of just sharing the workspace
+                threshold above.
+              </Text>
+            </Flex>
+            <Switch
+              checked={isPerUserBudgetsEnabled}
+              onCheckedChange={(checked) => {
+                setIsPerUserBudgetsEnabled(checked)
+                setIsDirty(true)
+              }}
+            />
+          </Flex>
+
+          {isPerUserBudgetsEnabled && (
+            <>
+              <Flex direction="column" gap="2" className={styles.negativeBalanceSection}>
+                <Text size="2" weight="medium">
+                  Default per-user budget
+                </Text>
+                <Text size="1" color="gray">
+                  Applies to every member unless they have their own override below. Supplements the
+                  workspace threshold above — whichever is hit first blocks further activity.
+                </Text>
+                <Box maxWidth="200px">
+                  <TextField.Root
+                    type="number"
+                    min={0}
+                    value={defaultUserBudget}
+                    onChange={(e) => {
+                      setDefaultUserBudget(e.target.value)
+                      setIsDirty(true)
+                    }}
+                    size="2"
+                  >
+                    <TextField.Slot side="right">credits</TextField.Slot>
+                  </TextField.Root>
+                </Box>
+              </Flex>
+
+              <Flex justify="between" align="center">
+                <Text size="2" weight="medium">
+                  Overrides
+                </Text>
+                <Button
+                  variant="soft"
+                  size="2"
+                  onClick={openAddOverride}
+                  disabled={overrideCandidates.length === 0}
+                >
+                  Add override
+                </Button>
+              </Flex>
+
+              {overrides.length === 0 ? (
+                <Callout
+                  type="info"
+                  message="No overrides set — every member uses the default budget above."
+                />
+              ) : (
+                <Table.Root className={styles.overridesTable}>
+                  <Table.Header>
+                    <Table.Row>
+                      <Table.ColumnHeaderCell>Member</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Threshold</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Alerts</Table.ColumnHeaderCell>
+                      <Table.ColumnHeaderCell>Remove</Table.ColumnHeaderCell>
+                    </Table.Row>
+                  </Table.Header>
+                  <Table.Body>
+                    {overrides.map((override) => (
+                      <Table.Row key={override.username}>
+                        <Table.Cell>
+                          <Text size="2" weight="medium">
+                            {override.username}
+                          </Text>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <TextField.Root
+                            type="number"
+                            min={0}
+                            value={override.threshold}
+                            onChange={(e) =>
+                              handleOverrideThresholdChange(override.username, e.target.value)
+                            }
+                            size="2"
+                            style={{ width: 100 }}
+                          >
+                            <TextField.Slot side="right">credits</TextField.Slot>
+                          </TextField.Root>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Switch
+                            checked={override.alertsEnabled}
+                            onCheckedChange={(checked) =>
+                              handleOverrideAlertsChange(override.username, checked)
+                            }
+                          />
+                        </Table.Cell>
+                        <Table.Cell>
+                          <IconButton
+                            variant="soft"
+                            color="gray"
+                            size="2"
+                            aria-label={`Remove override for ${override.username}`}
+                            onClick={() => handleRemoveOverride(override.username)}
+                          >
+                            <Cross2Icon />
+                          </IconButton>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))}
+                  </Table.Body>
+                </Table.Root>
+              )}
+            </>
+          )}
+        </Flex>
+
+        <Flex direction="column" gap="3">
+          <Flex justify="between" align="center">
             <Text size="4" weight="medium">
               Storage plan
             </Text>
@@ -227,6 +429,38 @@ export const BudgetPage: React.FC = () => {
               </Button>
             </Dialog.Close>
             <Button onClick={handleConfirmPlanChange}>Confirm</Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      <Dialog.Root open={isAddOverrideOpen} onOpenChange={setIsAddOverrideOpen}>
+        <Dialog.Content style={{ maxWidth: 420 }}>
+          <Dialog.Title>Add budget override</Dialog.Title>
+          <Dialog.Description size="2" mb="4">
+            Set a custom compute threshold for one member instead of the default above.
+          </Dialog.Description>
+          <Select.Root
+            value={newOverrideUsername ?? undefined}
+            onValueChange={setNewOverrideUsername}
+          >
+            <Select.Trigger placeholder="Select a member" style={{ width: '100%' }} />
+            <Select.Content position="popper">
+              {overrideCandidates.map((member) => (
+                <Select.Item key={member.username} value={member.username}>
+                  {member.username}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Root>
+          <Flex justify="end" gap="3" mt="4">
+            <Dialog.Close>
+              <Button color="gray" variant="soft">
+                Cancel
+              </Button>
+            </Dialog.Close>
+            <Button onClick={handleAddOverride} disabled={!newOverrideUsername}>
+              Add
+            </Button>
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
