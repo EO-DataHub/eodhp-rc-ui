@@ -24,15 +24,23 @@ import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator
 import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { useMockWorkspaceRoles } from './useMockWorkspaceRoles'
+import { useMockWorkspaceCategory, WorkspaceCategory } from './useMockWorkspaceCategory'
 import styles from './MembersPage.module.scss'
 
 // UI preview only — see docs/pending-backend-apis.md. No admin/owner API exists yet;
 // role changes and ownership transfer below are stored in localStorage, not a real API.
 const ROLE_PREVIEW_NOTE =
   '(UI preview only — role changes and ownership transfers are not saved to a real API.)'
+const CATEGORY_PREVIEW_NOTE = '(UI preview only — no workspace-category API exists yet.)'
+
+const CATEGORY_LABELS: Record<WorkspaceCategory, string> = {
+  commercial: 'Commercial',
+  research: 'Research',
+}
 
 export const MembersPage: React.FC = () => {
-  const { token, currentWorkspace, workspaceUserName } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, workspaceUserName, isHubAdmin } =
+    useContext(AuthenticationContext)
   const [deletingUsername, setDeletingUsername] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -42,6 +50,7 @@ export const MembersPage: React.FC = () => {
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [transferTarget, setTransferTarget] = useState<string | null>(null)
   const [transferConfirmText, setTransferConfirmText] = useState('')
+  const [pendingCategory, setPendingCategory] = useState<WorkspaceCategory | null>(null)
 
   const {
     data: members,
@@ -62,6 +71,15 @@ export const MembersPage: React.FC = () => {
   )
   const isCurrentUserOwner = Boolean(workspaceUserName) && owner === workspaceUserName
   const transferCandidates = members?.filter((member) => member.username !== owner) ?? []
+
+  const { category, setWorkspaceCategory } = useMockWorkspaceCategory(currentWorkspace)
+
+  const handleConfirmCategoryChange = () => {
+    if (!pendingCategory) return
+    setWorkspaceCategory(pendingCategory)
+    toast.success(`Workspace category set to ${CATEGORY_LABELS[pendingCategory]} (preview only)`)
+    setPendingCategory(null)
+  }
 
   const handleTransferOwnership = () => {
     if (!transferTarget) return
@@ -151,6 +169,62 @@ export const MembersPage: React.FC = () => {
           </Button>
         </Flex>
       </Flex>
+
+      <Flex align="center" gap="2">
+        <Text size="2" color="gray">
+          Category
+        </Text>
+        {isHubAdmin ? (
+          <Select.Root
+            value={category}
+            onValueChange={(value) => {
+              if (value !== category) setPendingCategory(value as WorkspaceCategory)
+            }}
+            size="1"
+          >
+            <Select.Trigger variant="soft" />
+            <Select.Content position="popper">
+              <Select.Item value="commercial">Commercial</Select.Item>
+              <Select.Item value="research">Research</Select.Item>
+            </Select.Content>
+          </Select.Root>
+        ) : (
+          <Badge color={category === 'commercial' ? 'blue' : 'green'} variant="soft">
+            {CATEGORY_LABELS[category]}
+          </Badge>
+        )}
+      </Flex>
+
+      <AlertDialog.Root
+        open={pendingCategory !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingCategory(null)
+        }}
+      >
+        <AlertDialog.Content style={{ maxWidth: 420 }}>
+          <AlertDialog.Title>Change workspace category</AlertDialog.Title>
+          <AlertDialog.Description size="2" mb="2">
+            Set this workspace&apos;s category to{' '}
+            <strong>{pendingCategory ? CATEGORY_LABELS[pendingCategory] : ''}</strong>? This affects
+            pricing for future usage; past charges are unaffected.
+          </AlertDialog.Description>
+          <Text size="1" color="red" as="p">
+            {CATEGORY_PREVIEW_NOTE}
+          </Text>
+          <Flex gap="3" mt="4" justify="end">
+            <AlertDialog.Cancel>
+              <Button variant="soft" color="gray">
+                Cancel
+              </Button>
+            </AlertDialog.Cancel>
+            <AlertDialog.Action>
+              <Button variant="solid" onClick={handleConfirmCategoryChange}>
+                Confirm
+              </Button>
+            </AlertDialog.Action>
+          </Flex>
+        </AlertDialog.Content>
+      </AlertDialog.Root>
 
       <Dialog.Root
         open={isTransferOpen}

@@ -19,6 +19,13 @@ const initOptions = {
 
 const authenticationInstance = new Keycloak(initOptions)
 
+// Platform-wide superuser realm role — see docs/pending-backend-apis.md. Unlike a
+// workspace's "owner" (per-workspace, mocked in useMockWorkspaceRoles.ts), this is real:
+// it's read straight from the already-decoded access token, no backend call needed.
+const HUB_ADMIN_ROLE = 'hub_admin'
+const checkIsHubAdmin = (): boolean =>
+  authenticationInstance.tokenParsed?.realm_access?.roles?.includes(HUB_ADMIN_ROLE) ?? false
+
 export const AuthenticationContextProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false)
@@ -26,6 +33,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [authenticatedAxios, setAuthenticatedAxios] = useState<AxiosInstance | undefined>()
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
+  const [isHubAdmin, setIsHubAdmin] = useState<boolean>(false)
   const workspaceUserName = userInfo?.preferred_username
   const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(
     () => localStorage.getItem('selectedWorkspace') ?? undefined,
@@ -69,6 +77,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         .updateToken()
         .then(() => {
           setToken(authenticationInstance.token)
+          setIsHubAdmin(checkIsHubAdmin())
         })
         .catch(() => {
           setIsAuthenticated(false)
@@ -100,6 +109,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         if (auth) {
           ensureLogoutDoesNotRedirect()
           setToken(authenticationInstance.token)
+          setIsHubAdmin(checkIsHubAdmin())
           return authenticationInstance.loadUserInfo()
         }
       })
@@ -173,6 +183,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         token,
         userInfo,
         workspaceUserName,
+        isHubAdmin,
         currentWorkspace,
         updateCurrentWorkspace,
         clearCurrentWorkspace,

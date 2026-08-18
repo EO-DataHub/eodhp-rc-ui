@@ -42,6 +42,33 @@ Backing data model (recommended there): a new `workspace_admins` table (`workspa
 `username`, `added_by`, `created_at`) plus a nullable `owner` column, replacing/extending
 today's single account-scoped `account_owner` column.
 
+## Workspace category (`src/pages/MembersPage`, badge also shown on Credits)
+
+Per the credits-ledger design docs: every workspace has a category (`commercial` /
+`research`) that feeds into its pricing multiplier, settable only by a `hub_admin`
+(platform-wide realm role) via the workspace-management system. Two different things are
+mocked here, at two different levels of realism:
+
+1. **Permission check is real, not mocked.** `AuthenticationContext.isHubAdmin` is read
+   straight from the already-decoded Keycloak access token
+   (`tokenParsed.realm_access.roles.includes('hub_admin')`, computed in
+   `AuthenticationProvider.tsx`) — no backend call needed, and nothing here needs to change
+   once a real category API exists. The edit `Select` on the Members page only renders for
+   users who actually hold the `hub_admin` realm role today.
+2. **The category value itself is mocked** — `useMockWorkspaceCategory.ts` stores it in
+   `localStorage` per workspace, defaulting new/unseen workspaces to `commercial` (mirroring
+   "new workspaces default to a category until a hub admin manually classifies them"). To
+   make this real:
+   - **Read category** — e.g. `GET /api/workspaces/:id` returning a `category` field, or a
+     dedicated `GET /api/workspaces/:id/category`.
+   - **Write category** — `PUT /api/workspaces/:id/category` with body
+     `{ category: 'commercial' | 'research' }`, gated server-side on the caller holding the
+     `hub_admin` realm role (the frontend's role check is real, but nothing stops a direct
+     API call bypassing it — same caveat as every other client-side-only gate in this doc).
+   - Per the schema doc, this table deliberately keeps no history — the *ledger* rows record
+     which category applied at charge-time, so recategorizing a workspace doesn't need to
+     rewrite past charges.
+
 ## Profile page (`src/pages/ProfilePage`)
 
 Account details and identity-provider linking both deep-link out to Keycloak's own Account

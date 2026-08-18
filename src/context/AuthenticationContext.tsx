@@ -21,6 +21,7 @@ interface AuthenticationContextValue {
   token: string | undefined
   userInfo?: KeycloakUserInfo
   workspaceUserName?: string
+  isHubAdmin: boolean
   currentWorkspace?: string
   updateCurrentWorkspace: (workspace: string) => void
   clearCurrentWorkspace: () => void
@@ -33,6 +34,7 @@ export const AuthenticationContext = createContext<AuthenticationContextValue>({
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   token: undefined,
+  isHubAdmin: false,
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   updateCurrentWorkspace: () => {},
   // eslint-disable-next-line @typescript-eslint/no-empty-function

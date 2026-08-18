@@ -1,8 +1,10 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { Badge, Box, Button, Dialog, Flex, Table, Text, TextField } from '@radix-ui/themes'
 import { toast } from 'react-toastify'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { getMockWorkspaceCategory } from '@/pages/MembersPage/useMockWorkspaceCategory'
 import styles from './CreditsPage.module.scss'
 
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
@@ -25,9 +27,12 @@ const CREDITS_PREVIEW_NOTE =
 const BUY_CREDITS_PREVIEW_NOTE = '(UI preview only — no credits API exists yet; nothing is bought.)'
 
 export const CreditsPage: React.FC = () => {
+  const { currentWorkspace } = useContext(AuthenticationContext)
   const [balance, setBalance] = useState(INITIAL_BALANCE)
   const [isBuyOpen, setIsBuyOpen] = useState(false)
   const [amount, setAmount] = useState('')
+
+  const category = currentWorkspace ? getMockWorkspaceCategory(currentWorkspace) : null
 
   const amountNumber = Number(amount)
   const isAmountValid = amount.trim() !== '' && !isNaN(amountNumber) && amountNumber > 0
@@ -50,10 +55,22 @@ export const CreditsPage: React.FC = () => {
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <Flex justify="between" align="start">
-        <PageHeading
-          title="Credits"
-          subtitle="Shared compute credit balance for this workspace — used for CPU and GPU"
-        />
+        <Flex direction="column" gap="2">
+          <PageHeading
+            title="Credits"
+            subtitle="Shared compute credit balance for this workspace — used for CPU and GPU"
+          />
+          {category && (
+            <Flex align="center" gap="2">
+              <Text size="2" color="gray">
+                Category
+              </Text>
+              <Badge color={category === 'commercial' ? 'blue' : 'green'} variant="soft">
+                {category === 'commercial' ? 'Commercial' : 'Research'}
+              </Badge>
+            </Flex>
+          )}
+        </Flex>
         <Button size="3" onClick={() => setIsBuyOpen(true)}>
           Buy more credits
         </Button>
