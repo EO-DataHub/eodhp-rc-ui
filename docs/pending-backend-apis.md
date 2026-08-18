@@ -69,6 +69,24 @@ mocked here, at two different levels of realism:
      which category applied at charge-time, so recategorizing a workspace doesn't need to
      rewrite past charges.
 
+## Workspace integrations — Dask, GPU (`src/pages/MembersPage`)
+
+Same shape as workspace category directly above, and shown right next to it: two
+per-workspace on/off flags (`daskEnabled`, `gpuEnabled`), settable only by a `hub_admin`,
+using the same real `isHubAdmin` permission check. `useMockWorkspaceIntegrations.ts` stores
+both flags in `localStorage` per workspace, both defaulting to disabled. To make this real:
+
+- **Read integrations** — e.g. extend `GET /api/workspaces/:id` with `dask_enabled` /
+  `gpu_enabled` booleans, or a dedicated `GET /api/workspaces/:id/integrations`.
+- **Write integrations** — `PUT /api/workspaces/:id/integrations` with body
+  `{ dask_enabled?: boolean, gpu_enabled?: boolean }`, gated server-side on `hub_admin` —
+  same bypass caveat as workspace category: the frontend gate is real, but a direct API
+  call isn't stopped by anything client-side.
+- Unlike category, enabling either of these presumably has to actually provision
+  something (spin up a Dask scheduler, attach GPU-backed compute) rather than just flip a
+  billing-relevant flag — the real endpoint is likely not a simple database write, but
+  that's an infrastructure question outside this doc's scope.
+
 ## Platform admin usage (`src/pages/PlatformAdminUsagePage`)
 
 A cross-workspace "which workspaces are using the most" leaderboard, gated on `isHubAdmin`
