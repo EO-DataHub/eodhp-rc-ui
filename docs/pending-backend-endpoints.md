@@ -1,4 +1,4 @@
-# Pending backend endpoints — reference table
+# Proposed backend endpoints
 
 A flat, scannable list of every backend endpoint grouped by the frontend pages it is needed by.
 
@@ -84,7 +84,14 @@ that.
 
 ---
 
-**Not included:** the combined-upload endpoint from Option A of the publishing-flow
-redesign (`pending-backend-apis.md`'s last section) — that document deliberately excludes it
-from its concrete list since nothing currently mocked depends on it, so it's left out here
-too for the same reason.
+## Open questions
+
+Not yet resolved — flagging here rather than cluttering the tables above.
+
+- **Usage visibility** — who can see a workspace's usage data: any member, or admins only?
+- **Member visibility** — who can see the list of workspace members, members or admins only?
+- **Promote/demote** — who can promote a member to admin or demote an admin back to member:
+  only the owner, or any admin?
+- **Dask/GPU integrations** — who can enable them: just `hub_admin` for now, or eventually workspace owners/admins too?
+- **Visibility changes** — who can change the visibility of a workspace's files, workflows, or catalogue data: owner, admin, or any member?
+- **Budget overrides** — who can view or set per-user budget overrides: only the owner, or any admin?
