@@ -12,7 +12,7 @@ import styles from './PlatformAdminUsagePage.module.scss'
 interface PlatformUsageRecord {
   id: string
   workspace: string
-  item: 'CPU' | 'GPU'
+  item: 'CPU' | 'GPU' | 'Memory'
   unit: string
   date: string
   quantity: number
@@ -127,6 +127,60 @@ const MOCK_PLATFORM_USAGE: PlatformUsageRecord[] = [
     date: '2026-08-01',
     quantity: 40,
     credits: 40,
+  },
+  {
+    id: 'p13',
+    workspace: 'sparkgeotest',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-11',
+    quantity: 300,
+    credits: 150,
+  },
+  {
+    id: 'p14',
+    workspace: 'sparkgeodemo',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-16',
+    quantity: 140,
+    credits: 70,
+  },
+  {
+    id: 'p15',
+    workspace: 'samples-opencosmos',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-28',
+    quantity: 500,
+    credits: 250,
+  },
+  {
+    id: 'p16',
+    workspace: 'discoveryreg',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-20',
+    quantity: 40,
+    credits: 20,
+  },
+  {
+    id: 'p17',
+    workspace: 'open-cosmos',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-26',
+    quantity: 180,
+    credits: 90,
+  },
+  {
+    id: 'p18',
+    workspace: 'ucl-london-airbus',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-08-02',
+    quantity: 60,
+    credits: 30,
   },
 ]
 

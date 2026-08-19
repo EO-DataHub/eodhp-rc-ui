@@ -9,8 +9,9 @@ import styles from './UsagePage.module.scss'
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
 // No usage API exists yet (it's being redesigned); every row below is illustrative mock data.
 //
-// Compute (CPU+GPU) only — storage isn't a per-use billed item under the purchased-plan model
-// (see BudgetPage), so it has no usage ledger here, the same way Google Drive doesn't show one.
+// Compute (CPU+GPU+memory) only — storage isn't a per-use billed item under the
+// purchased-plan model (see BudgetPage), so it has no usage ledger here, the same way Google
+// Drive doesn't show one.
 interface UsageRecord {
   id: string
   user: string
@@ -129,6 +130,60 @@ const MOCK_USAGE: UsageRecord[] = [
     date: '2026-08-12',
     quantity: 7,
     credits: 70,
+  },
+  {
+    id: 'u19',
+    user: 'agstephens',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-06-08',
+    quantity: 200,
+    credits: 100,
+  },
+  {
+    id: 'u20',
+    user: 'ajgwords',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-06-25',
+    quantity: 150,
+    credits: 75,
+  },
+  {
+    id: 'u21',
+    user: 'agstephens',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-09',
+    quantity: 220,
+    credits: 110,
+  },
+  {
+    id: 'u22',
+    user: 'geodowd',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-07-22',
+    quantity: 180,
+    credits: 90,
+  },
+  {
+    id: 'u23',
+    user: 'agstephens',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-08-03',
+    quantity: 90,
+    credits: 45,
+  },
+  {
+    id: 'u24',
+    user: 'ajgwords',
+    item: 'Memory',
+    unit: 'GB-hour',
+    date: '2026-08-11',
+    quantity: 260,
+    credits: 130,
   },
 ]
 

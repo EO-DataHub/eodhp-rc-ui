@@ -27,7 +27,7 @@ import styles from './BudgetPage.module.scss'
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
 // No budget/plan API exists yet; thresholds and plan prices below are illustrative.
 //
-// Model: compute (CPU+GPU) is metered against the single credit pool from CreditsPage — a
+// Model: compute (CPU+GPU+memory) is metered against the single credit pool from CreditsPage — a
 // running balance, not a resetting monthly quota, so this page shows that same balance
 // against a block point (negative-balance allowance) and a warn point, both balance-relative.
 // Storage is not credit-metered — it's a purchased plan (like Google Drive), so it gets a

@@ -11,10 +11,15 @@ import styles from './CreditsPage.module.scss'
 // UI/UX preview only — see "Build the Accounting page set in eodhp-rc-ui" task note.
 // No credits API exists yet; the balance, burn rate and price below are illustrative.
 //
-// Model: a single "compute" credit currency shared by CPU and GPU (they consume the same
-// pool at different rates). Storage is billed separately as a purchased plan — see BudgetPage.
+// Model: a single "compute" credit currency shared by CPU, GPU, and memory (they consume the
+// same pool at different rates). Memory is priced separately from CPU because the real
+// usage-data API already meters it as its own quantity (memory-gb-seconds, alongside
+// cpu-seconds) rather than bundling it into a CPU-hour rate — see the "should memory affect
+// cost" note in pending-backend-apis.md. Storage is billed separately as a purchased plan —
+// see BudgetPage.
 const BURN_RATES = [
   { label: 'CPU', creditsPerUnit: 1, unit: 'hour' },
+  { label: 'Memory', creditsPerUnit: 0.5, unit: 'GB-hour' },
   { label: 'GPU', creditsPerUnit: 10, unit: 'hour' },
 ]
 
@@ -58,7 +63,7 @@ export const CreditsPage: React.FC = () => {
         <Flex direction="column" gap="2">
           <PageHeading
             title="Credits"
-            subtitle="Shared compute credit balance for this workspace — used for CPU and GPU"
+            subtitle="Shared compute credit balance for this workspace — used for CPU, memory, and GPU"
           />
           {category && (
             <Flex align="center" gap="2">
