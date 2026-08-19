@@ -22,6 +22,10 @@ import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
 import { PlatformAdminUsagePage } from '@/pages/PlatformAdminUsagePage/PlatformAdminUsagePage'
+import { PlatformAdminPage } from '@/pages/PlatformAdminPage/PlatformAdminPage'
+import { PlatformWorkspacesPage } from '@/pages/PlatformWorkspacesPage/PlatformWorkspacesPage'
+import { PlatformBudgetPolicyPage } from '@/pages/PlatformBudgetPolicyPage/PlatformBudgetPolicyPage'
+import { PlatformCostsPage } from '@/pages/PlatformCostsPage/PlatformCostsPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -106,12 +110,34 @@ const routes = [
     ],
   },
   {
-    path: '/admin/usage',
+    path: '/admin',
     element: <ProtectedRoute />,
     children: [
       {
         path: '',
-        element: <PlatformAdminUsagePage />,
+        element: <Navigate to="workspaces" replace />,
+      },
+      {
+        path: '',
+        element: <PlatformAdminPage />,
+        children: [
+          {
+            path: 'workspaces',
+            element: <PlatformWorkspacesPage />,
+          },
+          {
+            path: 'budget-policy',
+            element: <PlatformBudgetPolicyPage />,
+          },
+          {
+            path: 'costs',
+            element: <PlatformCostsPage />,
+          },
+          {
+            path: 'usage',
+            element: <PlatformAdminUsagePage />,
+          },
+        ],
       },
     ],
   },

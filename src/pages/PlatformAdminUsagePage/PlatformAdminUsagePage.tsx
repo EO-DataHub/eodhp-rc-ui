@@ -1,11 +1,9 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { Box, Flex, Select, Table, Text } from '@radix-ui/themes'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
-import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { getMockWorkspaceCategory } from '@/pages/MembersPage/useMockWorkspaceCategory'
 import styles from './PlatformAdminUsagePage.module.scss'
 
 // UI preview only — see docs/pending-backend-apis.md. No cross-workspace usage API exists
@@ -139,7 +137,6 @@ type SortColumn = 'workspace' | 'item' | 'quantity' | 'date' | 'credits'
 const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
 
 export const PlatformAdminUsagePage: React.FC = () => {
-  const { isHubAdmin } = useContext(AuthenticationContext)
   const [selectedMonth, setSelectedMonth] = useState('all')
   const [selectedWorkspace, setSelectedWorkspace] = useState('all')
   const [sortColumn, setSortColumn] = useState<SortColumn>('date')
@@ -181,11 +178,7 @@ export const PlatformAdminUsagePage: React.FC = () => {
       totals.set(row.workspace, (totals.get(row.workspace) ?? 0) + row.credits)
     })
     return Array.from(totals.entries())
-      .map(([workspace, credits]) => ({
-        workspace,
-        credits,
-        category: getMockWorkspaceCategory(workspace),
-      }))
+      .map(([workspace, credits]) => ({ workspace, credits }))
       .sort((a, b) => b.credits - a.credits)
   }, [monthFilteredRows])
 
@@ -243,23 +236,10 @@ export const PlatformAdminUsagePage: React.FC = () => {
     return sortDirection === 'asc' ? <CaretUpIcon /> : <CaretDownIcon />
   }
 
-  if (!isHubAdmin) {
-    return (
-      <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-        <PageHeading
-          title="Platform usage"
-          subtitle="Usage across every workspace on the platform"
-          hideWorkspace
-        />
-        <Callout type="error" message="You don't have permission to view this page." />
-      </Flex>
-    )
-  }
-
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <PageHeading
-        title="Platform usage"
+        title="Usage"
         subtitle="Usage across every workspace on the platform"
         hideWorkspace
       />
@@ -309,7 +289,6 @@ export const PlatformAdminUsagePage: React.FC = () => {
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>Workspace</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Category</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Credits</Table.ColumnHeaderCell>
               </Table.Row>
             </Table.Header>
@@ -320,9 +299,6 @@ export const PlatformAdminUsagePage: React.FC = () => {
                     <Text size="2" weight="medium">
                       {row.workspace}
                     </Text>
-                  </Table.Cell>
-                  <Table.Cell>
-                    {row.category === 'commercial' ? 'Commercial' : 'Research'}
                   </Table.Cell>
                   <Table.Cell>{row.credits}</Table.Cell>
                 </Table.Row>

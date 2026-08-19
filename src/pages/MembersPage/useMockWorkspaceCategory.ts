@@ -35,3 +35,7 @@ export const useMockWorkspaceCategory = (workspace: string | undefined) => {
 
 export const getMockWorkspaceCategory = (workspace: string): WorkspaceCategory =>
   readStored(workspace)
+
+export const setMockWorkspaceCategory = (workspace: string, category: WorkspaceCategory) => {
+  localStorage.setItem(storageKey(workspace), category)
+}

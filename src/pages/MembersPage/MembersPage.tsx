@@ -9,7 +9,6 @@ import {
   AlertDialog,
   Badge,
   Select,
-  Switch,
 } from '@radix-ui/themes'
 import { PlusIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
@@ -26,29 +25,21 @@ import { Callout } from '@/components/Callout/Callout'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { useMockWorkspaceRoles } from './useMockWorkspaceRoles'
 import { useMockWorkspaceCategory, WorkspaceCategory } from './useMockWorkspaceCategory'
-import { useMockWorkspaceIntegrations, WorkspaceIntegrations } from './useMockWorkspaceIntegrations'
+import { useMockWorkspaceIntegrations } from './useMockWorkspaceIntegrations'
 import styles from './MembersPage.module.scss'
 
 // UI preview only — see docs/pending-backend-apis.md. No admin/owner API exists yet;
 // role changes and ownership transfer below are stored in localStorage, not a real API.
 const ROLE_PREVIEW_NOTE =
   '(UI preview only — role changes and ownership transfers are not saved to a real API.)'
-const CATEGORY_PREVIEW_NOTE = '(UI preview only — no workspace-category API exists yet.)'
-const INTEGRATION_PREVIEW_NOTE = '(UI preview only — no workspace-integrations API exists yet.)'
 
 const CATEGORY_LABELS: Record<WorkspaceCategory, string> = {
   commercial: 'Commercial',
   research: 'Research',
 }
 
-const INTEGRATION_LABELS: Record<keyof WorkspaceIntegrations, string> = {
-  daskEnabled: 'Dask integration',
-  gpuEnabled: 'GPU integration',
-}
-
 export const MembersPage: React.FC = () => {
-  const { token, currentWorkspace, workspaceUserName, isHubAdmin } =
-    useContext(AuthenticationContext)
+  const { token, currentWorkspace, workspaceUserName } = useContext(AuthenticationContext)
   const [deletingUsername, setDeletingUsername] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
@@ -58,11 +49,6 @@ export const MembersPage: React.FC = () => {
   const [isTransferOpen, setIsTransferOpen] = useState(false)
   const [transferTarget, setTransferTarget] = useState<string | null>(null)
   const [transferConfirmText, setTransferConfirmText] = useState('')
-  const [pendingCategory, setPendingCategory] = useState<WorkspaceCategory | null>(null)
-  const [pendingIntegration, setPendingIntegration] = useState<{
-    key: keyof WorkspaceIntegrations
-    value: boolean
-  } | null>(null)
 
   const {
     data: members,
@@ -84,27 +70,8 @@ export const MembersPage: React.FC = () => {
   const isCurrentUserOwner = Boolean(workspaceUserName) && owner === workspaceUserName
   const transferCandidates = members?.filter((member) => member.username !== owner) ?? []
 
-  const { category, setWorkspaceCategory } = useMockWorkspaceCategory(currentWorkspace)
-
-  const handleConfirmCategoryChange = () => {
-    if (!pendingCategory) return
-    setWorkspaceCategory(pendingCategory)
-    toast.success(`Workspace category set to ${CATEGORY_LABELS[pendingCategory]} (preview only)`)
-    setPendingCategory(null)
-  }
-
-  const { integrations, setIntegration } = useMockWorkspaceIntegrations(currentWorkspace)
-
-  const handleConfirmIntegrationChange = () => {
-    if (!pendingIntegration) return
-    setIntegration(pendingIntegration.key, pendingIntegration.value)
-    toast.success(
-      `${INTEGRATION_LABELS[pendingIntegration.key]} ${
-        pendingIntegration.value ? 'enabled' : 'disabled'
-      } (preview only)`,
-    )
-    setPendingIntegration(null)
-  }
+  const { category } = useMockWorkspaceCategory(currentWorkspace)
+  const { integrations } = useMockWorkspaceIntegrations(currentWorkspace)
 
   const handleTransferOwnership = () => {
     if (!transferTarget) return
@@ -195,132 +162,12 @@ export const MembersPage: React.FC = () => {
         </Flex>
       </Flex>
 
-      <Flex align="center" gap="2">
-        <Text size="2" color="gray">
-          Category
-        </Text>
-        {isHubAdmin ? (
-          <Select.Root
-            value={category}
-            onValueChange={(value) => {
-              if (value !== category) setPendingCategory(value as WorkspaceCategory)
-            }}
-            size="1"
-          >
-            <Select.Trigger variant="soft" />
-            <Select.Content position="popper">
-              <Select.Item value="commercial">Commercial</Select.Item>
-              <Select.Item value="research">Research</Select.Item>
-            </Select.Content>
-          </Select.Root>
-        ) : (
-          <Badge color={category === 'commercial' ? 'blue' : 'green'} variant="soft">
-            {CATEGORY_LABELS[category]}
-          </Badge>
-        )}
-      </Flex>
-
-      <Flex align="center" gap="5" wrap="wrap">
-        <Flex align="center" gap="2">
-          <Text size="2" color="gray">
-            Dask integration
-          </Text>
-          {isHubAdmin ? (
-            <Switch
-              checked={integrations.daskEnabled}
-              onCheckedChange={(checked) =>
-                setPendingIntegration({ key: 'daskEnabled', value: checked })
-              }
-              size="1"
-            />
-          ) : (
-            <Badge color={integrations.daskEnabled ? 'green' : 'gray'} variant="soft">
-              {integrations.daskEnabled ? 'Enabled' : 'Disabled'}
-            </Badge>
-          )}
-        </Flex>
-        <Flex align="center" gap="2">
-          <Text size="2" color="gray">
-            GPU integration
-          </Text>
-          {isHubAdmin ? (
-            <Switch
-              checked={integrations.gpuEnabled}
-              onCheckedChange={(checked) =>
-                setPendingIntegration({ key: 'gpuEnabled', value: checked })
-              }
-              size="1"
-            />
-          ) : (
-            <Badge color={integrations.gpuEnabled ? 'green' : 'gray'} variant="soft">
-              {integrations.gpuEnabled ? 'Enabled' : 'Disabled'}
-            </Badge>
-          )}
-        </Flex>
-      </Flex>
-
-      <AlertDialog.Root
-        open={pendingIntegration !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingIntegration(null)
-        }}
-      >
-        <AlertDialog.Content style={{ maxWidth: 420 }}>
-          <AlertDialog.Title>Change workspace integration</AlertDialog.Title>
-          <AlertDialog.Description size="2" mb="2">
-            {pendingIntegration &&
-              `${pendingIntegration.value ? 'Enable' : 'Disable'} ${
-                INTEGRATION_LABELS[pendingIntegration.key]
-              } for this workspace?`}
-          </AlertDialog.Description>
-          <Text size="1" color="red" as="p">
-            {INTEGRATION_PREVIEW_NOTE}
-          </Text>
-          <Flex gap="3" mt="4" justify="end">
-            <AlertDialog.Cancel>
-              <Button variant="soft" color="gray">
-                Cancel
-              </Button>
-            </AlertDialog.Cancel>
-            <AlertDialog.Action>
-              <Button variant="solid" onClick={handleConfirmIntegrationChange}>
-                Confirm
-              </Button>
-            </AlertDialog.Action>
-          </Flex>
-        </AlertDialog.Content>
-      </AlertDialog.Root>
-
-      <AlertDialog.Root
-        open={pendingCategory !== null}
-        onOpenChange={(open) => {
-          if (!open) setPendingCategory(null)
-        }}
-      >
-        <AlertDialog.Content style={{ maxWidth: 420 }}>
-          <AlertDialog.Title>Change workspace category</AlertDialog.Title>
-          <AlertDialog.Description size="2" mb="2">
-            Set this workspace&apos;s category to{' '}
-            <strong>{pendingCategory ? CATEGORY_LABELS[pendingCategory] : ''}</strong>? This affects
-            pricing for future usage; past charges are unaffected.
-          </AlertDialog.Description>
-          <Text size="1" color="red" as="p">
-            {CATEGORY_PREVIEW_NOTE}
-          </Text>
-          <Flex gap="3" mt="4" justify="end">
-            <AlertDialog.Cancel>
-              <Button variant="soft" color="gray">
-                Cancel
-              </Button>
-            </AlertDialog.Cancel>
-            <AlertDialog.Action>
-              <Button variant="solid" onClick={handleConfirmCategoryChange}>
-                Confirm
-              </Button>
-            </AlertDialog.Action>
-          </Flex>
-        </AlertDialog.Content>
-      </AlertDialog.Root>
+      <Text size="1" color="gray">
+        Category: {CATEGORY_LABELS[category]} · Dask:{' '}
+        {integrations.daskEnabled ? 'Enabled' : 'Disabled'} · GPU:{' '}
+        {integrations.gpuEnabled ? 'Enabled' : 'Disabled'} — set by a platform admin, see Platform
+        admin.
+      </Text>
 
       <Dialog.Root
         open={isTransferOpen}

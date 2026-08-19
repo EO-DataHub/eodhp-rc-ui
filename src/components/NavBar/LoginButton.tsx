@@ -107,7 +107,7 @@ export const LoginButton = ({
             <>
               <DropdownMenu.Separator />
               <DropdownMenu.Item asChild>
-                <Link to="/admin/usage">Platform admin</Link>
+                <Link to="/admin">Platform admin</Link>
               </DropdownMenu.Item>
             </>
           )}

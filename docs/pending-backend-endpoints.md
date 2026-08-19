@@ -2,7 +2,7 @@
 
 A flat, scannable list of every backend endpoint grouped by the frontend pages it is needed by.
 
-Two different kinds of "admin" appear below — don't conflate them. Owner/admin/member are roles _within one workspace_ (see the Members section). `hub_admin` is a separate, platform-wide role (assigned in Keycloak, not per-workspace) that can act across every workspace on the platform — it's what gates the Workspace category, Workspace integrations, and Platform admin usage endpoints.
+Two different kinds of "admin" appear below — don't conflate them. Owner/admin/member are roles _within one workspace_ (see the Members section). `hub_admin` is a separate, platform-wide role (assigned in Keycloak, not per-workspace) that can act across every workspace on the platform — it's what gates every endpoint under Platform admin below.
 
 ## Members — "Members page"
 
@@ -14,28 +14,45 @@ Two different kinds of "admin" appear below — don't conflate them. Owner/admin
 | POST   | `/api/workspaces/:id/owner/transfer`   | `{ newOwner: username }` | Transfers ownership: sets the new owner and moves the outgoing owner into `admins` | Current owner only |
 | DELETE | `/api/workspaces/:id/users/:username`  | –                        | Removes a member from the workspace; rejects if `:username` is the current owner   | Owner              |
 
-## Workspace category — "Workspace category"
+## Platform admin — "Platform admin"
 
-| Method | Path                                                                | Request body                               | Description                                                  | Auth        |
-| ------ | ------------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------ | ----------- |
-| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/category`) | –                                          | Returns the workspace's category (`commercial` / `research`) | Any member  |
-| PUT    | `/api/workspaces/:id/category`                                      | `{ category: 'commercial' \| 'research' }` | Sets the workspace's category                                | `hub_admin` |
+Four tabs, all `hub_admin`-only. All four need a base "every workspace on the platform" endpoint that doesn't exist yet — today's workspace/usage APIs are scoped to the caller's own memberships, or one billing account at a time, not the whole platform:
 
-## Workspace integrations — "Workspace integrations — Dask, GPU"
+| Method | Path                    | Request body | Description                                                                                                             | Auth        |
+| ------ | ----------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------- | ----------- |
+| GET    | `/api/admin/workspaces` | –            | Returns every workspace on the platform, regardless of the caller's own membership — base list for the three tabs below | `hub_admin` |
+
+### Workspace settings tab
+
+Per-workspace category and Dask/GPU integration settings, editable across every workspace on the platform from one place:
 
 | Method | Path                                                                    | Request body                                        | Description                                                             | Auth        |
 | ------ | ----------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------- |
+| GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/category`)     | –                                                   | Returns the workspace's category (`commercial` / `research`)            | Any member  |
+| PUT    | `/api/workspaces/:id/category`                                          | `{ category: 'commercial' \| 'research' }`          | Sets the workspace's category                                           | `hub_admin` |
 | GET    | `/api/workspaces/:id` (or dedicated `/api/workspaces/:id/integrations`) | –                                                   | Returns whether Dask and GPU integrations are enabled for the workspace | Any member  |
 | PUT    | `/api/workspaces/:id/integrations`                                      | `{ dask_enabled?: boolean, gpu_enabled?: boolean }` | Enables/disables Dask and/or GPU integration for the workspace          | `hub_admin` |
 
-## Platform admin usage — "Platform admin usage"
+### Usage tab
 
-| Method | Path                    | Request body | Description                                                                        | Auth        |
-| ------ | ----------------------- | ------------ | ---------------------------------------------------------------------------------- | ----------- |
-| GET    | `/api/admin/workspaces` | –            | Returns every workspace on the platform, regardless of the caller's own membership | `hub_admin` |
+Combined with the existing `GET /api/accounts/:accountId/accounting/usage-data` (see the Accounting group below), the base workspace list above is what powers this tab — no additional endpoint needed.
 
-Combined with the existing `GET /api/accounts/:accountId/accounting/usage-data` (see the
-Accounting group below), this is what powers the platform-wide usage view.
+### Budget policy tab
+
+Entirely new — nothing here exists today:
+
+| Method  | Path                                                                                     | Request body                                                                         | Description                                                                  | Auth        |
+| ------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ----------- |
+| GET     | `/api/admin/budget-alerts` (or extend the base workspace list with balance/limit/status) | –                                                                                    | Workspaces currently breaching or near their negative-balance limit          | `hub_admin` |
+| GET/PUT | `/api/admin/budget-policy/defaults`                                                      | `{ negativeBalanceAllowance: number, computeBudget: number, warnAtCredits: number }` | Platform-wide default budget policy that new workspaces are meant to inherit | `hub_admin` |
+
+### Platform costs tab
+
+Entirely new, and a different data source from everything else in this doc — these are cloud costs, not workspace usage, so this likely comes from a cloud billing/cost-explorer integration rather than the accounting service:
+
+| Method | Path                        | Request body | Description                                                                                   | Auth        |
+| ------ | --------------------------- | ------------ | --------------------------------------------------------------------------------------------- | ----------- |
+| GET    | `/api/admin/platform-costs` | –            | Cloud costs not attributable to any single workspace, broken down per cost item, with a total | `hub_admin` |
 
 ## Profile — "Profile page"
 
@@ -55,9 +72,7 @@ Airbus/Planet linking already has real, working endpoints (see the codebase's
 
 ## Publisher — visibility — "Publisher page"
 
-"Collections" are the entries listed under the Publisher page's Catalogue tab; "processes"
-are the entries listed under its Workflows tab. Both are STAC terms already used by the
-existing catalogue API, not new concepts.
+"Collections" are the entries listed under the Publisher page's Catalogue tab; "processes" are the entries listed under its Workflows tab. Both are STAC terms already used by the existing catalogue API, not new concepts.
 
 | Method | Path                              | Request body                            | Description                                 | Auth           |
 | ------ | --------------------------------- | --------------------------------------- | ------------------------------------------- | -------------- |
@@ -68,8 +83,7 @@ existing catalogue API, not new concepts.
 
 ## Files — visibility — "Files page"
 
-`:storeType` is `object` or `block` — which underlying storage backend the file lives in,
-shown as the "Store" column on the Files page.
+`:storeType` is `object` or `block` — which underlying storage backend the file lives in, shown as the "Store" column on the Files page.
 
 | Method | Path                                        | Request body                            | Description                           | Auth           |
 | ------ | ------------------------------------------- | --------------------------------------- | ------------------------------------- | -------------- |
@@ -78,10 +92,7 @@ shown as the "Store" column on the Files page.
 
 ## Accounting — usage, credits & budgets — "Accounting / Billing — usage, credits & budgets"
 
-The billing backend (`accounting-service`, routes in `accounting_service/app/app.py`) already
-has real endpoints for usage and pricing today — but only in raw quantity and pounds (£),
-with no concept of "credits" at all. Every row below is a credit-based endpoint on top of
-that.
+The billing backend (`accounting-service`, routes in `accounting_service/app/app.py`) already has real endpoints for usage and pricing today — but only in raw quantity and pounds (£), with no concept of "credits" at all. Every row below is a credit-based endpoint on top of that.
 
 | Method  | Path                                                                         | Request body                                                                     | Description                                                                                                                                                                                              | Auth             |
 | ------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
@@ -100,9 +111,10 @@ Not yet resolved — flagging here rather than cluttering the tables above.
 
 - **Usage visibility** — who can see a workspace's usage data: any member, or admins only?
 - **Member visibility** — who can see the list of workspace members, members or admins only?
-- **Promote/demote** — who can promote a member to admin or demote an admin back to member:
-  only the owner, or any admin?
+- **Promote/demote** — who can promote a member to admin or demote an admin back to member: only the owner, or any admin?
 - **Dask/GPU integrations** — who can enable them: just `hub_admin` for now, or eventually workspace owners/admins too?
 - **Visibility changes** — who can change the visibility of a workspace's files, workflows, or catalogue data: owner, admin, or any member?
 - **Budget overrides** — who can view or set per-user budget overrides: only the owner, or any admin?
 - **Provider accounts** — who can link/unlink commercial data-provider accounts (Airbus/Planet/Open Cosmos): only the owner (current behaviour, carried over from the old app), or any admin?
+- **Budget breach notifications** — when a workspace breaches its limit, who should be notified: just the platform admin, or the workspace's own owner/admins too?
+- **Platform costs granularity** — is a flat list with a total enough for the Platform costs tab, or does it need a time breakdown (e.g. month by month)?

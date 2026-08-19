@@ -51,3 +51,14 @@ export const useMockWorkspaceIntegrations = (workspace: string | undefined) => {
 
   return { integrations, setIntegration }
 }
+
+export const getMockWorkspaceIntegrations = (workspace: string): WorkspaceIntegrations =>
+  readStored(workspace)
+
+export const setMockWorkspaceIntegration = (
+  workspace: string,
+  key: keyof WorkspaceIntegrations,
+  value: boolean,
+) => {
+  writeStored(workspace, { ...readStored(workspace), [key]: value })
+}

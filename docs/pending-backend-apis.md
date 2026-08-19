@@ -1,9 +1,6 @@
 # Pending backend APIs: roles, ownership, visibility & accounting
 
-The Members, Publisher, Files, Profile, Accounting/Billing, and Platform admin usage pages
-currently mock several controls purely client-side (`localStorage` or in-memory React
-state, no server calls) because the real APIs don't exist yet. This doc lists what would
-need to be built for those controls to become real. Grouped by page.
+The Members, Publisher, Files, Profile, Accounting/Billing, and Platform admin usage pages currently mock several controls purely client-side (`localStorage` or in-memory React state, no server calls) because the real APIs don't exist yet. This doc lists what would need to be built for those controls to become real. Grouped by page.
 
 ## Members page (`src/pages/MembersPage`)
 
@@ -44,10 +41,7 @@ today's single account-scoped `account_owner` column.
 
 ## Workspace category (`src/pages/MembersPage`, badge also shown on Credits)
 
-Per the credits-ledger design docs: every workspace has a category (`commercial` /
-`research`) that feeds into its pricing multiplier, settable only by a `hub_admin`
-(platform-wide realm role) via the workspace-management system. Two different things are
-mocked here, at two different levels of realism:
+Per the credits-ledger design docs: every workspace has a category (`commercial` / `research`) that feeds into its pricing multiplier, settable only by a `hub_admin` (platform-wide realm role) via the workspace-management system. Two different things are mocked here, at two different levels of realism:
 
 1. **Permission check is real, not mocked.** `AuthenticationContext.isHubAdmin` is read
    straight from the already-decoded Keycloak access token
@@ -71,10 +65,7 @@ mocked here, at two different levels of realism:
 
 ## Workspace integrations — Dask, GPU (`src/pages/MembersPage`)
 
-Same shape as workspace category directly above, and shown right next to it: two
-per-workspace on/off flags (`daskEnabled`, `gpuEnabled`), settable only by a `hub_admin`,
-using the same real `isHubAdmin` permission check. `useMockWorkspaceIntegrations.ts` stores
-both flags in `localStorage` per workspace, both defaulting to disabled. To make this real:
+Same shape as workspace category directly above, and shown right next to it: two per-workspace on/off flags (`daskEnabled`, `gpuEnabled`), settable only by a `hub_admin`, using the same real `isHubAdmin` permission check. `useMockWorkspaceIntegrations.ts` stores both flags in `localStorage` per workspace, both defaulting to disabled. To make this real:
 
 - **Read integrations** — e.g. extend `GET /api/workspaces/:id` with `dask_enabled` /
   `gpu_enabled` booleans, or a dedicated `GET /api/workspaces/:id/integrations`.
