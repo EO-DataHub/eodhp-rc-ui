@@ -43,6 +43,16 @@ Accounting group below), this is what powers the platform-wide usage view.
 | ------ | -------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | DELETE | account-deletion endpoint — Keycloak itself or a wrapper in front of it (path **TBD**) | –            | Deletes the caller's own account; rejects with the list of workspaces needing an ownership transfer first, if the caller currently owns any | Authenticated user (self) |
 
+## Provider accounts — "Provider accounts page"
+
+Airbus/Planet linking already has real, working endpoints (see the codebase's
+`linkedAccountsService.ts`) — only the two rows below are actually missing.
+
+| Method | Path                                      | Request body | Description                                                                                                                                                                  | Auth  |
+| ------ | ----------------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| GET    | `/api/workspaces/:id/open-cosmos/session` | –            | Returns whether an Open Cosmos session already exists for this workspace, so the page can show "Connected" correctly on load instead of always starting from "Not connected" | Owner |
+| DELETE | `/api/workspaces/:id/open-cosmos/session` | –            | Revokes/deletes the stored Open Cosmos session — today "Disconnect" only clears local state and never reaches the backend                                                    | Owner |
+
 ## Publisher — visibility — "Publisher page"
 
 "Collections" are the entries listed under the Publisher page's Catalogue tab; "processes"
@@ -95,3 +105,4 @@ Not yet resolved — flagging here rather than cluttering the tables above.
 - **Dask/GPU integrations** — who can enable them: just `hub_admin` for now, or eventually workspace owners/admins too?
 - **Visibility changes** — who can change the visibility of a workspace's files, workflows, or catalogue data: owner, admin, or any member?
 - **Budget overrides** — who can view or set per-user budget overrides: only the owner, or any admin?
+- **Provider accounts** — who can link/unlink commercial data-provider accounts (Airbus/Planet/Open Cosmos): only the owner (current behaviour, carried over from the old app), or any admin?

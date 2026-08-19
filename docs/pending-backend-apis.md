@@ -129,6 +129,53 @@ data the Members page writes to `localStorage`) against every workspace the user
    has no concept of workspace ownership and could be called directly, bypassing whatever the
    frontend enforces.
 
+## Provider accounts page (`src/pages/ProviderAccountsPage`)
+
+Ported from `eodhp-workspace-ui`'s "Linked accounts" page — workspace-scoped (owner edits,
+everyone else views read-only), for linking commercial data-provider accounts so a workspace
+can order their imagery. Two different mechanisms, both already real, not mocked:
+
+- **Airbus / Planet** — a simple API-key link. Existing endpoints (`linkedAccountsService.ts`),
+  confirmed live in `eodhp-workspace-services` (`cmd/serve.go` route registration,
+  `api/services/linked-accounts.go`): `GET/POST /api/workspaces/:id/linked-accounts`,
+  `DELETE /api/workspaces/:id/linked-accounts/:provider`, and
+  `POST /api/workspaces/:id/linked-accounts/:provider/validate`. Now called with a Keycloak
+  bearer token instead of the old app's cookie/gateway session — otherwise unchanged. (Keys are
+  stored one-time-pad-encrypted, split between a Kubernetes secret and AWS Secrets Manager —
+  not relevant to the frontend, but explains why there's no plain "get the stored key back"
+  endpoint.)
+- **Open Cosmos** — a bespoke OAuth2/PKCE flow against Open Cosmos's own login domain, entirely
+  separate from Keycloak. Ported with two fixes over the old app: a `state` param is now
+  generated and checked on callback (the original had none), and the redirect-back handling
+  accounts for this app's hash router (the original app had no router at all).
+
+Two gaps carried over from the old app, **not** fixed by the port above because fixing them
+needs new backend work, not just frontend changes. Both confirmed against
+`eodhp-workspace-services`' actual route table (not `resource-catalogue-fastapi` — that repo
+also touches Open Cosmos, but only to read the stored secret directly from Kubernetes for
+order fulfilment; it exposes no HTTP routes for linking):
+
+1. **No read endpoint for the Open Cosmos session.** `POST /api/workspaces/:id/open-cosmos/session`
+   is real and live (`CreateOpenCosmosSession`, writes a `oauth-open-cosmos` Kubernetes secret
+   in the workspace's namespace) — but there's no matching `GET` anywhere in that service. So
+   "Connected" only reflects in-memory state for the current browser tab — reloading the page
+   always shows "Not connected," even if a session already exists server-side for that
+   workspace. Needs `GET /api/workspaces/:id/open-cosmos/session` (or folding an
+   `open_cosmos_linked: boolean` into the existing linked-accounts list) so the page can show
+   real status on load.
+2. **No revoke endpoint — and the generic one would break.** "Disconnect" only clears local
+   state; there's no `DELETE /api/workspaces/:id/open-cosmos/session`. The existing generic
+   `DELETE /api/workspaces/:id/linked-accounts/:provider` can't stand in for it either: that
+   handler deletes a `otp-{provider}` Kubernetes secret plus an AWS Secrets Manager entry,
+   neither of which exists for Open Cosmos (its secret is named `oauth-open-cosmos`, not
+   OTP-based) — calling it with `provider=open-cosmos` would 500, not silently no-op. A real
+   `DELETE /api/workspaces/:id/open-cosmos/session` needs to be a new, separate endpoint.
+
+Separately, going live also needs: a registered OAuth redirect URI for this app's own domain
+(the old app's was `https://eodatahub.org.uk/workspaces/` — this app needs its own, registered
+with Open Cosmos), and a real `VITE_OPEN_COSMOS_CLIENT_ID` for this app's build/deploy
+pipeline (see `.env.sample`) — neither of which is something this frontend change can supply.
+
 ## Publisher page (`src/pages/PublisherPage`, Catalogue + Workflows tabs)
 
 Today's real endpoints:
@@ -208,8 +255,8 @@ resets on refresh) until that lands. Real endpoints today, for reference:
 - `GET /api/accounting/prices` — current price per unit, **in pounds**, not credits.
 
 To make the mocked pages real, thought through page by page — a few things only surface
-once *quantity* (what's real today) is separated from *credits* (what nothing computes
-yet), and *"this month"* (what the UI shows) from *balance* (what the design actually
+once _quantity_ (what's real today) is separated from _credits_ (what nothing computes
+yet), and _"this month"_ (what the UI shows) from _balance_ (what the design actually
 tracks):
 
 ### Credits page
@@ -233,11 +280,11 @@ This is where "credits used" and "quantity" genuinely diverge, and it changes wh
 real endpoint should be, not just what fields it returns.
 
 - **Short-term**: extending today's `GET .../usage-data` (`BillingEvent`-based) with `user`
-  — as already scoped below — only ever gives *quantity* per user, per SKU. That's enough
+  — as already scoped below — only ever gives _quantity_ per user, per SKU. That's enough
   for the user-filter and table columns, but not enough for a meaningful "total credits" per
   user, because summing raw quantity across different SKUs (CPU-seconds + GB-months + API
   calls) means nothing without a price attached to each one first.
-- **Real target**: once the credit ledger exists, the Usage page should read from *it*, not
+- **Real target**: once the credit ledger exists, the Usage page should read from _it_, not
   `BillingEvent` — each ledger row already carries a computed `credits` value (schema doc),
   so a per-user total becomes a plain `SUM`. This needs a read endpoint over
   `CreditLedgerTransaction` (extending `/usage-data` once ledger rows exist, or a new
@@ -246,7 +293,7 @@ real endpoint should be, not just what fields it returns.
 - **This is a schema gap, not just an API gap.** `CreditLedgerTransaction` as currently
   designed (schema doc) has **no `user` column** — unlike `BillingEvent`, which has one
   today (`models.py:309`). If the ledger is built as currently specified, the per-user
-  attribution that exists right now would be *lost*, not just missing an endpoint to expose
+  attribution that exists right now would be _lost_, not just missing an endpoint to expose
   it. Worth raising directly: the ledger needs a `user: Mapped[UUID | None]` column, carried
   through from `BillingEvent.user` at debit-ingestion time (task 2a) — otherwise the Usage
   page's per-user requirement can't be met for real regardless of what the API layer does.
@@ -279,7 +326,7 @@ Two decisions were open here; both are now settled.
    `item_id` — e.g. a shared `budget_group` the relevant SKUs point to, or a virtual
    `item_id` representing "compute" as a whole. The `pricing_policy_rate`/burn-rate side
    stays per-SKU regardless (Credits' burn-rate table is correct to show CPU and GPU
-   separately at different rates) — only the *budget/limit* side needs to combine them.
+   separately at different rates) — only the _budget/limit_ side needs to combine them.
    Same combined-number treatment applies to the per-user default and overrides.
 
 With both decided, the endpoint shapes are close to final — suggested paths, following the
