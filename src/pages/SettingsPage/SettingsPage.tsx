@@ -27,6 +27,14 @@ export const SettingsPage: React.FC = () => {
           >
             Credentials
           </NavLink>
+          <NavLink
+            to="provider-accounts"
+            className={({ isActive }) =>
+              `${styles.sidebarLink} ${isActive ? styles.sidebarLinkActive : ''}`
+            }
+          >
+            Provider accounts
+          </NavLink>
         </Flex>
       </Box>
       <Box className={styles.content}>

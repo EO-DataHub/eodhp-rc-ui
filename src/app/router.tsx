@@ -10,6 +10,7 @@ import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputs
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { MembersPage } from '@/pages/MembersPage/MembersPage'
 import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
+import { ProviderAccountsPage } from '@/pages/ProviderAccountsPage/ProviderAccountsPage'
 import { CreditsPage } from '@/pages/CreditsPage/CreditsPage'
 import { BudgetPage } from '@/pages/BudgetPage/BudgetPage'
 import { UsagePage } from '@/pages/UsagePage/UsagePage'
@@ -133,6 +134,10 @@ const routes = [
           {
             path: 'credentials',
             element: <CredentialsPage />,
+          },
+          {
+            path: 'provider-accounts',
+            element: <ProviderAccountsPage />,
           },
         ],
       },
