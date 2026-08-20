@@ -9,6 +9,8 @@ on:
       - develop
       - demo
       - production
+      - test
+      - staging
 
 permissions:
   contents: read
@@ -34,8 +36,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
-          cache: "yarn"
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
 
       - name: Install dependencies
         uses: borales/actions-yarn@v5
@@ -47,17 +49,13 @@ jobs:
         with:
           cmd: build
         env:
-          NODE_OPTIONS: "--max_old_space_size=4096"
-          VITE_AWS_BUCKET_NAME: ${{ vars.VITE_AWS_BUCKET_NAME }}
-          VITE_AWS_REGION: ${{ vars.VITE_AWS_REGION }}
+          NODE_OPTIONS: '--max_old_space_size=4096'
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH }}
-          VITE_HUB_APP_WORKSPACE_NAME: ${{ vars.VITE_HUB_APP_WORKSPACE_NAME }}
           VITE_HUB_BASE_URL: ${{ vars.VITE_HUB_BASE_URL }}
           VITE_CATALOGUE_API_URL: ${{ vars.VITE_CATALOGUE_API_URL }}
           VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
           VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
           VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
-          VITE_SPARKGEO_BASE_URL: ${{ vars.VITE_SPARKGEO_BASE_URL }}
           VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
           VITE_RC_SUPPORT_UTILS_URL: ${{ vars.VITE_RC_SUPPORT_UTILS_URL }}
           VITE_GA_MEASUREMENT_ID: ${{ vars.VITE_GA_MEASUREMENT_ID }}
