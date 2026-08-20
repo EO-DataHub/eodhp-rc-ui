@@ -206,8 +206,8 @@ export const NavBar: React.FC = () => {
             value={currentWorkspace ?? undefined}
             onValueChange={(workspace) => updateCurrentWorkspace?.(workspace)}
           >
-            <Select.Trigger placeholder="Workspace" />
-            <Select.Content position="popper">
+            <Select.Trigger placeholder="Workspace" variant="soft" color="gray" />
+            <Select.Content position="popper" variant="soft" color="gray">
               <Select.Group>
                 {workspacesData?.map((workspace) => (
                   <Select.Item key={workspace.id} value={workspace.name}>
