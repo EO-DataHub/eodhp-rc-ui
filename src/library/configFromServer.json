@@ -193,18 +193,6 @@
     "thumbnail_auth": true,
     "thumbnail_asset": "thumbnail"
   },
-  "my-platero-l1c-cogs": {
-    "renders": {
-      "preview": {
-        "title": "True Color (RGB)",
-        "assets": ["TCI"],
-        "bidx": [1, 2, 3],
-        "nodata": 0,
-        "auth": true
-      }
-    },
-    "thumbnail_auth": true
-  },
   "my-mantis-l1d-cogs": {
     "renders": {
       "preview": {
@@ -5076,15 +5064,6 @@
     }
   },
   "menut-l1c-cogs": {
-    "renders": {
-      "preview": {
-        "title": "Preview (approximate location)",
-        "assets": ["thumbnail"],
-        "quicklook_georeference": "bbox"
-      }
-    }
-  },
-  "platero-l1c-cogs": {
     "renders": {
       "preview": {
         "title": "Preview (approximate location)",
