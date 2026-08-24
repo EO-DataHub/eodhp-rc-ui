@@ -136,31 +136,20 @@ can order their imagery. Two different mechanisms, both already real, not mocked
   not relevant to the frontend, but explains why there's no plain "get the stored key back"
   endpoint.)
 - **Open Cosmos** — a bespoke OAuth2/PKCE flow against Open Cosmos's own login domain, entirely
-  separate from Keycloak. Ported with two fixes over the old app: a `state` param is now
-  generated and checked on callback (the original had none), and the redirect-back handling
-  accounts for this app's hash router (the original app had no router at all).
+  separate from Keycloak. Ported with three fixes over the old app: a `state` param is now
+  generated and checked on callback (the original had none), the redirect-back handling
+  accounts for this app's hash router (the original app had no router at all), and connection
+  status/revocation go through the backend rather than being local-only (below).
 
-Two gaps carried over from the old app, **not** fixed by the port above because fixing them
-needs new backend work, not just frontend changes. Both confirmed against
-`eodhp-workspace-services`' actual route table (not `resource-catalogue-fastapi` — that repo
-also touches Open Cosmos, but only to read the stored secret directly from Kubernetes for
-order fulfilment; it exposes no HTTP routes for linking):
-
-1. **No read endpoint for the Open Cosmos session.** `POST /api/workspaces/:id/open-cosmos/session`
-   is real and live (`CreateOpenCosmosSession`, writes a `oauth-open-cosmos` Kubernetes secret
-   in the workspace's namespace) — but there's no matching `GET` anywhere in that service. So
-   "Connected" only reflects in-memory state for the current browser tab — reloading the page
-   always shows "Not connected," even if a session already exists server-side for that
-   workspace. Needs `GET /api/workspaces/:id/open-cosmos/session` (or folding an
-   `open_cosmos_linked: boolean` into the existing linked-accounts list) so the page can show
-   real status on load.
-2. **No revoke endpoint — and the generic one would break.** "Disconnect" only clears local
-   state; there's no `DELETE /api/workspaces/:id/open-cosmos/session`. The existing generic
-   `DELETE /api/workspaces/:id/linked-accounts/:provider` can't stand in for it either: that
-   handler deletes a `otp-{provider}` Kubernetes secret plus an AWS Secrets Manager entry,
-   neither of which exists for Open Cosmos (its secret is named `oauth-open-cosmos`, not
-   OTP-based) — calling it with `provider=open-cosmos` would 500, not silently no-op. A real
-   `DELETE /api/workspaces/:id/open-cosmos/session` needs to be a new, separate endpoint.
+`GET /api/workspaces/:id/open-cosmos/session` (`GetOpenCosmosSession`, any workspace member)
+and `DELETE /api/workspaces/:id/open-cosmos/session` (`DeleteOpenCosmosSession`, account owner
+only) are now real and live in `eodhp-workspace-services`, alongside the existing
+`POST` (`CreateOpenCosmosSession`). The frontend calls both: a `GET` on load/workspace-switch
+so "Connected" reflects the real stored state instead of always showing "Not connected" after
+a reload, and a `DELETE` from "Disconnect" so it actually revokes the shared session rather
+than only clearing local state. `DELETE` is a dedicated endpoint, not the generic
+`DELETE /api/workspaces/:id/linked-accounts/:provider` — that handler is OTP/AWS-Secrets-Manager
+based and has no route for Open Cosmos's plain `oauth-open-cosmos` Kubernetes secret.
 
 Separately, going live also needs: a registered OAuth redirect URI for this app's own domain
 (the old app's was `https://eodatahub.org.uk/workspaces/` — this app needs its own, registered

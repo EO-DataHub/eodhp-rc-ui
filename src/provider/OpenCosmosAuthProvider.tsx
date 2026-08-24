@@ -3,15 +3,12 @@ import { toast } from 'react-toastify'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { OpenCosmosAuthContext, OpenCosmosUser } from '@/context/OpenCosmosAuthContext'
 
-// Ported from eodhp-workspace-ui's OpenCosmosAuthContext, with two fixes: a `state` param
-// is now generated and checked on callback (the original had none), and the redirect-back
+// Ported from eodhp-workspace-ui's OpenCosmosAuthContext, with three fixes: a `state` param
+// is now generated and checked on callback (the original had none), the redirect-back
 // handling accounts for this app's hash router — the original had no router at all, so it
-// could rely on `window.location.pathname` alone to know where to return to.
-//
-// Not fixed (needs backend work — see docs/pending-backend-apis.md): there's still no GET to
-// check an existing linked session, so "Connected" doesn't survive a page reload even if a
-// session exists server-side; and disconnect() is still local-only, since there's no DELETE
-// endpoint to revoke the stored session.
+// could rely on `window.location.pathname` alone to know where to return to — and it now
+// checks/revokes the session via the backend GET/DELETE endpoints (see below), which the
+// original didn't have available when it was written (docs/pending-backend-apis.md).
 
 interface OpenCosmosSession {
   accessToken: string
@@ -140,7 +137,9 @@ const toErrorMessage = (error: unknown, fallback: string) =>
 export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) => {
   const { currentWorkspace, token } = useContext(AuthenticationContext)
   const callbackHandledRef = useRef(false)
+  const checkedWorkspaceNameRef = useRef<string>()
   const [session, setSession] = useState<OpenCosmosSession>()
+  const [hasStoredSession, setHasStoredSession] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>()
 
@@ -210,6 +209,59 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
     },
     [token],
   )
+
+  const fetchSessionStatus = useCallback(
+    async (workspaceName: string) => {
+      if (!token) return false
+
+      const response = await fetch(
+        `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(workspaceName)}/open-cosmos/session`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+
+      if (!response.ok) {
+        throw new Error('Unable to check the Open Cosmos session status.')
+      }
+
+      const status = (await response.json()) as { connected: boolean }
+      return status.connected
+    },
+    [token],
+  )
+
+  // Detect a session already stored for the workspace so "Connected" survives a page
+  // reload. Runs once per workspace (mount or switch); switching workspaces also drops
+  // the previous workspace's local session, since it was never valid for the new one.
+  useEffect(() => {
+    if (!hasConfiguration || !currentWorkspace || !token) return
+    if (checkedWorkspaceNameRef.current === currentWorkspace) return
+
+    const isWorkspaceSwitch = checkedWorkspaceNameRef.current !== undefined
+    checkedWorkspaceNameRef.current = currentWorkspace
+
+    if (isWorkspaceSwitch) {
+      setSession(undefined)
+      setError(undefined)
+    }
+
+    let cancelled = false
+    setIsLoading(true)
+
+    fetchSessionStatus(currentWorkspace)
+      .then((connected) => {
+        if (!cancelled) setHasStoredSession(connected)
+      })
+      .catch(() => {
+        if (!cancelled) setHasStoredSession(false)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentWorkspace, fetchSessionStatus, hasConfiguration, token])
 
   useEffect(() => {
     if (!hasConfiguration) return
@@ -351,16 +403,53 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
     [currentWorkspace, hasConfiguration],
   )
 
-  const disconnect = useCallback(() => {
+  // Drops this browser's copy of the token without touching the backend-stored,
+  // workspace-shared session. disconnect() below is the only thing allowed to revoke
+  // that session — this must never attempt it.
+  const clearLocalSession = useCallback(() => {
     clearTransaction()
     setSession(undefined)
+    setHasStoredSession(false)
     setError(undefined)
   }, [])
+
+  const disconnect = useCallback(async () => {
+    if (currentWorkspace && token) {
+      setIsLoading(true)
+
+      try {
+        const response = await fetch(
+          `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(currentWorkspace)}/open-cosmos/session`,
+          {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        )
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(errorText || 'Unable to disconnect Open Cosmos.')
+        }
+      } catch (disconnectError) {
+        // Deliberately leaves local/reported state untouched: the backend session may
+        // still be live (e.g. this user isn't the account owner), so we must not claim
+        // disconnected when we can't confirm it was actually revoked.
+        const message = toErrorMessage(disconnectError, 'Unable to disconnect Open Cosmos.')
+        setError(message)
+        toast.error(message)
+        return
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    clearLocalSession()
+  }, [clearLocalSession, currentWorkspace, token])
 
   return (
     <OpenCosmosAuthContext.Provider
       value={{
-        isConnected: Boolean(session?.accessToken),
+        isConnected: Boolean(session?.accessToken) || hasStoredSession,
         isLoading,
         hasConfiguration,
         error,

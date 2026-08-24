@@ -13,7 +13,7 @@ export interface OpenCosmosAuthContextType {
   error?: string
   user?: OpenCosmosUser
   connect: (organizationId: number) => Promise<void>
-  disconnect: () => void
+  disconnect: () => Promise<void>
 }
 
 export const OpenCosmosAuthContext = createContext<OpenCosmosAuthContextType | null>(null)

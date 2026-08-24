@@ -269,12 +269,6 @@ const OpenCosmosCard: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
       <Text size="2" color="gray">
         {description}
       </Text>
-      {!isConnected && (
-        <Callout
-          type="info"
-          message="Connection status is only remembered for this browser tab — reloading the page will show 'Not connected' even if a session already exists for this workspace."
-        />
-      )}
       {error && <Callout type="error" message={error} />}
       {!isConnected && (
         <TextField.Root
