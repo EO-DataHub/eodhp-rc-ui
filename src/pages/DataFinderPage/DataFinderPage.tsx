@@ -25,6 +25,7 @@ import {
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 
 import styles from './DataFinderPage.module.scss'
+// import { sortFeatures } from '@/library/geometryUtils.ts'
 
 export const DataFinderPage: React.FC = () => {
   const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
@@ -205,6 +206,18 @@ export const DataFinderPage: React.FC = () => {
     jobCollectionQuery.isFetched,
     navigate,
   ])
+
+  // Sort the items based on a fitness score.
+  // useEffect(() => {
+  //   setSortedItems(
+  //     sortFeatures(mapBounds, aoi, itemList, {
+  //       distanceBias: 1.0,
+  //       areaBias: 0.1,
+  //       aspectBias: 1.0,
+  //       temporalBias: 100.0,
+  //     }),
+  //   )
+  // }, [mapBounds, aoi, itemList])
 
   // Remove AOI from local storage on mount
   useEffect(() => {

@@ -108,6 +108,8 @@ export interface Item {
   collection: string
   bbox: [number, number, number, number]
   geometry: GeoJSON.Geometry
+  score: number | undefined
+  scores: number[]
   properties: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any
