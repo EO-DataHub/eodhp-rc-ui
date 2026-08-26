@@ -12,37 +12,6 @@
   width: 100%;
 }
 
-.tabLink {
-  padding: 0 0 0.5rem 0;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--gray-11);
-  font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
-  background-color: transparent;
-  transition:
-    color 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.tabLink:hover {
-  color: var(--gray-12);
-}
-
-.tabLinkActive {
-  border-bottom-color: var(--accent-9);
-  color: var(--accent-11);
-}
-
-.tabsHeader {
-  border-bottom: 1px solid var(--gray-5);
-}
-
-.tabsList {
-  margin-bottom: -1px; /* so active underline sits on top of border */
-}
-
 .ordersTable {
   width: 100%;
   border-collapse: collapse;

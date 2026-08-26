@@ -10,6 +10,8 @@ import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputs
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
+import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
+import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -78,6 +80,44 @@ const routes = [
           {
             path: 'data-storage',
             element: <DataStoragePage />,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/profile',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <PlaceholderPage title="Profile" />,
+      },
+    ],
+  },
+  {
+    path: '/settings',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <SettingsPage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to="members" replace />,
+          },
+          {
+            path: 'members',
+            element: <PlaceholderPage title="Members" />,
+          },
+          {
+            path: 'credentials',
+            element: <PlaceholderPage title="Credentials" />,
+          },
+          {
+            path: 'provider-accounts',
+            element: <PlaceholderPage title="Provider accounts" />,
           },
         ],
       },
