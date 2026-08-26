@@ -1,13 +1,12 @@
 import pLimit from 'p-limit'
 import { Collection } from '@/types'
-import { fetchWorkspaces, fetchWorkspaceTokens } from './workspaceTokenService'
+import { fetchWorkspaceTokens } from './workspaceTokenService'
 import { fetchUserCollections } from './collectionService'
 import { fetchUserItemsByParamsWithMetadata, fetchUserItemsFromUrl } from './itemService'
 import { OrderData, extractOrderData, isOrderItem } from '@/library/orderUtils'
 
 // Configuration constants for order fetching optimization
 const ORDER_FETCH_LIMIT_PER_COLLECTION = 200
-const MAX_WORKSPACE_CONCURRENCY = 2
 const MAX_COLLECTION_CONCURRENCY = 3
 
 export interface OrderFetchResult {
@@ -276,128 +275,6 @@ export const fetchMoreOrders = async (
       totalItemsMatched: totalItemsMatched > 0 ? totalItemsMatched : null,
       hasMore,
       collectionMetadata: updatedMetadata,
-    }
-  } catch (error) {
-    return {
-      orders: [],
-      totalItemsMatched: null,
-      hasMore: false,
-      collectionMetadata: [],
-    }
-  }
-}
-
-/**
- * Fetches all orders from all workspaces with optimized performance
- * Uses reduced concurrency and smaller item limits to prevent browser hangs
- * Returns orders with metadata about availability
- */
-export const fetchAllOrders = async (token: string): Promise<OrderFetchResult> => {
-  if (!token) {
-    return {
-      orders: [],
-      totalItemsMatched: null,
-      hasMore: false,
-      collectionMetadata: [],
-    }
-  }
-  try {
-    const workspaces = await fetchWorkspaces(token)
-    // Reduced concurrency for workspace-level operations to prevent browser overload
-    const workspaceLimit = pLimit(MAX_WORKSPACE_CONCURRENCY)
-    const collectionLimit = pLimit(MAX_COLLECTION_CONCURRENCY)
-
-    const collectionMetadata: OrderFetchResult['collectionMetadata'] = []
-    const allOrders: OrderData[] = []
-
-    const workspacePromises = workspaces.map((workspace) =>
-      workspaceLimit(async () => {
-        try {
-          const workspaceTokens = await fetchWorkspaceTokens(workspace.name, token)
-          const collections = await fetchUserCollections(workspace.name, workspaceTokens.access)
-
-          const collectionPromises = collections.map((collection) =>
-            collectionLimit(async () => {
-              const catalogPath = extractCatalogPath(collection)
-              if (!catalogPath) {
-                return {
-                  orders: [],
-                  numMatched: null,
-                  hasMore: false,
-                  nextUrl: null,
-                  collectionId: collection.id,
-                  collectionTitle: collection.title ?? collection.id,
-                }
-              }
-
-              const result = await fetchOrderItemsFromCollection(
-                workspace.name,
-                collection.id,
-                catalogPath,
-                workspaceTokens.access,
-                collection.title ?? collection.id,
-              )
-
-              // Store metadata for this collection
-              const metadata = {
-                workspace: workspace.name,
-                collectionId: collection.id,
-                catalogPath,
-                collectionTitle: collection.title ?? collection.id,
-                numMatched: result.numMatched,
-                hasMore: result.hasMore,
-                nextUrl: result.nextUrl,
-              }
-              collectionMetadata.push(metadata)
-
-              return {
-                ...result,
-                collectionId: collection.id,
-                collectionTitle: collection.title ?? collection.id,
-              }
-            }),
-          )
-
-          const settledCollections = await Promise.allSettled(collectionPromises)
-          return settledCollections
-            .filter(
-              (
-                r,
-              ): r is PromiseFulfilledResult<{
-                orders: OrderData[]
-                numMatched: number | null
-                hasMore: boolean
-                nextUrl: string | null
-                collectionId: string
-                collectionTitle: string
-              }> => r.status === 'fulfilled',
-            )
-            .flatMap((r) => r.value.orders)
-        } catch (error) {
-          // Return empty array on workspace error to allow other workspaces to continue
-          return []
-        }
-      }),
-    )
-
-    const settledWorkspaces = await Promise.allSettled(workspacePromises)
-    const ordersFromWorkspaces = settledWorkspaces
-      .filter((r): r is PromiseFulfilledResult<OrderData[]> => r.status === 'fulfilled')
-      .flatMap((r) => r.value)
-
-    allOrders.push(...ordersFromWorkspaces)
-
-    // Calculate total items matched and determine if there are more orders available
-    const totalItemsMatched = collectionMetadata.reduce((sum, meta) => {
-      return sum + (meta.numMatched ?? 0)
-    }, 0)
-    const hasMore = collectionMetadata.some((meta) => meta.hasMore)
-
-    return {
-      orders: allOrders,
-      totalItemsMatched: totalItemsMatched > 0 ? totalItemsMatched : null,
-      hasMore,
-      collectionMetadata,
     }
   } catch (error) {
     return {

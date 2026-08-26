@@ -1,4 +1,4 @@
-import React, { useContext, useState, useMemo, useEffect } from 'react'
+import React, { useContext, useState, useMemo } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { fetchItemFromCollection } from '@/services/itemService'
@@ -19,7 +19,6 @@ import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
-import { ChangeWorkspaceModal } from '@/components/ChangeWorkspaceModal/ChangeWorkspaceModal'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
@@ -29,7 +28,7 @@ export const OrderDetailsPage: React.FC = () => {
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentWorkspace, updateCurrentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token } = useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -37,7 +36,6 @@ export const OrderDetailsPage: React.FC = () => {
   const isOpticalData = !selectedCollection?.stac_extensions?.[0]?.includes('/sar/')
   const catalog = selectedCollection ? getCatalog(selectedCollection) : undefined
 
-  const [isChangeWorkspaceModalOpen, setIsChangeWorkspaceModalOpen] = useState(false)
   const [orderSelections, setOrderSelections] = useState<Record<string, string>>({})
   const [orderStatus, setOrderStatus] = useState<'pending' | 'success' | 'error' | null>(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
@@ -92,7 +90,9 @@ export const OrderDetailsPage: React.FC = () => {
   const aoiData = !isFullScene ? rawAoi : null
   const hasInitialAoi = !!rawAoi?.geometry?.coordinates?.length
 
-  const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(undefined)
+  const [selectedWorkspace, setSelectedWorkspace] = useState<string | undefined>(
+    currentWorkspace ?? undefined,
+  )
 
   const { data: workspacesData, isLoading: isWorkspacesLoading } = useQuery({
     queryKey: ['Workspaces', token],
@@ -100,12 +100,6 @@ export const OrderDetailsPage: React.FC = () => {
     enabled: !!token,
     refetchOnWindowFocus: false,
   })
-
-  useEffect(() => {
-    if (selectedWorkspace && selectedWorkspace !== currentWorkspace) {
-      updateCurrentWorkspace(selectedWorkspace)
-    }
-  }, [selectedWorkspace, currentWorkspace, updateCurrentWorkspace])
 
   const isPlaceOrderDisabled = useMemo(() => {
     if (providerType === 'open-cosmos') {
@@ -320,10 +314,6 @@ export const OrderDetailsPage: React.FC = () => {
           </Flex>
         </Flex>
       </Flex>
-      <ChangeWorkspaceModal
-        isOpen={isChangeWorkspaceModalOpen}
-        onClose={() => setIsChangeWorkspaceModalOpen(false)}
-      />
     </>
   )
 }

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useDropzone } from 'react-dropzone'
 import { MagnifyingGlassIcon, UploadIcon } from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaceTokens, fetchWorkspaces } from '@/services/workspaceTokenService'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import {
   deleteWorkspaceFile,
   listWorkspaceFiles,
@@ -23,10 +23,6 @@ export const DataStoragePage: React.FC = () => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
 
   const [searchText, setSearchText] = useState('')
-  const [dataWorkspace, setDataWorkspace] = useState<string>(() => {
-    const stored = localStorage.getItem('dataStorageSelectedWorkspace')
-    return stored ?? currentWorkspace ?? ''
-  })
   const [dataStoreFilter, setDataStoreFilter] = useState<'all' | StoreType>('all')
   const [uploadProgress, setUploadProgress] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -34,62 +30,20 @@ export const DataStoragePage: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false)
   const [deletingFileKey, setDeletingFileKey] = useState<string | null>(null)
 
-  // Fetch all workspaces to populate dropdown
-  const { data: allWorkspaces } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: !!token,
-  })
-
-  const workspaceOptions = useMemo(() => {
-    const workspaceSet = new Set<string>()
-
-    if (allWorkspaces) {
-      allWorkspaces.forEach((ws) => {
-        if (ws.name) {
-          workspaceSet.add(ws.name)
-        }
-      })
-    }
-
-    if (currentWorkspace) {
-      workspaceSet.add(currentWorkspace)
-    }
-
-    return Array.from(workspaceSet).sort()
-  }, [allWorkspaces, currentWorkspace])
-
-  const dataWorkspaceOptions = useMemo(() => {
-    return workspaceOptions
-  }, [workspaceOptions])
-
-  // Default data workspace if none selected yet
-  useEffect(() => {
-    if (!dataWorkspace && dataWorkspaceOptions.length > 0) {
-      setDataWorkspace(dataWorkspaceOptions[0])
-    }
-  }, [dataWorkspace, dataWorkspaceOptions])
-
   // Clear stale upload messages when the workspace or store filter changes
   useEffect(() => {
     setUploadSuccess(null)
     setUploadError(null)
-  }, [dataWorkspace, dataStoreFilter])
-
-  const handleDataWorkspaceChange = (workspace: string) => {
-    localStorage.setItem('dataStorageSelectedWorkspace', workspace)
-    setDataWorkspace(workspace)
-  }
+  }, [currentWorkspace, dataStoreFilter])
 
   const resolveWorkspaceAccessToken = async (): Promise<string> => {
     if (!token) {
       throw new Error('You must be signed in to access workspace files.')
     }
-    if (!dataWorkspace) {
+    if (!currentWorkspace) {
       throw new Error('Select a workspace to access files.')
     }
-    const workspaceTokens = await fetchWorkspaceTokens(dataWorkspace, token)
+    const workspaceTokens = await fetchWorkspaceTokens(currentWorkspace, token)
     return workspaceTokens.access
   }
 
@@ -101,13 +55,13 @@ export const DataStoragePage: React.FC = () => {
     error: filesError,
     refetch: refetchFiles,
   } = useQuery<WorkspaceFileListResponse>({
-    queryKey: ['WorkspaceFiles', dataWorkspace, dataStoreFilter, token],
+    queryKey: ['WorkspaceFiles', currentWorkspace, dataStoreFilter, token],
     queryFn: async () => {
       const accessToken = await resolveWorkspaceAccessToken()
-      return listWorkspaceFiles(dataWorkspace, accessToken, storeParam)
+      return listWorkspaceFiles(currentWorkspace!, accessToken, storeParam)
     },
     refetchOnWindowFocus: false,
-    enabled: Boolean(token && dataWorkspace),
+    enabled: Boolean(token && currentWorkspace),
   })
 
   const filteredFiles = useMemo(() => {
@@ -128,7 +82,7 @@ export const DataStoragePage: React.FC = () => {
     })
   }, [filesResult, searchText, dataStoreFilter])
 
-  const canUpload = Boolean(token && dataWorkspace && dataStoreFilter !== 'all')
+  const canUpload = Boolean(token && currentWorkspace && dataStoreFilter !== 'all')
 
   const handleDrop = async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return
@@ -136,7 +90,7 @@ export const DataStoragePage: React.FC = () => {
       setUploadError('You must be signed in to upload files.')
       return
     }
-    if (!dataWorkspace) {
+    if (!currentWorkspace) {
       setUploadError('Select a workspace to upload files.')
       return
     }
@@ -155,7 +109,7 @@ export const DataStoragePage: React.FC = () => {
       if (dataStoreFilter === 'object') {
         for (let i = 0; i < acceptedFiles.length; i++) {
           await uploadObjectStoreFilePresigned(
-            dataWorkspace,
+            currentWorkspace,
             accessToken,
             acceptedFiles[i],
             (fileProgress) => {
@@ -166,7 +120,7 @@ export const DataStoragePage: React.FC = () => {
         }
       } else {
         await uploadWorkspaceFiles(
-          dataWorkspace,
+          currentWorkspace,
           accessToken,
           dataStoreFilter,
           acceptedFiles,
@@ -190,7 +144,7 @@ export const DataStoragePage: React.FC = () => {
       setUploadError('You must be signed in to delete files.')
       return
     }
-    if (!dataWorkspace) {
+    if (!currentWorkspace) {
       setUploadError('Select a workspace to delete files.')
       return
     }
@@ -202,7 +156,7 @@ export const DataStoragePage: React.FC = () => {
 
     try {
       const accessToken = await resolveWorkspaceAccessToken()
-      await deleteWorkspaceFile(dataWorkspace, accessToken, item.storeType, item.fileName)
+      await deleteWorkspaceFile(currentWorkspace, accessToken, item.storeType, item.fileName)
       setUploadSuccess(`Deleted ${item.fileName}`)
       await refetchFiles()
     } catch (error) {
@@ -224,7 +178,7 @@ export const DataStoragePage: React.FC = () => {
           Data storage
         </Text>
         <Text size="3" color="gray">
-          Manage files stored in your workspaces
+          Manage files stored in this workspace
         </Text>
       </Flex>
 
@@ -238,21 +192,6 @@ export const DataStoragePage: React.FC = () => {
           className={styles.filterContainer}
           overflow="auto"
         >
-          <Box flexGrow="1" width="200px" flexShrink="0">
-            <Select.Root size="3" value={dataWorkspace} onValueChange={handleDataWorkspaceChange}>
-              <Select.Trigger style={{ width: '100%' }} placeholder="Workspace" />
-              <Select.Content position="popper">
-                <Select.Group>
-                  {dataWorkspaceOptions.map((workspace) => (
-                    <Select.Item key={workspace} value={workspace}>
-                      {workspace}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
-              </Select.Content>
-            </Select.Root>
-          </Box>
-
           <Box flexGrow="1" width="200px" flexShrink="0">
             <Select.Root
               size="3"
@@ -304,7 +243,7 @@ export const DataStoragePage: React.FC = () => {
             </Text>
             {!canUpload && (
               <Text size="2" color="gray">
-                Select a workspace and store type to enable uploads.
+                Select a store type to enable uploads.
               </Text>
             )}
           </Flex>
@@ -334,7 +273,7 @@ export const DataStoragePage: React.FC = () => {
           )
         )}
 
-        {!filesLoading && !filesError && dataWorkspace && (
+        {!filesLoading && !filesError && currentWorkspace && (
           <>
             <Flex justify="between" align="center" mb="3">
               <Text size="2" color="gray">
