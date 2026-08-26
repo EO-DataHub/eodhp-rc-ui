@@ -19,7 +19,7 @@ import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { useWorkspaces } from '@/hooks/useWorkspaces'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 export const OrderDetailsPage: React.FC = () => {
@@ -94,12 +94,7 @@ export const OrderDetailsPage: React.FC = () => {
     currentWorkspace ?? undefined,
   )
 
-  const { data: workspacesData, isLoading: isWorkspacesLoading } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    enabled: !!token,
-    refetchOnWindowFocus: false,
-  })
+  const { data: workspacesData, isLoading: isWorkspacesLoading } = useWorkspaces(token)
 
   const isPlaceOrderDisabled = useMemo(() => {
     if (providerType === 'open-cosmos') {
