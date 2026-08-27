@@ -12,6 +12,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
+import { MembersPage } from '@/pages/MembersPage/MembersPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -109,7 +110,7 @@ const routes = [
           },
           {
             path: 'members',
-            element: <PlaceholderPage title="Members" />,
+            element: <MembersPage />,
           },
           {
             path: 'credentials',
