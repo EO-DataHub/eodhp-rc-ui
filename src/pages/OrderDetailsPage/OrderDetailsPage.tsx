@@ -28,7 +28,7 @@ export const OrderDetailsPage: React.FC = () => {
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, updateCurrentWorkspace } = useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -51,6 +51,11 @@ export const OrderDetailsPage: React.FC = () => {
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
     setOrderSelections(selections)
+  }
+
+  const handleWorkspaceChange = (workspace: string) => {
+    setSelectedWorkspace(workspace)
+    updateCurrentWorkspace(workspace)
   }
 
   const mutation = useMutation({
@@ -281,7 +286,7 @@ export const OrderDetailsPage: React.FC = () => {
               onSelectionChange={handleSelectionsChange}
               workspaces={workspacesData ?? []}
               selectedWorkspace={selectedWorkspace}
-              onWorkspaceChange={setSelectedWorkspace}
+              onWorkspaceChange={handleWorkspaceChange}
               isWorkspacesLoading={isWorkspacesLoading}
             />
             <Text size="4" weight="bold" className={styles.cost}>
