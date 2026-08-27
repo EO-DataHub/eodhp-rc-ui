@@ -11,6 +11,7 @@ import {
 } from '@/services/accountService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { FormField } from '@/components/FormField/FormField'
 import styles from '../ProfilePage/ProfilePage.module.scss'
 
 const ACCOUNT_STATUS_LABELS: Record<string, string> = {
@@ -18,15 +19,6 @@ const ACCOUNT_STATUS_LABELS: Record<string, string> = {
   approved: 'Approved',
   denied: 'Request denied',
 }
-
-const FormField: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
-  <div className={styles.formField}>
-    <Text size="2" weight="medium" as="label">
-      {label}
-    </Text>
-    {children}
-  </div>
-)
 
 const EMPTY_FORM = {
   accountName: '',
@@ -252,7 +244,7 @@ export const AccountsPage: React.FC = () => {
         )}
 
         {!isLoading && !error && (accounts?.length ?? 0) > 0 && (
-          <Table.Root className={styles.accountsTable}>
+          <Table.Root className={styles.dataTable}>
             <Table.Header>
               <Table.Row>
                 <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>

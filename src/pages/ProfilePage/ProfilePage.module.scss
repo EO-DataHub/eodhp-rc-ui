@@ -12,7 +12,7 @@
   gap: 8px;
 }
 
-.accountsTable {
+.dataTable {
   width: 100%;
   border-collapse: collapse;
   table-layout: auto;
@@ -33,10 +33,4 @@
   tr:hover {
     background-color: var(--gray-2);
   }
-}
-
-.formField {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
