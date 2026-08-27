@@ -12,6 +12,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
+import { ProviderAccountsPage } from '@/pages/ProviderAccountsPage/ProviderAccountsPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -117,7 +118,7 @@ const routes = [
           },
           {
             path: 'provider-accounts',
-            element: <PlaceholderPage title="Provider accounts" />,
+            element: <ProviderAccountsPage />,
           },
         ],
       },
