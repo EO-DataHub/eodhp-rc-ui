@@ -53,9 +53,20 @@ export const LoginButton = ({
             </>
           )}
 
-          <DropdownMenu.Item asChild>
-            <Link to="/settings/members">Workspace settings</Link>
-          </DropdownMenu.Item>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Workspace settings</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/members">Members</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/credentials">Credentials</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/provider-accounts">Provider accounts</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
 
           <DropdownMenu.Item disabled>
             Accounting / Billing{' '}
