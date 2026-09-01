@@ -4,6 +4,7 @@ import { SidebarNavLayout } from '../../components/SidebarNavLayout/SidebarNavLa
 const links = [
   { to: 'members', label: 'Members' },
   { to: 'credentials', label: 'Credentials' },
+  { to: 's3-credentials', label: 'S3 credentials' },
   { to: 'provider-accounts', label: 'Provider accounts' },
 ]
 

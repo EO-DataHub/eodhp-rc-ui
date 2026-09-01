@@ -1,7 +1,6 @@
-// In dev, go through Vite's /api proxy (see vite.config.ts) instead of calling
-// VITE_HUB_BASE_URL directly, since the auth-agent-backed tokens endpoints
-// aren't CORS-enabled for cross-origin callers like a local dev server.
-const TOKENS_BASE_URL = import.meta.env.DEV ? '' : import.meta.env.VITE_HUB_BASE_URL
+import { getTokensBaseUrl } from './apiUrlUtils'
+
+const TOKENS_BASE_URL = getTokensBaseUrl()
 
 export interface DataHubToken {
   id: string

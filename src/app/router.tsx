@@ -12,6 +12,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
+import { S3CredentialsPage } from '@/pages/S3CredentialsPage/S3CredentialsPage'
 import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
 
 const ProcessesCataloguePage = lazy(() =>
@@ -115,6 +116,10 @@ const routes = [
           {
             path: 'credentials',
             element: <CredentialsPage />,
+          },
+          {
+            path: 's3-credentials',
+            element: <S3CredentialsPage />,
           },
           {
             path: 'provider-accounts',
