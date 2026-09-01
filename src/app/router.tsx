@@ -11,6 +11,7 @@ import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
+import { CredentialsPage } from '@/pages/CredentialsPage/CredentialsPage'
 import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
 
 const ProcessesCataloguePage = lazy(() =>
@@ -113,7 +114,7 @@ const routes = [
           },
           {
             path: 'credentials',
-            element: <PlaceholderPage title="Credentials" />,
+            element: <CredentialsPage />,
           },
           {
             path: 'provider-accounts',
