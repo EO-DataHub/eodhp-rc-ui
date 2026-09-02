@@ -1,14 +1,10 @@
 import React, { useContext, useState } from 'react'
 import { Button, Checkbox, Dialog, Flex, Table, Text, TextArea, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import {
-  Account,
-  CreateAccountPayload,
-  createAccount,
-  fetchAccounts,
-} from '@/services/accountService'
+import { Account, CreateAccountPayload, createAccount } from '@/services/accountService'
+import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
@@ -33,7 +29,7 @@ const CreateAccountDialog: React.FC<{
   onOpenChange: (open: boolean) => void
   accountOwner: string
 }> = ({ open, onOpenChange, accountOwner }) => {
-  const { token } = useContext(AuthenticationContext)
+  const { token, userInfo } = useContext(AuthenticationContext)
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY_FORM)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -46,7 +42,7 @@ const CreateAccountDialog: React.FC<{
       return createAccount(payload, token)
     },
     onSuccess: (account) => {
-      queryClient.setQueryData<Account[]>(['Accounts', token], (prev) =>
+      queryClient.setQueryData<Account[]>(['Accounts', userInfo?.sub], (prev) =>
         prev ? [...prev, account] : [account],
       )
       setForm(EMPTY_FORM)
@@ -182,19 +178,10 @@ const CreateAccountDialog: React.FC<{
 }
 
 export const AccountsPage: React.FC = () => {
-  const { token, workspaceUserName } = useContext(AuthenticationContext)
+  const { token, userInfo, workspaceUserName } = useContext(AuthenticationContext)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
-  const {
-    data: accounts,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['Accounts', token],
-    queryFn: () => fetchAccounts(token),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(token),
-  })
+  const { data: accounts, isLoading, error } = useAccounts(token, userInfo?.sub)
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>

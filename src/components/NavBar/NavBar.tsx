@@ -93,12 +93,12 @@ export const NavBar: React.FC = () => {
   const isMapsActive = location.pathname.startsWith('/finder')
   const isMyDataActive = location.pathname.startsWith('/my-data')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
-  const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token } =
+  const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token, userInfo } =
     useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
 
-  const { data: workspacesData } = useWorkspaces(token, isAuthenticated)
+  const { data: workspacesData } = useWorkspaces(token, userInfo?.sub, isAuthenticated)
 
   const toggleMenu = (menuName: string | null) => {
     if (!menuName) {

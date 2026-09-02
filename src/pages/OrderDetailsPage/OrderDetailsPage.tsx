@@ -28,7 +28,8 @@ export const OrderDetailsPage: React.FC = () => {
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentWorkspace, token, updateCurrentWorkspace } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, updateCurrentWorkspace, userInfo } =
+    useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -99,7 +100,10 @@ export const OrderDetailsPage: React.FC = () => {
     currentWorkspace ?? undefined,
   )
 
-  const { data: workspacesData, isLoading: isWorkspacesLoading } = useWorkspaces(token)
+  const { data: workspacesData, isLoading: isWorkspacesLoading } = useWorkspaces(
+    token,
+    userInfo?.sub,
+  )
 
   const isPlaceOrderDisabled = useMemo(() => {
     if (providerType === 'open-cosmos') {

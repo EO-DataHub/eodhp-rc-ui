@@ -1,15 +1,15 @@
 import React, { useContext, useMemo, useState } from 'react'
 import { Button, Dialog, Flex, Select, Table, Text, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import {
   CreateWorkspacePayload,
   Workspace,
   createWorkspace,
-  fetchWorkspaces,
 } from '@/services/workspaceTokenService'
-import { fetchAccounts } from '@/services/accountService'
+import { useWorkspaces } from '@/hooks/useWorkspaces'
+import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
@@ -27,7 +27,7 @@ const CreateWorkspaceDialog: React.FC<{
   onOpenChange: (open: boolean) => void
   approvedAccounts: { id: string; name: string }[]
 }> = ({ open, onOpenChange, approvedAccounts }) => {
-  const { token } = useContext(AuthenticationContext)
+  const { token, userInfo } = useContext(AuthenticationContext)
   const queryClient = useQueryClient()
   const [form, setForm] = useState(EMPTY_FORM)
   const [validationError, setValidationError] = useState<string | null>(null)
@@ -40,7 +40,7 @@ const CreateWorkspaceDialog: React.FC<{
       return createWorkspace(payload, token)
     },
     onSuccess: (workspace) => {
-      queryClient.setQueryData<Workspace[]>(['Workspaces', token], (prev) =>
+      queryClient.setQueryData<Workspace[]>(['Workspaces', userInfo?.sub], (prev) =>
         prev ? [...prev, workspace] : [workspace],
       )
       setForm(EMPTY_FORM)
@@ -145,26 +145,16 @@ const CreateWorkspaceDialog: React.FC<{
 }
 
 export const WorkspacesPage: React.FC = () => {
-  const { token } = useContext(AuthenticationContext)
+  const { token, userInfo } = useContext(AuthenticationContext)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
 
   const {
     data: workspaces,
     isLoading: isWorkspacesLoading,
     error,
-  } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(token),
-  })
+  } = useWorkspaces(token, userInfo?.sub)
 
-  const { data: accounts, isLoading: isAccountsLoading } = useQuery({
-    queryKey: ['Accounts', token],
-    queryFn: () => fetchAccounts(token),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(token),
-  })
+  const { data: accounts, isLoading: isAccountsLoading } = useAccounts(token, userInfo?.sub)
 
   const accountNameById = useMemo(
     () => Object.fromEntries((accounts ?? []).map((account) => [account.id, account.name])),
