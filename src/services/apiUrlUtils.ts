@@ -1,6 +1,13 @@
 const API_URL = import.meta.env.VITE_HUB_BASE_URL as string | undefined
 
 /**
+ * In dev, go through Vite's /api proxy (see vite.config.ts) instead of calling
+ * VITE_HUB_BASE_URL directly, since the auth-agent-backed tokens endpoints
+ * aren't CORS-enabled for cross-origin callers like a local dev server.
+ */
+export const getTokensBaseUrl = (): string => (import.meta.env.DEV ? '' : API_URL ?? '')
+
+/**
  * Returns the canonical origin for the hub API.
  * Falls back to window.location.origin in the browser if the API_URL
  * cannot be parsed.
