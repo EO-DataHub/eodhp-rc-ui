@@ -1,0 +1,19 @@
+.mainContainer {
+  align-items: flex-start;
+  margin: 3em auto;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1em 3em 1em;
+  min-height: 100vh;
+}
+
+.providerCard {
+  padding: 1.5em;
+  border: 1px solid var(--gray-6);
+  border-radius: var(--radius-3);
+  max-width: 480px;
+}
+
+.contractSelectors {
+  padding: 0.5em 0;
+}
