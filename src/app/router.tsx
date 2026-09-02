@@ -11,7 +11,9 @@ import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
-import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
+import { settingsRoutes } from '@/pages/SettingsPage/settingsRoutes'
+import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
+import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -91,7 +93,14 @@ const routes = [
     children: [
       {
         path: '',
-        element: <PlaceholderPage title="Profile" />,
+        element: <ProfilePage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to={defaultProfileRoute} replace />,
+          },
+          ...profileRoutes.map(({ to, element }) => ({ path: to, element })),
+        ],
       },
     ],
   },
@@ -105,20 +114,9 @@ const routes = [
         children: [
           {
             path: '',
-            element: <Navigate to="members" replace />,
+            element: <Navigate to={settingsRoutes[0].to} replace />,
           },
-          {
-            path: 'members',
-            element: <PlaceholderPage title="Members" />,
-          },
-          {
-            path: 'credentials',
-            element: <PlaceholderPage title="Credentials" />,
-          },
-          {
-            path: 'provider-accounts',
-            element: <PlaceholderPage title="Provider accounts" />,
-          },
+          ...settingsRoutes.map(({ to, element }) => ({ path: to, element })),
         ],
       },
     ],

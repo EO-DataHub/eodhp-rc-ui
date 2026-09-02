@@ -1,11 +1,10 @@
 import React, { useState, useContext, useRef, useEffect } from 'react'
 import { Flex, Select } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
 import { LoginButton } from './LoginButton'
 import ArrowIcon from '@/assets/icons/arrow-down.svg?react'
 import { useLocation, Link } from 'react-router-dom'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { useWorkspaces } from '@/hooks/useWorkspaces'
 
 import EarthObservationDataHubLogo from '@/assets/icons/eo-data-hub-logo.svg?react'
 import styles from './NavBar.module.scss'
@@ -94,17 +93,12 @@ export const NavBar: React.FC = () => {
   const isMapsActive = location.pathname.startsWith('/finder')
   const isMyDataActive = location.pathname.startsWith('/my-data')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
-  const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token } =
+  const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token, userInfo } =
     useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
 
-  const { data: workspacesData } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(isAuthenticated && token),
-  })
+  const { data: workspacesData } = useWorkspaces(token, userInfo?.sub, isAuthenticated)
 
   const toggleMenu = (menuName: string | null) => {
     if (!menuName) {
@@ -225,7 +219,7 @@ export const NavBar: React.FC = () => {
           )}
         />
 
-        {isAuthenticated && (
+        {isAuthenticated && (workspacesData?.length ?? 0) > 0 && (
           <Select.Root
             size="2"
             value={currentWorkspace ?? undefined}
