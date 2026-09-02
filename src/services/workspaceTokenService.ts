@@ -36,6 +36,7 @@ export interface Workspace {
   id: string
   name: string
   account: string
+  owner: string
   member_group: string
   status: string
   last_updated: string
