@@ -297,10 +297,10 @@ const OpenCosmosCard: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 }
 
 export const ProviderAccountsPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   const { data: accounts, isLoading: isAccountsLoading } = useQuery({
-    queryKey: ['Accounts', token],
+    queryKey: ['Accounts', userInfo?.sub],
     queryFn: () => fetchAccounts(token),
     refetchOnWindowFocus: false,
     enabled: Boolean(token),
@@ -318,7 +318,7 @@ export const ProviderAccountsPage: React.FC = () => {
     error,
     refetch,
   } = useQuery<string[]>({
-    queryKey: ['LinkedAccounts', currentWorkspace, token],
+    queryKey: ['LinkedAccounts', currentWorkspace, userInfo?.sub],
     queryFn: () => fetchLinkedAccounts(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
     enabled: Boolean(token && currentWorkspace),
