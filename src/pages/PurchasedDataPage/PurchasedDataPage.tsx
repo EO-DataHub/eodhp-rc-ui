@@ -21,7 +21,7 @@ import { Callout } from '@/components/Callout/Callout'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
 export const PurchasedDataPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState('')
   const [selectedCollection, setSelectedCollection] = useState('all')
@@ -80,7 +80,7 @@ export const PurchasedDataPage: React.FC = () => {
     isLoading,
     error,
   } = useQuery<OrderFetchResult>({
-    queryKey: ['Orders', currentWorkspace, token],
+    queryKey: ['Orders', currentWorkspace, userInfo?.sub],
     queryFn: (): Promise<OrderFetchResult> => {
       if (!token || !currentWorkspace) {
         return Promise.resolve({
@@ -93,7 +93,7 @@ export const PurchasedDataPage: React.FC = () => {
       return fetchOrdersForWorkspace(currentWorkspace, token)
     },
     refetchOnWindowFocus: false,
-    enabled: !!token && !!currentWorkspace,
+    enabled: !!token && !!currentWorkspace && !!userInfo?.sub,
   })
 
   useEffect(() => {

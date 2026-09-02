@@ -10,7 +10,7 @@ import {
 import { useContext, useMemo, useState } from 'react'
 import { isCollectionMatchingSearch } from '@/library/collectionUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { collectionHasQAIndicators } from '@/library/collectionQuality'
 
 export const GROUP_BY_KEY = 'groupBy'
@@ -28,14 +28,13 @@ export const useCollections = () => {
     })),
   })
 
-  const { currentWorkspace, token, isAuthenticating } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, userInfo, isAuthenticating } = useContext(AuthenticationContext)
 
-  const { data: workspaceTokensData, isFetching: isTokenLoading } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!(currentWorkspace ?? null) && !!(token ?? null),
-  })
+  const { data: workspaceTokensData, isFetching: isTokenLoading } = useWorkspaceToken(
+    currentWorkspace,
+    token,
+    userInfo?.sub,
+  )
 
   const {
     data: userCollections,

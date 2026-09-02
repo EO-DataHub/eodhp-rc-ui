@@ -20,7 +20,7 @@ import { formatFileDateTime, formatFileSize } from '@/library/fileUtils'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
 export const DataStoragePage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   const [searchText, setSearchText] = useState('')
   const [dataStoreFilter, setDataStoreFilter] = useState<'all' | StoreType>('all')
@@ -55,13 +55,13 @@ export const DataStoragePage: React.FC = () => {
     error: filesError,
     refetch: refetchFiles,
   } = useQuery<WorkspaceFileListResponse>({
-    queryKey: ['WorkspaceFiles', currentWorkspace, dataStoreFilter, token],
+    queryKey: ['WorkspaceFiles', currentWorkspace, dataStoreFilter, userInfo?.sub],
     queryFn: async () => {
       const accessToken = await resolveWorkspaceAccessToken()
       return listWorkspaceFiles(currentWorkspace!, accessToken, storeParam)
     },
     refetchOnWindowFocus: false,
-    enabled: Boolean(token && currentWorkspace),
+    enabled: Boolean(token && currentWorkspace && userInfo?.sub),
   })
 
   const filteredFiles = useMemo(() => {

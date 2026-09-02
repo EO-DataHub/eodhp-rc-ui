@@ -6,7 +6,7 @@ import { Map } from '@/components/Map/Map'
 import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
 import { useQuery, useQueries } from '@tanstack/react-query'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import {
   fetchCollections,
   fetchUserCollections,
@@ -27,7 +27,7 @@ import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import styles from './DataFinderPage.module.scss'
 
 export const DataFinderPage: React.FC = () => {
-  const { isAuthenticating, isAuthenticated, currentWorkspace, token } =
+  const { isAuthenticating, isAuthenticated, currentWorkspace, token, userInfo } =
     useContext(AuthenticationContext)
   // Use catch-all route parameter '*' to capture full path
   const params = useParams<{ '*': string }>()
@@ -51,14 +51,7 @@ export const DataFinderPage: React.FC = () => {
     }),
   })
 
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => {
-      return fetchWorkspaceTokens(currentWorkspace!, token!)
-    },
-    refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(currentWorkspace, token, userInfo?.sub)
 
   const userCollectionQuery = useQuery({
     queryKey: ['UserCollections', currentWorkspace],
@@ -81,15 +74,12 @@ export const DataFinderPage: React.FC = () => {
   const targetWorkspace = parsedPath?.workspace ?? currentWorkspace
 
   // Fetch workspace tokens for job collections (use workspace from URL if available)
-  const jobWorkspaceTokensQuery = useQuery({
-    queryKey: ['WorkspaceTokens', targetWorkspace, token],
-    queryFn: () => {
-      return fetchWorkspaceTokens(targetWorkspace!, token!)
-    },
-    refetchOnWindowFocus: false,
-    enabled:
-      !!parsedPath && parsedPath.type === 'job' && !!targetWorkspace && !!token && isAuthenticated,
-  })
+  const jobWorkspaceTokensQuery = useWorkspaceToken(
+    targetWorkspace,
+    token,
+    userInfo?.sub,
+    !!parsedPath && parsedPath.type === 'job' && isAuthenticated,
+  )
 
   // Fetch job collection if needed
   const jobCollectionQuery = useQuery({

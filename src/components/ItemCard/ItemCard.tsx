@@ -37,7 +37,7 @@ import {
 import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
@@ -154,7 +154,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   }, [item?.links])
 
   const navigate = useNavigate()
-  const { isAuthenticated, login, token } = useContext(AuthenticationContext)
+  const { isAuthenticated, login, token, userInfo } = useContext(AuthenticationContext)
 
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
@@ -232,12 +232,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const collectionWorkspace = isJobCollection ? extractWorkspaceFromCollection(collection!) : null
 
   // Fetch workspace tokens for job collections
-  const { data: jobWorkspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
-  })
+  const { data: jobWorkspaceTokensData } = useWorkspaceToken(
+    collectionWorkspace,
+    token,
+    userInfo?.sub,
+    !!isJobCollection && isAuthenticated,
+  )
 
   // temporarily fetching item details
   const { data } = useQuery({

@@ -20,7 +20,7 @@ export const WorkflowOutputsPage: React.FC = () => {
     jobId?: string
   }>()
   const navigate = useNavigate()
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const [searchText, setSearchText] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
@@ -61,7 +61,7 @@ export const WorkflowOutputsPage: React.FC = () => {
     isLoading: isLoadingJobs,
     error: jobsError,
   } = useQuery<JobsApiResponse>({
-    queryKey: ['WorkflowJobs', workflowWorkspace, sharedResultsWorkspaceName, token],
+    queryKey: ['WorkflowJobs', workflowWorkspace, sharedResultsWorkspaceName, userInfo?.sub],
     queryFn: async (): Promise<JobsApiResponse> => {
       if (!token || !workflowWorkspace) {
         return Promise.resolve({ jobs: [], links: [], numberTotal: 0 })
@@ -115,7 +115,7 @@ export const WorkflowOutputsPage: React.FC = () => {
       }
     },
     refetchOnWindowFocus: false,
-    enabled: !!token && !!workflowWorkspace,
+    enabled: !!token && !!workflowWorkspace && !!userInfo?.sub,
   })
 
   useEffect(() => {

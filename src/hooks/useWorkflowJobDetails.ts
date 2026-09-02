@@ -1,7 +1,7 @@
 import { useContext, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { fetchJobResults, fetchJobLog } from '@/services/workflowJobService'
 import { fetchItemByUrl } from '@/services/itemService'
 import { resolveApiUrl } from '@/services/apiUrlUtils'
@@ -33,7 +33,7 @@ const isJobResultsCollection = (value: unknown): value is JobResultsCollection =
 }
 
 export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDetailsParams) => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   const effectiveWorkspace = workspaceName ?? currentWorkspace ?? ''
 
@@ -41,11 +41,7 @@ export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDeta
     data: workspaceTokens,
     isLoading: isLoadingWorkspaceToken,
     error: workspaceTokenError,
-  } = useQuery({
-    queryKey: ['WorkspaceTokens', effectiveWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(effectiveWorkspace, token!),
-    enabled: !!job && !!effectiveWorkspace && !!token,
-  })
+  } = useWorkspaceToken(effectiveWorkspace, token, userInfo?.sub, !!job)
 
   const resultsLink = useMemo(
     () =>
