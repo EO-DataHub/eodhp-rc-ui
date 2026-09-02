@@ -1,7 +1,8 @@
 import { PlaceholderPage } from '@/components/PlaceholderPage/PlaceholderPage'
+import { MembersPage } from '@/pages/MembersPage/MembersPage'
 
 export const settingsRoutes = [
-  { to: 'members', label: 'Members', element: <PlaceholderPage title="Members" /> },
+  { to: 'members', label: 'Members', element: <MembersPage /> },
   { to: 'credentials', label: 'Credentials', element: <PlaceholderPage title="Credentials" /> },
   {
     to: 'provider-accounts',
