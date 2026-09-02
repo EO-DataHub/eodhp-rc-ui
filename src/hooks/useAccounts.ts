@@ -6,6 +6,6 @@ export const useAccounts = (token?: string | null, userId?: string, enabled = tr
     queryKey: ['Accounts', userId],
     queryFn: () => fetchAccounts(token),
     refetchOnWindowFocus: false,
-    enabled: Boolean(enabled && token),
+    enabled: Boolean(enabled && token && userId),
   })
 }

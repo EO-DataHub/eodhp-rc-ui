@@ -6,6 +6,6 @@ export const useWorkspaces = (token?: string | null, userId?: string, enabled = 
     queryKey: ['Workspaces', userId],
     queryFn: () => fetchWorkspaces(token),
     refetchOnWindowFocus: false,
-    enabled: Boolean(enabled && token),
+    enabled: Boolean(enabled && token && userId),
   })
 }
