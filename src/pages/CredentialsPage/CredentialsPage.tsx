@@ -28,7 +28,7 @@ import styles from './CredentialsPage.module.scss'
 const DEFAULT_EXPIRES_DAYS = 30
 
 export const CredentialsPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const [deletingTokenId, setDeletingTokenId] = useState<string | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -45,7 +45,7 @@ export const CredentialsPage: React.FC = () => {
     error,
     refetch,
   } = useQuery<DataHubToken[]>({
-    queryKey: ['DataHubTokens', currentWorkspace, token],
+    queryKey: ['DataHubTokens', currentWorkspace, userInfo?.sub],
     queryFn: () => listDataHubTokens(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
     enabled: Boolean(token && currentWorkspace),
