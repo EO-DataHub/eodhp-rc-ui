@@ -18,7 +18,7 @@ const AddMemberDialog: React.FC<{
   open: boolean
   onOpenChange: (open: boolean) => void
 }> = ({ open, onOpenChange }) => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const queryClient = useQueryClient()
   const [username, setUsername] = useState('')
 
@@ -33,7 +33,7 @@ const AddMemberDialog: React.FC<{
     },
     onSuccess: (_data, username) => {
       queryClient.setQueryData<WorkspaceMember[]>(
-        ['WorkspaceMembers', currentWorkspace, token],
+        ['WorkspaceMembers', currentWorkspace, userInfo?.sub],
         (prev) => (prev ? [...prev, { username }] : [{ username }]),
       )
       setUsername('')
@@ -94,7 +94,7 @@ const AddMemberDialog: React.FC<{
 }
 
 export const MembersPage: React.FC = () => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const queryClient = useQueryClient()
   const [isAddOpen, setIsAddOpen] = useState(false)
 
@@ -103,14 +103,14 @@ export const MembersPage: React.FC = () => {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['WorkspaceMembers', currentWorkspace, token],
+    queryKey: ['WorkspaceMembers', currentWorkspace, userInfo?.sub],
     queryFn: () => fetchWorkspaceMembers(currentWorkspace!, token!),
     refetchOnWindowFocus: false,
     enabled: Boolean(token && currentWorkspace),
   })
 
   const { data: accounts, isLoading: isAccountsLoading } = useQuery({
-    queryKey: ['Accounts', token],
+    queryKey: ['Accounts', userInfo?.sub],
     queryFn: () => fetchAccounts(token),
     refetchOnWindowFocus: false,
     enabled: Boolean(token),
@@ -134,7 +134,7 @@ export const MembersPage: React.FC = () => {
     },
     onSuccess: (_data, username) => {
       queryClient.setQueryData<WorkspaceMember[]>(
-        ['WorkspaceMembers', currentWorkspace, token],
+        ['WorkspaceMembers', currentWorkspace, userInfo?.sub],
         (prev) => prev?.filter((member) => member.username !== username),
       )
     },
