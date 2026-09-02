@@ -19,7 +19,7 @@ import type { Feature, Polygon } from 'geojson'
 import { fetchQuote } from '@/services/quoteService'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { Collection } from '@/types'
-import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { useWorkspaces } from '@/hooks/useWorkspaces'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 export const OrderDetailsPage: React.FC = () => {
@@ -28,7 +28,8 @@ export const OrderDetailsPage: React.FC = () => {
   const { item: navigatedItem } = state
   const { orderId } = useParams<{ orderId: string }>()
   const navigate = useNavigate()
-  const { currentWorkspace, token } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, updateCurrentWorkspace, userInfo } =
+    useContext(AuthenticationContext)
   const storedSelectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const selectedCollection = useMemo(() => {
     return (navigatedItem.collectionRef ?? storedSelectedCollection) as Collection
@@ -51,6 +52,11 @@ export const OrderDetailsPage: React.FC = () => {
 
   const handleSelectionsChange = (selections: Record<string, string>) => {
     setOrderSelections(selections)
+  }
+
+  const handleWorkspaceChange = (workspace: string) => {
+    setSelectedWorkspace(workspace)
+    updateCurrentWorkspace(workspace)
   }
 
   const mutation = useMutation({
@@ -94,12 +100,10 @@ export const OrderDetailsPage: React.FC = () => {
     currentWorkspace ?? undefined,
   )
 
-  const { data: workspacesData, isLoading: isWorkspacesLoading } = useQuery({
-    queryKey: ['Workspaces', token],
-    queryFn: () => fetchWorkspaces(token),
-    enabled: !!token,
-    refetchOnWindowFocus: false,
-  })
+  const { data: workspacesData, isLoading: isWorkspacesLoading } = useWorkspaces(
+    token,
+    userInfo?.sub,
+  )
 
   const isPlaceOrderDisabled = useMemo(() => {
     if (providerType === 'open-cosmos') {
@@ -286,7 +290,7 @@ export const OrderDetailsPage: React.FC = () => {
               onSelectionChange={handleSelectionsChange}
               workspaces={workspacesData ?? []}
               selectedWorkspace={selectedWorkspace}
-              onWorkspaceChange={setSelectedWorkspace}
+              onWorkspaceChange={handleWorkspaceChange}
               isWorkspacesLoading={isWorkspacesLoading}
             />
             <Text size="4" weight="bold" className={styles.cost}>
