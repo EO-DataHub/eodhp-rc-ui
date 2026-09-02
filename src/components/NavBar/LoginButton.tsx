@@ -44,18 +44,40 @@ export const LoginButton = ({
         <DropdownMenu.Content className={styles.dropdownContent}>
           {workspaceUserName && (
             <>
-              <DropdownMenu.Item asChild>
-                <Link to="/profile">
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger>
                   <Text weight="bold">{workspaceUserName}</Text>
-                </Link>
-              </DropdownMenu.Item>
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.SubContent>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/identity">Identity</Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/accounts">Accounts</Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/workspaces">Workspaces</Link>
+                  </DropdownMenu.Item>
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Sub>
               <DropdownMenu.Separator />
             </>
           )}
 
-          <DropdownMenu.Item asChild>
-            <Link to="/settings/members">Workspace settings</Link>
-          </DropdownMenu.Item>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Workspace settings</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/members">Members</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/credentials">Credentials</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/provider-accounts">Provider accounts</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
 
           <DropdownMenu.Item disabled>
             Accounting / Billing{' '}
