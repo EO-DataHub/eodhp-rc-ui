@@ -2,7 +2,7 @@ import React, { useContext, useEffect } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchThumbnailImage } from '@/library/fetchQuicklookImage'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import DefaultItemThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 
 interface AuthenticatedThumbnailProps {
@@ -22,19 +22,19 @@ const AuthenticatedThumbnail: React.FC<AuthenticatedThumbnailProps> = ({
   isJobCollection = false,
   workspaceToken,
 }) => {
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   // For job collections, use provided workspaceToken if available
   // For user collections, fetch workspace tokens
   const needsWorkspaceToken = requiresAuth && isUserCollection && !isJobCollection
 
   // Fetch workspace tokens for user collection thumbnail requests
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token && needsWorkspaceToken,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(
+    currentWorkspace,
+    token,
+    userInfo?.sub,
+    needsWorkspaceToken,
+  )
 
   // Determine which token to use
   // Priority: workspaceToken prop (for job collections) > workspaceTokensData (for user collections) > token

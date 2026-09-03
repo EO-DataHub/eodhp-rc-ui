@@ -10,7 +10,7 @@ import { fetchItem } from '@/services/itemService'
 import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -22,7 +22,7 @@ interface ItemInfoPanelProps {
 }
 
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
-  const { currentWorkspace, token, isAuthenticated } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
@@ -37,12 +37,12 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const targetWorkspace = collectionWorkspace ?? currentWorkspace
 
   // Fetch workspace token for user collections and job collections
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', targetWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(targetWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!targetWorkspace && !!token && (!!isUserItem || !!isJobCollection) && isAuthenticated,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(
+    targetWorkspace,
+    token,
+    userInfo?.sub,
+    (!!isUserItem || !!isJobCollection) && isAuthenticated,
+  )
 
   // Always fetch the full item when viewing metadata (GET /items/{id} returns full properties)
   // POST search endpoint returns minimal properties for performance, but GET /items/{id} returns full

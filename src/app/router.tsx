@@ -10,6 +10,10 @@ import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputs
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
+import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
+import { settingsRoutes } from '@/pages/SettingsPage/settingsRoutes'
+import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
+import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -79,6 +83,40 @@ const routes = [
             path: 'data-storage',
             element: <DataStoragePage />,
           },
+        ],
+      },
+    ],
+  },
+  {
+    path: '/profile',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <ProfilePage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to={defaultProfileRoute} replace />,
+          },
+          ...profileRoutes.map(({ to, element }) => ({ path: to, element })),
+        ],
+      },
+    ],
+  },
+  {
+    path: '/settings',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <SettingsPage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to={settingsRoutes[0].to} replace />,
+          },
+          ...settingsRoutes.map(({ to, element }) => ({ path: to, element })),
         ],
       },
     ],

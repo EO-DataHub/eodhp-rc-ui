@@ -1,5 +1,6 @@
 import { useContext } from 'react'
-import { Text, DropdownMenu } from '@radix-ui/themes'
+import { Text, DropdownMenu, Badge } from '@radix-ui/themes'
+import { Link } from 'react-router-dom'
 import { AuthenticationContext } from '../../context/AuthenticationContext'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
 import styles from './LoginButton.module.scss'
@@ -12,8 +13,14 @@ export const LoginButton = ({
   isUserMenuOpen: boolean
   setIsUserMenuOpen: (isOpen: boolean) => void
 }) => {
-  const { isAuthenticated, isAuthenticating, isAuthenticationServiceError, login, logout } =
-    useContext(AuthenticationContext)
+  const {
+    isAuthenticated,
+    isAuthenticating,
+    isAuthenticationServiceError,
+    login,
+    logout,
+    workspaceUserName,
+  } = useContext(AuthenticationContext)
 
   if (isAuthenticationServiceError) {
     const errorText =
@@ -35,6 +42,74 @@ export const LoginButton = ({
           </div>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content className={styles.dropdownContent}>
+          {workspaceUserName && (
+            <>
+              <DropdownMenu.Sub>
+                <DropdownMenu.SubTrigger>
+                  <Text weight="bold">{workspaceUserName}</Text>
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.SubContent>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/identity">Identity</Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/accounts">Accounts</Link>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item asChild>
+                    <Link to="/profile/workspaces">Workspaces</Link>
+                  </DropdownMenu.Item>
+                </DropdownMenu.SubContent>
+              </DropdownMenu.Sub>
+              <DropdownMenu.Separator />
+            </>
+          )}
+
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Workspace settings</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/members">Members</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/credentials">Credentials</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/settings/provider-accounts">Provider accounts</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+
+          <DropdownMenu.Item disabled>
+            Accounting / Billing{' '}
+            <Badge ml="2" color="gray" variant="soft">
+              Soon
+            </Badge>
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Item disabled>
+            Publishing{' '}
+            <Badge ml="2" color="gray" variant="soft">
+              Soon
+            </Badge>
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>My data</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/purchased">Purchased data</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/workflow-outputs">Workflow outputs</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/data-storage">Files</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
+
+          <DropdownMenu.Separator />
+
           {isAuthenticated && !isAuthenticating ? (
             <DropdownMenu.Item
               asChild

@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { fetchItems, fetchUserItems } from '@/services/itemService'
 import { Item } from '@/types'
 import { useSelector } from '@xstate/store/react'
@@ -14,7 +14,7 @@ export const MAX_USER_COLLECTION_ITEMS = 10000
 export const PAGE_SIZE = 10
 
 export const useItemsQuery = () => {
-  const { currentWorkspace, token, isAuthenticated } = useContext(AuthenticationContext)
+  const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
@@ -38,20 +38,20 @@ export const useItemsQuery = () => {
   })
 
   // Fetch workspace tokens for user collections (using currentWorkspace)
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token && isUserCollection,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(
+    currentWorkspace,
+    token,
+    userInfo?.sub,
+    !!isUserCollection,
+  )
 
   // Fetch workspace tokens for job collections (using collection's workspace)
-  const { data: jobWorkspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', collectionWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(collectionWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!isJobCollection && !!collectionWorkspace && !!token && isAuthenticated,
-  })
+  const { data: jobWorkspaceTokensData } = useWorkspaceToken(
+    collectionWorkspace,
+    token,
+    userInfo?.sub,
+    !!isJobCollection && isAuthenticated,
+  )
 
   const fetchFunction = () => {
     // Job collections use authenticated fetching like user collections

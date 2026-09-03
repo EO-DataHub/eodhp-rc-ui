@@ -4,25 +4,24 @@ import { resolveTilesUrl, requiresAuthentication } from '@/library/collectionRen
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
 import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { useQuery } from '@tanstack/react-query'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 
 export const RasterItemLayer = ({ item }: { item: Item }) => {
   // When on assets tab, resolve the tiles url when rendering
   const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render, item.isUserCollection)
   const { registerUrl, unregisterUrl } = useAuthenticatedTileUrls()
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   const needsAuth = requiresAuthentication(item.render, item.isUserCollection ?? false)
   const needsWorkspaceToken = needsAuth && item.isUserCollection
 
   // Fetch workspace tokens for user collection tile requests
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token && needsWorkspaceToken,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(
+    currentWorkspace,
+    token,
+    userInfo?.sub,
+    !!needsWorkspaceToken,
+  )
 
   // Only register URL and render when token is available
   const isTokenReady = needsWorkspaceToken

@@ -1,13 +1,12 @@
 import { useRef, useState, useEffect, useMemo, useContext, useCallback } from 'react'
 import { useSelector } from '@xstate/store/react'
-import { useQuery } from '@tanstack/react-query'
 import { useItemsQuery } from '@/hooks/useItemsQuery'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import centroid from '@turf/centroid'
 import area from '@turf/area'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
-import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -37,16 +36,11 @@ export const Map = () => {
     isDrawing: () => boolean
   } | null>(null)
   const { pageItems } = useItemsQuery()
-  const { token, currentWorkspace } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const { isAuthenticated, getTokenType } = useAuthenticatedTileUrls()
 
   // Fetch workspace tokens for user collection tile requests
-  const { data: workspaceTokensData } = useQuery({
-    queryKey: ['WorkspaceTokens', currentWorkspace, token],
-    queryFn: () => fetchWorkspaceTokens(currentWorkspace!, token!),
-    refetchOnWindowFocus: false,
-    enabled: !!currentWorkspace && !!token,
-  })
+  const { data: workspaceTokensData } = useWorkspaceToken(currentWorkspace, token, userInfo?.sub)
 
   // Use refs to ensure transformRequest always has access to the latest token values
   const tokenRef = useRef<string | undefined>(token)

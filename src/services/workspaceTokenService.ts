@@ -59,3 +59,40 @@ export const fetchWorkspaces = async (token?: string | null): Promise<Workspace[
 
   return workspaces as Workspace[]
 }
+
+export interface CreateWorkspacePayload {
+  name: string
+  account: string
+}
+
+export const createWorkspace = async (
+  payload: CreateWorkspacePayload,
+  token: string,
+): Promise<Workspace> => {
+  const response = await fetch(`${HUB_BASE_URL}/api/workspaces`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.ok) {
+    if (response.status === 409) {
+      throw new Error(
+        'A workspace with this name already exists. Please choose a different unique name.',
+      )
+    }
+    if (response.status === 500) {
+      throw new Error(
+        'Server error. Try again later or email enquiries@eodatahub.org.uk if this continues.',
+      )
+    }
+    throw new Error(`Failed to create workspace: ${response.status} ${response.statusText}`)
+  }
+
+  const workspace = await response.json()
+
+  return workspace as Workspace
+}

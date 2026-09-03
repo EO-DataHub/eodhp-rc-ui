@@ -5,6 +5,7 @@ import 'react-toastify/dist/ReactToastify.css'
 import { ErrorBoundary } from 'react-error-boundary'
 import { RouterProvider } from 'react-router-dom'
 import { AuthenticationContextProvider } from '@/provider/AuthenticationProvider'
+import { OpenCosmosAuthProvider } from '@/provider/OpenCosmosAuthProvider'
 import { router } from './router'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useEffect } from 'react'
@@ -25,15 +26,17 @@ function App() {
   return (
     <ErrorBoundary fallback={<div>We&apos;re sorry. Something is broken.</div>}>
       <AuthenticationContextProvider>
-        <AuthenticatedTileUrlsProvider>
-          <RestoreAOIContextProvider>
-            <Theme accentColor="blue">
-              <RouterProvider router={router} />
-              <ConsentBanner />
-              <ConsentButton />
-            </Theme>
-          </RestoreAOIContextProvider>
-        </AuthenticatedTileUrlsProvider>
+        <OpenCosmosAuthProvider>
+          <AuthenticatedTileUrlsProvider>
+            <RestoreAOIContextProvider>
+              <Theme accentColor="blue">
+                <RouterProvider router={router} />
+                <ConsentBanner />
+                <ConsentButton />
+              </Theme>
+            </RestoreAOIContextProvider>
+          </AuthenticatedTileUrlsProvider>
+        </OpenCosmosAuthProvider>
       </AuthenticationContextProvider>
     </ErrorBoundary>
   )
