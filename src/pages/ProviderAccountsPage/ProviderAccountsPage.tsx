@@ -11,7 +11,8 @@ import {
   LinkedAccountProvider,
   LinkedAccountValidation,
 } from '@/services/linkedAccountsService'
-import { fetchAccounts } from '@/services/accountService'
+import { fetchWorkspaceAdmins } from '@/services/workspaceMembersService'
+import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import styles from './ProviderAccountsPage.module.scss'
@@ -297,20 +298,30 @@ const OpenCosmosCard: React.FC<{ canEdit: boolean }> = ({ canEdit }) => {
 }
 
 export const ProviderAccountsPage: React.FC = () => {
-  const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
+  const { token, currentWorkspace, userInfo, workspaceUserName } = useContext(AuthenticationContext)
 
-  const { data: accounts, isLoading: isAccountsLoading } = useQuery({
-    queryKey: ['Accounts', userInfo?.sub],
-    queryFn: () => fetchAccounts(token),
+  const { data: workspaces, isLoading: isWorkspacesLoading } = useQuery({
+    queryKey: ['Workspaces', userInfo?.sub],
+    queryFn: () => fetchWorkspaces(token),
     refetchOnWindowFocus: false,
     enabled: Boolean(token),
   })
 
-  // Mirrors the real ownership check the backend enforces on linked-account changes: only
-  // the owner of the billing account this workspace belongs to may link or unlink providers.
-  const canEdit = Boolean(
-    accounts?.some((account) => account.workspaces?.some((ws) => ws.name === currentWorkspace)),
-  )
+  const { data: admins, isLoading: isAdminsLoading } = useQuery({
+    queryKey: ['WorkspaceAdmins', currentWorkspace, userInfo?.sub],
+    queryFn: () => fetchWorkspaceAdmins(currentWorkspace!, token!),
+    refetchOnWindowFocus: false,
+    enabled: Boolean(token && currentWorkspace),
+  })
+
+  const accountOwner = workspaces?.find((workspace) => workspace.name === currentWorkspace)?.owner
+
+  // Mirrors the real ownership check the backend enforces on linked-account changes: the
+  // owner of the workspace, or a workspace admin, may link or unlink providers.
+  const isAccountOwner = Boolean(workspaceUserName && workspaceUserName === accountOwner)
+  const isWorkspaceAdmin = Boolean(workspaceUserName && admins?.includes(workspaceUserName))
+  const canEdit = isAccountOwner || isWorkspaceAdmin
+  const isAccountsLoading = isWorkspacesLoading || isAdminsLoading
 
   const {
     data: linkedAccounts,
@@ -338,7 +349,7 @@ export const ProviderAccountsPage: React.FC = () => {
       {token && currentWorkspace && !isAccountsLoading && !canEdit && (
         <Callout
           type="info"
-          message="Only the owner of this workspace's billing account can link or unlink provider accounts."
+          message="Only the workspace owner or an admin can link or unlink provider accounts."
         />
       )}
 
