@@ -3,6 +3,7 @@ const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 export interface AccountWorkspace {
   id: string
   name: string
+  status?: string
 }
 
 export interface Account {
@@ -37,6 +38,21 @@ export const fetchAccounts = async (token?: string | null): Promise<Account[]> =
   }
 
   return accounts as Account[]
+}
+
+export const fetchAccount = async (id: string, token: string): Promise<Account> => {
+  const response = await fetch(`${HUB_BASE_URL}/api/accounts/${id}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch account: ${response.status} ${response.statusText}`)
+  }
+
+  return (await response.json()) as Account
 }
 
 export interface CreateAccountPayload {

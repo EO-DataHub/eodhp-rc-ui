@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react'
 import { Button, Checkbox, Dialog, Flex, Table, Text, TextArea, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
+import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { Account, CreateAccountPayload, createAccount } from '@/services/accountService'
@@ -239,9 +240,11 @@ export const AccountsPage: React.FC = () => {
               {accounts?.map((account: Account) => (
                 <Table.Row key={account.id}>
                   <Table.Cell>
-                    <Text size="2" weight="medium">
-                      {account.name}
-                    </Text>
+                    <Link to={account.id}>
+                      <Text size="2" weight="medium">
+                        {account.name}
+                      </Text>
+                    </Link>
                   </Table.Cell>
                   <Table.Cell>
                     {ACCOUNT_STATUS_LABELS[account.status?.toLowerCase() ?? ''] ??
