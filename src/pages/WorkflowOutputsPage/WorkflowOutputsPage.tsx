@@ -12,6 +12,7 @@ import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
 export const WorkflowOutputsPage: React.FC = () => {
@@ -160,14 +161,10 @@ export const WorkflowOutputsPage: React.FC = () => {
   return (
     <>
       <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-        <Flex direction="column" gap="3">
-          <Text size="7" weight="medium">
-            Workflow Outputs
-          </Text>
-          <Text size="3" color="gray">
-            View workflow execution jobs and their status
-          </Text>
-        </Flex>
+        <PageHeading
+          title="Workflow Outputs"
+          subtitle="View workflow execution jobs and their status"
+        />
         <Flex justify="between" align="center">
           <Box />
           <TextField.Root
