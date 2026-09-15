@@ -15,6 +15,7 @@ import { fetchWorkspaceAdmins } from '@/services/workspaceMembersService'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from './ProviderAccountsPage.module.scss'
 
 const PROVIDER_LABELS: Record<LinkedAccountProvider, string> = {
@@ -337,14 +338,10 @@ export const ProviderAccountsPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Provider accounts
-        </Text>
-        <Text size="3" color="gray">
-          Link commercial data provider accounts so this workspace can order their imagery.
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Provider accounts"
+        subtitle="Link commercial data provider accounts so this workspace can order their imagery."
+      />
 
       {token && currentWorkspace && !isAccountsLoading && !canEdit && (
         <Callout

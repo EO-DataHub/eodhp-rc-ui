@@ -8,6 +8,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../ProfilePage/ProfilePage.module.scss'
 
 const ACCOUNT_STATUS_LABELS: Record<string, string> = {
@@ -185,17 +186,11 @@ export const AccountsPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Billing accounts
-        </Text>
-        <Text size="3" color="gray">
-          A billing account represents the legal and billing relationship between your organisation
-          and EODH. Workspaces are created under a billing account, so you&apos;ll need at least one
-          approved account before you can create a workspace. New requests are reviewed by the EODH
-          team — you&apos;ll be notified by email once yours is approved.
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Billing accounts"
+        subtitle="A billing account represents the legal and billing relationship between your organisation and EODH. Workspaces are created under a billing account, so you'll need at least one approved account before you can create a workspace. New requests are reviewed by the EODH team — you'll be notified by email once yours is approved."
+        badge="user"
+      />
 
       <Flex direction="column" gap="4">
         <Flex justify="end">

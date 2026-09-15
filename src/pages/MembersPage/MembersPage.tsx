@@ -25,6 +25,7 @@ import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from './MembersPage.module.scss'
 
 const AddMemberDialog: React.FC<{
@@ -218,14 +219,7 @@ export const MembersPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Members
-        </Text>
-        <Text size="3" color="gray">
-          Manage who has access to this workspace.
-        </Text>
-      </Flex>
+      <PageHeading title="Members" subtitle="Manage who has access to this workspace." />
 
       <Flex direction="column" gap="4">
         {canManageMembers && (

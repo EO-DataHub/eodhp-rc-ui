@@ -1,5 +1,5 @@
 import { MetadataItem } from '@/types'
-import { formatDateToMMDDYEAR } from '@/library/dateUtils'
+import { formatDateToDDMMYEAR } from '@/library/dateUtils'
 
 const PLANET_FIELDS = [
   'datetime',
@@ -145,7 +145,7 @@ export const extractOpenCosmosOrderItemDetails = (
   }
 
   if (properties.datetime && typeof properties.datetime === 'string') {
-    add('Date', formatDateToMMDDYEAR(properties.datetime))
+    add('Date', formatDateToDDMMYEAR(properties.datetime))
   }
   add('Platform', properties.platform)
   add('Processing Level', properties['processing:level'])
@@ -182,7 +182,7 @@ export const extractPlanetOrderItemDetails = (
       const label = key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
       if (key === 'datetime' && (typeof value === 'string' || typeof value === 'number')) {
-        selected[label] = formatDateToMMDDYEAR(value)
+        selected[label] = formatDateToDDMMYEAR(value)
       } else {
         selected[label] = typeof value === 'boolean' ? String(value) : value
       }

@@ -18,6 +18,7 @@ import {
 import { ColumnSelector } from '@/components/ColumnSelector/ColumnSelector'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
 export const PurchasedDataPage: React.FC = () => {
@@ -298,14 +299,7 @@ export const PurchasedDataPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Purchased Data
-        </Text>
-        <Text size="3" color="gray">
-          View all your orders in this workspace
-        </Text>
-      </Flex>
+      <PageHeading title="Purchased Data" subtitle="View all your orders in this workspace" />
       <Flex justify="between" align="center">
         <Box />
         <TextField.Root
