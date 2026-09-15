@@ -13,6 +13,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../ProfilePage/ProfilePage.module.scss'
 
 const isDnsCompliant = (name: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)
@@ -171,15 +172,11 @@ export const WorkspacesPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Workspaces
-        </Text>
-        <Text size="3" color="gray">
-          Workspaces are where your data, workflows, and results are stored and processed on the
-          Hub. Each workspace belongs to one of your approved billing accounts.
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Workspaces"
+        subtitle="Workspaces are where your data, workflows, and results are stored and processed on the Hub. Each workspace belongs to one of your approved billing accounts."
+        badge="user"
+      />
 
       <Flex direction="column" gap="4">
         <Flex justify="end">

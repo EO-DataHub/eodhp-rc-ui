@@ -1,6 +1,7 @@
 import React, { useContext } from 'react'
 import { Button, Flex, Text } from '@radix-ui/themes'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../ProfilePage/ProfilePage.module.scss'
 
 const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL
@@ -13,14 +14,7 @@ export const IdentityPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Identity
-        </Text>
-        <Text size="3" color="gray">
-          Your EODH sign-in details
-        </Text>
-      </Flex>
+      <PageHeading title="Identity" subtitle="Your EODH sign-in details" badge="user" />
 
       <Flex direction="column" gap="4">
         <Flex direction="column" gap="2">
