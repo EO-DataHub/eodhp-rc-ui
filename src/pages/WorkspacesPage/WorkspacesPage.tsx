@@ -1,6 +1,7 @@
 import React, { useContext, useMemo, useState } from 'react'
 import { Button, Dialog, Flex, Select, Table, Text, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import {
@@ -146,8 +147,14 @@ const CreateWorkspaceDialog: React.FC<{
 }
 
 export const WorkspacesPage: React.FC = () => {
-  const { token, userInfo } = useContext(AuthenticationContext)
+  const { token, userInfo, updateCurrentWorkspace } = useContext(AuthenticationContext)
+  const navigate = useNavigate()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  const handleWorkspaceClick = (workspaceName: string) => {
+    updateCurrentWorkspace?.(workspaceName)
+    void navigate('/settings/members')
+  }
 
   const {
     data: workspaces,
@@ -237,9 +244,22 @@ export const WorkspacesPage: React.FC = () => {
               {workspaces?.map((workspace: Workspace) => (
                 <Table.Row key={workspace.id}>
                   <Table.Cell>
-                    <Text size="2" weight="medium">
+                    <button
+                      onClick={() => handleWorkspaceClick(workspace.name)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent-9)',
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        fontWeight: 500,
+                        padding: 0,
+                      }}
+                    >
                       {workspace.name}
-                    </Text>
+                    </button>
                   </Table.Cell>
                   <Table.Cell>{accountNameById[workspace.account] ?? workspace.account}</Table.Cell>
                 </Table.Row>
