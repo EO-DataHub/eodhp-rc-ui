@@ -94,7 +94,7 @@ export const CreditsPage: React.FC = () => {
 
             <Flex align="center" gap="3" className={styles.balanceCard}>
               <Text size="8" weight="bold">
-                {creditBalance.balance}
+                {balance!.toFixed(2)}
               </Text>
               <Flex direction="column">
                 <Text size="2" weight="medium">
