@@ -12,8 +12,11 @@ import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { settingsRoutes } from '@/pages/SettingsPage/settingsRoutes'
+import { AccountingPage } from '@/pages/AccountingPage/AccountingPage'
+import { accountingRoutes } from '@/pages/AccountingPage/accountingRoutes'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
 import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
+import { AccountDetailPage } from '@/pages/AccountsPage/AccountDetailPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -100,6 +103,10 @@ const routes = [
             element: <Navigate to={defaultProfileRoute} replace />,
           },
           ...profileRoutes.map(({ to, element }) => ({ path: to, element })),
+          {
+            path: 'accounts/:accountId',
+            element: <AccountDetailPage />,
+          },
         ],
       },
     ],
@@ -117,6 +124,23 @@ const routes = [
             element: <Navigate to={settingsRoutes[0].to} replace />,
           },
           ...settingsRoutes.map(({ to, element }) => ({ path: to, element })),
+        ],
+      },
+    ],
+  },
+  {
+    path: '/accounting',
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '',
+        element: <AccountingPage />,
+        children: [
+          {
+            path: '',
+            element: <Navigate to={accountingRoutes[0].to} replace />,
+          },
+          ...accountingRoutes.map(({ to, element }) => ({ path: to, element })),
         ],
       },
     ],

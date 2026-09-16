@@ -1,6 +1,7 @@
 import React, { useContext, useMemo, useState } from 'react'
 import { Button, Dialog, Flex, Select, Table, Text, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import {
@@ -13,6 +14,7 @@ import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
+import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../ProfilePage/ProfilePage.module.scss'
 
 const isDnsCompliant = (name: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)
@@ -145,8 +147,14 @@ const CreateWorkspaceDialog: React.FC<{
 }
 
 export const WorkspacesPage: React.FC = () => {
-  const { token, userInfo } = useContext(AuthenticationContext)
+  const { token, userInfo, updateCurrentWorkspace } = useContext(AuthenticationContext)
+  const navigate = useNavigate()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+
+  const handleWorkspaceClick = (workspaceName: string) => {
+    updateCurrentWorkspace?.(workspaceName)
+    void navigate('/settings/members')
+  }
 
   const {
     data: workspaces,
@@ -171,15 +179,11 @@ export const WorkspacesPage: React.FC = () => {
 
   return (
     <Flex direction="column" gap="7" className={styles.mainContainer}>
-      <Flex direction="column" gap="3">
-        <Text size="7" weight="medium">
-          Workspaces
-        </Text>
-        <Text size="3" color="gray">
-          Workspaces are where your data, workflows, and results are stored and processed on the
-          Hub. Each workspace belongs to one of your approved billing accounts.
-        </Text>
-      </Flex>
+      <PageHeading
+        title="Workspaces"
+        subtitle="Workspaces are where your data, workflows, and results are stored and processed on the Hub. Each workspace belongs to one of your approved billing accounts."
+        badge="user"
+      />
 
       <Flex direction="column" gap="4">
         <Flex justify="end">
@@ -240,9 +244,22 @@ export const WorkspacesPage: React.FC = () => {
               {workspaces?.map((workspace: Workspace) => (
                 <Table.Row key={workspace.id}>
                   <Table.Cell>
-                    <Text size="2" weight="medium">
+                    <button
+                      onClick={() => handleWorkspaceClick(workspace.name)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--accent-9)',
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
+                        fontSize: 'inherit',
+                        fontFamily: 'inherit',
+                        fontWeight: 500,
+                        padding: 0,
+                      }}
+                    >
                       {workspace.name}
-                    </Text>
+                    </button>
                   </Table.Cell>
                   <Table.Cell>{accountNameById[workspace.account] ?? workspace.account}</Table.Cell>
                 </Table.Row>

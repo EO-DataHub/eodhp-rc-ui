@@ -5,11 +5,17 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 interface PageHeadingProps {
   title: string
   subtitle?: string
-  hideWorkspace?: boolean
+  badge?: 'workspace' | 'user' | 'none'
 }
 
-export const PageHeading: React.FC<PageHeadingProps> = ({ title, subtitle, hideWorkspace }) => {
-  const { currentWorkspace } = useContext(AuthenticationContext)
+export const PageHeading: React.FC<PageHeadingProps> = ({
+  title,
+  subtitle,
+  badge = 'workspace',
+}) => {
+  const { currentWorkspace, workspaceUserName } = useContext(AuthenticationContext)
+  const badgeText =
+    badge === 'workspace' ? currentWorkspace : badge === 'user' ? workspaceUserName : undefined
 
   return (
     <Flex direction="column" gap="3">
@@ -17,9 +23,9 @@ export const PageHeading: React.FC<PageHeadingProps> = ({ title, subtitle, hideW
         <Text size="7" weight="medium">
           {title}
         </Text>
-        {!hideWorkspace && currentWorkspace && (
+        {badgeText && (
           <Badge size="2" color="gray" variant="soft">
-            {currentWorkspace}
+            {badgeText}
           </Badge>
         )}
       </Flex>
