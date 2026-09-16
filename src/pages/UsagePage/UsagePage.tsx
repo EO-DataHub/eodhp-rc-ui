@@ -12,7 +12,7 @@ import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { formatDateToDDMMYEAR } from '@/library/dateUtils'
+import { convertDateToUTCString } from '@/library/dateUtils'
 import styles from './UsagePage.module.scss'
 
 // The real usage-data API returns raw quantity per SKU, with no credit conversion and no
@@ -396,7 +396,9 @@ export const UsagePage: React.FC = () => {
                             </Table.Cell>
                             <Table.Cell>{row.quantity}</Table.Cell>
                             <Table.Cell>{skusBySku.get(row.item)?.unit ?? '—'}</Table.Cell>
-                            <Table.Cell>{formatDateToDDMMYEAR(row.event_start)}</Table.Cell>
+                            <Table.Cell>
+                              {convertDateToUTCString(new Date(row.event_start))}
+                            </Table.Cell>
                           </Table.Row>
                         ))}
                       </Table.Body>
