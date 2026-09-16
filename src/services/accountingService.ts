@@ -166,6 +166,62 @@ export const fetchWorkspaceUsageData = async (
   return events as BillingEvent[]
 }
 
+export interface LedgerTransaction {
+  uuid: string
+  workspace: string
+  user: string | null
+  transaction_type: 'debit' | 'grant' | 'reversal'
+  credits: string
+  occurred_at: string
+  recorded_at: string
+  reason: string | null
+}
+
+export interface FetchLedgerParams {
+  transactionType?: 'debit' | 'grant' | 'reversal'
+  start?: string
+  end?: string
+  limit?: number
+  after?: string
+}
+
+export const fetchWorkspaceLedger = async (
+  workspace: string,
+  token: string,
+  params: FetchLedgerParams = {},
+): Promise<LedgerTransaction[]> => {
+  const searchParams = new URLSearchParams()
+  if (params.transactionType) searchParams.set('type', params.transactionType)
+  if (params.start) searchParams.set('start', params.start)
+  if (params.end) searchParams.set('end', params.end)
+  if (params.limit) searchParams.set('limit', String(params.limit))
+  if (params.after) searchParams.set('after', params.after)
+  const queryString = searchParams.toString()
+
+  const response = await fetch(
+    `${HUB_BASE_URL}/api/workspaces/${workspace}/accounting/ledger${queryString ? `?${queryString}` : ''}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+
+  if (!response.ok) {
+    const detail = await extractErrorDetail(response)
+    throw new Error(detail ?? `Failed to fetch ledger: ${response.status} ${response.statusText}`)
+  }
+
+  const transactions = await response.json()
+
+  if (!Array.isArray(transactions)) {
+    throw new Error('Unexpected response format when fetching ledger.')
+  }
+
+  return transactions as LedgerTransaction[]
+}
+
 const USAGE_PAGE_SIZE = 500
 // Safety cap on pages followed, so an unexpected backend cursor bug can't hang the UI in an
 // endless fetch loop — well beyond what a single bounded (e.g. one month) range should need.

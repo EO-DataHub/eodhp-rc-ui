@@ -1,13 +1,23 @@
-import React, { useContext, useMemo } from 'react'
-import { Badge, Flex, Table, Text } from '@radix-ui/themes'
+import React, { useContext, useMemo, useState } from 'react'
+import { Badge, Button, Flex, Table, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchPricingPolicy, fetchSkus, fetchWorkspaceBalance } from '@/services/accountingService'
+import {
+  fetchPricingPolicy,
+  fetchSkus,
+  fetchWorkspaceBalance,
+  fetchWorkspaceLedger,
+} from '@/services/accountingService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
-import { formatDateToDDMMYEAR } from '@/library/dateUtils'
+import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
+import { convertDateToUTCString, formatDateToDDMMYEAR } from '@/library/dateUtils'
 import styles from './CreditsPage.module.scss'
+
+const RECENT_GRANTS_COUNT = 5
+const GRANTS_PAGE_SIZE = 10
+const GRANTS_FETCH_LIMIT = 100
 
 export const CreditsPage: React.FC = () => {
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
@@ -40,6 +50,24 @@ export const CreditsPage: React.FC = () => {
     refetchOnWindowFocus: false,
     enabled: Boolean(token),
   })
+
+  const {
+    data: grants,
+    isLoading: isGrantsLoading,
+    error: grantsError,
+  } = useQuery({
+    queryKey: ['CreditGrants', currentWorkspace, userInfo?.sub],
+    queryFn: () =>
+      fetchWorkspaceLedger(currentWorkspace!, token!, {
+        transactionType: 'grant',
+        limit: GRANTS_FETCH_LIMIT,
+      }),
+    refetchOnWindowFocus: false,
+    enabled: Boolean(token && currentWorkspace),
+  })
+
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false)
+  const [historyPage, setHistoryPage] = useState(0)
 
   const skusBySku = useMemo(() => {
     const map = new Map<string, { name: string; unit: string }>()
@@ -113,6 +141,95 @@ export const CreditsPage: React.FC = () => {
             </Text>
           </>
         )}
+
+        <Flex direction="column" gap="2">
+          <Text size="2" weight="medium">
+            Credit history
+          </Text>
+
+          {grantsError && (
+            <Callout
+              type="error"
+              message={
+                grantsError instanceof Error
+                  ? grantsError.message
+                  : 'Failed to load credit history.'
+              }
+            />
+          )}
+
+          {isGrantsLoading && <LoadingIndicator size="3" />}
+
+          {grants && grants.length === 0 && (
+            <Callout type="info" message="No credit top-ups recorded for this workspace yet." />
+          )}
+
+          {grants && grants.length > 0 && (
+            <>
+              <Table.Root className={styles.creditsTable}>
+                <Table.Header>
+                  <Table.Row>
+                    <Table.ColumnHeaderCell>Date</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Amount</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Reason</Table.ColumnHeaderCell>
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {(isHistoryExpanded
+                    ? grants.slice(
+                        historyPage * GRANTS_PAGE_SIZE,
+                        (historyPage + 1) * GRANTS_PAGE_SIZE,
+                      )
+                    : grants.slice(0, RECENT_GRANTS_COUNT)
+                  ).map((grant) => (
+                    <Table.Row key={grant.uuid}>
+                      <Table.Cell>{convertDateToUTCString(new Date(grant.occurred_at))}</Table.Cell>
+                      <Table.Cell>
+                        <Text weight="medium" color="green">
+                          +{Number(grant.credits).toFixed(2)}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell>{grant.reason ?? '—'}</Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+
+              {isHistoryExpanded && grants.length > GRANTS_PAGE_SIZE && (
+                <Flex justify="center" mt="2">
+                  <PageSelector
+                    currentPageIndex={historyPage}
+                    nextDisabled={(historyPage + 1) * GRANTS_PAGE_SIZE >= grants.length}
+                    onGoToPage={setHistoryPage}
+                    onNextClick={() => setHistoryPage((page) => page + 1)}
+                    onPreviousClick={() => setHistoryPage((page) => page - 1)}
+                    pageCount={Math.ceil(grants.length / GRANTS_PAGE_SIZE)}
+                    previousDisabled={historyPage === 0}
+                  />
+                </Flex>
+              )}
+
+              {grants.length > RECENT_GRANTS_COUNT && (
+                <Flex align="center" gap="3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setIsHistoryExpanded((expanded) => !expanded)
+                      setHistoryPage(0)
+                    }}
+                  >
+                    {isHistoryExpanded ? 'Show less' : `View all (${grants.length})`}
+                  </Button>
+                  {grants.length >= GRANTS_FETCH_LIMIT && (
+                    <Text size="1" color="gray">
+                      Showing the most recent {GRANTS_FETCH_LIMIT} top-ups.
+                    </Text>
+                  )}
+                </Flex>
+              )}
+            </>
+          )}
+        </Flex>
 
         <Flex direction="column" gap="2">
           <Text size="2" weight="medium">
