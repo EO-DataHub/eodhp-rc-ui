@@ -50,6 +50,12 @@ export const CreditsPage: React.FC = () => {
   const balance = creditBalance ? Number(creditBalance.balance) : null
   const isNegative = balance !== null && balance < 0
 
+  const formatUnitsPerCredit = (creditsPerUnit: string) => {
+    const rate = Number(creditsPerUnit)
+    if (!rate) return '—'
+    return (1 / rate).toLocaleString(undefined, { maximumFractionDigits: 2 })
+  }
+
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>
       <PageHeading
@@ -129,6 +135,7 @@ export const CreditsPage: React.FC = () => {
                   <Table.Row>
                     <Table.ColumnHeaderCell>Resource</Table.ColumnHeaderCell>
                     <Table.ColumnHeaderCell>Credits per unit</Table.ColumnHeaderCell>
+                    <Table.ColumnHeaderCell>Unit per credit</Table.ColumnHeaderCell>
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -143,6 +150,9 @@ export const CreditsPage: React.FC = () => {
                         </Table.Cell>
                         <Table.Cell>
                           {rate.credits_per_unit} / {sku?.unit ?? 'unit'}
+                        </Table.Cell>
+                        <Table.Cell>
+                          {formatUnitsPerCredit(rate.credits_per_unit)} {sku?.unit ?? 'unit'}
                         </Table.Cell>
                       </Table.Row>
                     )
