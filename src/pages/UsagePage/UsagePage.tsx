@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useMemo, useState } from 'react'
-import { Box, Button, Flex, Select, Table, Text } from '@radix-ui/themes'
+import { Box, Button, Flex, SegmentedControl, Select, Table, Text } from '@radix-ui/themes'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -15,11 +15,6 @@ import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import styles from './UsagePage.module.scss'
 
-// The real usage-data API returns raw quantity per SKU, with no credit conversion and no
-// per-user breakdown — converting to credits needs a workspace-category lookup that doesn't
-// exist yet, and there is no user field on a billing event at all. Both are known gaps; see
-// the "Wire eodhp-rc-ui Accounting pages to the real accounting API" task note.
-//
 // The API has no way to ask for "most recent" events — only a start/end range or forward
 // pagination via an `after` cursor over what appears to be an oldest-first, append-only
 // ledger. Fetching an unscoped page of raw events landed on ancient history for any workspace
@@ -27,9 +22,14 @@ import styles from './UsagePage.module.scss'
 // month/SKU, covers all history in a single page) to drive a months-by-resource pivot table,
 // then fetch every raw event for whichever month the user picks on demand — bounded to one
 // month, so following the `after` cursor to completion there is cheap and safe.
+//
+// Every billing event carries both `quantity` (raw, unit-specific) and `credits` (what it
+// cost, already category-adjusted server-side from the ledger) — a display-mode toggle lets
+// users see either, defaulting to credits since it's directly comparable across resources.
 const PAGE_SIZE = 10
 
-type SortColumn = 'item' | 'quantity' | 'date'
+type DisplayMode = 'credits' | 'raw'
+type SortColumn = 'item' | 'value' | 'date'
 
 const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
 
@@ -43,9 +43,12 @@ const getMonthBounds = (month: string) => {
 const formatQuantity = (value: number) =>
   Number.isInteger(value) ? String(value) : value.toFixed(2)
 
+const formatCredits = (value: number) => value.toFixed(2)
+
 export const UsagePage: React.FC = () => {
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('credits')
   const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [selectedItem, setSelectedItem] = useState('all')
   const [sortColumn, setSortColumn] = useState<SortColumn>('date')
@@ -96,29 +99,31 @@ export const UsagePage: React.FC = () => {
     [monthlyRows, skusBySku],
   )
 
-  const quantityByMonthAndItem = useMemo(() => {
+  const valueByMonthAndItem = useMemo(() => {
     const map = new Map<string, number>()
     monthlyRows.forEach((event) => {
       const key = `${event.event_start.slice(0, 7)}|${event.item}`
-      map.set(key, (map.get(key) ?? 0) + event.quantity)
+      const value = displayMode === 'credits' ? Number(event.credits) : event.quantity
+      map.set(key, (map.get(key) ?? 0) + value)
     })
     return map
-  }, [monthlyRows])
+  }, [monthlyRows, displayMode])
 
   useEffect(() => {
     setCurrentPage(0)
-  }, [selectedMonth, selectedItem, sortColumn, sortDirection])
+  }, [selectedMonth, selectedItem, sortColumn, sortDirection, displayMode])
 
   const usageByItemForSelectedMonth = useMemo(() => {
     const rows = monthlyRows.filter((event) => event.event_start.slice(0, 7) === selectedMonth)
     const totals = new Map<string, number>()
     rows.forEach((event) => {
-      totals.set(event.item, (totals.get(event.item) ?? 0) + event.quantity)
+      const value = displayMode === 'credits' ? Number(event.credits) : event.quantity
+      totals.set(event.item, (totals.get(event.item) ?? 0) + value)
     })
     return Array.from(totals.entries())
-      .map(([item, quantity]) => ({ item, quantity }))
+      .map(([item, value]) => ({ item, value }))
       .sort((a, b) => itemColumns.indexOf(a.item) - itemColumns.indexOf(b.item))
-  }, [monthlyRows, selectedMonth, itemColumns])
+  }, [monthlyRows, selectedMonth, itemColumns, displayMode])
 
   const monthBounds = useMemo(
     () => (selectedMonth ? getMonthBounds(selectedMonth) : null),
@@ -152,8 +157,11 @@ export const UsagePage: React.FC = () => {
         case 'item':
           comparison = a.item.localeCompare(b.item)
           break
-        case 'quantity':
-          comparison = a.quantity - b.quantity
+        case 'value':
+          comparison =
+            displayMode === 'credits'
+              ? Number(a.credits) - Number(b.credits)
+              : a.quantity - b.quantity
           break
         case 'date':
           comparison = new Date(a.event_start).getTime() - new Date(b.event_start).getTime()
@@ -161,7 +169,7 @@ export const UsagePage: React.FC = () => {
       }
       return sortDirection === 'asc' ? comparison : -comparison
     })
-  }, [rawEvents, selectedItem, sortColumn, sortDirection])
+  }, [rawEvents, selectedItem, sortColumn, sortDirection, displayMode])
 
   const pageCount = Math.ceil(filteredRows.length / PAGE_SIZE)
   const paginatedRows = useMemo(() => {
@@ -209,6 +217,16 @@ export const UsagePage: React.FC = () => {
 
         {token && currentWorkspace && !isMonthlyLoading && !monthlyError && (
           <>
+            <Flex justify="end">
+              <SegmentedControl.Root
+                value={displayMode}
+                onValueChange={(value) => setDisplayMode(value as DisplayMode)}
+              >
+                <SegmentedControl.Item value="credits">Credits</SegmentedControl.Item>
+                <SegmentedControl.Item value="raw">Raw usage</SegmentedControl.Item>
+              </SegmentedControl.Root>
+            </Flex>
+
             {months.length === 0 && (
               <Callout type="info" message="No usage recorded for this workspace yet." />
             )}
@@ -226,7 +244,9 @@ export const UsagePage: React.FC = () => {
                         {itemColumns.map((item) => (
                           <Table.ColumnHeaderCell key={item}>
                             {resourceLabel(item)}
-                            {skusBySku.get(item)?.unit ? ` (${skusBySku.get(item)!.unit})` : ''}
+                            {displayMode === 'raw' && skusBySku.get(item)?.unit
+                              ? ` (${skusBySku.get(item)!.unit})`
+                              : ''}
                           </Table.ColumnHeaderCell>
                         ))}
                       </Table.Row>
@@ -244,10 +264,14 @@ export const UsagePage: React.FC = () => {
                             </Text>
                           </Table.Cell>
                           {itemColumns.map((item) => {
-                            const quantity = quantityByMonthAndItem.get(`${month}|${item}`)
+                            const value = valueByMonthAndItem.get(`${month}|${item}`)
                             return (
                               <Table.Cell key={item}>
-                                {quantity !== undefined ? formatQuantity(quantity) : '—'}
+                                {value === undefined
+                                  ? '—'
+                                  : displayMode === 'credits'
+                                    ? formatCredits(value)
+                                    : formatQuantity(value)}
                               </Table.Cell>
                             )
                           })}
@@ -282,7 +306,9 @@ export const UsagePage: React.FC = () => {
                     <Table.Header>
                       <Table.Row>
                         <Table.ColumnHeaderCell>Resource</Table.ColumnHeaderCell>
-                        <Table.ColumnHeaderCell>Quantity</Table.ColumnHeaderCell>
+                        <Table.ColumnHeaderCell>
+                          {displayMode === 'credits' ? 'Credits' : 'Quantity'}
+                        </Table.ColumnHeaderCell>
                       </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -294,7 +320,9 @@ export const UsagePage: React.FC = () => {
                             </Text>
                           </Table.Cell>
                           <Table.Cell>
-                            {formatQuantity(row.quantity)} {skusBySku.get(row.item)?.unit ?? ''}
+                            {displayMode === 'credits'
+                              ? formatCredits(row.value)
+                              : `${formatQuantity(row.value)} ${skusBySku.get(row.item)?.unit ?? ''}`}
                           </Table.Cell>
                         </Table.Row>
                       ))}
@@ -368,12 +396,15 @@ export const UsagePage: React.FC = () => {
                               align="center"
                               gap="1"
                               className={styles.sortableHeader}
-                              onClick={() => handleSort('quantity')}
+                              onClick={() => handleSort('value')}
                             >
-                              Quantity {renderSortIcon('quantity')}
+                              {displayMode === 'credits' ? 'Credits' : 'Quantity'}{' '}
+                              {renderSortIcon('value')}
                             </Flex>
                           </Table.ColumnHeaderCell>
-                          <Table.ColumnHeaderCell>Unit</Table.ColumnHeaderCell>
+                          {displayMode === 'raw' && (
+                            <Table.ColumnHeaderCell>Unit</Table.ColumnHeaderCell>
+                          )}
                           <Table.ColumnHeaderCell>
                             <Flex
                               align="center"
@@ -394,8 +425,14 @@ export const UsagePage: React.FC = () => {
                                 {resourceLabel(row.item)}
                               </Text>
                             </Table.Cell>
-                            <Table.Cell>{row.quantity}</Table.Cell>
-                            <Table.Cell>{skusBySku.get(row.item)?.unit ?? '—'}</Table.Cell>
+                            <Table.Cell>
+                              {displayMode === 'credits'
+                                ? formatCredits(Number(row.credits))
+                                : row.quantity}
+                            </Table.Cell>
+                            {displayMode === 'raw' && (
+                              <Table.Cell>{skusBySku.get(row.item)?.unit ?? '—'}</Table.Cell>
+                            )}
                             <Table.Cell>
                               {convertDateToUTCString(new Date(row.event_start))}
                             </Table.Cell>
@@ -423,8 +460,9 @@ export const UsagePage: React.FC = () => {
             )}
 
             <Text size="1" color="gray">
-              Quantity per resource — not converted to credits, since there is currently no way to
-              look up which pricing category this workspace is in.
+              {displayMode === 'credits'
+                ? 'Credits reflect the pricing policy in force when each event was charged, including any workspace category adjustment.'
+                : 'Raw quantity per resource, in the unit defined for that SKU.'}
             </Text>
           </>
         )}

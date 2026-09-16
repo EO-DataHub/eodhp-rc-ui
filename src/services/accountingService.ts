@@ -116,6 +116,7 @@ export interface BillingEvent {
   item: string
   workspace: string
   quantity: number
+  credits: string
 }
 
 export interface FetchUsageDataParams {
