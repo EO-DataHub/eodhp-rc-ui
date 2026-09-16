@@ -117,8 +117,8 @@ export const UsagePage: React.FC = () => {
     })
     return Array.from(totals.entries())
       .map(([item, quantity]) => ({ item, quantity }))
-      .sort((a, b) => b.quantity - a.quantity)
-  }, [monthlyRows, selectedMonth])
+      .sort((a, b) => itemColumns.indexOf(a.item) - itemColumns.indexOf(b.item))
+  }, [monthlyRows, selectedMonth, itemColumns])
 
   const monthBounds = useMemo(
     () => (selectedMonth ? getMonthBounds(selectedMonth) : null),
@@ -301,6 +301,10 @@ export const UsagePage: React.FC = () => {
                     </Table.Body>
                   </Table.Root>
                 </Flex>
+
+                <Text size="3" weight="medium">
+                  Transactions
+                </Text>
 
                 <Flex direction="row" gap="2" align="center" className={styles.filterContainer}>
                   <Box width="220px">
