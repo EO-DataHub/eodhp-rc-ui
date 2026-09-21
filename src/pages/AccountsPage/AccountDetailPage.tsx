@@ -3,18 +3,12 @@ import { Flex, Table, Text } from '@radix-ui/themes'
 import { Link, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { fetchAccount } from '@/services/accountService'
+import { fetchAccount, getAccountStatusLabel } from '@/services/accountService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { formatDateToDDMMYEAR } from '@/library/dateUtils'
 import styles from '../ProfilePage/ProfilePage.module.scss'
-
-const ACCOUNT_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending review',
-  approved: 'Approved',
-  denied: 'Request denied',
-}
 
 export const AccountDetailPage: React.FC = () => {
   const { accountId } = useParams<{ accountId: string }>()
@@ -52,11 +46,7 @@ export const AccountDetailPage: React.FC = () => {
             <Table.Body>
               <Table.Row>
                 <Table.RowHeaderCell>Status</Table.RowHeaderCell>
-                <Table.Cell>
-                  {ACCOUNT_STATUS_LABELS[account.status?.toLowerCase() ?? ''] ??
-                    account.status ??
-                    'Unknown'}
-                </Table.Cell>
+                <Table.Cell>{getAccountStatusLabel(account.status)}</Table.Cell>
               </Table.Row>
               <Table.Row>
                 <Table.RowHeaderCell>Account owner</Table.RowHeaderCell>

@@ -4,19 +4,18 @@ import { Cross1Icon } from '@radix-ui/react-icons'
 import { Link } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { Account, CreateAccountPayload, createAccount } from '@/services/accountService'
+import {
+  Account,
+  CreateAccountPayload,
+  createAccount,
+  getAccountStatusLabel,
+} from '@/services/accountService'
 import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { FormField } from '@/components/FormField/FormField'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../ProfilePage/ProfilePage.module.scss'
-
-const ACCOUNT_STATUS_LABELS: Record<string, string> = {
-  pending: 'Pending review',
-  approved: 'Approved',
-  denied: 'Request denied',
-}
 
 const EMPTY_FORM = {
   accountName: '',
@@ -246,11 +245,7 @@ export const AccountsPage: React.FC = () => {
                       </Text>
                     </Link>
                   </Table.Cell>
-                  <Table.Cell>
-                    {ACCOUNT_STATUS_LABELS[account.status?.toLowerCase() ?? ''] ??
-                      account.status ??
-                      'Unknown'}
-                  </Table.Cell>
+                  <Table.Cell>{getAccountStatusLabel(account.status)}</Table.Cell>
                   <Table.Cell>{account.accountOwner}</Table.Cell>
                   <Table.Cell>
                     {account.workspaces?.length

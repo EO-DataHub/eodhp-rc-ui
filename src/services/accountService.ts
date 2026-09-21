@@ -18,6 +18,15 @@ export interface Account {
   workspaces: AccountWorkspace[]
 }
 
+const ACCOUNT_STATUS_LABELS: Record<string, string> = {
+  pending: 'Pending review',
+  approved: 'Approved',
+  denied: 'Request denied',
+}
+
+export const getAccountStatusLabel = (status: Account['status']): string =>
+  ACCOUNT_STATUS_LABELS[status?.toLowerCase() ?? ''] ?? status ?? 'Unknown'
+
 export const fetchAccounts = async (token?: string | null): Promise<Account[]> => {
   if (!token) return []
   const response = await fetch(`${HUB_BASE_URL}/api/accounts`, {
