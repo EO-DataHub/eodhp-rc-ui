@@ -7,6 +7,15 @@ export const convertDateToUTCString = (date: Date) => {
   return formattedDate
 }
 
+export const convertDateToLocalString = (date: Date) => {
+  const formattedDate =
+    `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}, ` +
+    `${date.getHours() % 12 || 12}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')} ` +
+    `${date.getHours() < 12 ? 'AM' : 'PM'}`
+
+  return formattedDate
+}
+
 export const getFormattedDateRange = (interval: (string | null)[]): string => {
   if (!Array.isArray(interval) || interval.length !== 2) return 'Invalid Date Range'
 

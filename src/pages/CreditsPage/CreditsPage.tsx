@@ -12,7 +12,7 @@ import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSkusBySku } from '@/hooks/useSkusBySku'
-import { convertDateToUTCString, formatDateToDDMMYEAR } from '@/library/dateUtils'
+import { convertDateToLocalString, formatDateToDDMMYEAR } from '@/library/dateUtils'
 import styles from './CreditsPage.module.scss'
 
 const RECENT_GRANTS_COUNT = 5
@@ -189,7 +189,9 @@ export const CreditsPage: React.FC = () => {
                     : sortedGrants.slice(0, RECENT_GRANTS_COUNT)
                   ).map((grant) => (
                     <Table.Row key={grant.uuid}>
-                      <Table.Cell>{convertDateToUTCString(new Date(grant.occurred_at))}</Table.Cell>
+                      <Table.Cell>
+                        {convertDateToLocalString(new Date(grant.occurred_at))}
+                      </Table.Cell>
                       <Table.Cell>
                         <Text weight="medium" color="green">
                           +{Number(grant.credits).toFixed(2)}

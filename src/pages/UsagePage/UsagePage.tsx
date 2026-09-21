@@ -9,7 +9,7 @@ import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSkusBySku } from '@/hooks/useSkusBySku'
-import { convertDateToUTCString } from '@/library/dateUtils'
+import { convertDateToLocalString } from '@/library/dateUtils'
 import styles from './UsagePage.module.scss'
 
 // The API has no way to ask for "most recent" events — only a start/end range or forward
@@ -437,7 +437,7 @@ export const UsagePage: React.FC = () => {
                               <Table.Cell>{skusBySku.get(row.item)?.unit ?? '—'}</Table.Cell>
                             )}
                             <Table.Cell>
-                              {convertDateToUTCString(new Date(row.event_start))}
+                              {convertDateToLocalString(new Date(row.event_start))}
                             </Table.Cell>
                           </Table.Row>
                         ))}
