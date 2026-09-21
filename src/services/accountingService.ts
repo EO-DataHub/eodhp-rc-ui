@@ -1,13 +1,27 @@
 const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 
-// FastAPI's default error body is `{ "detail": "..." }` (or a validation-error array under
-// the same key) — surface that instead of a generic status line where the backend provides one.
+// FastAPI's default error body is `{ "detail": "..." }` (or a validation-error array of
+// `{ msg, loc, type }` objects under the same key) — surface that instead of a generic status
+// line where the backend provides one.
 const extractErrorDetail = async (response: Response): Promise<string | undefined> => {
   try {
     const body: unknown = await response.json()
-    if (body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string') {
-      return body.detail
+    if (!body || typeof body !== 'object' || !('detail' in body)) return undefined
+
+    const { detail } = body as { detail: unknown }
+    if (typeof detail === 'string') return detail
+
+    if (Array.isArray(detail)) {
+      const messages = (detail as unknown[])
+        .map((item) => {
+          if (!item || typeof item !== 'object' || !('msg' in item)) return undefined
+          const { msg } = item as Record<string, unknown>
+          return typeof msg === 'string' ? msg : undefined
+        })
+        .filter((msg): msg is string => Boolean(msg))
+      return messages.length > 0 ? messages.join('; ') : undefined
     }
+
     return undefined
   } catch {
     return undefined
