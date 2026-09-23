@@ -79,12 +79,17 @@ export const LoginButton = ({
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
 
-          <DropdownMenu.Item disabled>
-            Accounting / Billing{' '}
-            <Badge ml="2" color="gray" variant="soft">
-              Soon
-            </Badge>
-          </DropdownMenu.Item>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Accounting / Billing</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/accounting/credits">Credits</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/accounting/usage">Usage</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
 
           <DropdownMenu.Item disabled>
             Publishing{' '}
