@@ -107,17 +107,18 @@ export const useCollections = () => {
 
       for (const [filterKey, filterValue] of filterEntries) {
         if (filterKey === 'groupBy') continue
-        if (!isValidCollectionId(collection.id)) {
-          if (filterKey === 'qa' && filterValue !== 'lic:my-data') {
-            const listed = collectionHasQAIndicators(collection)
-            if (filterValue === 'qa:available' && !listed) {
-              return false
-            }
-            if (filterValue === 'qa:unavailable' && listed) {
-              return false
-            }
-            continue
+        // QA comes from the collection's own assets, not the categorisation config
+        if (filterKey === 'qa') {
+          const listed = collectionHasQAIndicators(collection)
+          if (filterValue === 'qa:available' && !listed) {
+            return false
           }
+          if (filterValue === 'qa:unavailable' && listed) {
+            return false
+          }
+          continue
+        }
+        if (!isValidCollectionId(collection.id)) {
           if (filterValue !== 'uncategorised') {
             return false
           }
@@ -132,26 +133,11 @@ export const useCollections = () => {
           ) {
             // also consider the collection to be uncategorised
             // if the categorizationData for the current filterKey is empty
-            if (
-              filterKey !== 'qa' &&
-              filterValue === 'uncategorised' &&
-              categorizationData[filterKey].length > 0
-            ) {
+            if (filterValue === 'uncategorised' && categorizationData[filterKey].length > 0) {
               return false
             }
 
-            if (filterKey === 'qa') {
-              const listed = collectionHasQAIndicators(collection)
-              if (filterValue === 'qa:available' && !listed) {
-                return false
-              }
-              if (filterValue === 'qa:unavailable' && listed) {
-                return false
-              }
-            }
-
             if (
-              filterKey !== 'qa' &&
               filterValue !== 'uncategorised' &&
               !(categorizationData[filterKey] as string[]).includes(filterValue)
             ) {
@@ -181,19 +167,6 @@ export const useCollections = () => {
       return {
         category,
         collections: filteredCollections.filter((collection) => {
-          if (!isValidCollectionId(collection.id)) {
-            if (groupBy === 'qa') {
-              const listed = collectionHasQAIndicators(collection)
-              return (
-                (category.value === 'qa:available' && listed) ||
-                (category.value === 'qa:unavailable' && !listed)
-              )
-            }
-            return category.value === 'uncategorised'
-          }
-
-          const categorizationData = collectionCategorization[collection.id]
-
           if (groupBy === 'qa') {
             const listed = collectionHasQAIndicators(collection)
             return (
@@ -201,6 +174,12 @@ export const useCollections = () => {
               (category.value === 'qa:unavailable' && !listed)
             )
           }
+
+          if (!isValidCollectionId(collection.id)) {
+            return category.value === 'uncategorised'
+          }
+
+          const categorizationData = collectionCategorization[collection.id]
 
           return (
             (categorizationData[groupBy][0] as string) === category.value ||

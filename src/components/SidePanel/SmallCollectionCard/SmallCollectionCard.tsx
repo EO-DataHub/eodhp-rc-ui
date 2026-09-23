@@ -1,6 +1,6 @@
 import React from 'react'
 import { useSelector } from '@xstate/store/react'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
+import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import styles from './SmallCollectionCard.module.scss'
@@ -9,14 +9,18 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
+  onSelectCollectionQA: () => void
   onChangeCollection: () => void
   isLicenseProprietary: boolean
+  hasQA: boolean
   disabled?: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
+  onSelectCollectionQA,
   isLicenseProprietary,
+  hasQA,
   onChangeCollection,
   disabled = false,
 }) => {
@@ -38,6 +42,19 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
               <IconButton radius="full" variant="solid" className={styles.costButton}>
                 <PoundSterlingSymbolIcon width="6" height="9" />
               </IconButton>
+            )}
+            {hasQA && (
+              <Tooltip content="View Quality Assessment">
+                <IconButton
+                  radius="full"
+                  variant="solid"
+                  className={styles.infoButton}
+                  aria-label="View Quality Assessment"
+                  onClick={onSelectCollectionQA}
+                >
+                  <CheckCircledIcon width="20" height="20" />
+                </IconButton>
+              </Tooltip>
             )}
             <Tooltip content="View Collection Metadata">
               <IconButton radius="full" variant="solid" className={styles.infoButton}>

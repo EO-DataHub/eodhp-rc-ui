@@ -13,6 +13,7 @@ import { IntegrationToolsPanel } from './InfoPanel/IntegrationToolsPanel'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import Tabs from './Tabs/Tabs'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { collectionHasQAIndicators, getDefaultQATab } from '@/library/collectionQuality'
 
 interface ItemPanelProps {
   collection?: Collection
@@ -20,6 +21,7 @@ interface ItemPanelProps {
 }
 export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollectionPanel }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
+  const collectionInfoTab = useSelector(dataFinderStore, (state) => state.context.collectionInfoTab)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
@@ -44,6 +46,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
   }, [infoPanelItem, collection])
 
   const isLicenseProprietary = isCollectionPurchasable(collection)
+  const hasQA = collection ? collectionHasQAIndicators(collection) : false
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
@@ -62,7 +65,15 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
             panel: secondaryPanel === 'collection-info' ? undefined : 'collection-info',
           })
         }
+        onSelectCollectionQA={() => {
+          if (!collection) return
+          dataFinderStore.send({
+            type: 'toggleCollectionInfoTab',
+            tab: getDefaultQATab(collection),
+          })
+        }}
         isLicenseProprietary={isLicenseProprietary}
+        hasQA={hasQA}
         onChangeCollection={() => {
           // For now, just clear the query filter every time we change collections.
           // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
@@ -109,7 +120,12 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
           />
         )}
         {secondaryPanel === 'collection-info' && (
-          <CollectionInfoPanel selectedCollection={collection} onClose={closeSecondaryPanel} />
+          <CollectionInfoPanel
+            selectedCollection={collection}
+            onClose={closeSecondaryPanel}
+            tab={collectionInfoTab}
+            onTabChange={(tab) => dataFinderStore.send({ type: 'setCollectionInfoTab', tab })}
+          />
         )}
         {secondaryPanel === 'integration-tools' && itemWithCollectionContext && (
           <IntegrationToolsPanel item={itemWithCollectionContext} onClose={closeSecondaryPanel} />
