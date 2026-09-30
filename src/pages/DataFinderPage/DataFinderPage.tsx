@@ -5,6 +5,7 @@ import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { Collection } from '@/types'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
+import { WorkflowShareLinkHandler } from '@/demo/components/FinderDemoActions'
 import { useQuery, useQueries } from '@tanstack/react-query'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import {
@@ -356,6 +357,7 @@ export const DataFinderPage: React.FC = () => {
       <Box height="100%">
         <Map />
       </Box>
+      <WorkflowShareLinkHandler />
     </Box>
   )
 }

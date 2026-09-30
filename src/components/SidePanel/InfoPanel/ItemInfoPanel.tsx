@@ -14,6 +14,7 @@ import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { RunWorkflowButton } from '@/demo/components/FinderDemoActions'
 
 interface ItemInfoPanelProps {
   item: Item | null
@@ -89,7 +90,8 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
               <Text weight="medium" size="5" className={styles.title} title={item.id}>
                 {item.id}
               </Text>
-              <Flex direction="row" gap="5" justify="start">
+              <Flex direction="row" gap="5" justify="start" align="center">
+                <RunWorkflowButton scope="item" size="1" variant="soft" />
                 <IconButton variant="ghost" onClick={onClose} aria-label="Close">
                   <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>

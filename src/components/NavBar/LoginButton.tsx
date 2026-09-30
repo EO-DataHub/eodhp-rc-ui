@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { Text, DropdownMenu, Badge } from '@radix-ui/themes'
+import { Text, DropdownMenu } from '@radix-ui/themes'
 import { Link } from 'react-router-dom'
 import { AuthenticationContext } from '../../context/AuthenticationContext'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
@@ -91,12 +91,14 @@ export const LoginButton = ({
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
 
-          <DropdownMenu.Item disabled>
-            Publishing{' '}
-            <Badge ml="2" color="gray" variant="soft">
-              Soon
-            </Badge>
-          </DropdownMenu.Item>
+          <DropdownMenu.Sub>
+            <DropdownMenu.SubTrigger>Publishing</DropdownMenu.SubTrigger>
+            <DropdownMenu.SubContent>
+              <DropdownMenu.Item asChild>
+                <Link to="/workflows/create">Create workflow</Link>
+              </DropdownMenu.Item>
+            </DropdownMenu.SubContent>
+          </DropdownMenu.Sub>
 
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>My data</DropdownMenu.SubTrigger>
@@ -109,6 +111,9 @@ export const LoginButton = ({
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
                 <Link to="/my-data/data-storage">Files</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/workflows/saved-sets">Saved sets</Link>
               </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>

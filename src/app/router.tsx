@@ -17,6 +17,11 @@ import { accountingRoutes } from '@/pages/AccountingPage/accountingRoutes'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
 import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
 import { AccountDetailPage } from '@/pages/AccountsPage/AccountDetailPage'
+import { WorkflowsLayout } from '@/demo/pages/WorkflowsLayout'
+import { SavedSetsPage } from '@/demo/pages/SavedSetsPage'
+import { SavedSetDetailPage } from '@/demo/pages/SavedSetDetailPage'
+import { WorkflowRunsPage } from '@/demo/pages/WorkflowRunsPage'
+import { CreateWorkflowPage } from '@/demo/pages/CreateWorkflowPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -87,6 +92,34 @@ const routes = [
             element: <DataStoragePage />,
           },
         ],
+      },
+    ],
+  },
+  // UX demo for saved sets and self-service workflows. Not behind login, so it can be shown
+  // without an account.
+  {
+    path: '/workflows',
+    element: <WorkflowsLayout />,
+    children: [
+      {
+        path: '',
+        element: <Navigate to="saved-sets" replace />,
+      },
+      {
+        path: 'saved-sets',
+        element: <SavedSetsPage />,
+      },
+      {
+        path: 'saved-sets/:setId',
+        element: <SavedSetDetailPage />,
+      },
+      {
+        path: 'runs',
+        element: <WorkflowRunsPage />,
+      },
+      {
+        path: 'create',
+        element: <CreateWorkflowPage />,
       },
     ],
   },

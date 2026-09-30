@@ -9,6 +9,7 @@ import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePerma
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 import { Cross2Icon } from '@radix-ui/react-icons'
+import { RunWorkflowButton, SaveAsSetButton } from '@/demo/components/FinderDemoActions'
 
 const ClearAllButton = () => {
   return (
@@ -103,6 +104,8 @@ const PinnedItemsTab = () => {
         <Flex gap="2" wrap="wrap" align="center">
           <ClearAllButton />
           <ShareViewButton />
+          <SaveAsSetButton items={pinnedItems} />
+          <RunWorkflowButton scope="pinned" />
         </Flex>
       )}
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>

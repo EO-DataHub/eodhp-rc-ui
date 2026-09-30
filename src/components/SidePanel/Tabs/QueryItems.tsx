@@ -7,6 +7,8 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useItemsQuery, MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
+import { RunWorkflowButton } from '@/demo/components/FinderDemoActions'
+import { useReportSearchResults } from '@/demo/useReportSearchResults'
 
 const PaginationContainer = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -81,6 +83,7 @@ const QueryItemsTab = () => {
   const isUserCollection = useSelector(dataFinderStore, ({ context }) => context.isUserCollection)
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
+  useReportSearchResults(allItems)
 
   const toggleQueryFiltersPanel = () => {
     dataFinderStore.send({
@@ -115,6 +118,7 @@ const QueryItemsTab = () => {
         ) : (
           <Flex width="100%" gap="2" align="center">
             {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
+            {allItems.length > 0 && <RunWorkflowButton scope="results" label="Run on results" />}
           </Flex>
         )}
         {!isUserCollection && (
