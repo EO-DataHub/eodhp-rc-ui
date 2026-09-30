@@ -97,3 +97,25 @@ export const createWorkspace = async (
 
   return workspace as Workspace
 }
+
+export const deleteWorkspace = async (workspaceName: string, token: string): Promise<void> => {
+  const response = await fetch(
+    `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(workspaceName)}`,
+    {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('Only the workspace owner can delete this workspace.')
+    }
+    if (response.status === 404) {
+      throw new Error('This workspace no longer exists.')
+    }
+    throw new Error(`Failed to delete workspace: ${response.status} ${response.statusText}`)
+  }
+}
