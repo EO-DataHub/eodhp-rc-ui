@@ -111,7 +111,7 @@ export const deleteWorkspace = async (workspaceName: string, token: string): Pro
 
   if (!response.ok) {
     if (response.status === 403) {
-      throw new Error('Only the workspace owner can delete this workspace.')
+      throw new Error("You don't have permission to delete this workspace.")
     }
     if (response.status === 404) {
       throw new Error('This workspace no longer exists.')

@@ -180,16 +180,25 @@ const DeleteWorkspaceDialog: React.FC<{
           clearCurrentWorkspace()
         }
       }
-      handleOpenChange(false)
+      closeDialog()
     },
   })
 
+  const closeDialog = () => {
+    setConfirmed(false)
+    mutation.reset()
+    onOpenChange(false)
+  }
+
+  // Closing can't cancel the in-flight DELETE, so keep the dialog open until it
+  // settles. This covers Cancel, Escape and clicking outside. onSuccess calls
+  // closeDialog directly because its closure still sees isPending as true.
   const handleOpenChange = (next: boolean) => {
-    if (!next) {
-      setConfirmed(false)
-      mutation.reset()
+    if (next) {
+      onOpenChange(true)
+    } else if (!mutation.isPending) {
+      closeDialog()
     }
-    onOpenChange(next)
   }
 
   return (
@@ -218,7 +227,12 @@ const DeleteWorkspaceDialog: React.FC<{
           )}
 
           <Flex gap="2" justify="end">
-            <Button color="gray" variant="soft" onClick={() => handleOpenChange(false)}>
+            <Button
+              color="gray"
+              variant="soft"
+              disabled={mutation.isPending}
+              onClick={() => handleOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button
