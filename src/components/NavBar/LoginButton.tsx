@@ -115,6 +115,9 @@ export const LoginButton = ({
               <DropdownMenu.Item asChild>
                 <Link to="/workflows/saved-sets">Saved sets</Link>
               </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/workflows/runs">Workflow runs</Link>
+              </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
 

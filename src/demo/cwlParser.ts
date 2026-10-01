@@ -90,18 +90,6 @@ const toInputs = (rawInputs: unknown): ParsedCwlInput[] => {
   })
 }
 
-const findDockerImages = (node: unknown, found: string[] = []): string[] => {
-  if (Array.isArray(node)) {
-    node.forEach((child) => findDockerImages(child, found))
-  } else if (isObject(node)) {
-    Object.entries(node).forEach(([key, value]) => {
-      if (key === 'dockerPull' && typeof value === 'string') found.push(value)
-      else findDockerImages(value, found)
-    })
-  }
-  return found
-}
-
 /** Pick the process users launch: the top-level Workflow in a packed `$graph`, or the document. */
 const pickMainProcess = (doc: CwlObject): CwlObject | undefined => {
   if (!Array.isArray(doc.$graph)) return doc
@@ -151,18 +139,6 @@ export const parseCwl = (text: string): ParsedCwl => {
     checks.push({
       level: 'error',
       message: `Input "${input.id}" has type ${input.cwlType}, which isn't supported yet.`,
-    }),
-  )
-
-  const images = findDockerImages(doc)
-  const unpinned = images.filter((image) => !image.includes('@sha256:'))
-  if (images.length > 0 && unpinned.length === 0) {
-    checks.push({ level: 'ok', message: 'Container images are pinned by digest' })
-  }
-  unpinned.forEach((image) =>
-    checks.push({
-      level: 'warning',
-      message: `Image "${image}" isn't pinned by digest (image@sha256:…). That's fine for a private workflow, but it must be pinned before it can be made public.`,
     }),
   )
 

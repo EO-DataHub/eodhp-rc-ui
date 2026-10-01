@@ -1,5 +1,5 @@
 import { createStore } from '@xstate/store'
-import type { DemoWorkflow, RunBatch, SavedSet } from './demoTypes'
+import type { DemoWorkflow, RunBatch, RunScope, SavedSet } from './demoTypes'
 import { SEED_SETS, SEED_WORKFLOWS, seedRuns } from './mockData'
 
 const STORAGE_KEY = 'eodh-demo-workflows'
@@ -12,6 +12,8 @@ interface DemoContext {
   /** Ids of the current Data Finder search results (capped), written by the results tab. */
   resultIds: string[]
   resultsTotal: number
+  /** What the Data Finder's Workflows tab has selected, kept while the user switches tabs. */
+  panel: { workflowId?: string; scope?: RunScope; setId?: string }
 }
 
 type PersistedContext = Pick<DemoContext, 'sets' | 'workspaceWorkflows' | 'runs'>
@@ -34,6 +36,7 @@ const demoStore = createStore({
     runs: persisted.runs ?? seedRuns(Date.now()),
     resultIds: [],
     resultsTotal: 0,
+    panel: {},
   } as DemoContext,
   on: {
     addSet: (context, event: { set: SavedSet }) => ({
@@ -99,6 +102,10 @@ const demoStore = createStore({
       ...context,
       resultIds: event.ids,
       resultsTotal: event.total,
+    }),
+    setPanelSelection: (context, event: { panel: DemoContext['panel'] }) => ({
+      ...context,
+      panel: event.panel,
     }),
     resetDemo: (context) => ({
       ...context,

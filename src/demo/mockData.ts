@@ -1,4 +1,4 @@
-import type { DemoWorkflow, RunBatch, SavedSet } from './demoTypes'
+import type { DemoNotebook, DemoWorkflow, RunBatch, SavedSet } from './demoTypes'
 
 export const DEMO_WORKSPACE = 'demo-workspace'
 export const DEMO_USER = 'demo-user'
@@ -186,6 +186,52 @@ export const SEED_WORKFLOWS: DemoWorkflow[] = [
         source: { kind: 'user' },
       },
     ],
+  },
+]
+
+export const SEED_NOTEBOOKS: DemoNotebook[] = [
+  {
+    id: 'explore-items',
+    title: 'Explore a set of items',
+    description:
+      'Loads every item, maps their footprints and shows thumbnails and key metadata side by side.',
+    datasets: 'any',
+    input: 'stac-items',
+    fileName: 'explore_items.ipynb',
+  },
+  {
+    id: 'ndvi-time-series',
+    title: 'NDVI time series',
+    description: 'Calculates NDVI for each item and plots how it changes over time.',
+    datasets: ['sentinel2_ard', 'sentinel-2-l2a', 'sentinel-2-c1-l2a'],
+    input: 'stac-items',
+    minItems: 2,
+    fileName: 'ndvi_time_series.ipynb',
+  },
+  {
+    id: 'compare-dates',
+    title: 'Compare dates side by side',
+    description: 'Shows the items as a swipe comparison so you can see what changed between dates.',
+    datasets: 'any',
+    input: 'stac-items',
+    minItems: 2,
+    fileName: 'compare_dates.ipynb',
+  },
+  {
+    id: 'ndvi-calculation',
+    title: 'NDVI calculation',
+    description: 'Calculates NDVI for a single item and plots the result.',
+    datasets: ['sentinel2_ard', 'sentinel-2-l2a', 'sentinel-2-c1-l2a'],
+    input: 'stac-item',
+    fileName: 'ndvi_calculation.ipynb',
+  },
+  {
+    id: 's1-flood-extent',
+    title: 'Sentinel-1 flood extent',
+    description: 'Maps flooded areas from Sentinel-1 radar backscatter for each date.',
+    datasets: ['sentinel1'],
+    input: 'stac-items',
+    fileName: 's1_flood_extent.ipynb',
   },
 ]
 

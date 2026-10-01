@@ -15,6 +15,7 @@ import {
 import {
   ArrowLeftIcon,
   DotsHorizontalIcon,
+  FileTextIcon,
   ImageIcon,
   PlayIcon,
   SewingPinIcon,
@@ -25,6 +26,7 @@ import demoStore from '../demoStore'
 import type { SetItem } from '../demoTypes'
 import { DemoBadge } from '../components/DemoBadge'
 import { DeleteSetDialog } from '../components/DeleteSetDialog'
+import { OpenNotebookDialog } from '../components/OpenNotebookDialog'
 import { RunWorkflowDialog } from '../components/RunWorkflowDialog'
 import { UseElsewhereDialog } from '../components/UseElsewhereDialog'
 import { collectionsOf } from '../setUtils'
@@ -63,6 +65,7 @@ export const SavedSetDetailPage = () => {
   const [selected, setSelected] = useState<string[]>([])
   const [isRunOpen, setIsRunOpen] = useState(false)
   const [isElsewhereOpen, setIsElsewhereOpen] = useState(false)
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
 
   const backLink = (
@@ -123,8 +126,15 @@ export const SavedSetDetailPage = () => {
         <Button variant="soft" onClick={() => setIsRunOpen(true)} disabled={set.items.length === 0}>
           <PlayIcon /> Run workflow
         </Button>
+        <Button
+          variant="soft"
+          onClick={() => setIsNotebookOpen(true)}
+          disabled={set.items.length === 0}
+        >
+          <FileTextIcon /> Open notebook
+        </Button>
         <Button variant="soft" color="gray" onClick={() => setIsElsewhereOpen(true)}>
-          Use in Jupyter or QGIS
+          Use with pyeodh or QGIS
         </Button>
         <Button variant="soft" color="red" onClick={() => setIsDeleteOpen(true)}>
           Delete set
@@ -233,6 +243,10 @@ export const SavedSetDetailPage = () => {
       {isElsewhereOpen && (
         <UseElsewhereDialog set={set} onClose={() => setIsElsewhereOpen(false)} />
       )}
+      <OpenNotebookDialog
+        set={isNotebookOpen ? set : undefined}
+        onClose={() => setIsNotebookOpen(false)}
+      />
       <DeleteSetDialog
         set={isDeleteOpen ? set : undefined}
         onClose={() => setIsDeleteOpen(false)}

@@ -12,13 +12,14 @@ import {
   Text,
   Tooltip,
 } from '@radix-ui/themes'
-import { DotsHorizontalIcon, PlayIcon, SewingPinIcon } from '@radix-ui/react-icons'
+import { DotsHorizontalIcon, FileTextIcon, PlayIcon, SewingPinIcon } from '@radix-ui/react-icons'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { convertDateToLocalString } from '@/library/dateUtils'
 import demoStore from '../demoStore'
 import type { SavedSet } from '../demoTypes'
 import { DemoBadge } from '../components/DemoBadge'
 import { DeleteSetDialog } from '../components/DeleteSetDialog'
+import { OpenNotebookDialog } from '../components/OpenNotebookDialog'
 import { RunWorkflowDialog } from '../components/RunWorkflowDialog'
 import { UseElsewhereDialog } from '../components/UseElsewhereDialog'
 import { collectionsOf } from '../setUtils'
@@ -32,6 +33,7 @@ export const SavedSetsPage = () => {
   const openOnMap = useOpenSetOnMap()
   const [runSetId, setRunSetId] = useState<string>()
   const [elsewhereSet, setElsewhereSet] = useState<SavedSet>()
+  const [notebookSet, setNotebookSet] = useState<SavedSet>()
   const [deleteSet, setDeleteSet] = useState<SavedSet>()
 
   return (
@@ -128,6 +130,9 @@ export const SavedSetsPage = () => {
                   <Button size="1" variant="soft" onClick={() => setRunSetId(set.id)}>
                     <PlayIcon /> Run workflow
                   </Button>
+                  <Button size="1" variant="soft" onClick={() => setNotebookSet(set)}>
+                    <FileTextIcon /> Open notebook
+                  </Button>
                   <DropdownMenu.Root>
                     <DropdownMenu.Trigger>
                       <IconButton
@@ -143,7 +148,7 @@ export const SavedSetsPage = () => {
                         <RouterLink to={set.id}>View items</RouterLink>
                       </DropdownMenu.Item>
                       <DropdownMenu.Item onSelect={() => setElsewhereSet(set)}>
-                        Use in Jupyter or QGIS
+                        Use with pyeodh or QGIS
                       </DropdownMenu.Item>
                       <DropdownMenu.Separator />
                       <DropdownMenu.Item color="red" onSelect={() => setDeleteSet(set)}>
@@ -169,6 +174,8 @@ export const SavedSetsPage = () => {
       {elsewhereSet && (
         <UseElsewhereDialog set={elsewhereSet} onClose={() => setElsewhereSet(undefined)} />
       )}
+
+      <OpenNotebookDialog set={notebookSet} onClose={() => setNotebookSet(undefined)} />
 
       <DeleteSetDialog set={deleteSet} onClose={() => setDeleteSet(undefined)} />
     </Flex>

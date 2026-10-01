@@ -92,7 +92,6 @@ export const NavBar: React.FC = () => {
   const isCatalogActive = location.pathname === '/'
   const isMapsActive = location.pathname.startsWith('/finder')
   const isProcessesCatalogueActive = location.pathname.startsWith('/catalogue/processes')
-  const isWorkflowsActive = (path: string) => location.pathname.startsWith(`/workflows/${path}`)
   const { isAuthenticated, currentWorkspace, updateCurrentWorkspace, token, userInfo } =
     useContext(AuthenticationContext)
   const [isUserMenuOpen, setUserIsMenuOpen] = useState(false)
@@ -194,35 +193,6 @@ export const NavBar: React.FC = () => {
                 className={`${styles.link} ${isProcessesCatalogueActive ? styles.active : ''}`}
               >
                 Processes
-              </Link>
-            </>
-          )}
-        />
-
-        <DropdownMenu
-          id="workflows-menu"
-          label="Workflows"
-          shouldOpen={openMenu === 'workflows'}
-          onClick={() => toggleMenu('workflows')}
-          renderMenuItem={() => (
-            <>
-              <Link
-                to="/workflows/saved-sets"
-                className={`${styles.link} ${isWorkflowsActive('saved-sets') ? styles.active : ''}`}
-              >
-                Saved sets
-              </Link>
-              <Link
-                to="/workflows/runs"
-                className={`${styles.link} ${isWorkflowsActive('runs') ? styles.active : ''}`}
-              >
-                Workflow runs
-              </Link>
-              <Link
-                to="/workflows/create"
-                className={`${styles.link} ${isWorkflowsActive('create') ? styles.active : ''}`}
-              >
-                Create workflow
               </Link>
             </>
           )}

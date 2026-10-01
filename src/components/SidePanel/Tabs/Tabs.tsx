@@ -3,6 +3,7 @@ import { Tabs as T } from 'radix-ui'
 import styles from './Tabs.module.scss'
 import QueryItemsTab from './QueryItems'
 import PinnedItemsTab from './PinnedItems'
+import { WorkflowsTab } from '@/demo/components/WorkflowsTab'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
@@ -46,12 +47,20 @@ const Tabs = ({
             <Text>{pinnedItemsLabel}</Text>
           </T.Trigger>
         </Tooltip>
+        <Tooltip content="Pick a workflow, then choose the data to run it on">
+          <T.Trigger className={styles.TabsTrigger} value="workflows-tab">
+            <Text>Workflows</Text>
+          </T.Trigger>
+        </Tooltip>
       </T.List>
       <TabsContent value="query-items-tab">
         <QueryItemsTab />
       </TabsContent>
       <TabsContent value="pinned-items-tab">
         <PinnedItemsTab />
+      </TabsContent>
+      <TabsContent value="workflows-tab">
+        <WorkflowsTab />
       </TabsContent>
     </T.Root>
   )

@@ -13,24 +13,16 @@ export const UseElsewhereDialog = ({ set, onClose }: { set: SavedSet; onClose: (
           <DemoBadge />
         </Flex>
         <Dialog.Description size="2" color="gray" mb="4">
-          Saved sets are stored in your workspace, so Jupyter, QGIS and ArcGIS can read the same
-          items.
+          Saved sets are stored in your workspace, so your own code and the GIS plugins can read the
+          same items.
         </Dialog.Description>
         <Flex direction="column" gap="4">
           <Flex direction="column" gap="1">
             <Text size="2" weight="medium">
-              In Jupyter, with pyeodh
+              In your own Python code, with pyeodh
             </Text>
             <Code size="2" variant="soft" style={{ whiteSpace: 'pre', padding: '0.75rem' }}>
               {`ws = client.get_workspace("${set.workspace}")\nitems = ws.pin_sets.get("${slug}").items()`}
-            </Code>
-          </Flex>
-          <Flex direction="column" gap="1">
-            <Text size="2" weight="medium">
-              As a STAC ItemCollection
-            </Text>
-            <Code size="2" variant="soft" style={{ padding: '0.75rem', wordBreak: 'break-all' }}>
-              {`https://eodatahub.org.uk/api/workspaces/${set.workspace}/pin-sets/${slug}/items`}
             </Code>
           </Flex>
           <Text size="2" color="gray">

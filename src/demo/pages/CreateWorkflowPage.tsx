@@ -372,9 +372,6 @@ export const CreateWorkflowPage = () => {
 
   const inputs = useMemo(() => parsed?.inputs ?? [], [parsed])
   const hasErrors = parsed?.checks.some((c) => c.level === 'error') ?? true
-  const hasUnpinnedImages =
-    parsed?.checks.some((c) => c.level === 'warning' && c.message.includes('pinned by digest')) ??
-    false
   const unconfirmed = inputs.filter((i) => mappings[i.id]?.suggested && !mappings[i.id]?.confirmed)
 
   const workflowInputs = useMemo(
@@ -761,7 +758,7 @@ export const CreateWorkflowPage = () => {
                     </Text>
                   </Flex>
                 </RadioCards.Item>
-                <RadioCards.Item value="public" disabled={hasUnpinnedImages}>
+                <RadioCards.Item value="public">
                   <Flex direction="column" width="100%">
                     <Text weight="bold">Public</Text>
                     <Text size="1" color="gray">
@@ -776,12 +773,6 @@ export const CreateWorkflowPage = () => {
                   : 'Any signed-in Hub user with the link can run it. It is not listed in the EODH catalogue or in search.'}{' '}
                 Only workspace owners and admins can change this.
               </Text>
-              {hasUnpinnedImages && (
-                <Text size="2" color="orange">
-                  To make it public, pin its container images by digest (image@sha256:…) and upload
-                  it again.
-                </Text>
-              )}
               {published.visibility === 'public' && (
                 <Flex direction="column" gap="1">
                   <Text size="2" weight="medium">

@@ -44,6 +44,18 @@ export interface DemoWorkflow {
   createdAt: string
 }
 
+export interface DemoNotebook {
+  id: string
+  title: string
+  description: string
+  /** Collection ids this notebook works with, or `any`. */
+  datasets: string[] | 'any'
+  /** `stac-items` notebooks take a list of items; `stac-item` ones take a single item. */
+  input: 'stac-item' | 'stac-items'
+  minItems?: number
+  fileName: string
+}
+
 /** A saved set item: a reference, plus the full pinned item when saved from the map. */
 export interface SetItem {
   id: string

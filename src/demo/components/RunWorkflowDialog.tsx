@@ -14,15 +14,15 @@ import {
 } from '@radix-ui/themes'
 import { CheckCircledIcon, CrossCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import demoStore from '../demoStore'
-import type { DemoWorkflow, RunBatch, RunScope, WorkflowInput } from '../demoTypes'
+import type { RunBatch, RunScope, WorkflowInput } from '../demoTypes'
+import { SCOPE_LABELS, jobCount, primaryDataInput } from '../hubTypes'
+import { DEMO_CREDIT_BALANCE, MAX_RUN_ITEMS } from '../mockData'
 import {
-  SCOPE_LABELS,
-  isDatasetSupported,
-  jobCount,
-  primaryDataInput,
-  scopeSupport,
-} from '../hubTypes'
-import { DEMO_COLLECTIONS, DEMO_CREDIT_BALANCE, MAX_RUN_ITEMS, SEED_WORKFLOWS } from '../mockData'
+  scopeItemIds,
+  scopeOptions as buildScopeOptions,
+  visibleWorkflows,
+  workflowSupport as supportFor,
+} from '../runScopes'
 import type { RunContext } from '../useRunContext'
 import { DemoBadge } from './DemoBadge'
 import { LaunchInputs } from './LaunchInputs'
@@ -45,16 +45,11 @@ interface RunWorkflowDialogProps {
   context: RunContext
   initialScope?: RunScope
   initialSetId?: string
-  /** Set when arriving from a workflow share link. */
+  /** Set when arriving from a workflow share link, or from the Workflows tab. */
   initialWorkflowId?: string
+  /** Skip straight to the inputs, when the workflow and data were chosen elsewhere. */
+  startAtInputs?: boolean
 }
-
-const datasetNames = (workflow: DemoWorkflow) =>
-  workflow.datasets === 'any'
-    ? 'any dataset'
-    : workflow.datasets
-        .map((id) => DEMO_COLLECTIONS.find((c) => c.id === id)?.title ?? id)
-        .join(', ')
 
 export const RunWorkflowDialog = ({
   open,
@@ -63,17 +58,13 @@ export const RunWorkflowDialog = ({
   initialScope,
   initialSetId,
   initialWorkflowId,
+  startAtInputs = false,
 }: RunWorkflowDialogProps) => {
   const navigate = useNavigate()
   const sets = useSelector(demoStore, ({ context: c }) => c.sets)
   const workspaceWorkflows = useSelector(demoStore, ({ context: c }) => c.workspaceWorkflows)
   const workflows = useMemo(
-    () => [
-      ...workspaceWorkflows.filter(
-        (w) => w.ownerWorkspace === context.workspace || w.id === initialWorkflowId,
-      ),
-      ...SEED_WORKFLOWS,
-    ],
+    () => visibleWorkflows(workspaceWorkflows, context.workspace, initialWorkflowId),
     [workspaceWorkflows, context.workspace, initialWorkflowId],
   )
 
@@ -86,72 +77,22 @@ export const RunWorkflowDialog = ({
   // Start fresh every time the dialog opens.
   useEffect(() => {
     if (!open) return
-    setStep('scope')
+    setStep(startAtInputs ? 'inputs' : 'scope')
     setScope(initialScope)
     setSetId(initialSetId ?? sets[0]?.id)
     setWorkflowId(initialWorkflowId)
+    const initialWorkflow = workflows.find((w) => w.id === initialWorkflowId)
+    setValues(initialWorkflow ? initialUserValues(initialWorkflow.inputs) : {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const selectedSet = sets.find((s) => s.id === setId)
-  const resultIds = context.resultIds ?? []
-
-  const itemIdsFor = (s: RunScope | undefined): string[] => {
-    switch (s) {
-      case 'item':
-        return context.item ? [context.item.id] : []
-      case 'pinned':
-        return context.pinnedItems.map((i) => i.id)
-      case 'set':
-        return selectedSet?.items.map((i) => i.id) ?? []
-      case 'results':
-        return resultIds.slice(0, MAX_RUN_ITEMS)
-      default:
-        return []
-    }
-  }
-
-  const itemIds = itemIdsFor(scope)
+  const itemIds = scopeItemIds(scope, context, selectedSet)
   const itemCount = itemIds.length
   const workflow = workflows.find((w) => w.id === workflowId)
-
-  const scopeOptions: { scope: RunScope; detail: string; disabledReason?: string }[] = [
-    {
-      scope: 'item',
-      detail: context.item ? context.item.id : 'The item whose details are open',
-      disabledReason: context.item ? undefined : "Open an item's details on the map first",
-    },
-    {
-      scope: 'pinned',
-      detail: `${context.pinnedItems.length} pinned items`,
-      disabledReason: context.pinnedItems.length ? undefined : 'Pin some items on the map first',
-    },
-    {
-      scope: 'set',
-      detail: sets.length ? `${sets.length} saved sets in your workspace` : 'No saved sets yet',
-      disabledReason: sets.length ? undefined : 'Save your pinned items as a set first',
-    },
-    {
-      scope: 'results',
-      detail:
-        context.resultsTotal > MAX_RUN_ITEMS
-          ? `The latest ${MAX_RUN_ITEMS} of ${context.resultsTotal} results`
-          : `${context.resultsTotal} results from your search`,
-      disabledReason:
-        context.resultIds === undefined
-          ? 'Only available from a search in the Data Finder'
-          : context.resultsTotal === 0
-            ? 'Your search has no results'
-            : undefined,
-    },
-  ]
-
-  const workflowSupport = (w: DemoWorkflow) => {
-    if (!isDatasetSupported(w, context.collectionId)) {
-      return { supported: false, reason: `Only works with ${datasetNames(w)}.` }
-    }
-    return scope ? scopeSupport(w, scope, itemCount) : { supported: false, reason: '' }
-  }
+  const scopeOptions = buildScopeOptions(context, sets)
+  const workflowSupport = (w: (typeof workflows)[number]) =>
+    supportFor(w, scope, itemCount, context.collectionId)
 
   const sourceName = () => {
     switch (scope) {
@@ -409,7 +350,11 @@ export const RunWorkflowDialog = ({
               <Button
                 variant="soft"
                 color="gray"
-                onClick={() => setStep(initialWorkflowId ? 'scope' : 'workflow')}
+                onClick={() =>
+                  startAtInputs
+                    ? onOpenChange(false)
+                    : setStep(initialWorkflowId ? 'scope' : 'workflow')
+                }
               >
                 Back
               </Button>
