@@ -52,3 +52,22 @@ export const resolveApiUrl = (resourceUrl: string): URL => {
 export const isHubOriginUrl = (url: URL): boolean => {
   return url.origin === getHubOrigin()
 }
+
+const configuredWorkspacesDomain = (
+  import.meta.env.VITE_WORKSPACES_DOMAIN as string | undefined
+)?.trim()
+// An unset GitHub Actions variable arrives as an empty string, so treat that as unset too.
+const WORKSPACES_DOMAIN = configuredWorkspacesDomain
+  ? configuredWorkspacesDomain
+  : 'eodatahub-workspaces.org.uk'
+
+/**
+ * Returns true if a workspace token may be sent to this URL: the hub, or the workspace's own
+ * host, where its workflow outputs are served. Use this for URLs from data other users can
+ * write, such as saved sets, so the token never goes to an arbitrary server.
+ */
+export const canSendWorkspaceToken = (url: URL, workspace?: string): boolean => {
+  if (isHubOriginUrl(url)) return true
+  if (!workspace) return false
+  return url.origin === `https://${workspace.toLowerCase()}.${WORKSPACES_DOMAIN}`
+}

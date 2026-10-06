@@ -4,20 +4,34 @@ import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { resolveStacSearchStrategy } from '@/library/stacSearchConfig'
 import { toQueryExtensionFilters } from '@/library/stacQueryTransform'
-import { resolveApiUrl } from './apiUrlUtils'
+import { canSendWorkspaceToken, resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
-export const fetchCollectionByUrl = async (collectionUrl: string): Promise<Collection> => {
+/**
+ * Fetches a collection by URL. The workspace token is only sent to the hub or to the given
+ * workspace's own host.
+ */
+export const fetchCollectionByUrl = async (
+  collectionUrl: string,
+  workspaceToken?: string,
+  workspace?: string,
+): Promise<Collection> => {
   if (!collectionUrl) {
     throw new Error('Collection URL is required')
   }
 
-  const response = await fetch(collectionUrl, {
+  const url = resolveApiUrl(collectionUrl)
+  const headers: HeadersInit = {
+    Accept: 'application/json',
+  }
+  if (workspaceToken && canSendWorkspaceToken(url, workspace)) {
+    headers.Authorization = `Bearer ${workspaceToken}`
+  }
+
+  const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
+    headers,
   })
 
   if (!response.ok) {
@@ -181,7 +195,8 @@ export const fetchItem = async ({
 /**
  * Fetches a STAC Item directly from a full item URL.
  * Useful when results provide an absolute href to an item JSON file.
- * Authorization is only attached when the URL is on the hub origin.
+ * Authorization is attached for any https URL (workflow results are served off the hub origin),
+ * so callers passing untrusted URLs must only pass a token for URLs they trust.
  */
 export const fetchItemByUrl = async ({
   itemUrl,
