@@ -142,6 +142,10 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
   const [hasStoredSession, setHasStoredSession] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>()
+  // Keycloak's init() (responseMode: 'query') strips any ?code=&state=&error= from the URL,
+  // even ones it didn't issue, so capture the callback params during the first render —
+  // before any effect, and so before Keycloak init, has run.
+  const [callbackParams] = useState(() => new URLSearchParams(window.location.search))
 
   const hasConfiguration = useMemo(
     () => Boolean(OPEN_COSMOS_AUTH_DOMAIN && OPEN_COSMOS_CLIENT_ID && OPEN_COSMOS_AUDIENCE),
@@ -269,7 +273,7 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
     // token exchange runs below — otherwise storeSession can lose the single-use race.
     if (isAuthenticating) return
 
-    const params = new URLSearchParams(window.location.search)
+    const params = callbackParams
     const code = params.get('code')
     const oauthError = params.get('error')
 
@@ -346,7 +350,7 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
     }
 
     void handleCallback()
-  }, [exchangeToken, hasConfiguration, isAuthenticating, storeSession])
+  }, [callbackParams, exchangeToken, hasConfiguration, isAuthenticating, storeSession])
 
   const connect = useCallback(
     async (organizationId: number) => {
