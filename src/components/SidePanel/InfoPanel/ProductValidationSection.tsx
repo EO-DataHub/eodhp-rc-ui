@@ -90,7 +90,7 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
 
   const getStatus = useCallback(
     (key: string) =>
-      data?.[key]?.results['data validation']['radiometric uncertainty']?.value[0] as
+      data?.[key]?.results?.['data validation']?.['radiometric uncertainty']?.value?.[0] as
         | Status
         | undefined,
     [data],
@@ -113,7 +113,7 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
     return 'Product validation metrics not available for this collection.'
   }
 
-  const tableData = output.results['data validation']['radiometric uncertainty']
+  const tableData = output.results?.['data validation']?.['radiometric uncertainty']
   const metrics = tableData?.stated_value.map((item) => item.split('%')[0])
   const bands = tableData?.stated_value.map((item) => {
     const match = item.match(/\((.*?)\)/)
@@ -130,6 +130,14 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
 
   const productReportLink = findQALinkByRel(tableData?.links, 'data_product_report')
   const methodReportLink = findQALinkByRel(tableData?.links, 'detailed_result_report')
+  const dashboardLink = findQALinkByRel(tableData?.links, 'data_visualisation')
+
+  const statusBadgeContent = (
+    <>
+      <CheckCircledIcon />
+      Status: {statusMapping[overallStatus]}
+    </>
+  )
 
   return (
     <Flex direction="column" gap="8">
@@ -174,9 +182,21 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
             radius="full"
             size="3"
             color={statusColorMapping[overallStatus] as 'green' | 'red' | 'orange'}
+            asChild={Boolean(dashboardLink)}
           >
-            <CheckCircledIcon />
-            Status: {statusMapping[overallStatus]}
+            {dashboardLink ? (
+              <a
+                href={dashboardLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={dashboardLink.title}
+                style={{ textDecoration: 'none' }}
+              >
+                {statusBadgeContent}
+              </a>
+            ) : (
+              statusBadgeContent
+            )}
           </Badge>
           {activeKey && <Text color="gray">{formatWindowKeyLabel(activeKey)}</Text>}
         </Flex>
