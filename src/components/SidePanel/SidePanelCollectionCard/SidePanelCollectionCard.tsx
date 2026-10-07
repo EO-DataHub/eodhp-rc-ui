@@ -4,8 +4,9 @@ import { Flex, Text, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { QAButton } from '../QAButton/QAButton'
 import styles from './SidePanelCollectionCard.module.scss'
-import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons'
+import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
@@ -60,19 +61,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
             </IconButton>
           )}
 
-          {hasQA && (
-            <Tooltip content="View Quality Assessment">
-              <IconButton
-                radius="full"
-                variant="solid"
-                className={styles.infoButton}
-                aria-label="View Quality Assessment"
-                onClick={onSelectCollectionQA}
-              >
-                <CheckCircledIcon width="20" height="20" />
-              </IconButton>
-            </Tooltip>
-          )}
+          {hasQA && <QAButton onClick={onSelectCollectionQA} className={styles.infoButton} />}
 
           <Tooltip content="View Collection Metadata">
             <IconButton

@@ -109,33 +109,36 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
     )
   }
 
-  if (!output || sortedKeys.length === 0) {
+  const tableData = output?.results?.['data validation']?.['radiometric uncertainty']
+
+  if (!tableData || sortedKeys.length === 0) {
     return 'Product validation metrics not available for this collection.'
   }
 
-  const tableData = output.results?.['data validation']?.['radiometric uncertainty']
-  const metrics = tableData?.stated_value.map((item) => item.split('%')[0])
-  const bands = tableData?.stated_value.map((item) => {
+  const statedValues = tableData.stated_value ?? []
+  const metrics = statedValues.map((item) => item.split('%')[0])
+  const bands = statedValues.map((item) => {
     const match = item.match(/\((.*?)\)/)
     return match ? match[1] : ''
   })
-  const statuses = tableData?.value[1]
-  const overallStatus = tableData?.value[0] as Status
+  const statuses = tableData.value?.[1]
+  const overallStatus = tableData.value?.[0] as Status | undefined
+  const links = tableData.links ?? []
 
-  const rows = bands?.map((band, i) => ({
-    metric: metrics?.[i],
+  const rows = bands.map((band, i) => ({
+    metric: metrics[i],
     band,
     status: statuses?.[i],
   }))
 
-  const productReportLink = findQALinkByRel(tableData?.links, 'data_product_report')
-  const methodReportLink = findQALinkByRel(tableData?.links, 'detailed_result_report')
-  const dashboardLink = findQALinkByRel(tableData?.links, 'data_visualisation')
+  const productReportLink = findQALinkByRel(links, 'data_product_report')
+  const methodReportLink = findQALinkByRel(links, 'detailed_result_report')
+  const dashboardLink = findQALinkByRel(links, 'data_visualisation')
 
   const statusBadgeContent = (
     <>
       <CheckCircledIcon />
-      Status: {statusMapping[overallStatus]}
+      Status: {overallStatus ? statusMapping[overallStatus] : 'Unknown'}
     </>
   )
 
@@ -181,7 +184,11 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
           <Badge
             radius="full"
             size="3"
-            color={statusColorMapping[overallStatus] as 'green' | 'red' | 'orange'}
+            color={
+              overallStatus
+                ? (statusColorMapping[overallStatus] as 'green' | 'red' | 'orange')
+                : 'gray'
+            }
             asChild={Boolean(dashboardLink)}
           >
             {dashboardLink ? (
@@ -211,7 +218,7 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
           </Table.Header>
 
           <Table.Body>
-            {rows?.map((row, index) => (
+            {rows.map((row, index) => (
               <Table.Row key={index}>
                 <Table.RowHeaderCell>{row.band}</Table.RowHeaderCell>
                 <Table.Cell>
@@ -240,7 +247,7 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
             Additional Information
           </Heading>
           <Flex direction="column" gap="2">
-            {tableData?.links.map((link, index) => (
+            {links.map((link, index) => (
               <Link
                 key={`${link.rel}-${link.href}-${index}`}
                 href={link.href}
