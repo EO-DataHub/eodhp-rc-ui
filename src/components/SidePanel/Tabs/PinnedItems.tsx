@@ -1,8 +1,10 @@
 import { useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
-import { Share1Icon } from '@radix-ui/react-icons'
+import { BookmarkIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { SaveToSetDialog, SaveToSetMode } from '@/components/SavedSets/SaveToSetDialog'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { usePermalink } from '@/hooks/useCopyPermalink'
 import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
@@ -84,6 +86,42 @@ const ShareViewButton = () => {
   )
 }
 
+/** "Save as set" and "Add to set" for the pinned items. Saved sets need a signed-in workspace. */
+const SavedSetButtons = () => {
+  const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
+  const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
+  const [mode, setMode] = useState<SaveToSetMode>()
+
+  if (!isAuthenticated || !currentWorkspace) return null
+
+  return (
+    <>
+      <Tooltip content={`Save the pinned items to ${currentWorkspace} as a new set`}>
+        <Flex width="fit-content" px="2">
+          <Button variant="ghost" size="2" onClick={() => setMode('new')}>
+            <BookmarkIcon width="16px" height="16px" />
+            <Text>Save as set</Text>
+          </Button>
+        </Flex>
+      </Tooltip>
+      <Tooltip content="Add the pinned items to a saved set">
+        <Flex width="fit-content" px="2">
+          <Button variant="ghost" size="2" onClick={() => setMode('existing')}>
+            <PlusIcon width="16px" height="16px" />
+            <Text>Add to set</Text>
+          </Button>
+        </Flex>
+      </Tooltip>
+      <SaveToSetDialog
+        open={mode !== undefined}
+        onOpenChange={(open) => !open && setMode(undefined)}
+        items={pinnedItems}
+        initialMode={mode ?? 'new'}
+      />
+    </>
+  )
+}
+
 const PinnedItemsTab = () => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
@@ -103,6 +141,7 @@ const PinnedItemsTab = () => {
         <Flex gap="2" wrap="wrap" align="center">
           <ClearAllButton />
           <ShareViewButton />
+          <SavedSetButtons />
         </Flex>
       )}
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
