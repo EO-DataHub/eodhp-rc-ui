@@ -7,6 +7,7 @@ import type { SavedSetSummary } from '@/services/savedSetsService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterDialog'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
 import { convertDateToLocalString } from '@/library/dateUtils'
@@ -17,6 +18,7 @@ export const SavedSetsPage: React.FC = () => {
   const { canEdit } = useCanEditSavedSet()
   const [editSet, setEditSet] = useState<SavedSetSummary>()
   const [deleteSet, setDeleteSet] = useState<SavedSetSummary>()
+  const [jupyterSet, setJupyterSet] = useState<SavedSetSummary>()
 
   return (
     <Flex direction="column" gap="6" className={styles.mainContainer}>
@@ -81,28 +83,36 @@ export const SavedSetsPage: React.FC = () => {
                       size="1"
                       disabled={set.itemCount === 0}
                     />
-                    {canEdit(set) && (
-                      <DropdownMenu.Root>
-                        <DropdownMenu.Trigger>
-                          <IconButton
-                            size="1"
-                            variant="ghost"
-                            aria-label={`More actions for ${set.name}`}
-                          >
-                            <DotsHorizontalIcon />
-                          </IconButton>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Content>
-                          <DropdownMenu.Item onSelect={() => setEditSet(set)}>
-                            Edit
-                          </DropdownMenu.Item>
-                          <DropdownMenu.Separator />
-                          <DropdownMenu.Item color="red" onSelect={() => setDeleteSet(set)}>
-                            Delete
-                          </DropdownMenu.Item>
-                        </DropdownMenu.Content>
-                      </DropdownMenu.Root>
-                    )}
+                    <DropdownMenu.Root>
+                      <DropdownMenu.Trigger>
+                        <IconButton
+                          size="1"
+                          variant="ghost"
+                          aria-label={`More actions for ${set.name}`}
+                        >
+                          <DotsHorizontalIcon />
+                        </IconButton>
+                      </DropdownMenu.Trigger>
+                      <DropdownMenu.Content>
+                        <DropdownMenu.Item
+                          disabled={set.itemCount === 0}
+                          onSelect={() => setJupyterSet(set)}
+                        >
+                          Open in Jupyter…
+                        </DropdownMenu.Item>
+                        {canEdit(set) && (
+                          <>
+                            <DropdownMenu.Item onSelect={() => setEditSet(set)}>
+                              Edit
+                            </DropdownMenu.Item>
+                            <DropdownMenu.Separator />
+                            <DropdownMenu.Item color="red" onSelect={() => setDeleteSet(set)}>
+                              Delete
+                            </DropdownMenu.Item>
+                          </>
+                        )}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Root>
                   </Flex>
                 </Table.Cell>
               </Table.Row>
@@ -113,6 +123,7 @@ export const SavedSetsPage: React.FC = () => {
 
       <EditSavedSetDialog set={editSet} onClose={() => setEditSet(undefined)} />
       <DeleteSavedSetDialog set={deleteSet} onClose={() => setDeleteSet(undefined)} />
+      <OpenSetInJupyterDialog set={jupyterSet} onClose={() => setJupyterSet(undefined)} />
     </Flex>
   )
 }

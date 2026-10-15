@@ -58,6 +58,16 @@ export interface UpdateSavedSetPayload {
   description?: string
 }
 
+/**
+ * The hub that serves the pin-set API, as seen from outside the browser (e.g. by a notebook).
+ * In local dev the hub URL is the Vite proxy, so use the proxy's target instead.
+ */
+export const getPinSetApiOrigin = (): string => {
+  const devTarget = import.meta.env.VITE_DEV_PROXY_TARGET as string | undefined
+  const origin = import.meta.env.DEV && devTarget ? devTarget : (HUB_BASE_URL as string)
+  return origin.replace(/\/$/, '')
+}
+
 const setsUrl = (workspace: string) =>
   `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(workspace)}/pin-sets`
 

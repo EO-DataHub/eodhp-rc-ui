@@ -1,15 +1,24 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { Collection, Item, ProcessRecord } from '@/types'
+import type { ProcessRecord } from '@/types'
 import { fetchItems, fetchItemById } from '@/services/processCatalogueService'
 import { launchNotebook } from '@/services/notebookLaunchService'
-import { buildNotebookVariables } from '@/services/notebookVariableResolvers'
-import { getSelfLinkHref, getNotebookTemplateUrl } from '@/library/integrationTools'
-import { useSelector } from '@xstate/store/react'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import {
+  buildNotebookVariables,
+  getMissingVariables,
+  type NotebookLaunchContext,
+} from '@/services/notebookVariableResolvers'
+import { getNotebookTemplateUrl } from '@/library/integrationTools'
 
 export interface UseNotebookLaunchParams {
-  item: Item | null
-  collection: Collection | undefined
+  /** Fetch the notebook list only when true, e.g. once there's an item or the dialog is open. */
+  enabled: boolean
+  /** Only fetch notebooks that list this collection. */
+  applicableCollections?: string
+  /** Narrows the fetched notebooks. Pass a stable (module-level) function. */
+  filterNotebooks: (record: ProcessRecord) => boolean
+  /** Select the notebook automatically when it's the only one. */
+  autoSelectSingle?: boolean
+  context: NotebookLaunchContext | null
   token: string | undefined
   currentWorkspace: string | undefined
   username: string | undefined
@@ -19,7 +28,7 @@ export interface UseNotebookLaunchResult {
   notebooks: ProcessRecord[]
   selectedNotebook: ProcessRecord | null
   setSelectedNotebook: (n: ProcessRecord | null) => void
-  launch: (includeAoi?: boolean) => Promise<void>
+  launch: () => Promise<void>
   isLoadingNotebooks: boolean
   isLaunching: boolean
   notebooksError: string | null
@@ -27,9 +36,29 @@ export interface UseNotebookLaunchResult {
   retry: () => void
 }
 
+/**
+ * Opens a blank tab straight away, while the click still counts as user activation.
+ * Browsers block window.open once the launch request has been awaited.
+ */
+function openPendingTab(): Window | null {
+  const tab = window.open('', '_blank')
+  if (!tab) return null
+  tab.opener = null
+  try {
+    tab.document.title = 'Opening Jupyter…'
+    tab.document.body.textContent = 'Preparing your notebook…'
+  } catch {
+    // The placeholder text is cosmetic.
+  }
+  return tab
+}
+
 export function useNotebookLaunch({
-  item,
-  collection,
+  enabled,
+  applicableCollections,
+  filterNotebooks,
+  autoSelectSingle = false,
+  context,
   token,
   currentWorkspace,
   username,
@@ -41,25 +70,21 @@ export function useNotebookLaunch({
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchError, setLaunchError] = useState<string | null>(null)
 
-  // Retrieve AOI from store
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-
-  // Use collection id as the key for applicableCollections filter in the process catalogue
-  const collectionKey = collection?.id
-
   const loadNotebooks = useCallback(async () => {
-    if (!item || !collectionKey) {
+    if (!enabled) {
       setNotebooks([])
       setNotebooksError(null)
+      setLaunchError(null)
       return
     }
 
     setIsLoadingNotebooks(true)
     setNotebooksError(null)
+    setLaunchError(null)
 
     const { data, error } = await fetchItems({
       type: 'notebook',
-      applicableCollections: collectionKey,
+      applicableCollections,
       page: 1,
       pageSize: 50,
     })
@@ -73,73 +98,70 @@ export function useNotebookLaunch({
       return
     }
 
-    const items = data?.items ?? []
+    const items = (data?.items ?? []).filter(filterNotebooks)
     setNotebooks(items)
     setNotebooksError(null)
-    setSelectedNotebook(null)
-  }, [item, collectionKey])
+    setSelectedNotebook(autoSelectSingle && items.length === 1 ? items[0] : null)
+  }, [enabled, applicableCollections, filterNotebooks, autoSelectSingle])
 
   useEffect(() => {
     void loadNotebooks()
   }, [loadNotebooks])
 
-  const launch = useCallback(
-    async (includeAoi = false) => {
-      if (!item || !selectedNotebook || !token || !currentWorkspace || !username) return
+  const launch = useCallback(async () => {
+    if (!context || !selectedNotebook || !token || !currentWorkspace || !username) return
 
-      const stacItemLink = getSelfLinkHref(item)
-      if (!stacItemLink) {
-        setLaunchError('Missing required data for notebook launch. Please try again.')
-        return
+    setLaunchError(null)
+    const tab = openPendingTab()
+    setIsLaunching(true)
+
+    try {
+      // List items don't include links; fetch full item to get template URL (rel="template")
+      const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
+      if (fetchError != null || detail == null) {
+        throw new Error(fetchError ?? 'Could not load notebook details. Please try again.')
       }
 
-      setIsLaunching(true)
-      setLaunchError(null)
+      const templateUrl = getNotebookTemplateUrl(detail)
+      if (!templateUrl) {
+        throw new Error('Notebook template URL not found. Please contact support.')
+      }
 
-      try {
-        // List items don't include links; fetch full item to get template URL (rel="template")
-        const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
-        if (fetchError != null || detail == null) {
-          setLaunchError(fetchError ?? 'Could not load notebook details. Please try again.')
-          return
-        }
+      const inputParameterKeys =
+        selectedNotebook.properties?.type === 'notebook'
+          ? Object.keys(detail?.properties?.inputParameters ?? {})
+          : []
+      const variables = buildNotebookVariables(inputParameterKeys, context)
+      if (getMissingVariables(inputParameterKeys, variables).length > 0) {
+        throw new Error('Missing required data for notebook launch. Please try again.')
+      }
 
-        const templateUrl = getNotebookTemplateUrl(detail)
-        if (!templateUrl) {
-          setLaunchError('Notebook template URL not found. Please contact support.')
-          return
-        }
+      const requestPayload: Parameters<typeof launchNotebook>[0] = {
+        workspace_name: currentWorkspace,
+        username,
+        action_name: selectedNotebook.id,
+        template_url: templateUrl,
+      }
+      if (Object.keys(variables).length > 0) {
+        requestPayload.variables = variables
+      }
 
-        const inputParameterKeys =
-          selectedNotebook.properties?.type === 'notebook'
-            ? Object.keys(detail?.properties?.inputParameters ?? {})
-            : []
-        const context = { item, aoi, includeAoi }
-        const variables = buildNotebookVariables(inputParameterKeys, context)
+      const spawnUrl = await launchNotebook(requestPayload, token)
 
-        const requestPayload: Parameters<typeof launchNotebook>[0] = {
-          workspace_name: currentWorkspace,
-          username,
-          action_name: selectedNotebook.id,
-          template_url: templateUrl,
-        }
-        if (Object.keys(variables).length > 0) {
-          requestPayload.variables = variables
-        }
-
-        const spawnUrl = await launchNotebook(requestPayload, token)
-
+      if (tab) {
+        tab.location.href = spawnUrl
+      } else {
         window.open(spawnUrl, '_blank')
-      } catch (err) {
-        setLaunchError(
-          err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.',
-        )
-      } finally {
-        setIsLaunching(false)
       }
-    },
-    [item, selectedNotebook, token, currentWorkspace, username, aoi],
-  )
+    } catch (err) {
+      tab?.close()
+      setLaunchError(
+        err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.',
+      )
+    } finally {
+      setIsLaunching(false)
+    }
+  }, [context, selectedNotebook, token, currentWorkspace, username])
 
   const retry = useCallback(() => {
     void loadNotebooks()
