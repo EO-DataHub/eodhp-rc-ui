@@ -71,10 +71,13 @@ export const useAnalyticsActions = () => {
     assetKey,
     asset,
     item,
+    aoiSubsetBytes,
   }: {
     assetKey: string
     asset: DownloadableAsset
     item: Item
+    /** Set when the download is an AOI subset rather than the whole asset */
+    aoiSubsetBytes?: number
   }) => {
     if (consent !== 'granted') return
 
@@ -85,7 +88,9 @@ export const useAnalyticsActions = () => {
 
     const providers = collectionRef?.providers?.map((p) => p.name).join(',') ?? 'N/A'
 
-    safeEvent('download_item_imagery', {
+    const isAoiSubset = aoiSubsetBytes !== undefined
+
+    safeEvent(isAoiSubset ? 'download_item_aoi_subset' : 'download_item_imagery', {
       ...getUserParams(),
       item_id: item.id,
       collection_id: collectionRef?.id ?? 'N/A',
@@ -96,6 +101,7 @@ export const useAnalyticsActions = () => {
       roles: asset.roles?.join(',') ?? 'N/A',
       data_type: isCommercial ? 'commercial' : 'open',
       is_preview: asset.roles?.includes('thumbnail') ?? false,
+      ...(isAoiSubset && { estimated_mb: Math.round(aoiSubsetBytes / (1024 * 1024)) }),
     })
   }
 

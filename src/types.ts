@@ -141,6 +141,7 @@ export interface Item {
     }
     [key: string]: {
       href: string
+      type?: string
       roles: string[]
       size: number
       location: string

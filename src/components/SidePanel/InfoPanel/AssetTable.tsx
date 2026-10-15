@@ -9,6 +9,8 @@ import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
+import { isSubsettableAsset } from '@/library/aoiSubset'
+import { AoiSubsetDownload } from './AoiSubsetDownload'
 
 type AssetTableProps =
   | {
@@ -93,6 +95,9 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
               >
                 <DownloadIcon /> Download
               </Button>
+              {props.mode === 'item' && isSubsettableAsset(asset) && (
+                <AoiSubsetDownload item={props.item} assetKey={key} asset={asset} />
+              )}
               {metadata.map((metadataItem) => (
                 <MetadataTable
                   metadataItem={metadataItem}
