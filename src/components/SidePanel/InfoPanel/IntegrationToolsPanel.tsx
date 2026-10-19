@@ -17,6 +17,7 @@ import { convertDateToUTCString } from '@/library/dateUtils'
 import {
   downloadLyrxForItem,
   downloadQlrForItem,
+  getHubApiOrigin,
   getTitilerXyzUrl,
   supportsIntegrationTools,
 } from '@/library/integrationTools'
@@ -447,7 +448,16 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     setIncludeAoi(!!aoi)
   }, [aoi])
 
-  const launchContext = useMemo(() => ({ item, aoi, includeAoi }), [item, aoi, includeAoi])
+  const launchContext = useMemo(
+    () => ({
+      item,
+      aoi,
+      includeAoi,
+      workspace: currentWorkspace,
+      apiBaseUrl: getHubApiOrigin(),
+    }),
+    [item, aoi, includeAoi, currentWorkspace],
+  )
 
   const {
     notebooks,

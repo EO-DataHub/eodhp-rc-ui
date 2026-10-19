@@ -5,9 +5,6 @@ import { getSelfLinkHref } from '@/library/integrationTools'
 export interface PinSetLaunchContext {
   id: string
   name: string
-  workspace: string
-  /** Hub base URL the notebook calls the pin-set API on. */
-  apiBaseUrl: string
 }
 
 /**
@@ -16,6 +13,10 @@ export interface PinSetLaunchContext {
  * Used only for variable resolution; extend with optional fields (e.g. startDate, endDate) for future variables.
  */
 export interface NotebookLaunchContext {
+  /** Workspace the notebook works in; for a set, the set's workspace. */
+  workspace?: string
+  /** Hub base URL the notebook calls EODH APIs on. */
+  apiBaseUrl?: string
   item?: Item
   aoi?: GeoJSON.Feature | null
   includeAoi?: boolean
@@ -30,8 +31,8 @@ const RESOLVERS: Record<string, Resolver> = {
   AOI: (ctx) => (ctx.includeAoi && ctx.aoi ? JSON.stringify(ctx.aoi) : undefined),
   PIN_SET_ID: (ctx) => ctx.pinSet?.id,
   PIN_SET_NAME: (ctx) => ctx.pinSet?.name,
-  WORKSPACE_NAME: (ctx) => ctx.pinSet?.workspace,
-  EODH_BASE_URL: (ctx) => ctx.pinSet?.apiBaseUrl,
+  WORKSPACE_NAME: (ctx) => ctx.workspace,
+  EODH_BASE_URL: (ctx) => ctx.apiBaseUrl,
 }
 
 /** Resolved parameters a notebook can run without. */

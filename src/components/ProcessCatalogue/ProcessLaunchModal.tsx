@@ -8,7 +8,11 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { buildWorkflowVariables } from '@/services/workflowVariableResolvers'
 import { buildNotebookVariables } from '@/services/notebookVariableResolvers'
-import { getNotebookTemplateUrl, getWorkflowExecutionUrl } from '@/library/integrationTools'
+import {
+  getHubApiOrigin,
+  getNotebookTemplateUrl,
+  getWorkflowExecutionUrl,
+} from '@/library/integrationTools'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { launchNotebook } from '@/services/notebookLaunchService'
@@ -116,7 +120,13 @@ export const ProcessLaunchModal: React.FC<ProcessLaunchModalProps> = ({
     }
 
     const inputParameterKeys = Object.keys(process.properties?.inputParameters ?? {})
-    const context = { item: selectedItem, aoi, includeAoi }
+    const context = {
+      item: selectedItem,
+      aoi,
+      includeAoi,
+      workspace: currentWorkspace,
+      apiBaseUrl: getHubApiOrigin(),
+    }
     const variables = buildNotebookVariables(inputParameterKeys, context)
 
     setIsLaunching(true)

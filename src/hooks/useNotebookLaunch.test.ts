@@ -27,18 +27,13 @@ const setNotebook = record('pin_set_starter', {
 })
 
 const isItemNotebook = (r: ProcessRecord) => !isPinSetNotebook(r)
-const pinSet = {
-  id: 'set-1',
-  name: 'Floods',
-  workspace: 'my-ws',
-  apiBaseUrl: 'https://hub.example',
-}
+const pinSet = { id: 'set-1', name: 'Floods' }
 
 const params = (overrides: Partial<UseNotebookLaunchParams> = {}): UseNotebookLaunchParams => ({
   enabled: true,
   filterNotebooks: isPinSetNotebook,
   autoSelectSingle: true,
-  context: { pinSet },
+  context: { workspace: 'my-ws', apiBaseUrl: 'https://hub.example', pinSet },
   token: 'token',
   currentWorkspace: 'my-ws',
   username: 'alice',

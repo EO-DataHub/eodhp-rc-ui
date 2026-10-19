@@ -49,6 +49,19 @@ export function getNotebookTemplateUrl(
 }
 
 /**
+ * The hub's API origin as seen from outside the browser (e.g. by a notebook).
+ * In local dev the hub URL is the Vite proxy, so use the proxy's target instead.
+ * Returns undefined when no hub URL is configured.
+ */
+export function getHubApiOrigin(): string | undefined {
+  const devTarget = import.meta.env.VITE_DEV_PROXY_TARGET as string | undefined
+  const hubBaseUrl = import.meta.env.VITE_HUB_BASE_URL as string | undefined
+  const origin = import.meta.env.DEV && devTarget ? devTarget : hubBaseUrl
+  const trimmed = origin?.replace(/\/$/, '')
+  return trimmed ? trimmed : undefined
+}
+
+/**
  * Builds the workflow execution URL from environment configuration and the workflow id.
  * The execution endpoint is always the configured workflow process URL with "/execution" appended.
  *

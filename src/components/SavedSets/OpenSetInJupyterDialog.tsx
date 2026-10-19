@@ -4,7 +4,8 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
-import { getPinSetApiOrigin, type SavedSetSummary } from '@/services/savedSetsService'
+import { getHubApiOrigin } from '@/library/integrationTools'
+import type { SavedSetSummary } from '@/services/savedSetsService'
 
 /** Picks a notebook that works on saved sets and launches it in Jupyter for this set. */
 export const OpenSetInJupyterDialog: React.FC<{
@@ -18,12 +19,9 @@ export const OpenSetInJupyterDialog: React.FC<{
     () =>
       set
         ? {
-            pinSet: {
-              id: set.id,
-              name: set.name,
-              workspace: set.workspace,
-              apiBaseUrl: getPinSetApiOrigin(),
-            },
+            workspace: set.workspace,
+            apiBaseUrl: getHubApiOrigin(),
+            pinSet: { id: set.id, name: set.name },
           }
         : null,
     [set],

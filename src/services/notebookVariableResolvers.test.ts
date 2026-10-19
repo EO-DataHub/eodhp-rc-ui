@@ -18,12 +18,8 @@ const aoi: GeoJSON.Feature = {
   geometry: { type: 'Point', coordinates: [0, 51] },
 }
 
-const pinSet = {
-  id: 'set-1',
-  name: 'Floods 2025',
-  workspace: 'my-ws',
-  apiBaseUrl: 'https://hub.example',
-}
+const pinSet = { id: 'set-1', name: 'Floods 2025' }
+const env = { workspace: 'my-ws', apiBaseUrl: 'https://hub.example' }
 
 const notebook = (inputParameters?: Record<string, object>): ProcessRecord => ({
   id: 'nb',
@@ -53,13 +49,23 @@ describe('buildNotebookVariables', () => {
   it('fills set variables from a set context', () => {
     const vars = buildNotebookVariables(
       ['PIN_SET_ID', 'PIN_SET_NAME', 'WORKSPACE_NAME', 'EODH_BASE_URL'],
-      {
-        pinSet,
-      },
+      { ...env, pinSet },
     )
     expect(vars).toEqual({
       PIN_SET_ID: 'set-1',
       PIN_SET_NAME: 'Floods 2025',
+      WORKSPACE_NAME: 'my-ws',
+      EODH_BASE_URL: 'https://hub.example',
+    })
+  })
+
+  it('fills the workspace and hub URL for an item launch too', () => {
+    const vars = buildNotebookVariables(['STAC_ITEM_LINK', 'WORKSPACE_NAME', 'EODH_BASE_URL'], {
+      ...env,
+      item,
+    })
+    expect(vars).toEqual({
+      STAC_ITEM_LINK: 'https://hub.example/items/S2A',
       WORKSPACE_NAME: 'my-ws',
       EODH_BASE_URL: 'https://hub.example',
     })
@@ -81,6 +87,11 @@ describe('getMissingVariables', () => {
   it('reports required keys the context could not fill', () => {
     const keys = ['PIN_SET_ID', 'WORKSPACE_NAME']
     expect(getMissingVariables(keys, buildNotebookVariables(keys, { item }))).toEqual(keys)
+  })
+
+  it('does not report WORKSPACE_NAME for an item launch with a workspace', () => {
+    const keys = ['STAC_ITEM_LINK', 'WORKSPACE_NAME']
+    expect(getMissingVariables(keys, buildNotebookVariables(keys, { ...env, item }))).toEqual([])
   })
 
   it('does not report the optional AOI or keys without a resolver', () => {
