@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ProcessRecord } from '@/types'
+import type { ProcessDetail, ProcessRecord } from '@/types'
 import { fetchItems, fetchItemById } from '@/services/processCatalogueService'
-import { launchNotebook } from '@/services/notebookLaunchService'
+import { launchNotebook, type NotebookLaunchRequest } from '@/services/notebookLaunchService'
 import {
   buildNotebookVariables,
   getMissingVariables,
@@ -51,6 +51,70 @@ function openPendingTab(): Window | null {
     // The placeholder text is cosmetic.
   }
   return tab
+}
+
+export interface LaunchNotebookInNewTabParams {
+  /** Returns the full catalogue record; list records don't include the template link. */
+  loadNotebook: () => Promise<ProcessDetail>
+  context: NotebookLaunchContext
+  workspace: string
+  username: string
+  token: string
+}
+
+/**
+ * Launches a catalogue notebook with variables filled from the context and opens it in a new tab.
+ * Call it straight from the click handler so the tab opens before anything is awaited.
+ *
+ * @throws Error with user-friendly message on failure
+ */
+export async function launchNotebookInNewTab({
+  loadNotebook,
+  context,
+  workspace,
+  username,
+  token,
+}: LaunchNotebookInNewTabParams): Promise<void> {
+  const tab = openPendingTab()
+
+  try {
+    const notebook = await loadNotebook()
+
+    const templateUrl = getNotebookTemplateUrl(notebook)
+    if (!templateUrl) {
+      throw new Error('Notebook template URL not found. Please contact support.')
+    }
+
+    const inputParameterKeys =
+      notebook.properties?.type === 'notebook'
+        ? Object.keys(notebook.properties.inputParameters ?? {})
+        : []
+    const variables = buildNotebookVariables(inputParameterKeys, context)
+    if (getMissingVariables(inputParameterKeys, variables).length > 0) {
+      throw new Error('Missing required data for notebook launch. Please try again.')
+    }
+
+    const request: NotebookLaunchRequest = {
+      workspace_name: workspace,
+      username,
+      action_name: notebook.id,
+      template_url: templateUrl,
+    }
+    if (Object.keys(variables).length > 0) {
+      request.variables = variables
+    }
+
+    const spawnUrl = await launchNotebook(request, token)
+
+    if (tab) {
+      tab.location.href = spawnUrl
+    } else {
+      window.open(spawnUrl, '_blank')
+    }
+  } catch (err) {
+    tab?.close()
+    throw err
+  }
 }
 
 export function useNotebookLaunch({
@@ -112,49 +176,24 @@ export function useNotebookLaunch({
     if (!context || !selectedNotebook || !token || !currentWorkspace || !username) return
 
     setLaunchError(null)
-    const tab = openPendingTab()
     setIsLaunching(true)
 
     try {
-      // List items don't include links; fetch full item to get template URL (rel="template")
-      const { data: detail, error: fetchError } = await fetchItemById(selectedNotebook.id)
-      if (fetchError != null || detail == null) {
-        throw new Error(fetchError ?? 'Could not load notebook details. Please try again.')
-      }
-
-      const templateUrl = getNotebookTemplateUrl(detail)
-      if (!templateUrl) {
-        throw new Error('Notebook template URL not found. Please contact support.')
-      }
-
-      const inputParameterKeys =
-        selectedNotebook.properties?.type === 'notebook'
-          ? Object.keys(detail?.properties?.inputParameters ?? {})
-          : []
-      const variables = buildNotebookVariables(inputParameterKeys, context)
-      if (getMissingVariables(inputParameterKeys, variables).length > 0) {
-        throw new Error('Missing required data for notebook launch. Please try again.')
-      }
-
-      const requestPayload: Parameters<typeof launchNotebook>[0] = {
-        workspace_name: currentWorkspace,
+      await launchNotebookInNewTab({
+        // List items don't include links; fetch full item to get template URL (rel="template")
+        loadNotebook: async () => {
+          const { data, error } = await fetchItemById(selectedNotebook.id)
+          if (error != null || data == null) {
+            throw new Error(error ?? 'Could not load notebook details. Please try again.')
+          }
+          return data
+        },
+        context,
+        workspace: currentWorkspace,
         username,
-        action_name: selectedNotebook.id,
-        template_url: templateUrl,
-      }
-      if (Object.keys(variables).length > 0) {
-        requestPayload.variables = variables
-      }
-
-      const spawnUrl = await launchNotebook(requestPayload, token)
-
-      if (tab) {
-        tab.location.href = spawnUrl
-      } else {
-        window.open(spawnUrl, '_blank')
-      }
+        token,
+      })
     } catch (err) {
-      tab?.close()
       setLaunchError(
         err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.',
       )
