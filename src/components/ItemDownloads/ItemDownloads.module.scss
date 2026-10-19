@@ -1,0 +1,14 @@
+.code {
+  margin: 0;
+  padding: var(--space-3);
+  background-color: var(--gray-2);
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.filename {
+  word-break: break-all;
+}

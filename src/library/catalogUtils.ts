@@ -110,13 +110,20 @@ export const parseCollectionPath = (path: string): ParsedCollectionPath => {
   }
 }
 
+export const findCollectionById = (
+  collections: Collection[] | undefined,
+  id: string | undefined,
+): Collection | undefined => {
+  return collections?.find((col) => col.id === id)
+}
+
 /**
- * Generates the finder URL for a collection based on its type.
+ * Generates the route path for a collection (the part after "/finder/"), based on its type.
  * @param collection - The collection object
  * @param jobPath - Optional job path for job collections (extracted from collection links if not provided)
- * @returns The finder URL path
+ * @returns The collection route path, e.g. "sentinel2_ard", "my-SkySatCollect" or "{workspace}/processing-results/..."
  */
-export const getCollectionFinderUrl = (collection: Collection, jobPath?: string): string => {
+export const getCollectionRoutePath = (collection: Collection, jobPath?: string): string => {
   if (collection.isJobCollection) {
     // Extract workspace from collection
     const workspace = extractWorkspaceFromCollection(collection)
@@ -136,23 +143,73 @@ export const getCollectionFinderUrl = (collection: Collection, jobPath?: string)
     }
 
     if (jobPath && workspace) {
-      return `/finder/${workspace}/processing-results/${jobPath}`
+      return `${workspace}/processing-results/${jobPath}`
     }
 
     if (jobPath) {
       // Fallback: if workspace not found, use old format (backward compatibility)
-      return `/finder/processing-results/${jobPath}`
+      return `processing-results/${jobPath}`
     }
 
     // Fallback: if we can't extract the path, use collection ID (shouldn't happen)
     return workspace
-      ? `/finder/${workspace}/processing-results/${collection.id}`
-      : `/finder/processing-results/${collection.id}`
+      ? `${workspace}/processing-results/${collection.id}`
+      : `processing-results/${collection.id}`
   }
 
   if (collection.isUserCollection) {
-    return `/finder/my-${collection.id}`
+    return `my-${collection.id}`
   }
 
-  return `/finder/${collection.id}`
+  return collection.id
+}
+
+/**
+ * Generates the finder URL for a collection based on its type.
+ * @param collection - The collection object
+ * @param jobPath - Optional job path for job collections (extracted from collection links if not provided)
+ * @returns The finder URL path
+ */
+export const getCollectionFinderUrl = (collection: Collection, jobPath?: string): string =>
+  `/finder/${getCollectionRoutePath(collection, jobPath)}`
+
+export type ItemDownloadSource = 'purchased' | 'saved-set'
+
+interface ItemDownloadUrlParams {
+  /** Collection route path, as used after "/finder/". */
+  collectionPath: string
+  itemId: string
+  /** Workspace to resolve "my-" collections in. Ignored for other paths. */
+  workspace?: string
+  /** Page the link was opened from, for analytics. */
+  from?: ItemDownloadSource
+}
+
+/**
+ * Generates the download page URL for an item. The item id is a query parameter
+ * because item ids can contain "/".
+ */
+export const getItemDownloadUrl = ({
+  collectionPath,
+  itemId,
+  workspace,
+  from,
+}: ItemDownloadUrlParams): string => {
+  const params = new URLSearchParams({ item: itemId })
+  if (workspace && collectionPath.startsWith('my-')) {
+    params.set('workspace', workspace)
+  }
+  if (from) {
+    params.set('from', from)
+  }
+  return `/download/${collectionPath}?${params.toString()}`
+}
+
+export const parseItemDownloadSearch = (searchParams: URLSearchParams) => {
+  const from = searchParams.get('from')
+  return {
+    itemId: searchParams.get('item') ?? undefined,
+    workspace: searchParams.get('workspace') ?? undefined,
+    from: from === 'purchased' || from === 'saved-set' ? (from as ItemDownloadSource) : undefined,
+  }
 }
