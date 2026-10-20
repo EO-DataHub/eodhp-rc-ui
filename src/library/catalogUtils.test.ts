@@ -1,12 +1,19 @@
-import { describe, expect, it } from 'vitest'
-import type { Collection } from '@/types'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
+import type { Collection, Item } from '@/types'
 import {
   getCollectionFinderUrl,
   getCollectionRoutePath,
   getItemDownloadUrl,
+  getWorkflowOutputDownloadUrl,
+  parseProcessingResultsHref,
   parseCollectionPath,
   parseItemDownloadSearch,
 } from './catalogUtils'
+
+// setupTests.ts stubs URL for object URLs; these helpers need the real one.
+beforeAll(() => {
+  vi.unstubAllGlobals()
+})
 
 const collection = (overrides: Partial<Collection> = {}): Collection =>
   ({ id: 'sentinel2_ard', links: [], ...overrides }) as unknown as Collection
@@ -85,5 +92,81 @@ describe('getItemDownloadUrl', () => {
     expect(parseItemDownloadSearch(new URLSearchParams('item=x&from=elsewhere')).from).toBe(
       undefined,
     )
+  })
+})
+
+describe('getWorkflowOutputDownloadUrl', () => {
+  it('builds the download URL from the item collection link', () => {
+    const item = {
+      id: 'result/1',
+      links: [
+        {
+          rel: 'collection',
+          href: 'https://eodatahub.org.uk/api/catalogue/stac/catalogs/user/catalogs/npl/catalogs/processing-results/catalogs/qa-workflow/catalogs/airbus_phr_qa/collections/qa_documentation',
+        },
+      ],
+    } as unknown as Item
+    const url = getWorkflowOutputDownloadUrl(item)!
+    expect(url).toBe(
+      '/download/npl/processing-results/catalogs/qa-workflow/catalogs/airbus_phr_qa/collections/qa_documentation?item=result%2F1&from=workflow-output',
+    )
+    const { parsedPath, search } = parseDownloadUrl(url)
+    expect(parsedPath).toMatchObject({
+      type: 'job',
+      workspace: 'npl',
+      collectionId: 'qa_documentation',
+    })
+    expect(search).toEqual({ itemId: 'result/1', workspace: undefined, from: 'workflow-output' })
+  })
+
+  it('returns undefined for items outside processing results', () => {
+    const item = {
+      id: 'x',
+      links: [
+        { rel: 'collection', href: 'https://eodatahub.org.uk/api/catalogue/stac/collections/c' },
+      ],
+    } as unknown as Item
+    expect(getWorkflowOutputDownloadUrl(item)).toBeUndefined()
+  })
+})
+
+describe('workflow outputs on the workspace host', () => {
+  const filesBase =
+    'https://sparkgeouser.eodatahub-workspaces.org.uk/files/workspaces-eodhp/processing-results/raster-calculate/cat_b445'
+
+  it('maps static STAC file hrefs to the catalogue job path', () => {
+    expect(parseProcessingResultsHref(`${filesBase}/col_b445.json`)).toEqual({
+      workspace: 'sparkgeouser',
+      jobPath: 'catalogs/raster-calculate/catalogs/cat_b445/collections/col_b445',
+    })
+  })
+
+  it('ignores query strings on catalogue API hrefs', () => {
+    expect(
+      parseProcessingResultsHref(
+        'https://eodatahub.org.uk/api/catalogue/stac/catalogs/user/catalogs/npl/catalogs/processing-results/catalogs/wf/collections/c?f=json',
+      ),
+    ).toEqual({ workspace: 'npl', jobPath: 'catalogs/wf/collections/c' })
+  })
+
+  it('uses the results collection href when the item has no collection link', () => {
+    const item = {
+      id: '69450251',
+      links: [{ rel: 'parent', href: `${filesBase}.json` }],
+    } as unknown as Item
+    expect(getWorkflowOutputDownloadUrl(item, `${filesBase}/col_b445.json`)).toBe(
+      '/download/sparkgeouser/processing-results/catalogs/raster-calculate/catalogs/cat_b445/collections/col_b445?item=69450251&from=workflow-output',
+    )
+  })
+
+  it('prefers the collection link over a parent catalog link', () => {
+    const item = {
+      id: 'x',
+      links: [
+        { rel: 'parent', href: `${filesBase}.json` },
+        { rel: 'collection', href: `${filesBase}/col_b445.json` },
+      ],
+    } as unknown as Item
+    expect(getWorkflowOutputDownloadUrl(item)).toContain('/collections/col_b445?')
   })
 })

@@ -1,4 +1,4 @@
-import { Collection } from '@/types'
+import { Collection, Item } from '@/types'
 
 export const extractCatalogPaths = (selectedCollection: Collection): string[] => {
   const parentLink = selectedCollection.links?.find(
@@ -132,13 +132,7 @@ export const getCollectionRoutePath = (collection: Collection, jobPath?: string)
     if (!jobPath) {
       const selfLink = collection.links?.find((link) => link.rel === 'self')
       if (selfLink?.href) {
-        // Extract the path after /catalogs/user/catalogs/{workspace}/catalogs/processing-results/
-        const match = selfLink.href.match(
-          /\/catalogs\/user\/catalogs\/[^/]+\/catalogs\/processing-results\/(.+)/,
-        )
-        if (match?.[1]) {
-          jobPath = match[1]
-        }
+        jobPath = parseProcessingResultsHref(selfLink.href)?.jobPath
       }
     }
 
@@ -173,7 +167,8 @@ export const getCollectionRoutePath = (collection: Collection, jobPath?: string)
 export const getCollectionFinderUrl = (collection: Collection, jobPath?: string): string =>
   `/finder/${getCollectionRoutePath(collection, jobPath)}`
 
-export type ItemDownloadSource = 'purchased' | 'saved-set'
+const ITEM_DOWNLOAD_SOURCES = ['purchased', 'saved-set', 'workflow-output'] as const
+export type ItemDownloadSource = (typeof ITEM_DOWNLOAD_SOURCES)[number]
 
 interface ItemDownloadUrlParams {
   /** Collection route path, as used after "/finder/". */
@@ -210,6 +205,60 @@ export const parseItemDownloadSearch = (searchParams: URLSearchParams) => {
   return {
     itemId: searchParams.get('item') ?? undefined,
     workspace: searchParams.get('workspace') ?? undefined,
-    from: from === 'purchased' || from === 'saved-set' ? (from as ItemDownloadSource) : undefined,
+    from: ITEM_DOWNLOAD_SOURCES.find((source) => source === from),
   }
+}
+
+/**
+ * Reads the workspace and job path (as used in finder and download routes) from a workflow
+ * output collection href. Accepts both forms:
+ * - catalogue API: .../catalogs/user/catalogs/{workspace}/catalogs/processing-results/{jobPath}
+ * - static STAC files on the workspace host:
+ *   https://{workspace}.<domain>/files/{store}/processing-results/{catalog}/.../{collection}.json
+ */
+export const parseProcessingResultsHref = (
+  href: string,
+): { workspace: string; jobPath: string } | undefined => {
+  let url: URL
+  try {
+    url = new URL(href)
+  } catch {
+    return undefined
+  }
+  const path = url.pathname.replace(/\/$/, '')
+
+  const api = path.match(/\/catalogs\/user\/catalogs\/([^/]+)\/catalogs\/processing-results\/(.+)$/)
+  if (api) return { workspace: api[1], jobPath: api[2] }
+
+  const files = path.match(/\/files\/[^/]+\/processing-results\/(.+)\.json$/)
+  if (files) {
+    const segments = files[1].split('/')
+    const collectionId = segments.pop()
+    if (!collectionId || segments.length === 0) return undefined
+    return {
+      workspace: url.hostname.split('.')[0],
+      jobPath: [...segments.map((s) => `catalogs/${s}`), `collections/${collectionId}`].join('/'),
+    }
+  }
+
+  return undefined
+}
+
+/**
+ * Download page URL for a workflow output item, from its collection link, or from the
+ * results collection's own href when the item has no collection link.
+ */
+export const getWorkflowOutputDownloadUrl = (
+  item: Item,
+  resultsCollectionHref?: string,
+): string | undefined => {
+  const linkHref = (rel: string) => item.links?.find((link) => link.rel === rel)?.href
+  const collectionHref = linkHref('collection') ?? resultsCollectionHref ?? linkHref('parent')
+  const parsed = collectionHref ? parseProcessingResultsHref(collectionHref) : undefined
+  if (!parsed) return undefined
+  return getItemDownloadUrl({
+    collectionPath: `${parsed.workspace}/processing-results/${parsed.jobPath}`,
+    itemId: item.id,
+    from: 'workflow-output',
+  })
 }

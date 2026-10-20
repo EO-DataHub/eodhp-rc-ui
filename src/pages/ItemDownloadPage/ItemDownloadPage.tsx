@@ -67,7 +67,9 @@ export const ItemDownloadPage: React.FC = () => {
       ? { to: '/my-data/purchased', label: 'Purchased data' }
       : from === 'saved-set'
         ? { to: '/my-data/saved-sets', label: 'Saved sets' }
-        : { to: collectionPath ? `/finder/${collectionPath}` : '/', label: 'Data Finder' }
+        : from === 'workflow-output'
+          ? { to: '/my-data/workflow-outputs', label: 'Workflow outputs' }
+          : { to: collectionPath ? `/finder/${collectionPath}` : '/', label: 'Data Finder' }
   const backLink = (
     <Link asChild size="2">
       <RouterLink to={back.to}>
