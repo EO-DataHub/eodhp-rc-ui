@@ -9,7 +9,10 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
 import { convertDateToLocalString } from '@/library/dateUtils'
-import { getItemDownloadUrl } from '@/library/catalogUtils'
+import {
+  getItemDownloadUrl,
+  getWorkflowOutputDownloadUrlFromItemHref,
+} from '@/library/catalogUtils'
 import type { SavedSetItem } from '@/services/savedSetsService'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
@@ -63,6 +66,16 @@ export const SavedSetDetailPage: React.FC = () => {
   const allSelected = set.items.length > 0 && selectedInSet.length === set.items.length
   const toggle = (id: string, checked: boolean) =>
     setSelected((prev) => (checked ? [...prev, id] : prev.filter((s) => s !== id)))
+
+  const downloadUrl = (item: SavedSetItem): string | undefined =>
+    item.selfHref.includes('/processing-results/')
+      ? getWorkflowOutputDownloadUrlFromItemHref(item.selfHref, item.itemId, 'saved-set')
+      : getItemDownloadUrl({
+          collectionPath: `${isUserCollectionItem(item) ? 'my-' : ''}${item.collectionId}`,
+          itemId: item.itemId,
+          workspace: set.workspace,
+          from: 'saved-set',
+        })
 
   const removeError = removeItem.error ?? removeItems.error
   const isRemoving = removeItem.isPending || removeItems.isPending
@@ -188,19 +201,9 @@ export const SavedSetDetailPage: React.FC = () => {
                     size="1"
                     variant="ghost"
                   />
-                  {/* Workflow output items don't have a download page yet */}
-                  {!item.selfHref.includes('/catalogs/processing-results/') && (
+                  {downloadUrl(item) && (
                     <Button size="1" variant="ghost" asChild>
-                      <RouterLink
-                        to={getItemDownloadUrl({
-                          collectionPath: `${isUserCollectionItem(item) ? 'my-' : ''}${item.collectionId}`,
-                          itemId: item.itemId,
-                          workspace: set.workspace,
-                          from: 'saved-set',
-                        })}
-                      >
-                        Download
-                      </RouterLink>
+                      <RouterLink to={downloadUrl(item)!}>Download</RouterLink>
                     </Button>
                   )}
                   {editable && (

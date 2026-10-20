@@ -80,8 +80,11 @@ export const ItemDownloadPage: React.FC = () => {
     </Link>
   )
 
+  // The workspace can come from the link, so it isn't always the current one
   const notAvailableMessage = isPrivate
-    ? `This item isn't available in your current workspace${workspace ? ` (${workspace})` : ''}.`
+    ? workspace
+      ? `This item isn't available in workspace ${workspace}.`
+      : "This item isn't available to you."
     : 'This item could not be found.'
 
   let content: React.ReactNode

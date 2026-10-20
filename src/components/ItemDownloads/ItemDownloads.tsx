@@ -133,6 +133,8 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     [],
   )
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  // True until the last browser download has started, so a second click can't restart them
+  const [isStarting, setIsStarting] = useState(false)
 
   const selectedAssets = assets.filter((asset) => selected.has(asset.key))
   const allSelected = selectedAssets.length === assets.length
@@ -159,8 +161,13 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     const tokenFiles = selectedAssets.filter((a) => needsToken(a.href))
     const otherFiles = selectedAssets.filter((a) => !needsToken(a.href))
 
-    cancelDownloadsRef.current?.()
-    cancelDownloadsRef.current = triggerStaggeredDownloads(otherFiles.map((a) => a.href))
+    if (otherFiles.length > 0) {
+      setIsStarting(true)
+      cancelDownloadsRef.current = triggerStaggeredDownloads(
+        otherFiles.map((a) => a.href),
+        { onStarted: () => setIsStarting(false) },
+      )
+    }
 
     if (accessToken && tokenFiles.length > 0) {
       const controller = new AbortController()
@@ -193,6 +200,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     isPrivate,
     workspace,
     hubBaseUrl: getScriptHubBaseUrl(collection, HUB_BASE_URL),
+    filenames,
   }
 
   if (assets.length === 0) {
@@ -282,15 +290,17 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
 
         <Box>
           <Button
-            disabled={selectedAssets.length === 0 || progress !== null}
+            disabled={selectedAssets.length === 0 || progress !== null || isStarting}
             onClick={handleDownloadSelected}
           >
             <DownloadIcon />
             {progress
               ? `Downloading ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…`
-              : allSelected
-                ? `Download all (${assets.length})`
-                : `Download selected (${selectedAssets.length})`}
+              : isStarting
+                ? 'Starting downloads…'
+                : allSelected
+                  ? `Download all (${assets.length})`
+                  : `Download selected (${selectedAssets.length})`}
           </Button>
         </Box>
         <Text size="2" color="gray">

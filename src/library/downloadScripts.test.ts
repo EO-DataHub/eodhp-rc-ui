@@ -193,6 +193,7 @@ describe('script safety and filenames', () => {
     expect(script).toContain(
       'name = safe_name(posixpath.basename(path.rstrip("/"))) or safe_name(key)',
     )
+    expect(script).toContain('for key, asset in item.assets.items():')
   })
 })
 
@@ -218,5 +219,18 @@ describe('getScriptHubBaseUrl', () => {
     expect(getScriptHubBaseUrl(undefined, 'https://eodatahub.org.uk')).toBe(
       'https://eodatahub.org.uk',
     )
+  })
+})
+
+describe('filenames with a partial selection', () => {
+  it('uses the names worked out from all assets', () => {
+    const all = [
+      { key: 'a', href: 'https://x.example/one/data.tif' },
+      { key: 'b', href: 'https://x.example/two/data.tif' },
+    ]
+    const script = buildBashScript(
+      publicParams({ assets: [all[1]], allSelected: false, filenames: assetFilenames(all) }),
+    )
+    expect(script).toContain("-o 'b_data.tif'")
   })
 })

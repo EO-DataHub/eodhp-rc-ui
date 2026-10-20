@@ -3,12 +3,14 @@ const IFRAME_LIFETIME_MS = 60_000
 /**
  * Starts a browser download for each href by loading it in a hidden iframe, spaced out
  * so the browser doesn't drop them. Unlike clicking a link, this never navigates away
- * from the page. Returns a function that cancels the downloads not yet started.
+ * from the page. Calls onStarted once the last download has started. Returns a function
+ * that cancels the downloads not yet started.
  */
 export const triggerStaggeredDownloads = (
   hrefs: string[],
-  { intervalMs = 500 }: { intervalMs?: number } = {},
+  { intervalMs = 500, onStarted }: { intervalMs?: number; onStarted?: () => void } = {},
 ): (() => void) => {
+  if (hrefs.length === 0) onStarted?.()
   const startTimers = hrefs.map((href, index) =>
     setTimeout(() => {
       const iframe = document.createElement('iframe')
@@ -16,6 +18,7 @@ export const triggerStaggeredDownloads = (
       iframe.src = href
       document.body.appendChild(iframe)
       setTimeout(() => iframe.remove(), IFRAME_LIFETIME_MS)
+      if (index === hrefs.length - 1) onStarted?.()
     }, index * intervalMs),
   )
 

@@ -33,6 +33,15 @@ describe('triggerStaggeredDownloads', () => {
     expect(iframes()).toHaveLength(0)
   })
 
+  it('calls onStarted once the last download has started', () => {
+    const onStarted = vi.fn()
+    triggerStaggeredDownloads(['https://x.example/a', 'https://x.example/b'], { onStarted })
+    vi.advanceTimersByTime(0)
+    expect(onStarted).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(500)
+    expect(onStarted).toHaveBeenCalledTimes(1)
+  })
+
   it('cancels downloads that have not started', () => {
     const cancel = triggerStaggeredDownloads(['https://x.example/a', 'https://x.example/b'])
     vi.advanceTimersByTime(0)

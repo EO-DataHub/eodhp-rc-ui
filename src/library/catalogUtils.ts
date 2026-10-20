@@ -244,21 +244,60 @@ export const parseProcessingResultsHref = (
   return undefined
 }
 
+const getWorkflowOutputCollectionDownloadUrl = (
+  collectionHref: string,
+  itemId: string,
+  from: ItemDownloadSource,
+): string | undefined => {
+  const parsed = parseProcessingResultsHref(collectionHref)
+  if (!parsed) return undefined
+  return getItemDownloadUrl({
+    collectionPath: `${parsed.workspace}/processing-results/${parsed.jobPath}`,
+    itemId,
+    from,
+  })
+}
+
 /**
  * Download page URL for a workflow output item, from its collection link, or from the
- * results collection's own href when the item has no collection link.
+ * results collection's own href when the item has no collection link. The item's parent
+ * link isn't used: for static outputs it's the job catalog, not the collection.
  */
 export const getWorkflowOutputDownloadUrl = (
   item: Item,
   resultsCollectionHref?: string,
 ): string | undefined => {
-  const linkHref = (rel: string) => item.links?.find((link) => link.rel === rel)?.href
-  const collectionHref = linkHref('collection') ?? resultsCollectionHref ?? linkHref('parent')
-  const parsed = collectionHref ? parseProcessingResultsHref(collectionHref) : undefined
-  if (!parsed) return undefined
-  return getItemDownloadUrl({
-    collectionPath: `${parsed.workspace}/processing-results/${parsed.jobPath}`,
-    itemId: item.id,
-    from: 'workflow-output',
-  })
+  const collectionHref =
+    item.links?.find((link) => link.rel === 'collection')?.href ?? resultsCollectionHref
+  return collectionHref
+    ? getWorkflowOutputCollectionDownloadUrl(collectionHref, item.id, 'workflow-output')
+    : undefined
+}
+
+/**
+ * Download page URL for a workflow output item from the item's own href: catalogue
+ * ".../collections/{collection}/items/{id}" or static ".../{collection}/{id}.json".
+ */
+export const getWorkflowOutputDownloadUrlFromItemHref = (
+  itemHref: string,
+  itemId: string,
+  from: ItemDownloadSource,
+): string | undefined => {
+  let url: URL
+  try {
+    url = new URL(itemHref)
+  } catch {
+    return undefined
+  }
+  const path = url.pathname.replace(/\/$/, '')
+  url.search = ''
+  url.hash = ''
+  if (/\/items\/[^/]+$/.test(path)) {
+    url.pathname = path.replace(/\/items\/[^/]+$/, '')
+  } else if (path.endsWith('.json')) {
+    url.pathname = `${path.slice(0, path.lastIndexOf('/'))}.json`
+  } else {
+    return undefined
+  }
+  return getWorkflowOutputCollectionDownloadUrl(url.href, itemId, from)
 }

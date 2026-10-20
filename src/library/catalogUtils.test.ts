@@ -5,6 +5,7 @@ import {
   getCollectionRoutePath,
   getItemDownloadUrl,
   getWorkflowOutputDownloadUrl,
+  getWorkflowOutputDownloadUrlFromItemHref,
   parseProcessingResultsHref,
   parseCollectionPath,
   parseItemDownloadSearch,
@@ -157,6 +158,29 @@ describe('workflow outputs on the workspace host', () => {
     expect(getWorkflowOutputDownloadUrl(item, `${filesBase}/col_b445.json`)).toBe(
       '/download/sparkgeouser/processing-results/catalogs/raster-calculate/catalogs/cat_b445/collections/col_b445?item=69450251&from=workflow-output',
     )
+  })
+
+  it('ignores the parent link, which is the job catalog for static outputs', () => {
+    const item = {
+      id: 'x',
+      links: [{ rel: 'parent', href: `${filesBase}.json` }],
+    } as unknown as Item
+    expect(getWorkflowOutputDownloadUrl(item)).toBeUndefined()
+  })
+
+  it('builds the URL from a saved item href, catalogue or static', () => {
+    const expected =
+      '/download/sparkgeouser/processing-results/catalogs/raster-calculate/catalogs/cat_b445/collections/col_b445?item=i1&from=saved-set'
+    expect(
+      getWorkflowOutputDownloadUrlFromItemHref(
+        'https://eodatahub.org.uk/api/catalogue/stac/catalogs/user/catalogs/sparkgeouser/catalogs/processing-results/catalogs/raster-calculate/catalogs/cat_b445/collections/col_b445/items/i1',
+        'i1',
+        'saved-set',
+      ),
+    ).toBe(expected)
+    expect(
+      getWorkflowOutputDownloadUrlFromItemHref(`${filesBase}/col_b445/i1.json`, 'i1', 'saved-set'),
+    ).toBe(expected)
   })
 
   it('prefers the collection link over a parent catalog link', () => {

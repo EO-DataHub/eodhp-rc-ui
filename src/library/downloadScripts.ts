@@ -23,6 +23,8 @@ export interface DownloadScriptParams {
   isPrivate: boolean
   workspace?: string
   hubBaseUrl?: string
+  /** Names for all of the item's assets (from assetFilenames), so a partial selection keeps the names shown in the UI. */
+  filenames?: Map<string, string>
 }
 
 const hostnameOf = (href: string): string => {
@@ -120,8 +122,8 @@ export const buildBashScript = ({
   itemId,
   isPrivate,
   hubBaseUrl,
+  filenames = assetFilenames(assets),
 }: DownloadScriptParams): string => {
-  const filenames = assetFilenames(assets)
   const lines = [
     '#!/usr/bin/env bash',
     `# Download assets of STAC item ${commentText(itemId)}`,
@@ -233,14 +235,18 @@ export const buildPythonScript = ({
     `out_dir = ${pyString(outputDirName(itemId))}`,
     'os.makedirs(out_dir, exist_ok=True)',
     '',
-    'used = set()',
-    'for key in keys:',
-    '    asset = item.assets[key]',
+    '# Name every asset first, so names match the page even when only some are downloaded',
+    'names = {}',
+    'for key, asset in item.assets.items():',
     '    path = urllib.parse.unquote(urllib.parse.urlparse(asset.href).path)',
     '    name = safe_name(posixpath.basename(path.rstrip("/"))) or safe_name(key)',
-    '    if name in used:',
+    '    if name in names.values():',
     '        name = safe_name(f"{key}_{name}")',
-    '    used.add(name)',
+    '    names[key] = name',
+    '',
+    'for key in keys:',
+    '    asset = item.assets[key]',
+    '    name = names[key]',
     `    with requests.get(asset.href, stream=True, timeout=60${headersArg}) as response:`,
     '        response.raise_for_status()',
     '        with open(os.path.join(out_dir, name), "wb") as f:',

@@ -64,6 +64,17 @@ describe('ItemDownloads', () => {
     ])
   })
 
+  it('ignores a second click while downloads are starting', () => {
+    renderItemDownloads()
+    fireEvent.click(screen.getByText('Download all (4)'))
+    fireEvent.click(screen.getByText('Starting downloads…'))
+    act(() => {
+      vi.advanceTimersByTime(5_000)
+    })
+    expect(startedDownloads()).toHaveLength(4)
+    expect(screen.getByText('Download all (4)')).toBeEnabled()
+  })
+
   it('starts each selected download once', () => {
     renderItemDownloads()
     fireEvent.click(screen.getByLabelText('Select b'))
