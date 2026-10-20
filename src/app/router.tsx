@@ -19,6 +19,7 @@ import { accountingRoutes } from '@/pages/AccountingPage/accountingRoutes'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
 import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
 import { AccountDetailPage } from '@/pages/AccountsPage/AccountDetailPage'
+import { ItemDownloadPage } from '@/pages/ItemDownloadPage/ItemDownloadPage'
 
 const ProcessesCataloguePage = lazy(() =>
   import('@/pages/ProcessesCataloguePage/ProcessesCataloguePage').then((m) => ({
@@ -39,6 +40,10 @@ const routes = [
   {
     path: '/finder/*',
     element: <DataFinderPage />,
+  },
+  {
+    path: '/download/*',
+    element: <ItemDownloadPage />,
   },
   {
     path: '/catalogue/processes',

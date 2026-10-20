@@ -15,6 +15,8 @@ import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { SaveToSetDialog } from '@/components/SavedSets/SaveToSetDialog'
+import { ItemDownloads } from '@/components/ItemDownloads/ItemDownloads'
+import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 
 interface ItemInfoPanelProps {
   item: Item | null
@@ -27,6 +29,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
   const [isSaveToSetOpen, setIsSaveToSetOpen] = useState(false)
+  const { trackViewItemDownloads } = useAnalyticsActions()
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
@@ -95,6 +98,24 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
     [itemWithCollectionContext, item, collectionRender, isUserItem],
   )
 
+  // Pinned items can come from other collections than the one open in the finder
+  const downloadCollection = itemWithCollectionContext?.collectionRef ?? collection
+  // Collections under a workspace's catalog (purchased data, workflow outputs) are private
+  const downloadWorkspace = downloadCollection
+    ? extractWorkspaceFromCollection(downloadCollection)
+    : null
+  const isPrivateItem = !!(item?.isUserCollection ?? isUserItem) || !!downloadWorkspace
+
+  const handleTabChange = (value: string) => {
+    if (value === 'download' && itemWithCollectionContext) {
+      trackViewItemDownloads({
+        item: itemWithCollectionContext,
+        assetCount: Object.keys(itemWithCollectionContext.assets ?? {}).length,
+        source: 'panel',
+      })
+    }
+  }
+
   return (
     <>
       {item && (
@@ -128,11 +149,12 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
             </Text>
           </Flex>
 
-          <Tabs.Root defaultValue="metadata">
+          <Tabs.Root defaultValue="metadata" onValueChange={handleTabChange}>
             <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
+              <Tabs.Trigger value="download">Download</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="6">
@@ -159,6 +181,19 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                   isLoading={isLoadingResult}
                   hasError={!!errorResult}
                 />
+              </Tabs.Content>
+
+              <Tabs.Content value="download">
+                {isLoadingResult ? (
+                  <Text>Loading data...</Text>
+                ) : itemWithCollectionContext ? (
+                  <ItemDownloads
+                    item={itemWithCollectionContext}
+                    collection={downloadCollection}
+                    isPrivate={isPrivateItem}
+                    workspace={downloadWorkspace ?? currentWorkspace}
+                  />
+                ) : null}
               </Tabs.Content>
             </Box>
           </Tabs.Root>

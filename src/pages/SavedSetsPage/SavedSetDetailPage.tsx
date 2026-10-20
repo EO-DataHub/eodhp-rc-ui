@@ -10,7 +10,16 @@ import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterD
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
 import { convertDateToLocalString } from '@/library/dateUtils'
+import {
+  getItemDownloadUrl,
+  getWorkflowOutputDownloadUrlFromItemHref,
+} from '@/library/catalogUtils'
+import type { SavedSetItem } from '@/services/savedSetsService'
 import styles from '../MyDataPage/MyDataPage.module.scss'
+
+// The isUserCollection flag is missing or false on some saves, so also check the item's URL
+const isUserCollectionItem = (item: SavedSetItem): boolean =>
+  !!item.display?.isUserCollection || item.selfHref.includes('/catalogs/user/catalogs/')
 
 export const SavedSetDetailPage: React.FC = () => {
   const { setId } = useParams<{ setId: string }>()
@@ -59,6 +68,16 @@ export const SavedSetDetailPage: React.FC = () => {
   const allSelected = set.items.length > 0 && selectedInSet.length === set.items.length
   const toggle = (id: string, checked: boolean) =>
     setSelected((prev) => (checked ? [...prev, id] : prev.filter((s) => s !== id)))
+
+  const downloadUrl = (item: SavedSetItem): string | undefined =>
+    item.selfHref.includes('/processing-results/')
+      ? getWorkflowOutputDownloadUrlFromItemHref(item.selfHref, item.itemId, 'saved-set')
+      : getItemDownloadUrl({
+          collectionPath: `${isUserCollectionItem(item) ? 'my-' : ''}${item.collectionId}`,
+          itemId: item.itemId,
+          workspace: set.workspace,
+          from: 'saved-set',
+        })
 
   const removeError = removeItem.error ?? removeItems.error
   const isRemoving = removeItem.isPending || removeItems.isPending
@@ -191,6 +210,11 @@ export const SavedSetDetailPage: React.FC = () => {
                     size="1"
                     variant="ghost"
                   />
+                  {downloadUrl(item) && (
+                    <Button size="1" variant="ghost" asChild>
+                      <RouterLink to={downloadUrl(item)!}>Download</RouterLink>
+                    </Button>
+                  )}
                   {editable && (
                     <Tooltip content="Remove from set">
                       <IconButton
