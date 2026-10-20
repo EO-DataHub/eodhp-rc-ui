@@ -198,14 +198,16 @@ const PinnedItemsTab = () => {
         paddingTop: 'var(--space-3)',
       }}
     >
-      <Flex gap="2" wrap="wrap" align="center">
+      <Flex direction="column" gap="3">
         {!isEmpty && (
-          <>
+          <Flex gap="2" wrap="wrap" align="center">
             <ClearAllButton />
             <ShareViewButton />
-          </>
+          </Flex>
         )}
-        <SavedSetButtons />
+        <Flex gap="2" wrap="wrap" align="center">
+          <SavedSetButtons />
+        </Flex>
       </Flex>
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
