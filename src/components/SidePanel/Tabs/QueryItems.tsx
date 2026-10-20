@@ -114,7 +114,9 @@ const QueryItemsTab = () => {
           </Flex>
         ) : (
           <Flex width="100%" gap="2" align="center">
-            {hasPages && <PageIndicator page={page} totalItemsCount={allItems.length} />}
+            {!error && allItems.length > 0 && (
+              <PageIndicator page={page} totalItemsCount={allItems.length} />
+            )}
           </Flex>
         )}
         {!isUserCollection && (

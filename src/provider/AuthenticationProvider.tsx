@@ -21,7 +21,11 @@ const authenticationInstance = new Keycloak(initOptions)
 
 export const AuthenticationContextProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
-  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false)
+  // Start true so consumers' effects (which run before this provider's init effect, since
+  // child effects fire first) don't see a "finished, signed out" state on the first render.
+  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(
+    () => !authenticationInstance.didInitialize,
+  )
   const [isAuthenticationServiceError, setIsAuthenticationServiceError] = useState<boolean>(false)
   const [authenticatedAxios, setAuthenticatedAxios] = useState<AxiosInstance | undefined>()
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})

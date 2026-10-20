@@ -5,6 +5,7 @@ const links = [
   { to: 'purchased', label: 'Purchased data' },
   { to: 'workflow-outputs', label: 'Workflow outputs' },
   { to: 'data-storage', label: 'Files' },
+  { to: 'saved-sets', label: 'Saved sets' },
 ]
 
 export const MyDataPage: React.FC = () => {

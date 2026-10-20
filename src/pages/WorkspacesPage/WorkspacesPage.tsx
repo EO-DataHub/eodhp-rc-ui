@@ -1,14 +1,16 @@
 import React, { useContext, useMemo, useState } from 'react'
-import { Button, Dialog, Flex, Select, Table, Text, TextField } from '@radix-ui/themes'
+import { Button, Checkbox, Dialog, Flex, Select, Table, Text, TextField } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import {
   CreateWorkspacePayload,
   Workspace,
   createWorkspace,
+  deleteWorkspace,
 } from '@/services/workspaceTokenService'
+import { fetchWorkspaceAdmins } from '@/services/workspaceMembersService'
 import { useWorkspaces } from '@/hooks/useWorkspaces'
 import { useAccounts } from '@/hooks/useAccounts'
 import { Callout } from '@/components/Callout/Callout'
@@ -146,10 +148,115 @@ const CreateWorkspaceDialog: React.FC<{
   )
 }
 
+const DeleteWorkspaceDialog: React.FC<{
+  workspace: Workspace | null
+  onOpenChange: (open: boolean) => void
+}> = ({ workspace, onOpenChange }) => {
+  const { token, userInfo, currentWorkspace, updateCurrentWorkspace, clearCurrentWorkspace } =
+    useContext(AuthenticationContext)
+  const queryClient = useQueryClient()
+  const [confirmed, setConfirmed] = useState(false)
+
+  // Variables carry the workspace/user the delete was made for, so onSuccess
+  // updates the right cache entry even if the render-scope values change.
+  const mutation = useMutation({
+    mutationFn: ({ name }: { name: string; userId?: string }) => {
+      if (!token) {
+        return Promise.reject(new Error('You must be signed in to delete a workspace.'))
+      }
+      return deleteWorkspace(name, token)
+    },
+    onSuccess: (_data, { name, userId }) => {
+      // The backend tears the workspace down asynchronously, so an immediate
+      // refetch can still return it. Drop it from the cache instead.
+      const remaining =
+        queryClient.setQueryData<Workspace[]>(['Workspaces', userId], (prev) =>
+          prev?.filter((w) => w.name !== name),
+        ) ?? []
+      if (currentWorkspace === name) {
+        if (remaining.length > 0) {
+          updateCurrentWorkspace(remaining[0].name)
+        } else {
+          clearCurrentWorkspace()
+        }
+      }
+      closeDialog()
+    },
+  })
+
+  const closeDialog = () => {
+    setConfirmed(false)
+    mutation.reset()
+    onOpenChange(false)
+  }
+
+  // Closing can't cancel the in-flight DELETE, so keep the dialog open until it
+  // settles. This covers Cancel, Escape and clicking outside. onSuccess calls
+  // closeDialog directly because its closure still sees isPending as true.
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      onOpenChange(true)
+    } else if (!mutation.isPending) {
+      closeDialog()
+    }
+  }
+
+  return (
+    <Dialog.Root open={Boolean(workspace)} onOpenChange={handleOpenChange}>
+      <Dialog.Content maxWidth="500px">
+        <Flex direction="column" gap="4">
+          <Dialog.Title>Delete workspace</Dialog.Title>
+          <Dialog.Description size="2">
+            Deleting <strong>{workspace?.name}</strong> will{' '}
+            <strong>permanently remove all associated data</strong>. This action cannot be undone.
+          </Dialog.Description>
+
+          <Text as="label" size="2">
+            <Flex gap="2" align="center">
+              <Checkbox checked={confirmed} onCheckedChange={(c) => setConfirmed(c === true)} />I
+              understand that this action will delete everything permanently.
+            </Flex>
+          </Text>
+
+          {mutation.isError && (
+            <Text size="2" color="red">
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : 'Failed to delete workspace. Please try again.'}
+            </Text>
+          )}
+
+          <Flex gap="2" justify="end">
+            <Button
+              color="gray"
+              variant="soft"
+              disabled={mutation.isPending}
+              onClick={() => handleOpenChange(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="red"
+              disabled={!confirmed || mutation.isPending || !workspace}
+              onClick={() =>
+                workspace && mutation.mutate({ name: workspace.name, userId: userInfo?.sub })
+              }
+            >
+              {mutation.isPending ? 'Deleting…' : 'Delete workspace'}
+            </Button>
+          </Flex>
+        </Flex>
+      </Dialog.Content>
+    </Dialog.Root>
+  )
+}
+
 export const WorkspacesPage: React.FC = () => {
-  const { token, userInfo, updateCurrentWorkspace } = useContext(AuthenticationContext)
+  const { token, userInfo, workspaceUserName, updateCurrentWorkspace } =
+    useContext(AuthenticationContext)
   const navigate = useNavigate()
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null)
 
   const handleWorkspaceClick = (workspaceName: string) => {
     updateCurrentWorkspace?.(workspaceName)
@@ -163,6 +270,28 @@ export const WorkspacesPage: React.FC = () => {
   } = useWorkspaces(token, userInfo?.sub)
 
   const { data: accounts, isLoading: isAccountsLoading } = useAccounts(token, userInfo?.sub)
+
+  // Owners and workspace admins can delete. Admin lists are only fetched for
+  // workspaces the user doesn't own, and share the Members page cache key.
+  const notOwnedWorkspaces = (workspaces ?? []).filter(
+    (workspace) => workspace.owner !== workspaceUserName,
+  )
+  const adminQueries = useQueries({
+    queries: notOwnedWorkspaces.map((workspace) => ({
+      queryKey: ['WorkspaceAdmins', workspace.name, userInfo?.sub],
+      queryFn: () => fetchWorkspaceAdmins(workspace.name, token!),
+      refetchOnWindowFocus: false,
+      retry: false,
+      enabled: Boolean(token && workspaceUserName),
+    })),
+  })
+
+  const canDelete = (workspace: Workspace) => {
+    if (!workspaceUserName) return false
+    if (workspace.owner === workspaceUserName) return true
+    const index = notOwnedWorkspaces.findIndex((w) => w.name === workspace.name)
+    return Boolean(adminQueries[index]?.data?.includes(workspaceUserName))
+  }
 
   const accountNameById = useMemo(
     () => Object.fromEntries((accounts ?? []).map((account) => [account.id, account.name])),
@@ -238,6 +367,7 @@ export const WorkspacesPage: React.FC = () => {
               <Table.Row>
                 <Table.ColumnHeaderCell>Name</Table.ColumnHeaderCell>
                 <Table.ColumnHeaderCell>Account</Table.ColumnHeaderCell>
+                <Table.ColumnHeaderCell />
               </Table.Row>
             </Table.Header>
             <Table.Body>
@@ -262,6 +392,19 @@ export const WorkspacesPage: React.FC = () => {
                     </button>
                   </Table.Cell>
                   <Table.Cell>{accountNameById[workspace.account] ?? workspace.account}</Table.Cell>
+                  <Table.Cell justify="end">
+                    {canDelete(workspace) && (
+                      <Button
+                        size="2"
+                        variant="soft"
+                        color="red"
+                        aria-label={`Delete ${workspace.name}`}
+                        onClick={() => setWorkspaceToDelete(workspace)}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </Table.Cell>
                 </Table.Row>
               ))}
             </Table.Body>
@@ -273,6 +416,10 @@ export const WorkspacesPage: React.FC = () => {
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         approvedAccounts={approvedAccounts}
+      />
+      <DeleteWorkspaceDialog
+        workspace={workspaceToDelete}
+        onOpenChange={(open) => !open && setWorkspaceToDelete(null)}
       />
     </Flex>
   )

@@ -110,6 +110,9 @@ export const LoginButton = ({
               <DropdownMenu.Item asChild>
                 <Link to="/my-data/data-storage">Files</Link>
               </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
+                <Link to="/my-data/saved-sets">Saved sets</Link>
+              </DropdownMenu.Item>
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
 

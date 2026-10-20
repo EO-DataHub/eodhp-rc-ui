@@ -8,6 +8,8 @@ import { Navigate } from 'react-router-dom'
 import { PurchasedDataPage } from '@/pages/PurchasedDataPage/PurchasedDataPage'
 import { WorkflowOutputsPage } from '@/pages/WorkflowOutputsPage/WorkflowOutputsPage'
 import { DataStoragePage } from '@/pages/DataStoragePage/DataStoragePage'
+import { SavedSetsPage } from '@/pages/SavedSetsPage/SavedSetsPage'
+import { SavedSetDetailPage } from '@/pages/SavedSetsPage/SavedSetDetailPage'
 import { ProtectedRoute } from '@/components/ProtectedRoute/ProtectedRoute'
 import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
@@ -85,6 +87,14 @@ const routes = [
           {
             path: 'data-storage',
             element: <DataStoragePage />,
+          },
+          {
+            path: 'saved-sets',
+            element: <SavedSetsPage />,
+          },
+          {
+            path: 'saved-sets/:setId',
+            element: <SavedSetDetailPage />,
           },
         ],
       },

@@ -1,6 +1,6 @@
-import React, { useMemo, useContext } from 'react'
-import { Cross1Icon } from '@radix-ui/react-icons'
-import { Flex, Text, IconButton, Tabs, Box } from '@radix-ui/themes'
+import React, { useMemo, useContext, useState } from 'react'
+import { BookmarkIcon, Cross1Icon } from '@radix-ui/react-icons'
+import { Flex, Text, IconButton, Tabs, Box, Tooltip } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
 import type { Item } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
@@ -14,6 +14,7 @@ import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { SaveToSetDialog } from '@/components/SavedSets/SaveToSetDialog'
 
 interface ItemInfoPanelProps {
   item: Item | null
@@ -24,6 +25,8 @@ interface ItemInfoPanelProps {
 export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, onClose }) => {
   const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const [isSaveToSetOpen, setIsSaveToSetOpen] = useState(false)
   const collectionUrl = useMemo(() => {
     const url = item?.links.find((link) => link.rel === 'parent')?.href
     return url
@@ -80,6 +83,18 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
     return dataResult
   }, [dataResult, item])
 
+  // Saved with the render it's shown with now, so opening the set looks the same.
+  const itemToSave = useMemo(
+    () =>
+      itemWithCollectionContext && {
+        ...itemWithCollectionContext,
+        render: item?.render ?? collectionRender,
+        mapRender: item?.mapRender,
+        isUserCollection: item?.isUserCollection ?? isUserItem,
+      },
+    [itemWithCollectionContext, item, collectionRender, isUserItem],
+  )
+
   return (
     <>
       {item && (
@@ -90,6 +105,17 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                 {item.id}
               </Text>
               <Flex direction="row" gap="5" justify="start">
+                {isAuthenticated && currentWorkspace && itemToSave && (
+                  <Tooltip content="Add this item to a saved set">
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => setIsSaveToSetOpen(true)}
+                      aria-label="Add to set"
+                    >
+                      <BookmarkIcon width="20" height="20" color="#60646C" />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <IconButton variant="ghost" onClick={onClose} aria-label="Close">
                   <Cross1Icon width="20" height="20" color="#60646C" />
                 </IconButton>
@@ -136,6 +162,15 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
               </Tabs.Content>
             </Box>
           </Tabs.Root>
+
+          {itemToSave && (
+            <SaveToSetDialog
+              open={isSaveToSetOpen}
+              onOpenChange={setIsSaveToSetOpen}
+              items={[itemToSave]}
+              initialMode="existing"
+            />
+          )}
         </>
       )}
     </>

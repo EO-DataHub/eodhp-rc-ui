@@ -4,7 +4,6 @@ import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import {
   fetchPricingPolicy,
-  fetchSkus,
   fetchWorkspaceBalance,
   fetchWorkspaceLedger,
 } from '@/services/accountingService'
@@ -12,7 +11,8 @@ import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { convertDateToUTCString, formatDateToDDMMYEAR } from '@/library/dateUtils'
+import { useSkusBySku } from '@/hooks/useSkusBySku'
+import { convertDateToLocalString, formatDateToDDMMYEAR } from '@/library/dateUtils'
 import styles from './CreditsPage.module.scss'
 
 const RECENT_GRANTS_COUNT = 5
@@ -44,12 +44,7 @@ export const CreditsPage: React.FC = () => {
     enabled: Boolean(token),
   })
 
-  const { data: skus } = useQuery({
-    queryKey: ['BillingSkus', userInfo?.sub],
-    queryFn: () => fetchSkus(token!),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(token),
-  })
+  const skusBySku = useSkusBySku(token, userInfo?.sub)
 
   const {
     data: grants,
@@ -69,14 +64,21 @@ export const CreditsPage: React.FC = () => {
   const [isHistoryExpanded, setIsHistoryExpanded] = useState(false)
   const [historyPage, setHistoryPage] = useState(0)
 
-  const skusBySku = useMemo(() => {
-    const map = new Map<string, { name: string; unit: string }>()
-    skus?.forEach((sku) => map.set(sku.sku, { name: sku.name, unit: sku.unit }))
-    return map
-  }, [skus])
+  // Don't rely on the ledger endpoint's own ordering for "most recent" — sort client-side so
+  // this stays correct regardless of what order the API returns grants in.
+  const sortedGrants = useMemo(
+    () =>
+      grants
+        ? [...grants].sort(
+            (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime(),
+          )
+        : grants,
+    [grants],
+  )
 
   const balance = creditBalance ? Number(creditBalance.balance) : null
-  const isNegative = balance !== null && balance < 0
+  const hasValidBalance = balance !== null && !Number.isNaN(balance)
+  const isNegative = hasValidBalance && balance < 0
 
   const formatUnitsPerCredit = (creditsPerUnit: string) => {
     const rate = Number(creditsPerUnit)
@@ -111,7 +113,11 @@ export const CreditsPage: React.FC = () => {
 
         {isBalanceLoading && <LoadingIndicator size="3" />}
 
-        {creditBalance && (
+        {creditBalance && !hasValidBalance && (
+          <Callout type="error" message="Received an invalid credit balance from the server." />
+        )}
+
+        {creditBalance && hasValidBalance && (
           <>
             {isNegative && (
               <Callout
@@ -122,7 +128,7 @@ export const CreditsPage: React.FC = () => {
 
             <Flex align="center" gap="3" className={styles.balanceCard}>
               <Text size="8" weight="bold">
-                {balance!.toFixed(2)}
+                {balance.toFixed(2)}
               </Text>
               <Flex direction="column">
                 <Text size="2" weight="medium">
@@ -160,11 +166,11 @@ export const CreditsPage: React.FC = () => {
 
           {isGrantsLoading && <LoadingIndicator size="3" />}
 
-          {grants && grants.length === 0 && (
+          {sortedGrants && sortedGrants.length === 0 && (
             <Callout type="info" message="No credit top-ups recorded for this workspace yet." />
           )}
 
-          {grants && grants.length > 0 && (
+          {sortedGrants && sortedGrants.length > 0 && (
             <>
               <Table.Root className={styles.creditsTable}>
                 <Table.Header>
@@ -176,14 +182,16 @@ export const CreditsPage: React.FC = () => {
                 </Table.Header>
                 <Table.Body>
                   {(isHistoryExpanded
-                    ? grants.slice(
+                    ? sortedGrants.slice(
                         historyPage * GRANTS_PAGE_SIZE,
                         (historyPage + 1) * GRANTS_PAGE_SIZE,
                       )
-                    : grants.slice(0, RECENT_GRANTS_COUNT)
+                    : sortedGrants.slice(0, RECENT_GRANTS_COUNT)
                   ).map((grant) => (
                     <Table.Row key={grant.uuid}>
-                      <Table.Cell>{convertDateToUTCString(new Date(grant.occurred_at))}</Table.Cell>
+                      <Table.Cell>
+                        {convertDateToLocalString(new Date(grant.occurred_at))}
+                      </Table.Cell>
                       <Table.Cell>
                         <Text weight="medium" color="green">
                           +{Number(grant.credits).toFixed(2)}
@@ -195,21 +203,21 @@ export const CreditsPage: React.FC = () => {
                 </Table.Body>
               </Table.Root>
 
-              {isHistoryExpanded && grants.length > GRANTS_PAGE_SIZE && (
+              {isHistoryExpanded && sortedGrants.length > GRANTS_PAGE_SIZE && (
                 <Flex justify="center" mt="2">
                   <PageSelector
                     currentPageIndex={historyPage}
-                    nextDisabled={(historyPage + 1) * GRANTS_PAGE_SIZE >= grants.length}
+                    nextDisabled={(historyPage + 1) * GRANTS_PAGE_SIZE >= sortedGrants.length}
                     onGoToPage={setHistoryPage}
                     onNextClick={() => setHistoryPage((page) => page + 1)}
                     onPreviousClick={() => setHistoryPage((page) => page - 1)}
-                    pageCount={Math.ceil(grants.length / GRANTS_PAGE_SIZE)}
+                    pageCount={Math.ceil(sortedGrants.length / GRANTS_PAGE_SIZE)}
                     previousDisabled={historyPage === 0}
                   />
                 </Flex>
               )}
 
-              {grants.length > RECENT_GRANTS_COUNT && (
+              {sortedGrants.length > RECENT_GRANTS_COUNT && (
                 <Flex align="center" gap="3">
                   <Button
                     variant="ghost"
@@ -218,9 +226,9 @@ export const CreditsPage: React.FC = () => {
                       setHistoryPage(0)
                     }}
                   >
-                    {isHistoryExpanded ? 'Show less' : `View all (${grants.length})`}
+                    {isHistoryExpanded ? 'Show less' : `View all (${sortedGrants.length})`}
                   </Button>
-                  {grants.length >= GRANTS_FETCH_LIMIT && (
+                  {sortedGrants.length >= GRANTS_FETCH_LIMIT && (
                     <Text size="1" color="gray">
                       Showing the most recent {GRANTS_FETCH_LIMIT} top-ups.
                     </Text>

@@ -7,11 +7,10 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { buildWorkflowVariables } from '@/services/workflowVariableResolvers'
-import { buildNotebookVariables } from '@/services/notebookVariableResolvers'
-import { getNotebookTemplateUrl, getWorkflowExecutionUrl } from '@/library/integrationTools'
+import { getHubApiOrigin, getWorkflowExecutionUrl } from '@/library/integrationTools'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
-import { launchNotebook } from '@/services/notebookLaunchService'
+import { launchNotebookInNewTab } from '@/hooks/useNotebookLaunch'
 
 interface ProcessLaunchModalProps {
   open: boolean
@@ -109,32 +108,23 @@ export const ProcessLaunchModal: React.FC<ProcessLaunchModalProps> = ({
   const handleNotebookLaunch = async () => {
     if (!canLaunchBase || !selectedItem) return
 
-    const templateUrl = getNotebookTemplateUrl(process)
-    if (!templateUrl) {
-      setLaunchError('Notebook template URL not found. Please contact support.')
-      return
-    }
-
-    const inputParameterKeys = Object.keys(process.properties?.inputParameters ?? {})
-    const context = { item: selectedItem, aoi, includeAoi }
-    const variables = buildNotebookVariables(inputParameterKeys, context)
-
     setIsLaunching(true)
     setLaunchError(null)
 
     try {
-      const spawnUrl = await launchNotebook(
-        {
-          workspace_name: currentWorkspace,
-          username,
-          action_name: process.id,
-          template_url: templateUrl,
-          variables: Object.keys(variables).length > 0 ? variables : undefined,
+      await launchNotebookInNewTab({
+        loadNotebook: () => Promise.resolve(process),
+        context: {
+          item: selectedItem,
+          aoi,
+          includeAoi,
+          workspace: currentWorkspace,
+          apiBaseUrl: getHubApiOrigin(),
         },
+        workspace: currentWorkspace,
+        username,
         token,
-      )
-
-      window.open(spawnUrl, '_blank')
+      })
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Failed to launch notebook. Please try again.'

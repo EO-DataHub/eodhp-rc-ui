@@ -215,6 +215,7 @@ export interface ProcessRecord {
     updated?: string
     applicableCollections?: string[]
     contacts?: unknown[]
+    inputParameters?: Record<string, InputParameterEntry>
   }
 }
 

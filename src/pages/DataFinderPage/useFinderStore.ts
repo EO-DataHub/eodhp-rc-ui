@@ -315,6 +315,8 @@ const dataFinderStore = createStore({
         isUserCollection: boolean
         collectionName: string
         collection?: Collection
+        /** Map state per item id, e.g. when opening a saved set. Defaults to visible at full opacity. */
+        mapRenderByItemId?: Record<string, { visible: boolean; opacity: number }>
       },
     ): typeof context => {
       const existingIds = new Set(context.pinnedItems.map((i) => i.pinId))
@@ -334,7 +336,7 @@ const dataFinderStore = createStore({
           collectionName: event.collectionName,
           collectionRef: event.collection,
           render: event.collectionRender,
-          mapRender: { visible: true, opacity: 1 },
+          mapRender: event.mapRenderByItemId?.[item.id] ?? { visible: true, opacity: 1 },
         }))
       return {
         ...context,

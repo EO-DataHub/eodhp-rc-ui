@@ -12,11 +12,12 @@ import {
   Checkbox,
 } from '@radix-ui/themes'
 import styles from './InfoPanel.module.scss'
-import type { Collection, Item } from '@/types'
+import type { Collection, Item, ProcessRecord } from '@/types'
 import { convertDateToUTCString } from '@/library/dateUtils'
 import {
   downloadLyrxForItem,
   downloadQlrForItem,
+  getHubApiOrigin,
   getTitilerXyzUrl,
   supportsIntegrationTools,
 } from '@/library/integrationTools'
@@ -24,6 +25,7 @@ import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
+import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
 import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { WorkflowLaunchModal } from '@/components/WorkflowLaunchModal/WorkflowLaunchModal'
@@ -427,6 +429,9 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
   )
 }
 
+// Set notebooks can't run on a single item.
+const isItemNotebook = (record: ProcessRecord) => !isPinSetNotebook(record)
+
 // Jupyter Tab Component
 const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
@@ -443,6 +448,17 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     setIncludeAoi(!!aoi)
   }, [aoi])
 
+  const launchContext = useMemo(
+    () => ({
+      item,
+      aoi,
+      includeAoi,
+      workspace: currentWorkspace,
+      apiBaseUrl: getHubApiOrigin(),
+    }),
+    [item, aoi, includeAoi, currentWorkspace],
+  )
+
   const {
     notebooks,
     selectedNotebook,
@@ -454,8 +470,10 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     launchError,
     retry,
   } = useNotebookLaunch({
-    item,
-    collection,
+    enabled: !!collection?.id,
+    applicableCollections: collection?.id,
+    filterNotebooks: isItemNotebook,
+    context: launchContext,
     token,
     currentWorkspace,
     username,
@@ -574,7 +592,7 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
                     variant="soft"
                     size="2"
                     disabled={!canLaunch}
-                    onClick={() => void launch(includeAoi)}
+                    onClick={() => void launch()}
                   >
                     {isLaunching ? 'Launching...' : 'Launch'}
                   </Button>

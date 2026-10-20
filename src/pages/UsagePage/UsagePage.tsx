@@ -3,16 +3,13 @@ import { Box, Button, Flex, SegmentedControl, Select, Table, Text } from '@radix
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import {
-  fetchAllWorkspaceUsageData,
-  fetchSkus,
-  fetchWorkspaceUsageData,
-} from '@/services/accountingService'
+import { fetchAllWorkspaceUsageData, fetchWorkspaceUsageData } from '@/services/accountingService'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { convertDateToUTCString } from '@/library/dateUtils'
+import { useSkusBySku } from '@/hooks/useSkusBySku'
+import { convertDateToLocalString } from '@/library/dateUtils'
 import styles from './UsagePage.module.scss'
 
 // The API has no way to ask for "most recent" events — only a start/end range or forward
@@ -31,7 +28,13 @@ const PAGE_SIZE = 10
 type DisplayMode = 'credits' | 'raw'
 type SortColumn = 'item' | 'value' | 'date'
 
-const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
+// Months are keyed as UTC-midnight dates (`${month}-01`); format in UTC too, or the label
+// shifts back a day for anyone west of UTC.
+const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+})
 
 const getMonthBounds = (month: string) => {
   const [year, monthIndex] = month.split('-').map(Number)
@@ -43,7 +46,18 @@ const getMonthBounds = (month: string) => {
 const formatQuantity = (value: number) =>
   Number.isInteger(value) ? String(value) : value.toFixed(2)
 
-const formatCredits = (value: number) => value.toFixed(2)
+// 2dp is fine for monthly/aggregate totals, but a single raw event (e.g. one 5-minute scrape
+// interval's worth of usage) can be a small enough fraction of a credit to round to "0.00" at
+// that precision even though it isn't actually zero. Extend precision only when needed, so
+// aggregates stay clean while individual transactions don't look free.
+const formatCredits = (value: number) => {
+  if (value === 0) return '0.00'
+  if (Math.abs(value) >= 0.01) return value.toFixed(2)
+  for (let decimalPlaces = 3; decimalPlaces <= 8; decimalPlaces += 1) {
+    if (Number(value.toFixed(decimalPlaces)) !== 0) return value.toFixed(decimalPlaces)
+  }
+  return value.toFixed(8)
+}
 
 export const UsagePage: React.FC = () => {
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
@@ -66,18 +80,7 @@ export const UsagePage: React.FC = () => {
     enabled: Boolean(token && currentWorkspace),
   })
 
-  const { data: skus } = useQuery({
-    queryKey: ['BillingSkus', userInfo?.sub],
-    queryFn: () => fetchSkus(token!),
-    refetchOnWindowFocus: false,
-    enabled: Boolean(token),
-  })
-
-  const skusBySku = useMemo(() => {
-    const map = new Map<string, { name: string; unit: string }>()
-    skus?.forEach((sku) => map.set(sku.sku, { name: sku.name, unit: sku.unit }))
-    return map
-  }, [skus])
+  const skusBySku = useSkusBySku(token, userInfo?.sub)
 
   const resourceLabel = (sku: string) => skusBySku.get(sku)?.name ?? sku
 
@@ -434,7 +437,7 @@ export const UsagePage: React.FC = () => {
                               <Table.Cell>{skusBySku.get(row.item)?.unit ?? '—'}</Table.Cell>
                             )}
                             <Table.Cell>
-                              {convertDateToUTCString(new Date(row.event_start))}
+                              {convertDateToLocalString(new Date(row.event_start))}
                             </Table.Cell>
                           </Table.Row>
                         ))}
