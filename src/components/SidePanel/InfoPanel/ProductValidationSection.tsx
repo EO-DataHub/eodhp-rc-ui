@@ -2,9 +2,12 @@ import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator
 import { fetchCollectionQAJsonAsset } from '@/services/collectionService'
 import { Collection, CollectionRadiometricAggregatePayload } from '@/types'
 import { CheckCircledIcon } from '@radix-ui/react-icons'
-import { Badge, Flex, Heading, Link, Select, Table, Text } from '@radix-ui/themes'
+import { Badge, Flex, Heading, Link, Table, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { findQALinkByRel } from '@/library/collectionQuality'
+import { RadiometricPeriodPicker, RadiometricStatus } from './RadiometricPeriodPicker'
+import { QAValidationIntro } from './qaIntroCopy'
 
 function formatWindowKeyLabel(key: string) {
   const [start, end] = key.split(',')
@@ -19,10 +22,15 @@ function formatWindowKeyLabel(key: string) {
   return endLabel ? `${startLabel} - ${endLabel}` : startLabel
 }
 
+/** Newest first; keys whose start date cannot be parsed go last. */
 function sortRadiometricWindowKeys(keys: string[]): string[] {
+  const parseStart = (k: string) => new Date(k.split(',')[0]?.trim() ?? '').getTime()
   return [...keys].sort((a, b) => {
-    const parseStart = (k: string) => new Date(k.split(',')[0]?.trim() ?? 0).getTime()
-    return parseStart(b) - parseStart(a)
+    const startA = parseStart(a)
+    const startB = parseStart(b)
+    if (Number.isNaN(startA)) return Number.isNaN(startB) ? 0 : 1
+    if (Number.isNaN(startB)) return -1
+    return startB - startA
   })
 }
 
@@ -38,7 +46,7 @@ const statusColorMapping = {
   'partial pass': 'orange',
 }
 
-type Status = keyof typeof statusMapping
+type Status = RadiometricStatus
 
 const renderStatusCell = (status: Status) => {
   return (
@@ -80,6 +88,14 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
 
   const output = activeKey && data?.[activeKey] ? data[activeKey] : undefined
 
+  const getStatus = useCallback(
+    (key: string) =>
+      data?.[key]?.results?.['data validation']?.['radiometric uncertainty']?.value?.[0] as
+        | Status
+        | undefined,
+    [data],
+  )
+
   if (!radiometricHref) {
     return 'Product validation metrics not available for this collection.'
   }
@@ -93,93 +109,154 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
     )
   }
 
-  if (!output || sortedKeys.length === 0) {
+  const tableData = output?.results?.['data validation']?.['radiometric uncertainty']
+
+  if (!tableData || sortedKeys.length === 0) {
     return 'Product validation metrics not available for this collection.'
   }
 
-  const tableData = output.results['data validation']['radiometric uncertainty']
-  const metrics = tableData?.stated_value.map((item) => item.split('%')[0])
-  const bands = tableData?.stated_value.map((item) => {
+  const statedValues = tableData.stated_value ?? []
+  const metrics = statedValues.map((item) => item.split('%')[0])
+  const bands = statedValues.map((item) => {
     const match = item.match(/\((.*?)\)/)
     return match ? match[1] : ''
   })
-  const statuses = tableData?.value[1]
-  const overallStatus = tableData?.value[0] as Status
+  const statuses = tableData.value?.[1]
+  const overallStatus = tableData.value?.[0] as Status | undefined
+  const links = tableData.links ?? []
 
-  const rows = bands?.map((band, i) => ({
-    metric: metrics?.[i],
+  const rows = bands.map((band, i) => ({
+    metric: metrics[i],
     band,
     status: statuses?.[i],
   }))
 
+  const productReportLink = findQALinkByRel(links, 'data_product_report')
+  const methodReportLink = findQALinkByRel(links, 'detailed_result_report')
+  const dashboardLink = findQALinkByRel(links, 'data_visualisation')
+
+  const statusBadgeContent = (
+    <>
+      <CheckCircledIcon />
+      Status: {overallStatus ? statusMapping[overallStatus] : 'Unknown'}
+    </>
+  )
+
   return (
     <Flex direction="column" gap="8">
+      <Flex direction="column" gap="2" maxWidth="700px">
+        <QAValidationIntro />
+        {methodReportLink && (
+          <Text as="p">
+            <Link
+              href={methodReportLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="always"
+              weight="medium"
+            >
+              {methodReportLink.title || 'Validation Workflow Description'}
+            </Link>
+          </Text>
+        )}
+      </Flex>
+
       <Flex direction="column" gap="4" align="start">
         <Heading as="h3" size="4" weight="medium">
           Radiometric Uncertainty
         </Heading>
-        <Flex align="center" gap="2">
-          <Text weight="medium">Time Period: </Text>
-          <Select.Root value={activeKey ?? undefined} onValueChange={(v) => setSelectedKey(v)}>
-            <Select.Trigger placeholder="Choose Time Period" />
-            <Select.Content>
-              {sortedKeys.map((key) => (
-                <Select.Item value={key} key={key}>
-                  {formatWindowKeyLabel(key)}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
+        <Flex direction="column" gap="2">
+          <Text weight="medium">Time Period</Text>
+          <RadiometricPeriodPicker
+            windowKeys={sortedKeys}
+            activeKey={activeKey ?? ''}
+            getStatus={getStatus}
+            formatKeyLabel={formatWindowKeyLabel}
+            onSelect={setSelectedKey}
+          />
         </Flex>
 
-        <>
+        <Flex align="center" gap="3" wrap="wrap">
           <Badge
             radius="full"
             size="3"
-            color={statusColorMapping[overallStatus] as 'green' | 'red' | 'orange'}
+            color={
+              overallStatus
+                ? (statusColorMapping[overallStatus] as 'green' | 'red' | 'orange')
+                : 'gray'
+            }
+            asChild={Boolean(dashboardLink)}
           >
-            <CheckCircledIcon />
-            Status: {statusMapping[overallStatus]}
+            {dashboardLink ? (
+              <a
+                href={dashboardLink.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={dashboardLink.title}
+                style={{ textDecoration: 'none' }}
+              >
+                {statusBadgeContent}
+              </a>
+            ) : (
+              statusBadgeContent
+            )}
           </Badge>
-          <Table.Root variant="surface" layout="fixed" style={{ maxWidth: 500 }}>
-            <Table.Header>
-              <Table.Row>
-                <Table.ColumnHeaderCell>Bands</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Metric</Table.ColumnHeaderCell>
-                <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+          {activeKey && <Text color="gray">{formatWindowKeyLabel(activeKey)}</Text>}
+        </Flex>
+
+        <Table.Root variant="surface" layout="fixed" style={{ maxWidth: 500 }}>
+          <Table.Header>
+            <Table.Row>
+              <Table.ColumnHeaderCell>Bands</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Metric</Table.ColumnHeaderCell>
+              <Table.ColumnHeaderCell>Status</Table.ColumnHeaderCell>
+            </Table.Row>
+          </Table.Header>
+
+          <Table.Body>
+            {rows.map((row, index) => (
+              <Table.Row key={index}>
+                <Table.RowHeaderCell>{row.band}</Table.RowHeaderCell>
+                <Table.Cell>
+                  {productReportLink ? (
+                    <Link
+                      href={productReportLink.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      underline="always"
+                      title={productReportLink.title}
+                    >
+                      {row.metric}%
+                    </Link>
+                  ) : (
+                    `${row.metric}%`
+                  )}
+                </Table.Cell>
+                {renderStatusCell(row.status as Status)}
               </Table.Row>
-            </Table.Header>
+            ))}
+          </Table.Body>
+        </Table.Root>
 
-            <Table.Body>
-              {rows?.map((row, index) => (
-                <Table.Row key={index}>
-                  <Table.RowHeaderCell>{row.band}</Table.RowHeaderCell>
-                  <Table.Cell>{row.metric}%</Table.Cell>
-                  {renderStatusCell(row.status as 'pass' | 'fail' | 'partial pass')}
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table.Root>
-
-          <Flex direction="column" align="start">
-            <Heading as="h3" size="4" mb="2" weight="medium">
-              Additional Information
-            </Heading>
-            <Flex direction="column" gap="2">
-              {tableData?.links.map((link, index) => (
-                <Link
-                  key={`${link.rel}-${link.href}-${index}`}
-                  href={link.href}
-                  target="_blank"
-                  underline="always"
-                  weight="medium"
-                >
-                  {link.title}
-                </Link>
-              ))}
-            </Flex>
+        <Flex direction="column" align="start">
+          <Heading as="h3" size="4" mb="2" weight="medium">
+            Additional Information
+          </Heading>
+          <Flex direction="column" gap="2">
+            {links.map((link, index) => (
+              <Link
+                key={`${link.rel}-${link.href}-${index}`}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="always"
+                weight="medium"
+              >
+                {link.title}
+              </Link>
+            ))}
           </Flex>
-        </>
+        </Flex>
       </Flex>
     </Flex>
   )

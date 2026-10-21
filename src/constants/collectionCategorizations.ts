@@ -147,7 +147,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_sar_data: {
@@ -157,7 +156,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_pneo_data: {
@@ -167,7 +165,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   airbus_phr_data: {
@@ -177,7 +174,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: true,
     additionalFieldsToDisplay: [],
   },
   airbus_data_example: {
@@ -187,7 +183,6 @@ const collectionCategorization = {
     location: [],
     timePeriod: [],
     license: [],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   ukcp: {
@@ -197,7 +192,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Forecast],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   sentinel2_ard: {
@@ -207,7 +201,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: true,
     additionalFieldsToDisplay: [],
   },
   'sentinel-2-c1-l2a': {
@@ -217,7 +210,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   sentinel1: {
@@ -227,7 +219,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   sentinel1_ard: {
@@ -237,7 +228,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   land_cover: {
@@ -247,7 +237,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'clms-lcm-global-10m-yearly-v1-cog': {
@@ -257,7 +246,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3': {
@@ -267,7 +255,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-arctic-sea-ice-thickness-monthly': {
@@ -277,7 +264,6 @@ const collectionCategorization = {
     location: [Location.Continental],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-night': {
@@ -287,7 +273,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3b-day': {
@@ -297,7 +282,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-night': {
@@ -307,7 +291,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-lst-s3a-day': {
@@ -317,7 +300,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3a': {
@@ -327,7 +309,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-daily-s3b': {
@@ -337,7 +318,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3a': {
@@ -347,7 +327,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-aerosol-slstr-monthly-s3b': {
@@ -357,7 +336,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-sst-cdrv3-climatology': {
@@ -367,7 +345,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerScene: {
@@ -377,7 +354,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   TanagerMethane: {
@@ -387,7 +363,6 @@ const collectionCategorization = {
     location: [],
     timePeriod: [],
     license: [],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatVideo: {
@@ -397,7 +372,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatScene: {
@@ -407,7 +381,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   SkySatCollect: {
@@ -417,7 +390,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   REScene: {
@@ -427,7 +399,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   REOrthoTile: {
@@ -437,7 +408,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   PSScene: {
@@ -447,7 +417,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: true,
     additionalFieldsToDisplay: [],
   },
   cordex: {
@@ -457,7 +426,6 @@ const collectionCategorization = {
     location: [Location.Continental],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   cmip6: {
@@ -467,7 +435,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current, TimePeriod.Forecast],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [
       'cmip6:variable_long_name',
       'cmip6:frequency',
@@ -483,7 +450,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   DYAMOND3_N2560: {
@@ -493,7 +459,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   wcrp: {
@@ -503,7 +468,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'menut-l1a-cogs': {
@@ -513,7 +477,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'menut-l1b-cogs': {
@@ -523,7 +486,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'menut-l1c-cogs': {
@@ -533,7 +495,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'mantis-l1d-cogs': {
@@ -543,7 +504,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'hammer-l1c-cogs': {
@@ -553,7 +513,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'accenture-1-l1c-cogs': {
@@ -563,7 +522,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Commercial_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   ceda_flights: {
@@ -573,7 +531,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic],
     license: [],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-land-vegetation-fapar': {
@@ -583,7 +540,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-geospatial-builtarea': {
@@ -593,7 +549,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-geospatial-elevation': {
@@ -603,7 +558,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-geospatial-landclass': {
@@ -613,7 +567,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-geospatial-landcover': {
@@ -623,7 +576,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-land-vegetation-lai': {
@@ -633,7 +585,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-lst': {
@@ -643,7 +594,6 @@ const collectionCategorization = {
     location: [Location.United_Kingdom],
     timePeriod: [TimePeriod.Historic],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-chuk-geospatial': {
@@ -653,7 +603,6 @@ const collectionCategorization = {
     location: [],
     timePeriod: [],
     license: [],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   'eocis-soil-moisture-africa': {
@@ -663,7 +612,6 @@ const collectionCategorization = {
     location: [Location.Continental],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
   era5_repack: {
@@ -673,7 +621,6 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
-    qa: null,
     additionalFieldsToDisplay: [],
   },
 }

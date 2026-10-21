@@ -15,10 +15,15 @@ import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
 import { Callout } from '../Callout/Callout'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { getCollectionFinderUrl } from '@/library/catalogUtils'
+import { getDefaultQATab } from '@/library/collectionQuality'
+import type { CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
 }
+
+/** Which card button opened the info panel. Clicking the same button again closes it. */
+type InfoPanelSource = 'info' | 'qa'
 
 interface GroupByCollection {
   category: { label: string; value: string }
@@ -27,7 +32,7 @@ interface GroupByCollection {
 
 const renderGroupedByCollections = (
   groupedByCollections: GroupByCollection[],
-  onSelectCollectionInfo: (collection: Collection) => void,
+  onSelectCollectionInfo: (collection: Collection, source?: InfoPanelSource) => void,
   onChangeCollection: (collection: Collection) => void,
 ) => {
   if (!groupedByCollections) {
@@ -71,6 +76,7 @@ const renderGroupedByCollections = (
                     key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
                     collection={collection}
                     onSelectCollectionInfo={() => onSelectCollectionInfo(collection)}
+                    onSelectCollectionQA={() => onSelectCollectionInfo(collection, 'qa')}
                     onChangeCollection={() => onChangeCollection(collection)}
                   />
                 ))}
@@ -86,6 +92,8 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
   const { trackCollectionVisualization } = useAnalyticsActions()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedCollectionInfo, setSelectedCollectionInfo] = useState<Collection | null>(null)
+  const [collectionInfoTab, setCollectionInfoTab] = useState<CollectionInfoTab>('metadata')
+  const [infoPanelSource, setInfoPanelSource] = useState<InfoPanelSource>('info')
 
   const {
     searchText,
@@ -102,13 +110,17 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
 
   const navigate = useNavigate()
 
-  const handleSelectCollectionInfo = (collection: Collection) => {
+  const handleSelectCollectionInfo = (collection: Collection, source: InfoPanelSource = 'info') => {
     // Reset item info panel
     setIsFilterOpen(false)
-    if (selectedCollectionInfo?.id === collection.id) {
+    // Compare against the button that opened the panel, not the current tab, so the
+    // toggle still closes after the user has moved to another tab
+    if (selectedCollectionInfo?.id === collection.id && infoPanelSource === source) {
       setSelectedCollectionInfo(null)
     } else {
       setSelectedCollectionInfo(collection)
+      setInfoPanelSource(source)
+      setCollectionInfoTab(source === 'qa' ? getDefaultQATab(collection) : 'metadata')
     }
   }
 
@@ -180,6 +192,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
                 key={collection.isUserCollection ? `user-${collection.id}` : collection.id}
                 collection={collection}
                 onSelectCollectionInfo={() => handleSelectCollectionInfo(collection)}
+                onSelectCollectionQA={() => handleSelectCollectionInfo(collection, 'qa')}
                 onChangeCollection={() => handleChangeCollection(collection)}
               />
             )}
@@ -207,6 +220,8 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
           <CollectionInfoPanel
             onClose={() => setSelectedCollectionInfo(null)}
             selectedCollection={selectedCollectionInfo}
+            tab={collectionInfoTab}
+            onTabChange={setCollectionInfoTab}
           />
         )}
       </InfoPanelWrapper>
