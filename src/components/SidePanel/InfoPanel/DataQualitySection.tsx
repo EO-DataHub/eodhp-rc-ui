@@ -10,8 +10,7 @@ import {
 } from '@/types'
 import { fetchCollectionQAJsonAsset } from '@/services/collectionService'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import { parseFrameworkReference } from '@/library/collectionQuality'
-import { qaDocumentationIntro } from './qaIntroCopy'
+import { QADocumentationIntro } from './qaIntroCopy'
 
 const metricLabelMapping = {
   'not assessed': 'Not Assessed',
@@ -205,7 +204,6 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
 
   const { links: reportLinks, ...categories } = output.qa_check_results
   const reportLink = reportLinks?.[0]
-  const frameworkReference = parseFrameworkReference(output.information)
 
   const rowCount = Math.max(
     ...Object.values(categories).map((category) => Object.keys(category).length),
@@ -216,19 +214,7 @@ export const DataQualitySection = ({ collection }: { collection: Collection }) =
   return (
     <Flex direction="column" gap="8">
       <Flex direction="column" gap="2" maxWidth="700px">
-        <Text as="p">{qaDocumentationIntro}</Text>
-        {frameworkReference && (
-          <Text as="p">
-            <Link
-              href={frameworkReference.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              underline="always"
-            >
-              {frameworkReference.label}
-            </Link>
-          </Text>
-        )}
+        <QADocumentationIntro />
       </Flex>
 
       <Flex direction="column">

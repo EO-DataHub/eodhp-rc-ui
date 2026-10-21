@@ -4,7 +4,6 @@ import {
   findQALinkByRel,
   getDefaultQATab,
   groupRadiometricWindowsByYear,
-  parseFrameworkReference,
   parseRadiometricWindows,
 } from './collectionQuality'
 import type { Collection } from '@/types'
@@ -57,36 +56,6 @@ describe('findQALinkByRel', () => {
   test('does not match partial segments', () => {
     expect(findQALinkByRel(links, 'report')).toBeUndefined()
     expect(findQALinkByRel(undefined, 'report')).toBeUndefined()
-  })
-})
-
-describe('parseFrameworkReference', () => {
-  test('splits label and URL', () => {
-    expect(
-      parseFrameworkReference(
-        'Result criteria follows EDAP EO Mission Quality Assessment Framework - Optical Guidelines, found at: https://earth.esa.int/doc.pdf/1c26',
-      ),
-    ).toEqual({
-      label:
-        'Result criteria follows EDAP EO Mission Quality Assessment Framework - Optical Guidelines',
-      href: 'https://earth.esa.int/doc.pdf/1c26',
-    })
-  })
-
-  test('does not cut words that end in "at" or "see"', () => {
-    expect(
-      parseFrameworkReference('Assessment is available in PDF format: https://example.com/a.pdf'),
-    ).toEqual({
-      label: 'Assessment is available in PDF format',
-      href: 'https://example.com/a.pdf',
-    })
-    expect(parseFrameworkReference('Oversee https://example.com')?.label).toBe('Oversee')
-    expect(parseFrameworkReference('Details, see https://example.com')?.label).toBe('Details')
-  })
-
-  test('returns null without a URL', () => {
-    expect(parseFrameworkReference('No link here')).toBeNull()
-    expect(parseFrameworkReference(undefined)).toBeNull()
   })
 })
 

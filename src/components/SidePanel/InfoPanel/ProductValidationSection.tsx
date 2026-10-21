@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { findQALinkByRel } from '@/library/collectionQuality'
 import { RadiometricPeriodPicker, RadiometricStatus } from './RadiometricPeriodPicker'
-import { qaValidationIntro, qaValidationMethodLeadIn } from './qaIntroCopy'
+import { QAValidationIntro } from './qaIntroCopy'
 
 function formatWindowKeyLabel(key: string) {
   const [start, end] = key.split(',')
@@ -145,24 +145,20 @@ export const ProductValidationSection = ({ collection }: { collection: Collectio
   return (
     <Flex direction="column" gap="8">
       <Flex direction="column" gap="2" maxWidth="700px">
-        <Text as="p">
-          {qaValidationIntro}
-          {methodReportLink && (
-            <>
-              {' '}
-              {qaValidationMethodLeadIn}{' '}
-              <Link
-                href={methodReportLink.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                underline="always"
-              >
-                {methodReportLink.title || 'Validation Workflow Description'}
-              </Link>
-              .
-            </>
-          )}
-        </Text>
+        <QAValidationIntro />
+        {methodReportLink && (
+          <Text as="p">
+            <Link
+              href={methodReportLink.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="always"
+              weight="medium"
+            >
+              {methodReportLink.title || 'Validation Workflow Description'}
+            </Link>
+          </Text>
+        )}
       </Flex>
 
       <Flex direction="column" gap="4" align="start">

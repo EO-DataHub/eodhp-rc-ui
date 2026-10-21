@@ -33,22 +33,6 @@ export function findQALinkByRel<T extends QALink>(links: T[] | undefined, relNam
   })
 }
 
-/**
- * Split the QPR `information` text into a readable label and the first URL it contains,
- * e.g. "Result criteria follows X, found at: https://..." -> { label: "Result criteria follows X", href }.
- */
-export function parseFrameworkReference(
-  information: string | undefined,
-): { label: string; href: string } | null {
-  const match = information?.match(/https?:\/\/\S+/)
-  if (!information || match?.index == null) return null
-  const label = information
-    .slice(0, match.index)
-    .replace(/[\s,:]*(?:\b(?:found at|see|at))?[\s,:]*$/i, '')
-    .trim()
-  return { label: label || 'Assessment framework', href: match[0] }
-}
-
 export interface RadiometricWindow {
   key: string
   year: number
