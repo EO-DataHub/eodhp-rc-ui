@@ -26,6 +26,14 @@ export type SecondaryPanel =
   | 'integration-tools'
   | undefined
 
+export type CollectionInfoTab =
+  | 'metadata'
+  | 'assets'
+  | 'providers'
+  | 'resources'
+  | 'qa_documentation'
+  | 'qa_validation'
+
 const PlaceholderRender: StacRender = {
   id: 'default',
   title: 'Default visualization',
@@ -36,6 +44,7 @@ interface AppContext {
   isContextHydrated: boolean
   isLoading: boolean
   secondaryPanel: SecondaryPanel
+  collectionInfoTab: CollectionInfoTab
   infoPanelItem?: Item
   mapInstance?: MapInstance
   drawInstance?: MapboxDraw
@@ -63,6 +72,7 @@ const dataFinderStore = createStore({
     isContextHydrated: false,
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined,
+    collectionInfoTab: 'metadata',
     infoPanelItem: undefined,
     mapInstance: undefined,
     drawInstance: undefined,
@@ -113,6 +123,30 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: event.panel,
+        // Opening the collection info panel generically always starts on the first tab
+        collectionInfoTab:
+          event.panel === 'collection-info' ? 'metadata' : context.collectionInfoTab,
+      }
+    },
+    toggleCollectionInfoTab: (context, event: { tab: CollectionInfoTab }): typeof context => {
+      // Panel is already open on the requested tab, close it
+      if (context.secondaryPanel === 'collection-info' && context.collectionInfoTab === event.tab) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+        }
+      }
+
+      return {
+        ...context,
+        secondaryPanel: 'collection-info',
+        collectionInfoTab: event.tab,
+      }
+    },
+    setCollectionInfoTab: (context, event: { tab: CollectionInfoTab }) => {
+      return {
+        ...context,
+        collectionInfoTab: event.tab,
       }
     },
     toggleItemInfoPanel: (context, event: { item: Item }): typeof context => {
@@ -315,6 +349,8 @@ const dataFinderStore = createStore({
         isUserCollection: boolean
         collectionName: string
         collection?: Collection
+        /** Map state per item id, e.g. when opening a saved set. Defaults to visible at full opacity. */
+        mapRenderByItemId?: Record<string, { visible: boolean; opacity: number }>
       },
     ): typeof context => {
       const existingIds = new Set(context.pinnedItems.map((i) => i.pinId))
@@ -334,7 +370,7 @@ const dataFinderStore = createStore({
           collectionName: event.collectionName,
           collectionRef: event.collection,
           render: event.collectionRender,
-          mapRender: { visible: true, opacity: 1 },
+          mapRender: event.mapRenderByItemId?.[item.id] ?? { visible: true, opacity: 1 },
         }))
       return {
         ...context,

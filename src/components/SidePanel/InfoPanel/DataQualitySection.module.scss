@@ -24,3 +24,24 @@
   align-self: flex-start;
   border-radius: 8px;
 }
+.linkCell {
+  width: 100%;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:hover {
+    filter: brightness(0.92);
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #002060;
+    outline-offset: -2px;
+  }
+}
+
+.linkIcon {
+  flex-shrink: 0;
+}
