@@ -26,6 +26,8 @@ export type SecondaryPanel =
   | 'integration-tools'
   | undefined
 
+export type InfoPanelTab = 'metadata' | 'assets' | 'resources' | 'download'
+
 export type CollectionInfoTab =
   | 'metadata'
   | 'assets'
@@ -46,6 +48,7 @@ interface AppContext {
   secondaryPanel: SecondaryPanel
   collectionInfoTab: CollectionInfoTab
   infoPanelItem?: Item
+  infoPanelTab: InfoPanelTab
   mapInstance?: MapInstance
   drawInstance?: MapboxDraw
   drawMode?: DrawMode
@@ -74,6 +77,7 @@ const dataFinderStore = createStore({
     secondaryPanel: undefined,
     collectionInfoTab: 'metadata',
     infoPanelItem: undefined,
+    infoPanelTab: 'metadata',
     mapInstance: undefined,
     drawInstance: undefined,
     drawMode: undefined,
@@ -149,9 +153,15 @@ const dataFinderStore = createStore({
         collectionInfoTab: event.tab,
       }
     },
-    toggleItemInfoPanel: (context, event: { item: Item }): typeof context => {
-      // Panel is already open with the same item, close it
-      if (context.infoPanelItem?.id === event.item.id) {
+    toggleItemInfoPanel: (context, event: { item: Item; tab?: InfoPanelTab }): typeof context => {
+      const tab = event.tab ?? 'metadata'
+      const isOpenForItem =
+        context.infoPanelItem?.id === event.item.id && context.secondaryPanel === 'item-info'
+      // The card's download button owns the Download tab and the info button owns the rest
+      const isSameButton = (tab === 'download') === (context.infoPanelTab === 'download')
+
+      // Panel is already open with the same item from the same button, close it
+      if (isOpenForItem && isSameButton) {
         return {
           ...context,
           secondaryPanel: undefined,
@@ -163,6 +173,13 @@ const dataFinderStore = createStore({
         ...context,
         secondaryPanel: 'item-info',
         infoPanelItem: event.item,
+        infoPanelTab: tab,
+      }
+    },
+    setInfoPanelTab: (context, event: { tab: InfoPanelTab }) => {
+      return {
+        ...context,
+        infoPanelTab: event.tab,
       }
     },
     toggleIntegrationToolsPanel: (context, event: { item: Item }): typeof context => {

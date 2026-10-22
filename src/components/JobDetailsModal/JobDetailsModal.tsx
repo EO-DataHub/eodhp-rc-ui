@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import { Link as RouterLink } from 'react-router-dom'
 import { Dialog, Button, Flex, Text, Box } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import { WorkflowJob } from '@/types'
@@ -6,6 +7,7 @@ import { formatOrderDate } from '@/library/orderUtils'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { useWorkflowJobDetails } from '@/hooks/useWorkflowJobDetails'
+import { getWorkflowOutputDownloadUrl } from '@/library/catalogUtils'
 import styles from './JobDetailsModal.module.scss'
 
 interface JobDetailsModalProps {
@@ -46,6 +48,15 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   } = useWorkflowJobDetails({ job, workspaceName })
 
   if (!job) return null
+
+  const resultsLinks = (resultsData as { links?: { rel: string; href: string }[] } | undefined)
+    ?.links
+  const resultsSelfHref = Array.isArray(resultsLinks)
+    ? resultsLinks.find((link) => link.rel === 'self')?.href
+    : undefined
+  const downloadUrl = resultItem
+    ? getWorkflowOutputDownloadUrl(resultItem, resultsSelfHref)
+    : undefined
 
   const formatTimestamp = (timestamp: string | null): string => {
     if (!timestamp) return 'N/A'
@@ -306,6 +317,13 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                         <Text size="2" style={{ fontFamily: 'monospace' }}>
                           {resultItem.id}
                         </Text>
+                        {downloadUrl && (
+                          <Box mt="2">
+                            <Button size="1" variant="soft" asChild>
+                              <RouterLink to={downloadUrl}>Open download page</RouterLink>
+                            </Button>
+                          </Box>
+                        )}
                         <Box mt="2">
                           {Object.entries(resultItem.assets ?? {}).length === 0 && (
                             <Text size="2" color="gray">

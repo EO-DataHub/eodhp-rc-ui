@@ -4,6 +4,7 @@ import { CubeData, Item, ItemCardType } from '@/types'
 import {
   BlendingModeIcon,
   Cross2Icon,
+  DownloadIcon,
   DrawingPinIcon,
   EyeOpenIcon,
   EyeClosedIcon,
@@ -38,6 +39,7 @@ import { useSelector } from '@xstate/store/react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItem } from '@/services/itemService'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
+import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
@@ -159,7 +161,13 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
 
-  const isSelected = infoPanelItem?.id === item.id && secondaryPanel === 'item-info'
+  const infoPanelTab = useSelector(dataFinderStore, (state) => state.context.infoPanelTab)
+  const { trackViewItemDownloads } = useAnalyticsActions()
+
+  const isInfoPanelOpenForItem = infoPanelItem?.id === item.id && secondaryPanel === 'item-info'
+  // The info and download buttons share one panel, so highlight the one matching the open tab
+  const isSelected = isInfoPanelOpenForItem && infoPanelTab !== 'download'
+  const isDownloadSelected = isInfoPanelOpenForItem && infoPanelTab === 'download'
   const isIntegrationToolsSelected =
     infoPanelItem?.id === item.id && secondaryPanel === 'integration-tools'
   const isAnyPanelSelected = infoPanelItem?.id === item.id
@@ -552,6 +560,24 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
                 description="This link will open the map with this item pinned and the current map view."
               />
             )}
+            <ActionButton
+              active={isDownloadSelected}
+              onClick={() => {
+                if (!isDownloadSelected) {
+                  trackViewItemDownloads({
+                    item,
+                    assetCount: Object.keys(item.assets ?? {}).length,
+                    source: 'card',
+                  })
+                }
+                dataFinderStore.send({ type: 'toggleItemInfoPanel', item, tab: 'download' })
+              }}
+              aria-label="Download this item"
+            >
+              <Tooltip content="Download">
+                <DownloadIcon />
+              </Tooltip>
+            </ActionButton>
             <ActionButton
               active={isSelected}
               onClick={() => dataFinderStore.send({ type: 'toggleItemInfoPanel', item })}
