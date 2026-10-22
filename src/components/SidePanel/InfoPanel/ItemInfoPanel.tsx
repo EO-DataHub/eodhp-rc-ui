@@ -13,7 +13,7 @@ import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { InfoPanelTab } from '@/pages/DataFinderPage/useFinderStore'
 import { SaveToSetDialog } from '@/components/SavedSets/SaveToSetDialog'
 import { ItemDownloads } from '@/components/ItemDownloads/ItemDownloads'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
@@ -28,6 +28,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const activeTab = useSelector(dataFinderStore, (state) => state.context.infoPanelTab)
   const [isSaveToSetOpen, setIsSaveToSetOpen] = useState(false)
   const { trackViewItemDownloads } = useAnalyticsActions()
   const collectionUrl = useMemo(() => {
@@ -107,6 +108,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const isPrivateItem = !!(item?.isUserCollection ?? isUserItem) || !!downloadWorkspace
 
   const handleTabChange = (value: string) => {
+    dataFinderStore.send({ type: 'setInfoPanelTab', tab: value as InfoPanelTab })
     if (value === 'download' && itemWithCollectionContext) {
       trackViewItemDownloads({
         item: itemWithCollectionContext,
@@ -149,7 +151,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
             </Text>
           </Flex>
 
-          <Tabs.Root defaultValue="metadata" onValueChange={handleTabChange}>
+          <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
             <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
