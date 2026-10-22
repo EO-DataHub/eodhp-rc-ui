@@ -4,21 +4,25 @@ import { Flex, Text, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { QAButton } from '../QAButton/QAButton'
 import styles from './SidePanelCollectionCard.module.scss'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { collectionHasQAIndicators } from '@/library/collectionQuality'
 
 interface CollectionCardProps {
   collection: Collection
   onSelectCollectionInfo: () => void
+  onSelectCollectionQA: () => void
   onChangeCollection: () => void
 }
 
 export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
   collection,
   onSelectCollectionInfo,
+  onSelectCollectionQA,
   onChangeCollection,
 }) => {
   const selectedCollection = useSelector(dataFinderStore, (state) => state.context.collection)
@@ -34,6 +38,7 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
   }
 
   const isLicenseProprietary = isCollectionPurchasable(collection)
+  const hasQA = collectionHasQAIndicators(collection)
 
   return (
     <Flex
@@ -55,6 +60,8 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
               <PoundSterlingSymbolIcon width="6" height="9" />
             </IconButton>
           )}
+
+          {hasQA && <QAButton onClick={onSelectCollectionQA} className={styles.infoButton} />}
 
           <Tooltip content="View Collection Metadata">
             <IconButton

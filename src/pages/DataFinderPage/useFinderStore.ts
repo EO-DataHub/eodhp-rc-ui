@@ -28,6 +28,14 @@ export type SecondaryPanel =
 
 export type InfoPanelTab = 'metadata' | 'assets' | 'resources' | 'download'
 
+export type CollectionInfoTab =
+  | 'metadata'
+  | 'assets'
+  | 'providers'
+  | 'resources'
+  | 'qa_documentation'
+  | 'qa_validation'
+
 const PlaceholderRender: StacRender = {
   id: 'default',
   title: 'Default visualization',
@@ -38,6 +46,7 @@ interface AppContext {
   isContextHydrated: boolean
   isLoading: boolean
   secondaryPanel: SecondaryPanel
+  collectionInfoTab: CollectionInfoTab
   infoPanelItem?: Item
   infoPanelTab: InfoPanelTab
   mapInstance?: MapInstance
@@ -66,6 +75,7 @@ const dataFinderStore = createStore({
     isContextHydrated: false,
     isLoading: true, // flag to indicate if the initial data is loading (replacement to useQuery 'isLoading')
     secondaryPanel: undefined,
+    collectionInfoTab: 'metadata',
     infoPanelItem: undefined,
     infoPanelTab: 'metadata',
     mapInstance: undefined,
@@ -117,6 +127,30 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: event.panel,
+        // Opening the collection info panel generically always starts on the first tab
+        collectionInfoTab:
+          event.panel === 'collection-info' ? 'metadata' : context.collectionInfoTab,
+      }
+    },
+    toggleCollectionInfoTab: (context, event: { tab: CollectionInfoTab }): typeof context => {
+      // Panel is already open on the requested tab, close it
+      if (context.secondaryPanel === 'collection-info' && context.collectionInfoTab === event.tab) {
+        return {
+          ...context,
+          secondaryPanel: undefined,
+        }
+      }
+
+      return {
+        ...context,
+        secondaryPanel: 'collection-info',
+        collectionInfoTab: event.tab,
+      }
+    },
+    setCollectionInfoTab: (context, event: { tab: CollectionInfoTab }) => {
+      return {
+        ...context,
+        collectionInfoTab: event.tab,
       }
     },
     toggleItemInfoPanel: (context, event: { item: Item; tab?: InfoPanelTab }): typeof context => {

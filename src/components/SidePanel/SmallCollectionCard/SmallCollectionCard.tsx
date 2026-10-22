@@ -3,20 +3,25 @@ import { useSelector } from '@xstate/store/react'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Flex, Text, Card, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import { getFormattedDateRange } from '@/library/dateUtils'
+import { QAButton } from '../QAButton/QAButton'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
+  onSelectCollectionQA: () => void
   onChangeCollection: () => void
   isLicenseProprietary: boolean
+  hasQA: boolean
   disabled?: boolean
 }
 
 export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
   onSelectCollectionInfo,
+  onSelectCollectionQA,
   isLicenseProprietary,
+  hasQA,
   onChangeCollection,
   disabled = false,
 }) => {
@@ -39,6 +44,7 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
                 <PoundSterlingSymbolIcon width="6" height="9" />
               </IconButton>
             )}
+            {hasQA && <QAButton onClick={onSelectCollectionQA} className={styles.infoButton} />}
             <Tooltip content="View Collection Metadata">
               <IconButton radius="full" variant="solid" className={styles.infoButton}>
                 <InfoCircledIcon width="20" height="20" onClick={onSelectCollectionInfo} />

@@ -11,15 +11,21 @@ import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { ProvidersSection } from './ProvidersSection'
 import { DataQualitySection } from './DataQualitySection'
 import { ProductValidationSection } from './ProductValidationSection'
+import type { CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
   selectedCollection: Collection | null | undefined
+  /** Controls the active tab. Omit to let the panel manage its own tab. */
+  tab?: CollectionInfoTab
+  onTabChange?: (tab: CollectionInfoTab) => void
 }
 
 export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
   onClose,
   selectedCollection,
+  tab,
+  onTabChange,
 }) => {
   return (
     <>
@@ -50,14 +56,18 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
             ))}
           </Flex>
 
-          <Tabs.Root defaultValue="metadata">
+          <Tabs.Root
+            defaultValue="metadata"
+            value={tab}
+            onValueChange={(value) => onTabChange?.(value as CollectionInfoTab)}
+          >
             <Tabs.List style={{ justifySelf: 'flex-start', fontSize: 16 }}>
               <Tabs.Trigger value="metadata">Metadata</Tabs.Trigger>
               <Tabs.Trigger value="assets">Assets</Tabs.Trigger>
               <Tabs.Trigger value="providers">Providers</Tabs.Trigger>
               <Tabs.Trigger value="resources">Additional Resources</Tabs.Trigger>
-              <Tabs.Trigger value="document_qa">Document QA</Tabs.Trigger>
-              <Tabs.Trigger value="product_validation">Product Validation</Tabs.Trigger>
+              <Tabs.Trigger value="qa_documentation">QA – Documentation</Tabs.Trigger>
+              <Tabs.Trigger value="qa_validation">QA – Validation</Tabs.Trigger>
             </Tabs.List>
 
             <Box pt="6">
@@ -88,11 +98,11 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
                 <AdditionalResourcesSection links={selectedCollection.links} />
               </Tabs.Content>
 
-              <Tabs.Content value="document_qa">
+              <Tabs.Content value="qa_documentation">
                 <DataQualitySection collection={selectedCollection} />
               </Tabs.Content>
 
-              <Tabs.Content value="product_validation">
+              <Tabs.Content value="qa_validation">
                 <ProductValidationSection collection={selectedCollection} />
               </Tabs.Content>
             </Box>

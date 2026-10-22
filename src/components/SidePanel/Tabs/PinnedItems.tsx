@@ -1,8 +1,8 @@
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useContext, useState } from 'react'
 import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
-import { BookmarkIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
+import { BookmarkIcon, ListBulletIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { SaveToSetDialog, SaveToSetMode } from '@/components/SavedSets/SaveToSetDialog'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -58,7 +58,13 @@ const ShareViewButton = () => {
 
   return (
     <>
-      <Tooltip content={tooltip}>
+      <Tooltip
+        content={
+          canShare
+            ? 'Copy a link to these pinned items and the current map view (not saved)'
+            : tooltip
+        }
+      >
         <Flex width="fit-content" px="2">
           <Button
             variant="ghost"
@@ -86,38 +92,93 @@ const ShareViewButton = () => {
   )
 }
 
-/** "Save as set" and "Add to set" for the pinned items. Saved sets need a signed-in workspace. */
+/**
+ * "Save as set", "Add to set" and "Open set". Saved sets need a signed-in workspace, so the buttons
+ * are greyed out with a reason rather than hidden, to show the feature exists.
+ */
 const SavedSetButtons = () => {
   const { isAuthenticated, currentWorkspace } = useContext(AuthenticationContext)
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
+  const hasPinnedItems = pinnedItems.length > 0
+  const navigate = useNavigate()
   const [mode, setMode] = useState<SaveToSetMode>()
 
-  if (!isAuthenticated || !currentWorkspace) return null
+  const unavailableReason = !isAuthenticated
+    ? 'Log in to'
+    : !currentWorkspace
+      ? 'Select a workspace to'
+      : undefined
+  const tooltip = (action: string, available: string) =>
+    unavailableReason ? `${unavailableReason} ${action}` : available
 
   return (
     <>
-      <Tooltip content={`Save the pinned items to ${currentWorkspace} as a new set`}>
+      {hasPinnedItems && (
+        <>
+          <Tooltip
+            content={tooltip(
+              'save sets',
+              `Save the pinned items as a new set in the ${currentWorkspace} workspace, where all its members can open it`,
+            )}
+          >
+            <Flex width="fit-content" px="2">
+              <Button
+                variant="ghost"
+                size="2"
+                onClick={() => setMode('new')}
+                disabled={!!unavailableReason}
+              >
+                <BookmarkIcon width="16px" height="16px" />
+                <Text>Save as set</Text>
+              </Button>
+            </Flex>
+          </Tooltip>
+          <Tooltip
+            content={tooltip(
+              'add to sets',
+              `Add the pinned items to a set saved in the ${currentWorkspace} workspace`,
+            )}
+          >
+            <Flex width="fit-content" px="2">
+              <Button
+                variant="ghost"
+                size="2"
+                onClick={() => setMode('existing')}
+                disabled={!!unavailableReason}
+              >
+                <PlusIcon width="16px" height="16px" />
+                <Text>Add to set</Text>
+              </Button>
+            </Flex>
+          </Tooltip>
+        </>
+      )}
+      <Tooltip
+        content={tooltip(
+          'open saved sets',
+          `Open a set saved in the ${currentWorkspace} workspace`,
+        )}
+      >
         <Flex width="fit-content" px="2">
-          <Button variant="ghost" size="2" onClick={() => setMode('new')}>
-            <BookmarkIcon width="16px" height="16px" />
-            <Text>Save as set</Text>
+          <Button
+            variant="ghost"
+            size="2"
+            onClick={() => navigate('/my-data/saved-sets')}
+            disabled={!!unavailableReason}
+          >
+            <ListBulletIcon width="16px" height="16px" />
+            <Text>Open set</Text>
           </Button>
         </Flex>
       </Tooltip>
-      <Tooltip content="Add the pinned items to a saved set">
-        <Flex width="fit-content" px="2">
-          <Button variant="ghost" size="2" onClick={() => setMode('existing')}>
-            <PlusIcon width="16px" height="16px" />
-            <Text>Add to set</Text>
-          </Button>
-        </Flex>
-      </Tooltip>
-      <SaveToSetDialog
-        open={mode !== undefined}
-        onOpenChange={(open) => !open && setMode(undefined)}
-        items={pinnedItems}
-        initialMode={mode ?? 'new'}
-      />
+      {hasPinnedItems && !unavailableReason && (
+        <SaveToSetDialog
+          open={mode !== undefined}
+          onOpenChange={(open) => !open && setMode(undefined)}
+          items={pinnedItems}
+          initialMode={mode ?? 'new'}
+        />
+      )}
     </>
   )
 }
@@ -137,13 +198,17 @@ const PinnedItemsTab = () => {
         paddingTop: 'var(--space-3)',
       }}
     >
-      {!isEmpty && (
+      <Flex direction="column" gap="3">
+        {!isEmpty && (
+          <Flex gap="2" wrap="wrap" align="center">
+            <ClearAllButton />
+            <ShareViewButton />
+          </Flex>
+        )}
         <Flex gap="2" wrap="wrap" align="center">
-          <ClearAllButton />
-          <ShareViewButton />
           <SavedSetButtons />
         </Flex>
-      )}
+      </Flex>
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
         <ItemList
           cardType="pinned-item"

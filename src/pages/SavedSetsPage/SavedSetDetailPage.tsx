@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import { Button, Checkbox, Flex, IconButton, Link, Table, Text, Tooltip } from '@radix-ui/themes'
-import { ArrowLeftIcon, TrashIcon } from '@radix-ui/react-icons'
+import { ArrowLeftIcon, CodeIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCanEditSavedSet, useSavedSet, useSavedSetMutations } from '@/hooks/useSavedSets'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterDialog'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
 import { convertDateToLocalString } from '@/library/dateUtils'
@@ -29,6 +30,7 @@ export const SavedSetDetailPage: React.FC = () => {
   const [selected, setSelected] = useState<string[]>([])
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isJupyterOpen, setIsJupyterOpen] = useState(false)
 
   const backLink = (
     <Link asChild size="2">
@@ -103,6 +105,13 @@ export const SavedSetDetailPage: React.FC = () => {
 
       <Flex gap="2" wrap="wrap">
         <OpenSetOnMapButton setId={set.id} setName={set.name} disabled={set.items.length === 0} />
+        <Button
+          variant="soft"
+          disabled={set.items.length === 0}
+          onClick={() => setIsJupyterOpen(true)}
+        >
+          <CodeIcon /> Open in Jupyter
+        </Button>
         {editable && (
           <>
             <Button variant="soft" color="gray" onClick={() => setIsEditOpen(true)}>
@@ -228,6 +237,10 @@ export const SavedSetDetailPage: React.FC = () => {
       </Table.Root>
 
       <EditSavedSetDialog set={isEditOpen ? set : undefined} onClose={() => setIsEditOpen(false)} />
+      <OpenSetInJupyterDialog
+        set={isJupyterOpen ? set : undefined}
+        onClose={() => setIsJupyterOpen(false)}
+      />
       <DeleteSavedSetDialog
         set={isDeleteOpen ? set : undefined}
         onClose={() => setIsDeleteOpen(false)}
