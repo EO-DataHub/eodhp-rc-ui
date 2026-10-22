@@ -48,6 +48,8 @@ import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 interface ItemCardProps {
   item: Item
   type: ItemCardType
+  /** Shown under the unpin button on pinned cards, for reordering layers */
+  dragHandle?: React.ReactNode
 }
 
 const renderAdditionalFields = (item: Item, collectionId: string | null) => {
@@ -146,7 +148,7 @@ const OpacitySelector = ({ item }: { item: Item }) => {
   )
 }
 
-const ItemCard = ({ item, type }: ItemCardProps) => {
+const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionId = collection?.id
 
@@ -429,7 +431,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               : renderAdditionalFields(item, item.collection)}
           </Flex>
           {isPinnedCard && (
-            <Flex align="end" direction="column">
+            <Flex align="end" direction="column" gap="2">
               <IconButton
                 size="1"
                 variant="soft"
@@ -439,6 +441,7 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               >
                 <Cross2Icon />
               </IconButton>
+              {dragHandle}
             </Flex>
           )}
         </Flex>
