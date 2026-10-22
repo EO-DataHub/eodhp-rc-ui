@@ -10,6 +10,7 @@ import { downloadWithToken, triggerStaggeredDownloads } from '@/library/assetDow
 import {
   assetFilenames,
   buildBashScript,
+  buildPowerShellScript,
   buildPythonScript,
   getCatalogPath,
   getScriptHubBaseUrl,
@@ -339,7 +340,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
           <Link href="https://pyeodh.readthedocs.io/" target="_blank" rel="noopener noreferrer">
             pyeodh
           </Link>
-          ) or the command line (using curl).
+          ), the command line (using curl) or PowerShell on Windows.
         </Text>
         {isPrivate && (
           <Text size="2">
@@ -360,6 +361,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
             <Tabs.List size="1">
               <Tabs.Trigger value="python">Python</Tabs.Trigger>
               <Tabs.Trigger value="bash">Bash</Tabs.Trigger>
+              <Tabs.Trigger value="powershell">PowerShell (Windows)</Tabs.Trigger>
             </Tabs.List>
             <Box pt="3">
               <Tabs.Content value="python">
@@ -383,6 +385,19 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
                     trackCopyDownloadScript({
                       item,
                       language: 'bash',
+                      selectedCount: selectedAssets.length,
+                    })
+                  }
+                />
+              </Tabs.Content>
+              <Tabs.Content value="powershell">
+                <CodeBlock
+                  code={buildPowerShellScript(scriptParams)}
+                  label="PowerShell"
+                  onCopied={() =>
+                    trackCopyDownloadScript({
+                      item,
+                      language: 'powershell',
                       selectedCount: selectedAssets.length,
                     })
                   }

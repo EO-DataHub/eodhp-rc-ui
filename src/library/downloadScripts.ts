@@ -147,6 +147,57 @@ export const buildBashScript = ({
   return `${lines.join('\n')}\n`
 }
 
+// PowerShell also treats curly single quotes as quote marks, so those are doubled too
+const psQuote = (value: string): string => `'${value.replace(/['‘’‚‛]/g, '$&$&')}'`
+
+export const buildPowerShellScript = ({
+  assets,
+  itemId,
+  isPrivate,
+  hubBaseUrl,
+  filenames = assetFilenames(assets),
+}: DownloadScriptParams): string => {
+  // Wrapped in & { } so pasting into a console stops at the first failed download
+  const lines = [
+    `# Download assets of STAC item ${commentText(itemId)}`,
+    '# Paste into PowerShell, or save as download.ps1 and run:',
+    '#   powershell -ExecutionPolicy Bypass -File download.ps1',
+    '& {',
+    "  $ErrorActionPreference = 'Stop'",
+    '  # The progress bar makes downloads very slow in Windows PowerShell 5.1',
+    "  $ProgressPreference = 'SilentlyContinue'",
+    '  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12',
+    '',
+  ]
+
+  if (isPrivate) {
+    lines.push(
+      `  $EODH_TOKEN = ${psQuote(TOKEN_PLACEHOLDER)}`,
+      '  $headers = @{ Authorization = "Bearer $EODH_TOKEN" }',
+      '',
+    )
+  }
+
+  lines.push(
+    `  $dir = ${psQuote(outputDirName(itemId))}`,
+    '  New-Item -ItemType Directory -Force -Path $dir | Out-Null',
+    '',
+  )
+
+  for (const { key, href } of assets) {
+    const name = psQuote(filenames.get(key)!)
+    const auth = isPrivate && isEodhHost(href, hubBaseUrl) ? ' -Headers $headers' : ''
+    lines.push(
+      `  Invoke-WebRequest -UseBasicParsing${auth} -Uri ${psQuote(href)} -OutFile (Join-Path $dir ${name})`,
+      `  Write-Host 'Downloaded' ${name}`,
+    )
+  }
+
+  lines.push('}')
+
+  return `${lines.join('\n')}\n`
+}
+
 export const buildPythonScript = ({
   assets,
   allSelected,

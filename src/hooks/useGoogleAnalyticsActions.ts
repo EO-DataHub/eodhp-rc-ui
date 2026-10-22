@@ -188,7 +188,7 @@ export const useAnalyticsActions = () => {
     selectedCount,
   }: {
     item: Item
-    language: 'python' | 'bash'
+    language: 'python' | 'bash' | 'powershell'
     selectedCount: number
   }) => {
     if (consent !== 'granted') return

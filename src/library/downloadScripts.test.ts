@@ -3,6 +3,7 @@ import type { Collection } from '@/types'
 import {
   assetFilenames,
   buildBashScript,
+  buildPowerShellScript,
   buildPythonScript,
   getCatalogPath,
   getScriptHubBaseUrl,
@@ -132,6 +133,46 @@ describe('buildBashScript', () => {
   })
 })
 
+describe('buildPowerShellScript', () => {
+  it('has no token for public items', () => {
+    const script = buildPowerShellScript(publicParams())
+    expect(script).not.toContain('EODH_TOKEN')
+    expect(script).not.toContain('-Headers')
+    expect(script).toContain(
+      "Invoke-WebRequest -UseBasicParsing -Uri 'https://dap.ceda.ac.uk/data/S2/B04.tif' -OutFile (Join-Path $dir 'B04.tif')",
+    )
+    expect(script).toContain("$dir = 'S2A_20250601'")
+  })
+
+  it('stops on the first error and runs as one block when pasted', () => {
+    const lines = buildPowerShellScript(publicParams()).trimEnd().split('\n')
+    expect(lines).toContain('& {')
+    expect(lines.at(-1)).toBe('}')
+    expect(lines).toContain("  $ErrorActionPreference = 'Stop'")
+    expect(lines).toContain("  $ProgressPreference = 'SilentlyContinue'")
+  })
+
+  it('sends the token only to DataHub hosts for private items', () => {
+    const script = buildPowerShellScript(privateParams())
+    expect(script).toContain(`$EODH_TOKEN = '${TOKEN_PLACEHOLDER}'`)
+    expect(script).toContain(
+      "Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri 'https://my-ws.eodatahub-workspaces.org.uk/files/commercial-data/HH.tif'",
+    )
+    expect(script).toContain(
+      "Invoke-WebRequest -UseBasicParsing -Uri 'https://third-party.example.com/quicklook.png'",
+    )
+  })
+
+  it('doubles straight and curly single quotes in hrefs', () => {
+    const script = buildPowerShellScript(
+      publicParams({
+        assets: [{ key: 'q', href: "https://x.example/it's it\u2019s $x.tif?a=1&b=2" }],
+      }),
+    )
+    expect(script).toContain("-Uri 'https://x.example/it''s it\u2019\u2019s $x.tif?a=1&b=2'")
+  })
+})
+
 describe('buildPythonScript', () => {
   it('uses a public client and loops over every asset when all are selected', () => {
     const script = buildPythonScript(publicParams())
@@ -181,7 +222,11 @@ describe('buildPythonScript', () => {
 describe('script safety and filenames', () => {
   it('keeps item ids with newlines inside the comment line', () => {
     const params = publicParams({ itemId: 'evil\nrm -rf ~\r\nmore' })
-    for (const script of [buildBashScript(params), buildPythonScript(params)]) {
+    for (const script of [
+      buildBashScript(params),
+      buildPowerShellScript(params),
+      buildPythonScript(params),
+    ]) {
       expect(script).toContain('# Download assets of STAC item evil rm -rf ~ more\n')
       expect(script.split('\n').some((line) => line.startsWith('rm -rf'))).toBe(false)
     }
