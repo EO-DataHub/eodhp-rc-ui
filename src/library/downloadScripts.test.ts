@@ -125,7 +125,7 @@ describe('buildBashScript', () => {
   it('has no token for public items', () => {
     const script = buildBashScript(publicParams())
     expect(script).not.toContain('EODH_TOKEN')
-    expect(script).toContain("curl -fL -o 'B04.tif' 'https://dap.ceda.ac.uk/data/S2/B04.tif'")
+    expect(script).toContain("download 'B04.tif' 'https://dap.ceda.ac.uk/data/S2/B04.tif'\n")
     expect(script).toContain("mkdir -p 'S2A_20250601'")
   })
 
@@ -133,10 +133,10 @@ describe('buildBashScript', () => {
     const script = buildBashScript(privateParams())
     expect(script).toContain(`EODH_TOKEN='${TOKEN_PLACEHOLDER}'`)
     expect(script).toContain(
-      `curl -fL -H "Authorization: Bearer $EODH_TOKEN" -o 'HH.tif' 'https://my-ws.eodatahub-workspaces.org.uk/files/commercial-data/HH.tif'`,
+      `download 'HH.tif' 'https://my-ws.eodatahub-workspaces.org.uk/files/commercial-data/HH.tif' -H "Authorization: Bearer $EODH_TOKEN"\n`,
     )
     expect(script).toContain(
-      "curl -fL -o 'quicklook.png' 'https://third-party.example.com/quicklook.png'",
+      "download 'quicklook.png' 'https://third-party.example.com/quicklook.png'\n",
     )
   })
 
@@ -148,20 +148,25 @@ describe('buildBashScript', () => {
     )
     expect(script).toContain(`'https://x.example/it'\\''s a file.tif?a=1&b=2'`)
   })
+
+  it('times out stalled downloads and continues after a failure', () => {
+    const script = buildBashScript(publicParams())
+    expect(script).toContain('curl -fL --connect-timeout 30 --speed-limit 1 --speed-time 60 "$@"')
+    expect(script).toContain('    failed+=("$name")')
+    expect(script.trimEnd().endsWith('  exit 1\nfi')).toBe(true)
+  })
 })
 
 describe('buildPowerShellScript', () => {
   it('has no token for public items', () => {
     const script = buildPowerShellScript(publicParams())
     expect(script).not.toContain('EODH_TOKEN')
-    expect(script).not.toContain('-Headers')
-    expect(script).toContain(
-      "Invoke-WebRequest -UseBasicParsing -Uri 'https://dap.ceda.ac.uk/data/S2/B04.tif' -OutFile (Join-Path $dir 'B04.tif')",
-    )
+    expect(script).not.toContain('$headers')
+    expect(script).toContain("  Save-Asset 'https://dap.ceda.ac.uk/data/S2/B04.tif' 'B04.tif'\n")
     expect(script).toContain("$dir = 'S2A_20250601'")
   })
 
-  it('stops on the first error and runs as one block when pasted', () => {
+  it('runs as one block when pasted', () => {
     const lines = buildPowerShellScript(publicParams()).trimEnd().split('\n')
     expect(lines).toContain('& {')
     expect(lines.at(-1)).toBe('}')
@@ -179,11 +184,19 @@ describe('buildPowerShellScript', () => {
     const script = buildPowerShellScript(privateParams())
     expect(script).toContain(`$EODH_TOKEN = '${TOKEN_PLACEHOLDER}'`)
     expect(script).toContain(
-      "Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri 'https://my-ws.eodatahub-workspaces.org.uk/files/commercial-data/HH.tif'",
+      "  Save-Asset 'https://my-ws.eodatahub-workspaces.org.uk/files/commercial-data/HH.tif' 'HH.tif' $headers\n",
     )
     expect(script).toContain(
-      "Invoke-WebRequest -UseBasicParsing -Uri 'https://third-party.example.com/quicklook.png'",
+      "  Save-Asset 'https://third-party.example.com/quicklook.png' 'quicklook.png'\n",
     )
+  })
+
+  it('times out stalled downloads and continues after a failure', () => {
+    const script = buildPowerShellScript(publicParams())
+    expect(script).toContain('-TimeoutSec 60')
+    expect(script).toContain('    } catch {')
+    expect(script).toContain('      $failed.Add($Name)')
+    expect(script).toContain('  if ($failed.Count -gt 0) {')
   })
 
   it('doubles straight and curly single quotes in hrefs', () => {
@@ -192,7 +205,7 @@ describe('buildPowerShellScript', () => {
         assets: [{ key: 'q', href: "https://x.example/it's it\u2019s $x.tif?a=1&b=2" }],
       }),
     )
-    expect(script).toContain("-Uri 'https://x.example/it''s it\u2019\u2019s $x.tif?a=1&b=2'")
+    expect(script).toContain("Save-Asset 'https://x.example/it''s it\u2019\u2019s $x.tif?a=1&b=2'")
   })
 })
 
@@ -205,6 +218,14 @@ describe('buildPythonScript', () => {
     expect(script).toContain('.get_item("S2A_20250601")')
     expect(script).toContain('keys = list(item.assets)')
     expect(script).not.toContain('TOKEN')
+  })
+
+  it('continues after a failed download and exits with an error at the end', () => {
+    const script = buildPythonScript(publicParams())
+    expect(script).toContain('timeout=60')
+    expect(script).toContain('    except requests.RequestException as e:')
+    expect(script).toContain('        failed.append(name)')
+    expect(script).toContain('if failed:\n    sys.exit(')
   })
 
   it('lists the selected keys when only some assets are selected', () => {
@@ -299,6 +320,6 @@ describe('filenames with a partial selection', () => {
     const script = buildBashScript(
       publicParams({ assets: [all[1]], allSelected: false, filenames: assetFilenames(all) }),
     )
-    expect(script).toContain("-o 'b_data.tif'")
+    expect(script).toContain("download 'b_data.tif' ")
   })
 })

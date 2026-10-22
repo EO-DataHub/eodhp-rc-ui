@@ -119,6 +119,9 @@ const outputDirName = (itemId: string): string => safeName(itemId) || 'downloads
 // Keeps ids from breaking out of a "#" comment line in the generated scripts
 const commentText = (text: string): string => text.replace(/[\r\n\u2028\u2029]+/g, ' ')
 
+// Give up when a server does not connect in 30 s, or sends less than 1 byte/s for 60 s
+const CURL_TIMEOUTS = '--connect-timeout 30 --speed-limit 1 --speed-time 60'
+
 export const buildBashScript = ({
   assets,
   itemId,
@@ -138,13 +141,39 @@ export const buildBashScript = ({
   }
 
   const dir = shellQuote(outputDirName(itemId))
-  lines.push(`mkdir -p ${dir}`, `cd ${dir}`, '')
+  lines.push(
+    `mkdir -p ${dir}`,
+    `cd ${dir}`,
+    '',
+    'failed=()',
+    '',
+    '# Downloads one file. On a failure or timeout, notes the file and continues with the next.',
+    'download() {',
+    '  local name=$1 url=$2',
+    '  shift 2',
+    `  if curl -fL ${CURL_TIMEOUTS} "$@" -o "$name" "$url"; then`,
+    '    echo "Downloaded $name"',
+    '  else',
+    '    rm -f -- "$name"',
+    '    failed+=("$name")',
+    '  fi',
+    '}',
+    '',
+  )
 
   for (const { key, href } of assets) {
     const auth =
       isPrivate && isEodhHost(href, hubBaseUrl) ? ' -H "Authorization: Bearer $EODH_TOKEN"' : ''
-    lines.push(`curl -fL${auth} -o ${shellQuote(filenames.get(key)!)} ${shellQuote(href)}`)
+    lines.push(`download ${shellQuote(filenames.get(key)!)} ${shellQuote(href)}${auth}`)
   }
+
+  lines.push(
+    '',
+    'if [ ${#failed[@]} -gt 0 ]; then',
+    '  echo "Could not download ${#failed[@]} file(s): ${failed[*]}" >&2',
+    '  exit 1',
+    'fi',
+  )
 
   return `${lines.join('\n')}\n`
 }
@@ -159,8 +188,8 @@ export const buildPowerShellScript = ({
   hubBaseUrl,
   filenames = assetFilenames(assets),
 }: DownloadScriptParams): string => {
-  // Wrapped in & { } so pasting into a console stops at the first failed download. No blank
-  // lines inside: consoles without PSReadLine treat one as the end of the pasted block.
+  // Wrapped in & { } so a pasted script runs as one block. No blank lines inside: consoles
+  // without PSReadLine treat one as the end of the pasted block.
   const lines = [
     `# Download assets of STAC item ${commentText(itemId)}`,
     '# Paste into PowerShell, or save as download.ps1 and run:',
@@ -182,18 +211,32 @@ export const buildPowerShellScript = ({
   lines.push(
     `  $dir = ${psQuote(outputDirName(itemId))}`,
     '  New-Item -ItemType Directory -Force -Path $dir | Out-Null',
+    '  $failed = [System.Collections.Generic.List[string]]::new()',
+    '  # Downloads one file. On a failure or timeout, notes the file and continues with the next.',
+    '  function Save-Asset([string]$Uri, [string]$Name, [hashtable]$Headers = @{}) {',
+    '    $path = Join-Path $dir $Name',
+    '    try {',
+    '      Invoke-WebRequest -UseBasicParsing -TimeoutSec 60 -Headers $Headers -Uri $Uri -OutFile $path',
+    "      Write-Host 'Downloaded' $Name",
+    '    } catch {',
+    '      Remove-Item -LiteralPath $path -ErrorAction SilentlyContinue',
+    '      Write-Warning "Could not download ${Name}: $($_.Exception.Message)"',
+    '      $failed.Add($Name)',
+    '    }',
+    '  }',
   )
 
   for (const { key, href } of assets) {
-    const name = psQuote(filenames.get(key)!)
-    const auth = isPrivate && isEodhHost(href, hubBaseUrl) ? ' -Headers $headers' : ''
-    lines.push(
-      `  Invoke-WebRequest -UseBasicParsing${auth} -Uri ${psQuote(href)} -OutFile (Join-Path $dir ${name})`,
-      `  Write-Host 'Downloaded' ${name}`,
-    )
+    const auth = isPrivate && isEodhHost(href, hubBaseUrl) ? ' $headers' : ''
+    lines.push(`  Save-Asset ${psQuote(href)} ${psQuote(filenames.get(key)!)}${auth}`)
   }
 
-  lines.push('}')
+  lines.push(
+    '  if ($failed.Count -gt 0) {',
+    `    throw "Could not download $($failed.Count) file(s): $($failed -join ', ')"`,
+    '  }',
+    '}',
+  )
 
   return `${lines.join('\n')}\n`
 }
@@ -223,6 +266,7 @@ export const buildPythonScript = ({
     'import os',
     'import posixpath',
     'import re',
+    'import sys',
     'import urllib.parse',
     '',
     'import pyeodh',
@@ -297,15 +341,28 @@ export const buildPythonScript = ({
     '    names[key] = name',
     '    used.add(name.lower())',
     '',
+    '# On a failure or timeout, note the file and continue with the next',
+    'failed = []',
     'for key in keys:',
     '    asset = item.assets[key]',
     '    name = names[key]',
-    `    with requests.get(asset.href, stream=True, timeout=60${headersArg}) as response:`,
-    '        response.raise_for_status()',
-    '        with open(os.path.join(out_dir, name), "wb") as f:',
-    '            for chunk in response.iter_content(chunk_size=1024 * 1024):',
-    '                f.write(chunk)',
+    '    path = os.path.join(out_dir, name)',
+    '    try:',
+    `        with requests.get(asset.href, stream=True, timeout=60${headersArg}) as response:`,
+    '            response.raise_for_status()',
+    '            with open(path, "wb") as f:',
+    '                for chunk in response.iter_content(chunk_size=1024 * 1024):',
+    '                    f.write(chunk)',
+    '    except requests.RequestException as e:',
+    '        print(f"Could not download {name}: {e}", file=sys.stderr)',
+    '        if os.path.exists(path):',
+    '            os.remove(path)',
+    '        failed.append(name)',
+    '        continue',
     '    print("Downloaded", name)',
+    '',
+    'if failed:',
+    '    sys.exit(f"Could not download {len(failed)} file(s): {\', \'.join(failed)}")',
   )
 
   return `${lines.join('\n')}\n`
