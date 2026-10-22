@@ -1,5 +1,23 @@
 const IFRAME_LIFETIME_MS = 60_000
 
+const CEDA_HOST = 'dap.ceda.ac.uk'
+
+/**
+ * The href to give the browser for a download. CEDA serves images and XML to display
+ * inline, so they open in a tab (or show in the hidden iframe and never save); its
+ * download=1 flag makes it send them as attachments.
+ */
+export const browserDownloadHref = (href: string): string => {
+  try {
+    const url = new URL(href)
+    if (url.hostname.toLowerCase() !== CEDA_HOST) return href
+    url.searchParams.set('download', '1')
+    return url.href
+  } catch {
+    return href
+  }
+}
+
 /**
  * Starts a browser download for each href by loading it in a hidden iframe, spaced out
  * so the browser doesn't drop them. Unlike clicking a link, this never navigates away

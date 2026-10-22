@@ -6,7 +6,11 @@ import { toast } from 'react-toastify'
 import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import type { Collection, Item } from '@/types'
 import { formatFileSize } from '@/library/fileUtils'
-import { downloadWithToken, triggerStaggeredDownloads } from '@/library/assetDownload'
+import {
+  browserDownloadHref,
+  downloadWithToken,
+  triggerStaggeredDownloads,
+} from '@/library/assetDownload'
 import {
   assetFilenames,
   buildBashScript,
@@ -165,7 +169,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     if (otherFiles.length > 0) {
       setIsStarting(true)
       cancelDownloadsRef.current = triggerStaggeredDownloads(
-        otherFiles.map((a) => a.href),
+        otherFiles.map((a) => browserDownloadHref(a.href)),
         { onStarted: () => setIsStarting(false) },
       )
     }
@@ -259,7 +263,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
                   <Table.Cell>
                     <Flex direction="column">
                       <Link
-                        href={asset.href}
+                        href={browserDownloadHref(asset.href)}
                         download
                         target="_blank"
                         rel="noopener noreferrer"
