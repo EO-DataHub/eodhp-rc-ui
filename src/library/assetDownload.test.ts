@@ -1,7 +1,36 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { downloadWithToken, triggerStaggeredDownloads } from './assetDownload'
+import { browserDownloadHref, downloadWithToken, triggerStaggeredDownloads } from './assetDownload'
 
 const iframes = () => document.querySelectorAll('iframe')
+
+describe('browserDownloadHref', () => {
+  // setupTests.ts stubs URL; this needs the real one
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('asks CEDA to send files as attachments', () => {
+    expect(browserDownloadHref('https://dap.ceda.ac.uk/neodc/ard/thumb.jpg')).toBe(
+      'https://dap.ceda.ac.uk/neodc/ard/thumb.jpg?download=1',
+    )
+  })
+
+  it('keeps an existing query string', () => {
+    expect(browserDownloadHref('https://dap.ceda.ac.uk/neodc/meta.xml?v=2')).toBe(
+      'https://dap.ceda.ac.uk/neodc/meta.xml?v=2&download=1',
+    )
+  })
+
+  it('leaves other hosts, including look-alikes, unchanged', () => {
+    for (const href of [
+      'https://eocis.org/data/thumb.jpg',
+      'https://dap.ceda.ac.uk.example.com/thumb.jpg',
+      'not a url',
+    ]) {
+      expect(browserDownloadHref(href)).toBe(href)
+    }
+  })
+})
 
 describe('triggerStaggeredDownloads', () => {
   beforeEach(() => {
