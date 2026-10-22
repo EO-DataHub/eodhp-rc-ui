@@ -133,10 +133,81 @@ export const useAnalyticsActions = () => {
     })
   }
 
+  const getItemParams = (item: Item) => {
+    const collectionRef = item.collectionRef
+    const isCommercial =
+      Boolean(item.isLicenseProprietary) || collectionRef?.license === 'proprietary'
+    return {
+      item_id: item.id,
+      collection_id: collectionRef?.id ?? item.collection ?? 'N/A',
+      data_type: isCommercial ? 'commercial' : 'open',
+    }
+  }
+
+  const trackViewItemDownloads = ({
+    item,
+    assetCount,
+    source,
+  }: {
+    item: Item
+    assetCount: number
+    source: string
+  }) => {
+    if (consent !== 'granted') return
+
+    safeEvent('view_item_downloads', {
+      ...getUserParams(),
+      ...getItemParams(item),
+      asset_count: assetCount,
+      source,
+    })
+  }
+
+  const trackDownloadAllItemImagery = ({
+    item,
+    assetCount,
+    selectedCount,
+  }: {
+    item: Item
+    assetCount: number
+    selectedCount: number
+  }) => {
+    if (consent !== 'granted') return
+
+    safeEvent('download_all_item_imagery', {
+      ...getUserParams(),
+      ...getItemParams(item),
+      asset_count: assetCount,
+      selected_count: selectedCount,
+    })
+  }
+
+  const trackCopyDownloadScript = ({
+    item,
+    language,
+    selectedCount,
+  }: {
+    item: Item
+    language: 'python' | 'bash' | 'powershell'
+    selectedCount: number
+  }) => {
+    if (consent !== 'granted') return
+
+    safeEvent('copy_download_script', {
+      ...getUserParams(),
+      ...getItemParams(item),
+      language,
+      selected_count: selectedCount,
+    })
+  }
+
   return {
     trackCollectionVisualization,
     trackDownloadCollectionImagery,
     trackDownloadItemImagery,
     trackPurchasedImagery,
+    trackViewItemDownloads,
+    trackDownloadAllItemImagery,
+    trackCopyDownloadScript,
   }
 }

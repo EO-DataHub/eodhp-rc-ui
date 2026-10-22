@@ -1,11 +1,22 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
-import { Flex, Text, TextField, Box, Table, Select, Button, Checkbox } from '@radix-ui/themes'
+import {
+  Flex,
+  Text,
+  TextField,
+  Box,
+  Table,
+  Select,
+  Button,
+  Checkbox,
+  Tooltip,
+} from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { fetchOrdersForWorkspace, fetchMoreOrders, OrderFetchResult } from '@/services/orderService'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { formatOrderDate, OrderData } from '@/library/orderUtils'
+import { getItemDownloadUrl } from '@/library/catalogUtils'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import {
@@ -275,21 +286,42 @@ export const PurchasedDataPage: React.FC = () => {
       case ColumnId.VIEW:
         return (
           <Table.Cell data-column-id={columnId}>
-            <button
-              onClick={() => handleViewOnMap(order)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-9)',
-                textDecoration: 'underline',
-                cursor: 'pointer',
-                fontSize: 'inherit',
-                fontFamily: 'inherit',
-                padding: 0,
-              }}
-            >
-              View on map
-            </button>
+            <Flex gap="3" align="center">
+              <button
+                onClick={() => handleViewOnMap(order)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--accent-9)',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontSize: 'inherit',
+                  fontFamily: 'inherit',
+                  padding: 0,
+                }}
+              >
+                View on map
+              </button>
+              {order.item.properties['order:status'] === 'succeeded' ? (
+                <RouterLink
+                  to={getItemDownloadUrl({
+                    collectionPath: `my-${order.item.collection}`,
+                    itemId: order.item.id,
+                    workspace: order.workspace,
+                    from: 'purchased',
+                  })}
+                  style={{ color: 'var(--accent-9)' }}
+                >
+                  Download
+                </RouterLink>
+              ) : (
+                <Tooltip content="Available once the order is delivered">
+                  <Text color="gray" style={{ cursor: 'not-allowed' }}>
+                    Download
+                  </Text>
+                </Tooltip>
+              )}
+            </Flex>
           </Table.Cell>
         )
       default:
