@@ -66,17 +66,19 @@ const basenameOf = (href: string): string => {
 
 /**
  * Picks a local filename for each asset: the href's basename, or the asset key when
- * there is none. When two assets share a name, the later one is prefixed with its key.
+ * there is none. When two assets share a name, ignoring case, the later one is prefixed
+ * with its key.
  */
 export const assetFilenames = (assets: ScriptAsset[]): Map<string, string> => {
   const names = new Map<string, string>()
   const used = new Set<string>()
   for (const { key, href } of assets) {
     let name = safeName(basenameOf(href)) || safeName(key)
-    if (used.has(name)) {
+    // Ignore case, as Windows and macOS filesystems do
+    if (used.has(name.toLowerCase())) {
       name = safeName(`${key}_${name}`)
     }
-    used.add(name)
+    used.add(name.toLowerCase())
     names.set(key, name)
   }
   return names
@@ -143,6 +145,55 @@ export const buildBashScript = ({
       isPrivate && isEodhHost(href, hubBaseUrl) ? ' -H "Authorization: Bearer $EODH_TOKEN"' : ''
     lines.push(`curl -fL${auth} -o ${shellQuote(filenames.get(key)!)} ${shellQuote(href)}`)
   }
+
+  return `${lines.join('\n')}\n`
+}
+
+// PowerShell also treats curly single quotes as quote marks, so those are doubled too
+const psQuote = (value: string): string => `'${value.replace(/['‘’‚‛]/g, '$&$&')}'`
+
+export const buildPowerShellScript = ({
+  assets,
+  itemId,
+  isPrivate,
+  hubBaseUrl,
+  filenames = assetFilenames(assets),
+}: DownloadScriptParams): string => {
+  // Wrapped in & { } so pasting into a console stops at the first failed download. No blank
+  // lines inside: consoles without PSReadLine treat one as the end of the pasted block.
+  const lines = [
+    `# Download assets of STAC item ${commentText(itemId)}`,
+    '# Paste into PowerShell, or save as download.ps1 and run:',
+    '#   powershell -ExecutionPolicy Bypass -File download.ps1',
+    '& {',
+    "  $ErrorActionPreference = 'Stop'",
+    '  # The progress bar makes downloads very slow in Windows PowerShell 5.1',
+    "  $ProgressPreference = 'SilentlyContinue'",
+    '  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12',
+  ]
+
+  if (isPrivate) {
+    lines.push(
+      `  $EODH_TOKEN = ${psQuote(TOKEN_PLACEHOLDER)}`,
+      '  $headers = @{ Authorization = "Bearer $EODH_TOKEN" }',
+    )
+  }
+
+  lines.push(
+    `  $dir = ${psQuote(outputDirName(itemId))}`,
+    '  New-Item -ItemType Directory -Force -Path $dir | Out-Null',
+  )
+
+  for (const { key, href } of assets) {
+    const name = psQuote(filenames.get(key)!)
+    const auth = isPrivate && isEodhHost(href, hubBaseUrl) ? ' -Headers $headers' : ''
+    lines.push(
+      `  Invoke-WebRequest -UseBasicParsing${auth} -Uri ${psQuote(href)} -OutFile (Join-Path $dir ${name})`,
+      `  Write-Host 'Downloaded' ${name}`,
+    )
+  }
+
+  lines.push('}')
 
   return `${lines.join('\n')}\n`
 }
@@ -237,12 +288,14 @@ export const buildPythonScript = ({
     '',
     '# Name every asset first, so names match the page even when only some are downloaded',
     'names = {}',
+    'used = set()',
     'for key, asset in item.assets.items():',
     '    path = urllib.parse.unquote(urllib.parse.urlparse(asset.href).path)',
     '    name = safe_name(posixpath.basename(path.rstrip("/"))) or safe_name(key)',
-    '    if name in names.values():',
+    '    if name.lower() in used:',
     '        name = safe_name(f"{key}_{name}")',
     '    names[key] = name',
+    '    used.add(name.lower())',
     '',
     'for key in keys:',
     '    asset = item.assets[key]',
