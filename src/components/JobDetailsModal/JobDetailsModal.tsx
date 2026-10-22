@@ -184,7 +184,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
           {/* Links */}
           {job.links && job.links.length > 0 && (
             <Box>
-              <Text size="2" weight="bold" mb="2">
+              <Text as="div" size="2" weight="bold" mb="2">
                 Links
               </Text>
               <Flex direction="column" gap="2">
@@ -204,7 +204,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
 
           {/* Results */}
           <Box>
-            <Text size="2" weight="bold" mb="2">
+            <Text as="div" size="2" weight="bold" mb="2">
               Results
             </Text>
             {!resultsLink && (
@@ -285,7 +285,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
                   </Box>
 
                   <Box>
-                    <Text size="2" weight="medium">
+                    <Text as="div" size="2" weight="medium">
                       Result item assets
                     </Text>
                     {!firstItemLink && (
@@ -380,7 +380,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
 
           {/* Logs */}
           <Box>
-            <Text size="2" weight="bold" mb="2">
+            <Text as="div" size="2" weight="bold" mb="2">
               Logs
             </Text>
             {!logLinks.length && (
