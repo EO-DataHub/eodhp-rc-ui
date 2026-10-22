@@ -66,17 +66,19 @@ const basenameOf = (href: string): string => {
 
 /**
  * Picks a local filename for each asset: the href's basename, or the asset key when
- * there is none. When two assets share a name, the later one is prefixed with its key.
+ * there is none. When two assets share a name, ignoring case, the later one is prefixed
+ * with its key.
  */
 export const assetFilenames = (assets: ScriptAsset[]): Map<string, string> => {
   const names = new Map<string, string>()
   const used = new Set<string>()
   for (const { key, href } of assets) {
     let name = safeName(basenameOf(href)) || safeName(key)
-    if (used.has(name)) {
+    // Ignore case, as Windows and macOS filesystems do
+    if (used.has(name.toLowerCase())) {
       name = safeName(`${key}_${name}`)
     }
-    used.add(name)
+    used.add(name.toLowerCase())
     names.set(key, name)
   }
   return names
@@ -286,12 +288,14 @@ export const buildPythonScript = ({
     '',
     '# Name every asset first, so names match the page even when only some are downloaded',
     'names = {}',
+    'used = set()',
     'for key, asset in item.assets.items():',
     '    path = urllib.parse.unquote(urllib.parse.urlparse(asset.href).path)',
     '    name = safe_name(posixpath.basename(path.rstrip("/"))) or safe_name(key)',
-    '    if name in names.values():',
+    '    if name.lower() in used:',
     '        name = safe_name(f"{key}_{name}")',
     '    names[key] = name',
+    '    used.add(name.lower())',
     '',
     'for key in keys:',
     '    asset = item.assets[key]',

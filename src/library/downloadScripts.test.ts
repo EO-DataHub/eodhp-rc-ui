@@ -81,6 +81,23 @@ describe('assetFilenames', () => {
   })
 })
 
+describe('assetFilenames case', () => {
+  it('treats names that differ only in case as the same file', () => {
+    const names = assetFilenames([
+      { key: 'upper', href: 'https://x.example/B04.TIF' },
+      { key: 'lower', href: 'https://x.example/b04.tif' },
+    ])
+    expect(names.get('upper')).toBe('B04.TIF')
+    expect(names.get('lower')).toBe('lower_b04.tif')
+  })
+
+  it('matches the case-insensitive check in the Python script', () => {
+    const script = buildPythonScript(publicParams())
+    expect(script).toContain('    if name.lower() in used:')
+    expect(script).toContain('    used.add(name.lower())')
+  })
+})
+
 describe('getCatalogPath', () => {
   it('extracts the catalog path from the collection self link', () => {
     const collection = {
