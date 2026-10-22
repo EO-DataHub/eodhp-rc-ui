@@ -152,6 +152,12 @@ describe('buildPowerShellScript', () => {
     expect(lines).toContain("  $ProgressPreference = 'SilentlyContinue'")
   })
 
+  it('has no blank lines inside the block', () => {
+    const lines = buildPowerShellScript(privateParams()).trimEnd().split('\n')
+    const block = lines.slice(lines.indexOf('& {'))
+    expect(block.every((line) => line.trim() !== '')).toBe(true)
+  })
+
   it('sends the token only to DataHub hosts for private items', () => {
     const script = buildPowerShellScript(privateParams())
     expect(script).toContain(`$EODH_TOKEN = '${TOKEN_PLACEHOLDER}'`)

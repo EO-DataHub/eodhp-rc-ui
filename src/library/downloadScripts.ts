@@ -157,7 +157,8 @@ export const buildPowerShellScript = ({
   hubBaseUrl,
   filenames = assetFilenames(assets),
 }: DownloadScriptParams): string => {
-  // Wrapped in & { } so pasting into a console stops at the first failed download
+  // Wrapped in & { } so pasting into a console stops at the first failed download. No blank
+  // lines inside: consoles without PSReadLine treat one as the end of the pasted block.
   const lines = [
     `# Download assets of STAC item ${commentText(itemId)}`,
     '# Paste into PowerShell, or save as download.ps1 and run:',
@@ -167,21 +168,18 @@ export const buildPowerShellScript = ({
     '  # The progress bar makes downloads very slow in Windows PowerShell 5.1',
     "  $ProgressPreference = 'SilentlyContinue'",
     '  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12',
-    '',
   ]
 
   if (isPrivate) {
     lines.push(
       `  $EODH_TOKEN = ${psQuote(TOKEN_PLACEHOLDER)}`,
       '  $headers = @{ Authorization = "Bearer $EODH_TOKEN" }',
-      '',
     )
   }
 
   lines.push(
     `  $dir = ${psQuote(outputDirName(itemId))}`,
     '  New-Item -ItemType Directory -Force -Path $dir | Out-Null',
-    '',
   )
 
   for (const { key, href } of assets) {
