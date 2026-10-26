@@ -7,6 +7,7 @@ import {
   resolveTilesUrl,
   getCollectionConfigKey,
 } from '@/library/collectionRenderingConfig'
+import { movePinnedItem } from '@/library/pinnedLayerOrder'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -355,6 +356,12 @@ const dataFinderStore = createStore({
       return {
         ...context,
         pinnedItems: context.pinnedItems.filter((i) => i.pinId !== event.item.pinId),
+      }
+    },
+    movePinnedItem: (context, event: { fromPinId: string; toPinId: string }) => {
+      return {
+        ...context,
+        pinnedItems: movePinnedItem(context.pinnedItems, event.fromPinId, event.toPinId),
       }
     },
     addPinnedItems: (

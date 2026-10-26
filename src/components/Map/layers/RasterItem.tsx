@@ -6,7 +6,7 @@ import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 
-export const RasterItemLayer = ({ item }: { item: Item }) => {
+export const RasterItemLayer = ({ item, layerId }: { item: Item; layerId?: string }) => {
   // When on assets tab, resolve the tiles url when rendering
   const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render, item.isUserCollection)
   const { registerUrl, unregisterUrl } = useAuthenticatedTileUrls()
@@ -56,6 +56,7 @@ export const RasterItemLayer = ({ item }: { item: Item }) => {
   return (
     <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
       <Layer
+        id={layerId}
         type="raster"
         paint={{
           'raster-opacity': item.mapRender?.opacity ?? 1,

@@ -146,7 +146,7 @@ function squareAndTransformBoundingBox(bbox: number[]): number[] {
   return [geoMinSquare[0], geoMinSquare[1], geoMaxSquare[0], geoMaxSquare[1]]
 }
 
-export const QuicklookItemLayer = ({ item }: { item: Item }) => {
+export const QuicklookItemLayer = ({ item, layerId }: { item: Item; layerId?: string }) => {
   const { render } = item
   const { token } = useContext(AuthenticationContext)
 
@@ -200,6 +200,7 @@ export const QuicklookItemLayer = ({ item }: { item: Item }) => {
     <>
       <Source type="image" url={imageUrl} coordinates={coordinates}>
         <Layer
+          id={layerId}
           type="raster"
           paint={{
             'raster-opacity': item.mapRender?.opacity ?? 1,
