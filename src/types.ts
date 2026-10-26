@@ -15,6 +15,8 @@ export interface Catalog {
   conformsTo: string[]
 }
 
+export type RenderBand = number | string
+
 export interface BaseStacRender {
   title: string
   assets: string[]
@@ -26,9 +28,15 @@ export interface BaseStacRender {
   resampling?: string
   expression?: string
   minmax_zoom?: [number, number]
-  bidx?: number[]
+  // Band indexes or names. The per-asset object form is not yet in a released spec version.
+  bidx?: RenderBand[] | Record<string, RenderBand[]>
+  tilematrixsets?: Record<string, unknown>
   // the following fields are not part of the STAC Render Extension
   variable?: string
+  // titiler-xarray slicing parameters
+  datetime?: string
+  sel?: string | string[]
+  drop_dim?: string
   tileMatrixSetId?: string
   scale?: number
   multiscale?: boolean

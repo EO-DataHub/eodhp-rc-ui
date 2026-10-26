@@ -6,6 +6,8 @@ import {
   collectionRenderingConfig,
   resolveTilesUrl,
   getCollectionConfigKey,
+  getCollectionRenders,
+  getItemRenderOptions,
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
 import * as turf from '@turf/turf'
@@ -335,7 +337,7 @@ const dataFinderStore = createStore({
       const pinnedItem = {
         ...event.item,
         pinId: pinnedItemId,
-        tilesUrl: resolveTilesUrl(event.item, event.collectionRender, event.isUserCollection) ?? '',
+        tilesUrl: resolveTilesUrl(event.item, event.collectionRender) ?? '',
         isLicenseProprietary: event.isLicenseProprietary,
         isUserCollection: event.isUserCollection,
         collectionName: event.collectionName,
@@ -388,7 +390,7 @@ const dataFinderStore = createStore({
         .map((item) => ({
           ...item,
           pinId: getPinnedItemId(item, event.collectionRender),
-          tilesUrl: resolveTilesUrl(item, event.collectionRender, event.isUserCollection) ?? '',
+          tilesUrl: resolveTilesUrl(item, event.collectionRender) ?? '',
           isLicenseProprietary: event.isLicenseProprietary,
           isUserCollection: event.isUserCollection,
           collectionName: event.collectionName,
@@ -474,11 +476,7 @@ const dataFinderStore = createStore({
       const collectionConfig =
         collectionRenderingConfig[getCollectionConfigKey(collection.id, isUserCollection)]
 
-      const baseRenders = collectionConfig?.renders ?? {}
-      const renders = {
-        ...baseRenders,
-        ...collection.renders,
-      }
+      const renders = getCollectionRenders(collection, isUserCollection)
 
       let collectionRenderOptions = Object.entries(renders).map(([id, render]) => ({
         ...render,
@@ -510,6 +508,18 @@ const dataFinderStore = createStore({
         // Close info panel and clear infoPanelItem when switching collections
         secondaryPanel: undefined,
         infoPanelItem: undefined,
+      }
+    },
+    // Collections with no renders of their own (such as workflow output stubs) can still have
+    // item renders, so offer those once the first item is known.
+    setItemRenderOptions: (context, event: { item: Item }) => {
+      if (context.collectionRender !== PlaceholderRender) return context
+      const collectionRenderOptions = getItemRenderOptions(event.item)
+      if (collectionRenderOptions.length === 0) return context
+      return {
+        ...context,
+        collectionRenderOptions,
+        collectionRender: collectionRenderOptions[0],
       }
     },
     setCollectionRender: (_, event: { collectionRender: StacRender | undefined }) => ({

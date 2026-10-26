@@ -1,5 +1,5 @@
 import qs from 'qs'
-import { Item, BaseStacRender, StacRender } from '@/types'
+import { Item, BaseStacRender, Collection, RenderBand, StacRender } from '@/types'
 import serverConfig from './configFromServer.json'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
@@ -103,14 +103,116 @@ export function requiresThumbnailAuthentication(
   return isUserCollection
 }
 
+/**
+ * Copies the EODH-only render fields from a static config render onto a render from STAC.
+ * These fields are never taken from STAC, so workflow authors cannot change auth or
+ * quicklook handling.
+ */
+function withStaticOnlyFields(
+  render: BaseStacRender,
+  staticRender: BaseStacRender | undefined,
+): BaseStacRender {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { auth, quicklook_georeference, ...stacRender } = render
+  return {
+    ...stacRender,
+    ...(staticRender?.auth !== undefined && { auth: staticRender.auth }),
+    ...(staticRender?.quicklook_georeference !== undefined && {
+      quicklook_georeference: staticRender.quicklook_georeference,
+    }),
+  }
+}
+
+/**
+ * Returns the renders for a collection: static config renders, replaced by key with the
+ * collection's own STAC renders. Renders are replaced whole, not merged field by field.
+ */
+export function getCollectionRenders(
+  collection: Collection,
+  isUserCollection: boolean,
+): Record<string, BaseStacRender> {
+  const configKey = getCollectionConfigKey(collection.id, isUserCollection)
+  const staticRenders = collectionRenderingConfig[configKey]?.renders ?? {}
+  const renders = { ...staticRenders }
+  for (const [renderId, render] of Object.entries(collection.renders ?? {})) {
+    renders[renderId] = withStaticOnlyFields(render, staticRenders[renderId])
+  }
+  return renders
+}
+
+/** Returns the renders defined on an item, as render options. */
+export function getItemRenderOptions(item: Item): StacRender[] {
+  const renders = (item.properties?.renders ?? {}) as Record<string, BaseStacRender>
+  return Object.entries(renders).map(([id, render]) => ({
+    ...withStaticOnlyFields(render, undefined),
+    id,
+  }))
+}
+
+/**
+ * Returns the render to use for an item: the item's own STAC render with the same key
+ * replaces the selected collection render.
+ */
+export function resolveItemRender(item: Item, render: StacRender | undefined) {
+  const itemRender = (item.properties?.renders as Record<string, BaseStacRender> | undefined)?.[
+    render?.id ?? ''
+  ]
+  if (!render || !itemRender) return render
+  return { ...withStaticOnlyFields(itemRender, render), id: render.id }
+}
+
+type BandMetadata = { name?: string; common_name?: string; 'eo:common_name'?: string }[]
+
+function getBandMetadata(item: Item, asset: string): BandMetadata | undefined {
+  const sources = [item.assets?.[asset], item.properties] as Record<string, unknown>[]
+  for (const source of sources) {
+    for (const key of ['bands', 'eo:bands', 'raster:bands']) {
+      const bands = source?.[key]
+      if (Array.isArray(bands) && bands.length > 0) return bands as BandMetadata
+    }
+  }
+  return undefined
+}
+
+/** Converts a band name to its 1-based index. Unknown names are passed on for the tiler to reject. */
+function toBandIndex(item: Item, asset: string, band: RenderBand): RenderBand {
+  if (typeof band === 'number') return band
+  const index = getBandMetadata(item, asset)?.findIndex((metadata) =>
+    [metadata.name, metadata.common_name, metadata['eo:common_name']].includes(band),
+  )
+  return index !== undefined && index >= 0 ? index + 1 : band
+}
+
+/**
+ * Converts render bidx to titiler STAC band params. A flat list of indexes is passed as
+ * bidx, which titiler applies to every asset. Band names and the per-asset form become
+ * asset_bidx, as "<asset>|1,2,3".
+ */
+function toTilerBandParams(
+  item: Item,
+  render: StacRender,
+): { bidx?: RenderBand[]; asset_bidx?: string[] } {
+  const { bidx, assets } = render
+  if (!bidx) return {}
+  if (Array.isArray(bidx) && bidx.every((band) => typeof band === 'number')) return { bidx }
+
+  const bandsByAsset = Array.isArray(bidx)
+    ? assets.map((asset) => [asset, bidx] as const)
+    : Object.entries(bidx)
+  return {
+    bidx: undefined,
+    asset_bidx: bandsByAsset.map(
+      ([asset, bands]) =>
+        `${asset}|${bands.map((band) => toBandIndex(item, asset, band)).join(',')}`,
+    ),
+  }
+}
+
 export const resolveTilesUrl = (
   item: Item,
-  render: StacRender | undefined,
-  isUserCollection?: boolean,
+  selectedRender: StacRender | undefined,
 ): string | undefined => {
-  const configKey = getCollectionConfigKey(item.collection, isUserCollection ?? false)
-  const collectionConfig = collectionRenderingConfig[configKey]
-  if (!collectionConfig) return undefined
+  const render = resolveItemRender(item, selectedRender)
   if (!render) return undefined
 
   let tilerUrl = undefined
@@ -131,12 +233,14 @@ export const resolveTilesUrl = (
   } as { url: string; rescale?: string[]; colormap?: string }
 
   if (render) {
-    // Exclude client-side only properties (auth, quicklook_georeference) from query params
+    // Exclude client-side only properties from query params
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { auth, quicklook_georeference, ...renderParams } = render
+    const { auth, quicklook_georeference, minmax_zoom, tilematrixsets, ...renderParams } = render
     queryParams = {
       ...queryParams,
       ...renderParams,
+      // The multidim tiler takes bidx as given
+      ...(render.variable ? { bidx: render.bidx } : toTilerBandParams(item, render)),
       // Handles rescale parameter which can be either:
       // 1. A nested array of [min,max] pairs: [[0,100], [0,255]]
       // 2. A single [min,max] pair: [0,100]

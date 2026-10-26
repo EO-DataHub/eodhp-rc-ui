@@ -5,10 +5,7 @@
 
 import { fetchItem } from '@/services/itemService'
 import dataFinderStore from './useFinderStore'
-import {
-  collectionRenderingConfig,
-  getCollectionConfigKey,
-} from '@/library/collectionRenderingConfig'
+import { getCollectionRenders } from '@/library/collectionRenderingConfig'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import type { Collection, Item, StacRender } from '@/types'
 import type { ItemByCollection } from '@/utils/permalink'
@@ -24,10 +21,7 @@ export function getDefaultCollectionRender(
   isUserCollection: boolean,
   renderId?: string,
 ): StacRender {
-  const configKey = getCollectionConfigKey(collection.id, isUserCollection)
-  const collectionConfig = collectionRenderingConfig[configKey]
-  const baseRenders = collectionConfig?.renders ?? {}
-  const renders = { ...baseRenders, ...collection.renders }
+  const renders = getCollectionRenders(collection, isUserCollection)
   const options = Object.entries(renders).map(([id, render]) => ({ ...render, id }))
   if (renderId) {
     const match = options.find((option) => option.id === renderId)

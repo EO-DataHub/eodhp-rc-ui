@@ -1,6 +1,10 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
-import { resolveTilesUrl, requiresAuthentication } from '@/library/collectionRenderingConfig'
+import {
+  resolveItemRender,
+  resolveTilesUrl,
+  requiresAuthentication,
+} from '@/library/collectionRenderingConfig'
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
 import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -8,7 +12,7 @@ import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 
 export const RasterItemLayer = ({ item, layerId }: { item: Item; layerId?: string }) => {
   // When on assets tab, resolve the tiles url when rendering
-  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render, item.isUserCollection)
+  const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render)
   const { registerUrl, unregisterUrl } = useAuthenticatedTileUrls()
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
@@ -53,11 +57,16 @@ export const RasterItemLayer = ({ item, layerId }: { item: Item; layerId?: strin
   // Don't render until token is ready for authenticated requests
   if (needsAuth && !isTokenReady) return null
 
+  // MapLibre rejects an explicit undefined zoom, so only pass zooms the render defines
+  const minmaxZoom = resolveItemRender(item, item.render)?.minmax_zoom
+  const zoomRange = minmaxZoom ? { minzoom: minmaxZoom[0], maxzoom: minmaxZoom[1] } : {}
+
   return (
     <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
       <Layer
         id={layerId}
         type="raster"
+        {...zoomRange}
         paint={{
           'raster-opacity': item.mapRender?.opacity ?? 1,
         }}

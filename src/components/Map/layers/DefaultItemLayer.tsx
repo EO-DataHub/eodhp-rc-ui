@@ -12,8 +12,7 @@ export const DefaultItemLayer = ({ item }: { item: Item }) => {
   const modifiedItem = {
     ...item,
     isUserCollection: item.isUserCollection ?? isUserCollection,
-    tilesUrl:
-      resolveTilesUrl(item, collectionRender, item.isUserCollection ?? isUserCollection) ?? '',
+    tilesUrl: resolveTilesUrl(item, collectionRender) ?? '',
     render: collectionRender,
     mapRender: {
       visible: true,

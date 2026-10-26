@@ -36,6 +36,12 @@ export const Map = () => {
     isDrawing: () => boolean
   } | null>(null)
   const { pageItems } = useItemsQuery()
+  const firstItem = pageItems?.[0]
+
+  useEffect(() => {
+    if (firstItem) dataFinderStore.send({ type: 'setItemRenderOptions', item: firstItem })
+  }, [firstItem])
+
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const { isAuthenticated, getTokenType } = useAuthenticatedTileUrls()
 
