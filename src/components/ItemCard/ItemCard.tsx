@@ -48,6 +48,8 @@ import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 interface ItemCardProps {
   item: Item
   type: ItemCardType
+  /** Shown under the unpin button on pinned cards, for reordering layers */
+  dragHandle?: React.ReactNode
 }
 
 const renderAdditionalFields = (item: Item, collectionId: string | null) => {
@@ -146,7 +148,7 @@ const OpacitySelector = ({ item }: { item: Item }) => {
   )
 }
 
-const ItemCard = ({ item, type }: ItemCardProps) => {
+const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionId = collection?.id
 
@@ -429,16 +431,20 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
               : renderAdditionalFields(item, item.collection)}
           </Flex>
           {isPinnedCard && (
-            <Flex align="end" direction="column">
-              <IconButton
-                size="1"
-                variant="soft"
-                radius="full"
-                className={styles.unpinButton}
-                onClick={unpinItem}
-              >
-                <Cross2Icon />
-              </IconButton>
+            <Flex align="end" direction="column" gap="2">
+              <Tooltip content="Remove from pinned items">
+                <IconButton
+                  size="1"
+                  variant="soft"
+                  radius="full"
+                  className={styles.unpinButton}
+                  onClick={unpinItem}
+                  aria-label="Remove from pinned items"
+                >
+                  <Cross2Icon />
+                </IconButton>
+              </Tooltip>
+              {dragHandle}
             </Flex>
           )}
         </Flex>
@@ -448,10 +454,12 @@ const ItemCard = ({ item, type }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
+        {/* Pinned cards put the style name on its own line so the icons get the full width */}
         <Flex
-          justify={isPinnedCard ? 'between' : 'end'}
+          direction={isPinnedCard ? 'column' : 'row'}
+          justify="end"
           gap="2"
-          align="center"
+          align={isPinnedCard ? 'stretch' : 'center'}
           style={{ minWidth: 0, flexShrink: 0 }}
         >
           {isPinnedCard && item.render && (

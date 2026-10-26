@@ -10,7 +10,26 @@ import { usePermalink } from '@/hooks/useCopyPermalink'
 import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
-import { Cross2Icon } from '@radix-ui/react-icons'
+import { Cross2Icon, DragHandleDots2Icon } from '@radix-ui/react-icons'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  Modifier,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { IconButton } from '@radix-ui/themes'
+import { Item } from '@/types'
 
 const ClearAllButton = () => {
   return (
@@ -183,10 +202,68 @@ const SavedSetButtons = () => {
   )
 }
 
+// The list only reorders vertically, so don't let cards drift sideways while dragging
+const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 })
+
+const SortablePinnedItem = ({ item }: { item: Item }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.pinId ?? item.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <ItemCard
+        item={item}
+        type="pinned-item"
+        dragHandle={
+          <Tooltip content="Drag to change the layer order on the map">
+            <IconButton
+              size="1"
+              variant="ghost"
+              color="gray"
+              aria-label="Drag to reorder layer"
+              style={{ cursor: isDragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+              {...attributes}
+              {...listeners}
+            >
+              <DragHandleDots2Icon />
+            </IconButton>
+          </Tooltip>
+        }
+      />
+    </div>
+  )
+}
+
 const PinnedItemsTab = () => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
   const isEmpty = pinnedItems.length === 0
+  // The top of the list is the top layer on the map, so show the store's bottom-to-top order reversed
+  const listedItems = [...pinnedItems].reverse()
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  )
+
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (over && active.id !== over.id) {
+      dataFinderStore.send({
+        type: 'movePinnedItem',
+        fromPinId: String(active.id),
+        toPinId: String(over.id),
+      })
+    }
+  }
 
   return (
     <Grid
@@ -210,11 +287,28 @@ const PinnedItemsTab = () => {
         </Flex>
       </Flex>
       <Flex direction="column" style={{ overflowY: 'auto', flexGrow: 1 }}>
-        <ItemList
-          cardType="pinned-item"
-          items={[...pinnedItems].reverse()}
-          renderItem={(item) => <ItemCard key={item.pinId} item={item} type="pinned-item" />}
-        />
+        {pinnedItems.length > 1 && (
+          <Text size="1" color="gray" mx="2" mb="2">
+            Items at the top of the list are drawn on top of the map. Drag to reorder.
+          </Text>
+        )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={listedItems.map((item) => item.pinId ?? item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ItemList
+              cardType="pinned-item"
+              items={listedItems}
+              renderItem={(item) => <SortablePinnedItem key={item.pinId} item={item} />}
+            />
+          </SortableContext>
+        </DndContext>
       </Flex>
     </Grid>
   )
