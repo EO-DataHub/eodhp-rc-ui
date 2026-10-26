@@ -10,6 +10,8 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSkusBySku } from '@/hooks/useSkusBySku'
 import { convertDateToLocalString } from '@/library/dateUtils'
+import { formatCredits, formatQuantity } from '@/library/usageFormatting'
+import { formatPeriodLabel, getPeriodEnd } from '@/library/usagePeriods'
 import styles from './UsagePage.module.scss'
 
 // The API has no way to ask for "most recent" events — only a start/end range or forward
@@ -28,35 +30,15 @@ const PAGE_SIZE = 10
 type DisplayMode = 'credits' | 'raw'
 type SortColumn = 'item' | 'value' | 'date'
 
-// Months are keyed as UTC-midnight dates (`${month}-01`); format in UTC too, or the label
-// shifts back a day for anyone west of UTC.
-const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-})
+// Months are keyed as `YYYY-MM`, the UTC month an aggregated row's event_start falls in.
+const monthStart = (month: string) => new Date(`${month}-01T00:00:00Z`)
 
 const getMonthBounds = (month: string) => {
-  const [year, monthIndex] = month.split('-').map(Number)
-  const start = new Date(Date.UTC(year, monthIndex - 1, 1))
-  const end = new Date(Date.UTC(year, monthIndex, 1))
-  return { start: start.toISOString(), end: end.toISOString() }
-}
-
-const formatQuantity = (value: number) =>
-  Number.isInteger(value) ? String(value) : value.toFixed(2)
-
-// 2dp is fine for monthly/aggregate totals, but a single raw event (e.g. one 5-minute scrape
-// interval's worth of usage) can be a small enough fraction of a credit to round to "0.00" at
-// that precision even though it isn't actually zero. Extend precision only when needed, so
-// aggregates stay clean while individual transactions don't look free.
-const formatCredits = (value: number) => {
-  if (value === 0) return '0.00'
-  if (Math.abs(value) >= 0.01) return value.toFixed(2)
-  for (let decimalPlaces = 3; decimalPlaces <= 8; decimalPlaces += 1) {
-    if (Number(value.toFixed(decimalPlaces)) !== 0) return value.toFixed(decimalPlaces)
+  const start = monthStart(month)
+  return {
+    start: start.toISOString(),
+    end: getPeriodEnd(start, 'month').toISOString(),
   }
-  return value.toFixed(8)
 }
 
 export const UsagePage: React.FC = () => {
@@ -194,7 +176,7 @@ export const UsagePage: React.FC = () => {
     return sortDirection === 'asc' ? <CaretUpIcon /> : <CaretDownIcon />
   }
 
-  const monthLabel = (month: string) => MONTH_FORMATTER.format(new Date(`${month}-01`))
+  const monthLabel = (month: string) => formatPeriodLabel(monthStart(month), 'month')
 
   return (
     <Flex direction="column" gap="7" height="100vh" className={styles.mainContainer}>

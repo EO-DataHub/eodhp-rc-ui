@@ -16,6 +16,8 @@ interface AuthenticationContextValue {
   isAuthenticated: boolean
   isAuthenticating: boolean
   isAuthenticationServiceError: boolean
+  // Holds the `hub_admin` realm role, which grants reads across every workspace.
+  isHubAdmin: boolean
   login: () => Promise<void>
   logout: () => Promise<void>
   token: string | undefined
@@ -30,6 +32,7 @@ export const AuthenticationContext = createContext<AuthenticationContextValue>({
   isAuthenticated: false,
   isAuthenticating: false,
   isAuthenticationServiceError: false,
+  isHubAdmin: false,
   login: () => Promise.resolve(),
   logout: () => Promise.resolve(),
   token: undefined,

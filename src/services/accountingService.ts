@@ -38,12 +38,15 @@ export const fetchWorkspaceBalance = async (
   workspace: string,
   token: string,
 ): Promise<CreditBalance> => {
-  const response = await fetch(`${HUB_BASE_URL}/api/workspaces/${workspace}/accounting/balance`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const response = await fetch(
+    `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(workspace)}/accounting/balance`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     },
-  })
+  )
 
   if (!response.ok) {
     const detail = await extractErrorDetail(response)
@@ -133,18 +136,28 @@ export interface BillingEvent {
   credits: string
 }
 
+// Calendar periods in UTC, as the API defines them: a week starts on Monday, a quarter on
+// 1 January, April, July or October.
+export type TimeAggregation = 'day' | 'week' | 'month' | 'quarter'
+
+export type UsageDimension = 'user' | 'sku' | 'workspace'
+
 export interface FetchUsageDataParams {
   start?: string
   end?: string
   limit?: number
   after?: string
-  timeAggregation?: 'day' | 'month'
+  timeAggregation?: TimeAggregation
+  sku?: string
+  // Only meaningful with timeAggregation. An empty array totals over the period alone; omit it
+  // for the API default of sku + workspace.
+  groupBy?: UsageDimension[]
 }
 
-export const fetchWorkspaceUsageData = async (
-  workspace: string,
+const fetchUsageData = async (
+  path: string,
   token: string,
-  params: FetchUsageDataParams = {},
+  params: FetchUsageDataParams,
 ): Promise<BillingEvent[]> => {
   const searchParams = new URLSearchParams()
   if (params.start) searchParams.set('start', params.start)
@@ -152,10 +165,12 @@ export const fetchWorkspaceUsageData = async (
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.after) searchParams.set('after', params.after)
   if (params.timeAggregation) searchParams.set('time-aggregation', params.timeAggregation)
+  if (params.sku) searchParams.set('sku', params.sku)
+  if (params.groupBy) searchParams.set('group-by', params.groupBy.join(','))
   const queryString = searchParams.toString()
 
   const response = await fetch(
-    `${HUB_BASE_URL}/api/workspaces/${workspace}/accounting/usage-data${queryString ? `?${queryString}` : ''}`,
+    `${HUB_BASE_URL}/api/${path}${queryString ? `?${queryString}` : ''}`,
     {
       method: 'GET',
       headers: {
@@ -179,6 +194,19 @@ export const fetchWorkspaceUsageData = async (
 
   return events as BillingEvent[]
 }
+
+export const fetchWorkspaceUsageData = (
+  workspace: string,
+  token: string,
+  params: FetchUsageDataParams = {},
+): Promise<BillingEvent[]> =>
+  fetchUsageData(`workspaces/${encodeURIComponent(workspace)}/accounting/usage-data`, token, params)
+
+// Usage across every workspace. Hub admins only: anyone else gets a 401.
+export const fetchAllWorkspacesUsageData = (
+  token: string,
+  params: FetchUsageDataParams = {},
+): Promise<BillingEvent[]> => fetchUsageData('accounting/usage-data', token, params)
 
 export interface LedgerTransaction {
   uuid: string
@@ -213,7 +241,7 @@ export const fetchWorkspaceLedger = async (
   const queryString = searchParams.toString()
 
   const response = await fetch(
-    `${HUB_BASE_URL}/api/workspaces/${workspace}/accounting/ledger${queryString ? `?${queryString}` : ''}`,
+    `${HUB_BASE_URL}/api/workspaces/${encodeURIComponent(workspace)}/accounting/ledger${queryString ? `?${queryString}` : ''}`,
     {
       method: 'GET',
       headers: {

@@ -1,0 +1,33 @@
+@use '../../library/genericStyles/usageTable' as usage;
+
+.mainContainer {
+  align-items: left;
+  margin: 3em auto;
+  width: 100%;
+  max-width: 1200px;
+  padding: 0 1em 3em 1em;
+  min-height: 100vh;
+}
+
+.periodLabel {
+  min-width: 11em;
+  text-align: center;
+}
+
+.statCard {
+  min-width: 220px;
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.usageTable {
+  @include usage.usageTable;
+}

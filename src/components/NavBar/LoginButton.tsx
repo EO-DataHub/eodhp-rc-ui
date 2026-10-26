@@ -17,6 +17,7 @@ export const LoginButton = ({
     isAuthenticated,
     isAuthenticating,
     isAuthenticationServiceError,
+    isHubAdmin,
     login,
     logout,
     workspaceUserName,
@@ -88,6 +89,11 @@ export const LoginButton = ({
               <DropdownMenu.Item asChild>
                 <Link to="/accounting/usage">Usage</Link>
               </DropdownMenu.Item>
+              {isHubAdmin && (
+                <DropdownMenu.Item asChild>
+                  <Link to="/accounting/hub">All workspaces</Link>
+                </DropdownMenu.Item>
+              )}
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
 

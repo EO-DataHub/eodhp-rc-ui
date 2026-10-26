@@ -6,6 +6,9 @@ const CreditsPage = lazy(() =>
 const UsagePage = lazy(() =>
   import('@/pages/UsagePage/UsagePage').then((m) => ({ default: m.UsagePage })),
 )
+const HubUsagePage = lazy(() =>
+  import('@/pages/HubUsagePage/HubUsagePage').then((m) => ({ default: m.HubUsagePage })),
+)
 
 export const accountingRoutes = [
   {
@@ -23,6 +26,18 @@ export const accountingRoutes = [
     element: (
       <Suspense fallback={<div>Loading…</div>}>
         <UsagePage />
+      </Suspense>
+    ),
+  },
+  {
+    to: 'hub',
+    label: 'All workspaces',
+    // Hidden from the sidebar for everyone else. The page checks the role itself too, since
+    // the route can still be reached by URL.
+    hubAdminOnly: true,
+    element: (
+      <Suspense fallback={<div>Loading…</div>}>
+        <HubUsagePage />
       </Suspense>
     ),
   },

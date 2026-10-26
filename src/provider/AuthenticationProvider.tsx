@@ -31,6 +31,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
   const workspaceUserName = userInfo?.preferred_username
+  // Read from the access token on each render, so it follows token refreshes.
+  const isHubAdmin = Boolean(token) && authenticationInstance.hasRealmRole('hub_admin')
   const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(
     () => localStorage.getItem('selectedWorkspace') ?? undefined,
   )
@@ -172,6 +174,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         isAuthenticated,
         isAuthenticating,
         isAuthenticationServiceError,
+        isHubAdmin,
         login,
         logout,
         token,
