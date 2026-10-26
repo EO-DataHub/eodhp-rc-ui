@@ -113,7 +113,7 @@ function withStaticOnlyFields(
   staticRender: BaseStacRender | undefined,
 ): BaseStacRender {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { auth, quicklook_georeference, ...stacRender } = render
+  const { auth, quicklook_georeference, isFallback, ...stacRender } = render
   return {
     ...stacRender,
     ...(staticRender?.auth !== undefined && { auth: staticRender.auth }),
@@ -121,6 +121,35 @@ function withStaticOnlyFields(
       quicklook_georeference: staticRender.quicklook_georeference,
     }),
   }
+}
+
+/**
+ * The render used when a collection and its items define none. Each item is drawn from its
+ * first COG asset with the tiler's default styling.
+ */
+export const FALLBACK_RENDER: StacRender = {
+  id: 'default',
+  title: 'Default visualization',
+  assets: [],
+  isFallback: true,
+}
+
+/**
+ * Returns the asset the fallback render draws: the first COG data asset, then the first COG,
+ * then the first GeoTIFF data asset, then the first GeoTIFF.
+ */
+export function getFallbackAsset(item: Item): string | undefined {
+  const tiffs = Object.entries(item.assets ?? {}).filter(([, asset]) =>
+    asset.type?.includes('image/tiff'),
+  )
+  const isCog = (type?: string) => !!type?.includes('cloud-optimized')
+  const isData = (roles?: string[]) => !!roles?.includes('data')
+  const match =
+    tiffs.find(([, asset]) => isCog(asset.type) && isData(asset.roles)) ??
+    tiffs.find(([, asset]) => isCog(asset.type)) ??
+    tiffs.find(([, asset]) => isData(asset.roles)) ??
+    tiffs[0]
+  return match?.[0]
 }
 
 /**
@@ -208,12 +237,23 @@ function toTilerBandParams(
   }
 }
 
+// Render fields used only by the UI, never sent to the tiler
+const CLIENT_ONLY_RENDER_FIELDS = [
+  'auth',
+  'quicklook_georeference',
+  'minmax_zoom',
+  'tilematrixsets',
+  'isFallback',
+]
+
 export const resolveTilesUrl = (
   item: Item,
   selectedRender: StacRender | undefined,
 ): string | undefined => {
-  const render = resolveItemRender(item, selectedRender)
-  if (!render) return undefined
+  const itemRender = resolveItemRender(item, selectedRender)
+  const fallbackAsset = itemRender?.isFallback ? getFallbackAsset(item) : undefined
+  if (!itemRender || (itemRender.isFallback && !fallbackAsset)) return undefined
+  const render = fallbackAsset ? { ...itemRender, assets: [fallbackAsset] } : itemRender
 
   let tilerUrl = undefined
   let urlParam = undefined
@@ -233,9 +273,9 @@ export const resolveTilesUrl = (
   } as { url: string; rescale?: string[]; colormap?: string }
 
   if (render) {
-    // Exclude client-side only properties from query params
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { auth, quicklook_georeference, minmax_zoom, tilematrixsets, ...renderParams } = render
+    const renderParams = Object.fromEntries(
+      Object.entries(render).filter(([key]) => !CLIENT_ONLY_RENDER_FIELDS.includes(key)),
+    )
     queryParams = {
       ...queryParams,
       ...renderParams,

@@ -10,7 +10,15 @@ import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 
-export const RasterItemLayer = ({ item, layerId }: { item: Item; layerId?: string }) => {
+export const RasterItemLayer = ({
+  item,
+  layerId,
+  sourceId,
+}: {
+  item: Item
+  layerId?: string
+  sourceId?: string
+}) => {
   // When on assets tab, resolve the tiles url when rendering
   const tilesUrl = item.tilesUrl ?? resolveTilesUrl(item, item.render)
   const { registerUrl, unregisterUrl } = useAuthenticatedTileUrls()
@@ -62,7 +70,7 @@ export const RasterItemLayer = ({ item, layerId }: { item: Item; layerId?: strin
   const zoomRange = minmaxZoom ? { minzoom: minmaxZoom[0], maxzoom: minmaxZoom[1] } : {}
 
   return (
-    <Source type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
+    <Source id={sourceId} type="raster" tileSize={256} tiles={[tilesUrl]} bounds={item.bbox}>
       <Layer
         id={layerId}
         type="raster"

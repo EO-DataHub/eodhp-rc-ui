@@ -7,6 +7,8 @@ import area from '@turf/area'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
+import { pinIdFromSourceId } from '@/library/pinnedLayerOrder'
+import { getTileErrorMessage } from '@/library/tileErrors'
 
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -87,6 +89,22 @@ export const Map = () => {
     )
     dataFinderStore.send({ type: 'clearInitialBounds' })
   }, [mapInstance, initialBounds])
+
+  // Record tile errors against the pinned item whose source failed
+  useEffect(() => {
+    if (!mapInstance) return
+    const onError = (event: { error: unknown; sourceId?: string }) => {
+      const pinId = pinIdFromSourceId(event.sourceId)
+      if (!pinId) return
+      void getTileErrorMessage(event.error).then((message) => {
+        if (message) dataFinderStore.send({ type: 'setTileError', pinId, message })
+      })
+    }
+    mapInstance.on('error', onError)
+    return () => {
+      mapInstance.off('error', onError)
+    }
+  }, [mapInstance])
 
   // Calculate AOI area from the feature
   const aoiArea = useMemo(() => {

@@ -8,6 +8,7 @@ import {
   getCollectionConfigKey,
   getCollectionRenders,
   getItemRenderOptions,
+  FALLBACK_RENDER,
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
 import * as turf from '@turf/turf'
@@ -39,12 +40,6 @@ export type CollectionInfoTab =
   | 'qa_documentation'
   | 'qa_validation'
 
-const PlaceholderRender: StacRender = {
-  id: 'default',
-  title: 'Default visualization',
-  assets: [],
-}
-
 interface AppContext {
   isContextHydrated: boolean
   isLoading: boolean
@@ -61,11 +56,20 @@ interface AppContext {
   queryFilter?: object
   page: number
   pinnedItems: Item[]
+  // Latest tile error message per pinned item, by pin id
+  tileErrors: Record<string, string>
   hoveredItem?: Item
   collection?: Collection
   collectionRenderOptions: StacRender[]
   collectionRender?: StacRender
   isUserCollection: boolean
+}
+
+const withoutTileError = (tileErrors: Record<string, string>, pinId: string | undefined) => {
+  if (!pinId || !(pinId in tileErrors)) return tileErrors
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { [pinId]: _removed, ...rest } = tileErrors
+  return rest
 }
 
 // Build a unique id for pinned items
@@ -90,6 +94,7 @@ const dataFinderStore = createStore({
     queryFilter: undefined,
     page: 0,
     pinnedItems: [],
+    tileErrors: {},
     hoveredItem: undefined,
     collection: undefined,
     collectionRenderOptions: [],
@@ -358,6 +363,14 @@ const dataFinderStore = createStore({
       return {
         ...context,
         pinnedItems: context.pinnedItems.filter((i) => i.pinId !== event.item.pinId),
+        tileErrors: withoutTileError(context.tileErrors, event.item.pinId),
+      }
+    },
+    setTileError: (context, event: { pinId: string; message: string }) => {
+      if (context.tileErrors[event.pinId] === event.message) return context
+      return {
+        ...context,
+        tileErrors: { ...context.tileErrors, [event.pinId]: event.message },
       }
     },
     movePinnedItem: (context, event: { fromPinId: string; toPinId: string }) => {
@@ -405,6 +418,7 @@ const dataFinderStore = createStore({
     },
     clearAllPinnedItems: {
       pinnedItems: [],
+      tileErrors: {},
     },
     hoveredItemChange: (context, event: { item: Item | undefined }) => {
       return {
@@ -485,7 +499,7 @@ const dataFinderStore = createStore({
 
       // If no renders are available, create a placeholder render option
       if (collectionRenderOptions.length === 0) {
-        collectionRenderOptions = [PlaceholderRender]
+        collectionRenderOptions = [FALLBACK_RENDER]
       }
 
       // Merge in the collection configuration
@@ -513,7 +527,7 @@ const dataFinderStore = createStore({
     // Collections with no renders of their own (such as workflow output stubs) can still have
     // item renders, so offer those once the first item is known.
     setItemRenderOptions: (context, event: { item: Item }) => {
-      if (context.collectionRender !== PlaceholderRender) return context
+      if (!context.collectionRender?.isFallback) return context
       const collectionRenderOptions = getItemRenderOptions(event.item)
       if (collectionRenderOptions.length === 0) return context
       return {

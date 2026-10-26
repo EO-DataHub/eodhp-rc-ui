@@ -2,7 +2,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest'
 import type { BaseStacRender, Collection, Item, StacRender } from '@/types'
 import {
   collectionRenderingConfig,
+  FALLBACK_RENDER,
   getCollectionRenders,
+  getFallbackAsset,
   getItemRenderOptions,
   resolveItemRender,
   resolveTilesUrl,
@@ -286,5 +288,58 @@ describe('getItemRenderOptions', () => {
 
   it('returns no options for an item without renders', () => {
     expect(getItemRenderOptions(makeItem('c'))).toEqual([])
+  })
+})
+
+describe('fallback render', () => {
+  const COG = 'image/tiff; application=geotiff; profile=cloud-optimized'
+  const asset = (type: string, roles: string[] = []) => ({
+    href: `https://example.com/${roles.join('-') || 'asset'}.tif`,
+    type,
+    roles,
+  })
+
+  it('prefers a COG data asset, then a COG, then a GeoTIFF data asset, then a GeoTIFF', () => {
+    const pick = (assets: Record<string, unknown>) =>
+      getFallbackAsset(makeItem('c', [], { assets }))
+    expect(
+      pick({
+        thumbnail: asset('image/png', ['thumbnail']),
+        overview: asset(COG, ['overview']),
+        data: asset(COG, ['data']),
+      }),
+    ).toBe('data')
+    expect(pick({ tiff: asset('image/tiff', ['data']), overview: asset(COG, ['overview']) })).toBe(
+      'overview',
+    )
+    expect(pick({ a: asset('image/tiff'), b: asset('image/tiff', ['data']) })).toBe('b')
+    expect(pick({ a: asset('image/tiff') })).toBe('a')
+    expect(pick({ json: asset('application/json', ['data']) })).toBeUndefined()
+  })
+
+  it('draws the fallback asset with default styling', () => {
+    const item = makeItem('col_job-1', [], { assets: { ndvi: asset(COG, ['data']) } })
+    const query = queryOf(resolveTilesUrl(item, FALLBACK_RENDER))
+    expect(query.getAll('assets')).toEqual(['ndvi'])
+    expect(query.get('isFallback')).toBeNull()
+  })
+
+  it('returns no tile URL when the item has no GeoTIFF', () => {
+    expect(resolveTilesUrl(makeItem('c'), FALLBACK_RENDER)).toBeUndefined()
+  })
+
+  it('uses an item render with the fallback key, as is', () => {
+    const item = makeItem('c', ['a'], {
+      properties: { renders: { default: { title: 'Author default', assets: ['a'] } } },
+    })
+    expect(queryOf(resolveTilesUrl(item, FALLBACK_RENDER)).getAll('assets')).toEqual(['a'])
+  })
+
+  it('cannot be set from STAC', () => {
+    const renders = getCollectionRenders(
+      makeCollection('col_job-1', { r: { title: 'R', assets: ['a'], isFallback: true } }),
+      true,
+    )
+    expect(renders.r.isFallback).toBeUndefined()
   })
 })

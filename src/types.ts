@@ -46,6 +46,8 @@ export interface BaseStacRender {
   return_mask?: boolean
   quicklook_georeference?: string
   auth?: boolean
+  // Set on the render the UI uses when a collection defines none
+  isFallback?: boolean
 }
 
 // The STAC Render Extension does not define an id field, so we add it to make
@@ -143,12 +145,14 @@ export interface Item {
   assets: {
     thumbnail: {
       href: string
+      type?: string
       roles: string[]
       size: number
       location: string
     }
     [key: string]: {
       href: string
+      type?: string
       roles: string[]
       size: number
       location: string
