@@ -1,13 +1,13 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { Dialog, Button, Flex, Text, Box } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
-import { WorkflowJob } from '@/types'
+import { Collection, WorkflowJob } from '@/types'
 import { formatOrderDate } from '@/library/orderUtils'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { useWorkflowJobDetails } from '@/hooks/useWorkflowJobDetails'
-import { getWorkflowOutputDownloadUrl } from '@/library/catalogUtils'
+import { getWorkflowOutputDownloadUrl, getWorkflowOutputFinderUrl } from '@/library/catalogUtils'
 import styles from './JobDetailsModal.module.scss'
 
 interface JobDetailsModalProps {
@@ -24,6 +24,11 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   workspaceName,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
+  const [isRawResultsVisible, setIsRawResultsVisible] = useState(false)
+
+  useEffect(() => {
+    setIsRawResultsVisible(false)
+  }, [job?.id])
 
   const {
     isLoadingWorkspaceToken,
@@ -57,6 +62,11 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
   const downloadUrl = resultItem
     ? getWorkflowOutputDownloadUrl(resultItem, resultsSelfHref)
     : undefined
+  const resultsBounds = (resultsData as Partial<Collection> | undefined)?.extent?.spatial?.bbox?.[0]
+  const finderUrl =
+    job.status === 'successful' && resultItem
+      ? getWorkflowOutputFinderUrl(resultItem, resultsSelfHref, resultsBounds ?? resultItem.bbox)
+      : undefined
 
   const formatTimestamp = (timestamp: string | null): string => {
     if (!timestamp) return 'N/A'
@@ -259,29 +269,43 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({
               !resultsError &&
               resultsData != null && (
                 <Flex direction="column" gap="3">
-                  <Box>
-                    <Text size="2" weight="medium" mb="1">
-                      Result collection (raw payload)
-                    </Text>
-                    <Box
-                      mt="2"
-                      px="3"
-                      py="2"
-                      style={{
-                        backgroundColor: 'var(--gray-2)',
-                        borderRadius: 6,
-                        maxHeight: 260,
-                        overflow: 'auto',
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                      }}
-                    >
-                      <pre style={{ margin: 0 }}>
-                        {typeof resultsData === 'object'
-                          ? JSON.stringify(resultsData, null, 2)
-                          : String(resultsData).slice(0, 10000)}
-                      </pre>
+                  {finderUrl && (
+                    <Box>
+                      <Button size="2" asChild>
+                        <RouterLink to={finderUrl}>Open on map</RouterLink>
+                      </Button>
                     </Box>
+                  )}
+                  <Box>
+                    <Button
+                      size="1"
+                      variant="ghost"
+                      onClick={() => setIsRawResultsVisible(!isRawResultsVisible)}
+                      aria-expanded={isRawResultsVisible}
+                    >
+                      {isRawResultsVisible ? 'Hide raw JSON' : 'Show raw JSON'}
+                    </Button>
+                    {isRawResultsVisible && (
+                      <Box
+                        mt="2"
+                        px="3"
+                        py="2"
+                        style={{
+                          backgroundColor: 'var(--gray-2)',
+                          borderRadius: 6,
+                          maxHeight: 260,
+                          overflow: 'auto',
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                        }}
+                      >
+                        <pre style={{ margin: 0 }}>
+                          {typeof resultsData === 'object'
+                            ? JSON.stringify(resultsData, null, 2)
+                            : String(resultsData).slice(0, 10000)}
+                        </pre>
+                      </Box>
+                    )}
                   </Box>
 
                   <Box>

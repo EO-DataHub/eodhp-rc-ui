@@ -68,6 +68,14 @@ export const Map = () => {
   const initialBounds = useSelector(dataFinderStore, (state) => state.context.initialBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
+  // The store outlives this component, so drop the map instance on unmount. Otherwise, coming
+  // back to the finder, initial bounds are applied to the removed map and then cleared.
+  useEffect(() => {
+    return () => {
+      dataFinderStore.send({ type: 'mapLoad', mapInstance: undefined })
+    }
+  }, [])
+
   // Apply permalink initial bounds when map is ready
   useEffect(() => {
     if (!mapInstance || !initialBounds) return
