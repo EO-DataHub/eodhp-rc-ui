@@ -244,34 +244,53 @@ export const parseProcessingResultsHref = (
   return undefined
 }
 
+const getWorkflowOutputCollectionPath = (collectionHref: string): string | undefined => {
+  const parsed = parseProcessingResultsHref(collectionHref)
+  return parsed ? `${parsed.workspace}/processing-results/${parsed.jobPath}` : undefined
+}
+
 const getWorkflowOutputCollectionDownloadUrl = (
   collectionHref: string,
   itemId: string,
   from: ItemDownloadSource,
 ): string | undefined => {
-  const parsed = parseProcessingResultsHref(collectionHref)
-  if (!parsed) return undefined
-  return getItemDownloadUrl({
-    collectionPath: `${parsed.workspace}/processing-results/${parsed.jobPath}`,
-    itemId,
-    from,
-  })
+  const collectionPath = getWorkflowOutputCollectionPath(collectionHref)
+  return collectionPath ? getItemDownloadUrl({ collectionPath, itemId, from }) : undefined
 }
 
 /**
- * Download page URL for a workflow output item, from its collection link, or from the
- * results collection's own href when the item has no collection link. The item's parent
- * link isn't used: for static outputs it's the job catalog, not the collection.
+ * The collection href of a workflow output item: its collection link, or the results
+ * collection's own href when the item has no collection link. The item's parent link isn't
+ * used: for static outputs it's the job catalog, not the collection.
  */
+const getWorkflowOutputCollectionHref = (item: Item, resultsCollectionHref?: string) =>
+  item.links?.find((link) => link.rel === 'collection')?.href ?? resultsCollectionHref
+
+/** Download page URL for a workflow output item. */
 export const getWorkflowOutputDownloadUrl = (
   item: Item,
   resultsCollectionHref?: string,
 ): string | undefined => {
-  const collectionHref =
-    item.links?.find((link) => link.rel === 'collection')?.href ?? resultsCollectionHref
+  const collectionHref = getWorkflowOutputCollectionHref(item, resultsCollectionHref)
   return collectionHref
     ? getWorkflowOutputCollectionDownloadUrl(collectionHref, item.id, 'workflow-output')
     : undefined
+}
+
+/**
+ * Finder URL for the collection that holds a workflow output item. The finder only lists items
+ * in the map view, so the URL also sets the view to `bounds` when given.
+ */
+export const getWorkflowOutputFinderUrl = (
+  item: Item,
+  resultsCollectionHref?: string,
+  bounds?: number[],
+): string | undefined => {
+  const collectionHref = getWorkflowOutputCollectionHref(item, resultsCollectionHref)
+  const collectionPath = collectionHref && getWorkflowOutputCollectionPath(collectionHref)
+  if (!collectionPath) return undefined
+  const query = bounds?.length === 4 ? `?bounds=${bounds.join(',')}` : ''
+  return `/finder/${collectionPath}${query}`
 }
 
 /**

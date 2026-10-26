@@ -5,11 +5,13 @@ import {
   getCollectionRoutePath,
   getItemDownloadUrl,
   getWorkflowOutputDownloadUrl,
+  getWorkflowOutputFinderUrl,
   getWorkflowOutputDownloadUrlFromItemHref,
   parseProcessingResultsHref,
   parseCollectionPath,
   parseItemDownloadSearch,
 } from './catalogUtils'
+import { parsePermalinkParams } from '@/utils/permalink'
 
 // setupTests.ts stubs URL for object URLs; these helpers need the real one.
 beforeAll(() => {
@@ -128,6 +130,56 @@ describe('getWorkflowOutputDownloadUrl', () => {
       ],
     } as unknown as Item
     expect(getWorkflowOutputDownloadUrl(item)).toBeUndefined()
+  })
+})
+
+describe('getWorkflowOutputFinderUrl', () => {
+  const collectionHref =
+    'https://eodatahub.org.uk/api/catalogue/stac/catalogs/user/catalogs/npl/catalogs/processing-results/catalogs/qa-workflow/catalogs/airbus_phr_qa/collections/qa_documentation'
+
+  it('builds the finder URL from the item collection link', () => {
+    const item = {
+      id: 'i',
+      links: [{ rel: 'collection', href: collectionHref }],
+    } as unknown as Item
+    const url = getWorkflowOutputFinderUrl(item)!
+    expect(url).toBe(
+      '/finder/npl/processing-results/catalogs/qa-workflow/catalogs/airbus_phr_qa/collections/qa_documentation',
+    )
+    expect(parseCollectionPath(url.replace(/^\/finder\//, ''))).toMatchObject({
+      type: 'job',
+      workspace: 'npl',
+      collectionId: 'qa_documentation',
+    })
+  })
+
+  it('uses the results collection href when the item has no collection link', () => {
+    const item = { id: 'i', links: [] } as unknown as Item
+    expect(getWorkflowOutputFinderUrl(item, collectionHref)).toBe(
+      '/finder/npl/processing-results/catalogs/qa-workflow/catalogs/airbus_phr_qa/collections/qa_documentation',
+    )
+  })
+
+  it('returns undefined for items outside processing results', () => {
+    const item = {
+      id: 'x',
+      links: [
+        { rel: 'collection', href: 'https://eodatahub.org.uk/api/catalogue/stac/collections/c' },
+      ],
+    } as unknown as Item
+    expect(getWorkflowOutputFinderUrl(item)).toBeUndefined()
+  })
+
+  it('sets the map view to the given bounds', () => {
+    const item = { id: 'i', links: [] } as unknown as Item
+    const url = getWorkflowOutputFinderUrl(item, collectionHref, [-1.5, 50.5, 0.5, 51.5])!
+    const [, query] = url.split('?')
+    expect(parsePermalinkParams(new URLSearchParams(query)).bounds).toEqual([-1.5, 50.5, 0.5, 51.5])
+  })
+
+  it('ignores 3D bounds', () => {
+    const item = { id: 'i', links: [] } as unknown as Item
+    expect(getWorkflowOutputFinderUrl(item, collectionHref, [0, 0, 0, 1, 1, 1])).not.toContain('?')
   })
 })
 
