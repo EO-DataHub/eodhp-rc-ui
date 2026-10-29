@@ -210,8 +210,8 @@ export function buildPermalinkUrlWithLimit(
   primaryCollectionId: string,
   items: Item[],
   bounds: MapBounds,
-  maxLength: number = MAX_PERMALINK_URL_LENGTH,
   toolId?: string,
+  maxLength: number = MAX_PERMALINK_URL_LENGTH,
 ): BuildPermalinkResult {
   const base = `${window.location.origin}${window.location.pathname}`
   let n = items.length

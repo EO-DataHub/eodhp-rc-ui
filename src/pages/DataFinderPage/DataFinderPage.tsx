@@ -19,6 +19,16 @@ import { fetchItemById } from '@/services/processCatalogueService'
 
 import styles from './DataFinderPage.module.scss'
 
+const withToolParam = (params: URLSearchParams, toolId: string | undefined) => {
+  const next = new URLSearchParams(params)
+  if (toolId) {
+    next.set('tool', toolId)
+  } else {
+    next.delete('tool')
+  }
+  return next
+}
+
 export const DataFinderPage: React.FC = () => {
   const { currentWorkspace } = useContext(AuthenticationContext)
   // Use catch-all route parameter '*' to capture full path
@@ -29,6 +39,7 @@ export const DataFinderPage: React.FC = () => {
   const permalinkRestoreDoneRef = useRef(false)
   // The tool id the page opened with; the URL is left alone until its lookup finishes
   const initialToolIdRef = useRef(searchParams.get('tool'))
+  // A ref, not state: it only gates the URL sync effect and must not cause a render of its own
   const isToolLookupPendingRef = useRef(false)
   // setSearchParams changes with every URL change, so the mount-only effect reads it from a ref
   const setSearchParamsRef = useRef(setSearchParams)
@@ -80,21 +91,22 @@ export const DataFinderPage: React.FC = () => {
 
     if (toolId) {
       isToolLookupPendingRef.current = true
-      void fetchItemById(toolId).then(({ data }) => {
+      void fetchItemById(toolId).then(({ data, notFound }) => {
         if (isCancelled) return
         isToolLookupPendingRef.current = false
-        if (data) {
+
+        // The user chose a tool from the Tools tab while the lookup ran, so keep their choice
+        const toolChosenMeanwhile = dataFinderStore.getSnapshot().context.chosenTool
+        if (toolChosenMeanwhile) {
+          setSearchParamsRef.current((prev) => withToolParam(prev, toolChosenMeanwhile.id), {
+            replace: true,
+          })
+        } else if (data) {
           dataFinderStore.send({ type: 'chooseTool', tool: data })
-        } else {
-          setSearchParamsRef.current(
-            (prev) => {
-              const next = new URLSearchParams(prev)
-              next.delete('tool')
-              return next
-            },
-            { replace: true },
-          )
+        } else if (notFound) {
+          setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
         }
+        // On other failures the parameter stays, so a refresh can try again
       })
     }
 
@@ -109,18 +121,7 @@ export const DataFinderPage: React.FC = () => {
     if (isToolLookupPendingRef.current) return
     if ((searchParams.get('tool') ?? undefined) === chosenToolId) return
 
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev)
-        if (chosenToolId) {
-          next.set('tool', chosenToolId)
-        } else {
-          next.delete('tool')
-        }
-        return next
-      },
-      { replace: true },
-    )
+    setSearchParams((prev) => withToolParam(prev, chosenToolId), { replace: true })
   }, [chosenToolId, searchParams, setSearchParams])
 
   // Remove AOI from local storage on mount

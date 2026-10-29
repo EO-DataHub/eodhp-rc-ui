@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Flex, Text, Heading, IconButton, TextField, Badge } from '@radix-ui/themes'
 import styles from './SidePanel.module.scss'
 import listStyles from './ItemList.module.scss'
@@ -16,7 +16,8 @@ import { Callout } from '../Callout/Callout'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { getCollectionFinderUrl } from '@/library/catalogUtils'
 import { getDefaultQATab } from '@/library/collectionQuality'
-import type { CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
+import dataFinderStore, { type CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
+import { useSelector } from '@xstate/store/react'
 
 interface CollectionPanelProps {
   onCloseCollectionPanel: () => void
@@ -101,12 +102,34 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     filters,
     setFilters,
     collectionCount,
-    groupedByCollections,
+    groupedByCollections: allGroupedByCollections,
     groupBy,
     setGroupBy,
     error,
-    filteredCollections,
+    filteredCollections: allFilteredCollections,
   } = useCollections()
+
+  // While a tool is chosen, offer only the datasets it can run on. A tool that names none runs on any
+  const applicableCollections = useSelector(
+    dataFinderStore,
+    (state) => state.context.chosenTool?.properties.applicableCollections,
+  )
+  const appliesToChosenTool = useMemo(() => {
+    if (!applicableCollections?.length) return () => true
+    return (collection: Collection) => applicableCollections.includes(collection.id)
+  }, [applicableCollections])
+  const filteredCollections = useMemo(
+    () => allFilteredCollections.filter(appliesToChosenTool),
+    [allFilteredCollections, appliesToChosenTool],
+  )
+  const groupedByCollections = useMemo(
+    () =>
+      allGroupedByCollections.map((group) => ({
+        ...group,
+        collections: group.collections.filter(appliesToChosenTool),
+      })),
+    [allGroupedByCollections, appliesToChosenTool],
+  )
 
   const navigate = useNavigate()
 

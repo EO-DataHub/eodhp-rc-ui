@@ -63,7 +63,6 @@ function computePermalink(
       primaryCollectionId,
       items,
       mapBounds,
-      undefined,
       toolId,
     )
     return {
