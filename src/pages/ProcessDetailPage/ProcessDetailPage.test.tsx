@@ -1,12 +1,19 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import type { Collection, ProcessDetail } from '@/types'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import type { ProcessDetail } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchItemById } from '@/services/processCatalogueService'
-import { useProcessLaunchFromCatalogue } from '@/hooks/useProcessLaunchFromCatalogue'
-import { item, ndviWorkflow, notebookRecord, stubBrowserGlobals } from '@/test-data/runWorkflow'
+import {
+  anyDatasetWorkflow,
+  itemNotebook,
+  multiDatasetWorkflow,
+  ndviWorkflow,
+  pinSetNotebook,
+  stubBrowserGlobals,
+} from '@/test-data/runWorkflow'
 import { ProcessDetailPage } from './ProcessDetailPage'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -15,9 +22,6 @@ vi.mock('@/services/processCatalogueService', () => ({
 }))
 vi.mock('@/services/workflowLaunchService', () => ({ launchWorkflow: vi.fn() }))
 vi.mock('@/services/workspaceTokenService', () => ({ fetchWorkspaceTokens: vi.fn() }))
-vi.mock('@/hooks/useProcessLaunchFromCatalogue', () => ({
-  useProcessLaunchFromCatalogue: vi.fn(),
-}))
 
 type AuthValue = React.ContextType<typeof AuthenticationContext>
 
@@ -35,76 +39,79 @@ const auth = (overrides: Partial<AuthValue> = {}): AuthValue => ({
   ...overrides,
 })
 
-const notebook = notebookRecord('ndvi_notebook', {
-  STAC_ITEM_LINK: { hubType: 'stac-item', type: 'text' },
-})
+const signedOut: Partial<AuthValue> = {
+  isAuthenticated: false,
+  token: undefined,
+  userInfo: undefined,
+  currentWorkspace: undefined,
+}
 
-const collectionUrl = 'https://hub.example/collections/sentinel2_ard'
+/** Stands in for the page the button goes to, and shows where that is. */
+const Destination = () => {
+  const location = useLocation()
+  return <p data-testid="destination">{`${location.pathname}${location.search}`}</p>
+}
 
 const renderPage = (record: ProcessDetail, authOverrides: Partial<AuthValue> = {}) => {
   vi.mocked(fetchItemById).mockResolvedValue({ data: record, error: null, notFound: false })
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <MemoryRouter initialEntries={[`/catalogue/processes/${record.id}`]}>
-      <AuthenticationContext.Provider value={auth(authOverrides)}>
-        <Routes>
-          <Route path="/catalogue/processes/:itemId" element={<ProcessDetailPage />} />
-        </Routes>
-      </AuthenticationContext.Provider>
+      <QueryClientProvider client={queryClient}>
+        <AuthenticationContext.Provider value={auth(authOverrides)}>
+          <Routes>
+            <Route path="/catalogue/processes/:itemId" element={<ProcessDetailPage />} />
+            <Route path="/finder/*" element={<Destination />} />
+            <Route path="/" element={<Destination />} />
+          </Routes>
+        </AuthenticationContext.Provider>
+      </QueryClientProvider>
     </MemoryRouter>,
   )
 }
 
 const runButton = () => screen.findByRole('button', { name: /run workflow/i })
+const openInFinderButton = () => screen.findByRole('button', { name: /open in data finder/i })
+
+const destination = async () => (await screen.findByTestId('destination')).textContent
 
 beforeEach(() => {
   stubBrowserGlobals()
-  vi.stubEnv('VITE_HUB_BASE_URL', 'https://hub.example')
-  vi.stubEnv('VITE_WORKFLOW_RESULTS_WORKSPACE_NAME', 'wf-ws')
-  vi.mocked(useProcessLaunchFromCatalogue).mockReturnValue({
-    collections: [{ id: 'sentinel2_ard', label: 'Sentinel-2 ARD', url: collectionUrl }],
-    selectedCollectionUrl: collectionUrl,
-    selectedCollection: { id: 'sentinel2_ard' } as Collection,
-    setSelectedCollectionUrl: vi.fn(),
-    startDate: null,
-    endDate: null,
-    setStartDate: vi.fn(),
-    setEndDate: vi.fn(),
-    items: [item],
-    selectedItem: item,
-    setSelectedItemId: vi.fn(),
-    isLoadingItems: false,
-    itemsError: null,
-    dateRangeError: null,
-    reset: vi.fn(),
-  })
 })
 
 afterEach(() => {
   vi.clearAllMocks()
-  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 })
 
 describe('ProcessDetailPage for a workflow', () => {
-  it('opens the Run workflow dialog with the workflow filled in', async () => {
+  it("goes to the Data Finder at the workflow's dataset with the workflow chosen", async () => {
     renderPage(ndviWorkflow)
     fireEvent.click(await runButton())
+    expect(await destination()).toBe('/finder/sentinel2_ard?tool=ndvi')
+  })
 
-    const dialog = await screen.findByRole('dialog')
-    expect(
-      await screen.findByRole('heading', { name: /what do you want to run on/i }),
-    ).toBeInTheDocument()
-    expect(dialog).toHaveTextContent('NDVI')
-    expect(useProcessLaunchFromCatalogue).toHaveBeenCalledWith({ process: ndviWorkflow })
+  it("goes to the workflow's first dataset", async () => {
+    renderPage(multiDatasetWorkflow)
+    fireEvent.click(await runButton())
+    expect(await destination()).toBe('/finder/landsat_c2l2?tool=change-detection')
+  })
+
+  it('goes to the dataset list with no tool chosen when the workflow names no dataset', async () => {
+    renderPage(anyDatasetWorkflow)
+    fireEvent.click(await runButton())
+    expect(await destination()).toBe('/')
+  })
+
+  it('does not open the Run workflow dialog', async () => {
+    renderPage(ndviWorkflow)
+    fireEvent.click(await runButton())
+    await destination()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('disables Run workflow when signed out', async () => {
-    renderPage(ndviWorkflow, {
-      isAuthenticated: false,
-      token: undefined,
-      userInfo: undefined,
-      currentWorkspace: undefined,
-    })
+    renderPage(ndviWorkflow, signedOut)
     expect(await runButton()).toBeDisabled()
     expect(screen.getByText(/sign in to run this workflow/i)).toBeInTheDocument()
   })
@@ -114,14 +121,58 @@ describe('ProcessDetailPage for a workflow', () => {
     expect(await runButton()).toBeEnabled()
     expect(screen.queryByText(/sign in to run this workflow/i)).toBeNull()
   })
+
+  it('has no Open in Data Finder button', async () => {
+    renderPage(ndviWorkflow)
+    await runButton()
+    expect(screen.queryByRole('button', { name: /open in data finder/i })).toBeNull()
+  })
 })
 
-describe('ProcessDetailPage for a notebook', () => {
+describe('ProcessDetailPage for an item notebook', () => {
+  it("goes to the Data Finder at the notebook's dataset with the notebook chosen", async () => {
+    renderPage(itemNotebook)
+    fireEvent.click(await openInFinderButton())
+    expect(await destination()).toBe('/finder/sentinel2_ard?tool=ndvi_notebook')
+  })
+
+  it('goes to the dataset list with no tool chosen when the notebook names no dataset', async () => {
+    const anyDatasetNotebook: ProcessDetail = {
+      ...itemNotebook,
+      properties: { ...itemNotebook.properties, applicableCollections: [] },
+    }
+    renderPage(anyDatasetNotebook)
+    fireEvent.click(await openInFinderButton())
+    expect(await destination()).toBe('/')
+  })
+
+  it('disables Open in Data Finder when signed out', async () => {
+    renderPage(itemNotebook, signedOut)
+    expect(await openInFinderButton()).toBeDisabled()
+    expect(screen.getByText(/sign in to open this notebook/i)).toBeInTheDocument()
+  })
+
+  it('does not ask a signed-in user to sign in', async () => {
+    renderPage(itemNotebook)
+    expect(await openInFinderButton()).toBeEnabled()
+    expect(screen.queryByText(/sign in to open this notebook/i)).toBeNull()
+  })
+
+  it('has no Run workflow button', async () => {
+    renderPage(itemNotebook)
+    await openInFinderButton()
+    expect(screen.queryByRole('button', { name: /run workflow/i })).toBeNull()
+  })
+})
+
+describe('ProcessDetailPage for a pin-set notebook', () => {
   it('shows the guidance text and no launch button', async () => {
-    renderPage(notebook)
+    renderPage(pinSetNotebook)
     expect(
       await screen.findByText(/to launch this notebook, go to the data catalogue/i),
     ).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /run workflow|launch/i })).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: /run workflow|launch|open in data finder/i }),
+    ).toBeNull()
   })
 })
