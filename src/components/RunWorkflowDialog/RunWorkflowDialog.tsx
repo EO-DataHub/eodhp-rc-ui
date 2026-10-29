@@ -147,6 +147,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
     setDetail(initialWorkflow ?? null)
     setDetailError(null)
     setValues(initialUserValues(initialWorkflow?.properties.inputParameters ?? {}))
+    setIncludeAoi(!!aoi)
     setLaunchError(null)
     setJobId(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,6 +160,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
   const loadWorkflows = async () => {
     setIsLoadingWorkflows(true)
     setWorkflowsError(null)
+    // Only the first 100 workflows are fetched, because the list is filtered by dataset in the browser
     const { data, error } = await fetchItems({ type: 'workflow', page: 1, pageSize: 100 })
     setIsLoadingWorkflows(false)
     if (error) {
@@ -185,16 +187,21 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
     ? { item, aoi, includeAoi, workspace: currentWorkspace, apiBaseUrl: getHubApiOrigin() }
     : null
 
+  const resolvedHubValues = launchContext ? buildWorkflowVariables(inputs, launchContext) : {}
+
+  /** Item inputs the Hub cannot fill, for example when the item has no self link. */
+  const missingItemInputs = Object.entries(inputs).filter(
+    ([key, def]) => getHubInputKind(key, def) === 'item' && !resolvedHubValues[key],
+  )
+
   const hubValueText = (key: string, def: InputParameterEntry) => {
     switch (getHubInputKind(key, def)) {
       case 'item':
-        return item ? `Item ${item.id}` : ''
+        return item && resolvedHubValues[key] ? `Item ${item.id}` : 'Not available'
       case 'area':
         return areaText()
-      default: {
-        const resolved = launchContext && buildWorkflowVariables({ [key]: def }, launchContext)
-        return resolved?.[key] ?? 'Not available'
-      }
+      default:
+        return resolvedHubValues[key] ?? 'Not available'
     }
   }
 
@@ -240,6 +247,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
 
   const run = async () => {
     if (!detail || !launchContext || !token || !currentWorkspace) return
+    if (missingItemInputs.length > 0) return
 
     const executionUrl = getWorkflowExecutionUrl(detail)
     if (!executionUrl) {
@@ -251,7 +259,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
     setLaunchError(null)
     try {
       const variables = {
-        ...buildWorkflowVariables(inputs, launchContext),
+        ...resolvedHubValues,
         ...toLaunchValues(inputs, values),
       }
       const { access } = await fetchWorkspaceTokens(currentWorkspace, token)
@@ -328,6 +336,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
                   key={w.id}
                   type="button"
                   aria-pressed={w.id === selectedId}
+                  disabled={isLoadingDetail}
                   className={`${styles.workflowOption} ${w.id === selectedId ? styles.workflowOptionSelected : ''}`}
                   onClick={() => setSelectedId(w.id)}
                 >
@@ -410,6 +419,18 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
                 <Callout.Text>Select a workspace to run this workflow.</Callout.Text>
               </Callout.Root>
             )}
+            {missingItemInputs.length > 0 && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  The Hub cannot fill in{' '}
+                  {missingItemInputs.map(([key, def]) => inputLabel(key, def)).join(', ')} because
+                  this item has no link. Choose a different item.
+                </Callout.Text>
+              </Callout.Root>
+            )}
             {launchError && (
               <Callout.Root color="red" size="1">
                 <Callout.Text>{launchError}</Callout.Text>
@@ -419,7 +440,13 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
             <Flex justify="between" gap="3" mt="2">
               {backButton(beforeReview())}
               <Button
-                disabled={!currentWorkspace || !token || !item || isLaunching}
+                disabled={
+                  !currentWorkspace ||
+                  !token ||
+                  !item ||
+                  missingItemInputs.length > 0 ||
+                  isLaunching
+                }
                 onClick={() => void run()}
               >
                 {isLaunching ? 'Running…' : 'Run workflow'}
