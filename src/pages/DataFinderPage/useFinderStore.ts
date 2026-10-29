@@ -1,7 +1,7 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Collection, StacRender, Item } from '@/types'
+import { Collection, StacRender, Item, ProcessRecord } from '@/types'
 import {
   collectionRenderingConfig,
   resolveTilesUrl,
@@ -64,6 +64,7 @@ interface AppContext {
   collectionRenderOptions: StacRender[]
   collectionRender?: StacRender
   isUserCollection: boolean
+  chosenTool?: ProcessRecord
 }
 
 // Build a unique id for pinned items
@@ -93,6 +94,7 @@ const dataFinderStore = createStore({
     collectionRenderOptions: [],
     collectionRender: undefined,
     isUserCollection: false,
+    chosenTool: undefined,
   } as AppContext,
   // Transitions
   on: {
@@ -529,6 +531,11 @@ const dataFinderStore = createStore({
       }
       return { ...context, aoi: event.aoi }
     },
+    chooseTool: (context, event: { tool: ProcessRecord }) => ({
+      ...context,
+      chosenTool: event.tool,
+    }),
+    clearTool: (context) => ({ ...context, chosenTool: undefined }),
   },
 })
 

@@ -15,6 +15,7 @@ import {
   restoreFromPermalinkSingleCollection,
 } from './permalinkRestore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { fetchItemById } from '@/services/processCatalogueService'
 
 import styles from './DataFinderPage.module.scss'
 
@@ -24,11 +25,18 @@ export const DataFinderPage: React.FC = () => {
   const params = useParams<{ '*': string }>()
   const collectionPath = params['*'] ?? ''
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const permalinkRestoreDoneRef = useRef(false)
+  // The tool id the page opened with; the URL is left alone until its lookup finishes
+  const initialToolIdRef = useRef(searchParams.get('tool'))
+  const isToolLookupPendingRef = useRef(false)
+  // setSearchParams changes with every URL change, so the mount-only effect reads it from a ref
+  const setSearchParamsRef = useRef(setSearchParams)
+  setSearchParamsRef.current = setSearchParams
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const chosenToolId = useSelector(dataFinderStore, (state) => state.context.chosenTool?.id)
 
   const {
     status: collectionStatus,
@@ -64,6 +72,56 @@ export const DataFinderPage: React.FC = () => {
     }
     // Otherwise still loading, or waiting for sign-in
   }, [collectionPath, collectionStatus, resolvedCollection, isResolvedUserCollection, navigate])
+
+  // Choose the tool named in the URL, and clear the chosen tool when the Data Finder closes
+  useEffect(() => {
+    const toolId = initialToolIdRef.current
+    let isCancelled = false
+
+    if (toolId) {
+      isToolLookupPendingRef.current = true
+      void fetchItemById(toolId).then(({ data }) => {
+        if (isCancelled) return
+        isToolLookupPendingRef.current = false
+        if (data) {
+          dataFinderStore.send({ type: 'chooseTool', tool: data })
+        } else {
+          setSearchParamsRef.current(
+            (prev) => {
+              const next = new URLSearchParams(prev)
+              next.delete('tool')
+              return next
+            },
+            { replace: true },
+          )
+        }
+      })
+    }
+
+    return () => {
+      isCancelled = true
+      dataFinderStore.send({ type: 'clearTool' })
+    }
+  }, [])
+
+  // Keep the tool parameter in step with the chosen tool, including after a dataset change
+  useEffect(() => {
+    if (isToolLookupPendingRef.current) return
+    if ((searchParams.get('tool') ?? undefined) === chosenToolId) return
+
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        if (chosenToolId) {
+          next.set('tool', chosenToolId)
+        } else {
+          next.delete('tool')
+        }
+        return next
+      },
+      { replace: true },
+    )
+  }, [chosenToolId, searchParams, setSearchParams])
 
   // Remove AOI from local storage on mount
   useEffect(() => {
