@@ -49,6 +49,13 @@ describe('buildWorkflowVariables', () => {
         bbox: JSON.stringify(aoi),
       })
     })
+
+    it('falls back to the key name when the Hub type has no resolver and no variableRef', () => {
+      expect(build({ AOI: { hubType: 'bbox', cwlType: 'string' } })).toEqual({
+        AOI: JSON.stringify(aoi),
+      })
+      expect(hasResolver('AOI', { hubType: 'bbox' })).toBe(true)
+    })
   })
 
   describe('by variableRef', () => {

@@ -12,6 +12,13 @@ export const item = {
   assets: {},
 } as unknown as Item
 
+/** An item the catalogue returned without a self link, so the Hub cannot send its link. */
+export const itemWithoutLink = {
+  ...item,
+  id: 'S2A_NO_LINK',
+  links: [],
+} as unknown as Item
+
 export const aoi: GeoJSON.Feature = {
   type: 'Feature',
   properties: {},
@@ -105,6 +112,16 @@ export const areaWorkflow = workflowRecord('area-mask', {
   inputParameters: {
     stac_item: { label: 'STAC item', hubType: 'stac-item', cwlType: 'string' },
     aoi: { label: 'Area of interest', hubType: 'aoi', cwlType: 'string' },
+  },
+})
+
+/** A workflow that names more than one dataset. The first is where the Data Finder opens. */
+export const multiDatasetWorkflow = workflowRecord('change-detection', {
+  title: 'Change detection',
+  description: 'Works on Landsat or Sentinel-2 items.',
+  applicableCollections: ['landsat_c2l2', 'sentinel2_ard'],
+  inputParameters: {
+    stac_item: { label: 'STAC item', hubType: 'stac-item', cwlType: 'string' },
   },
 })
 

@@ -1,8 +1,8 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import type { Collection } from '@/types'
+import type { Collection, ProcessDetail } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
@@ -16,8 +16,10 @@ import {
   areaWorkflow,
   item,
   ITEM_SELF_HREF,
+  itemWithoutLink,
   legacyWorkflow,
   listRecord,
+  multiDatasetWorkflow,
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
@@ -50,14 +52,16 @@ const auth = (overrides: Partial<AuthValue> = {}): AuthValue => ({
   ...overrides,
 })
 
+const dialogTree = (props: DialogProps = {}, authOverrides: Partial<AuthValue> = {}) => (
+  <MemoryRouter>
+    <AuthenticationContext.Provider value={auth(authOverrides)}>
+      <RunWorkflowDialog open onOpenChange={vi.fn()} {...props} />
+    </AuthenticationContext.Provider>
+  </MemoryRouter>
+)
+
 const renderDialog = (props: DialogProps = {}, authOverrides: Partial<AuthValue> = {}) =>
-  render(
-    <MemoryRouter>
-      <AuthenticationContext.Provider value={auth(authOverrides)}>
-        <RunWorkflowDialog open onOpenChange={vi.fn()} {...props} />
-      </AuthenticationContext.Provider>
-    </MemoryRouter>,
-  )
+  render(dialogTree(props, authOverrides))
 
 const heading = (name: RegExp) => screen.findByRole('heading', { name })
 const next = () => fireEvent.click(screen.getByRole('button', { name: 'Next' }))
@@ -86,6 +90,8 @@ const toReview = async () => {
 }
 
 const drawArea = () => dataFinderStore.send({ type: 'storeAoi', aoi })
+
+const findDataLink = () => screen.queryByRole('link', { name: /find data on the map/i })
 
 const collection = { id: 'sentinel2_ard' } as Collection
 const collectionUrl = 'https://hub.example/collections/sentinel2_ard'
@@ -289,6 +295,41 @@ describe('RunWorkflowDialog from an item', () => {
     )
   })
 
+  it('disables Run and sends no job when the item has no self link', async () => {
+    renderDialog({ item: itemWithoutLink })
+    await chooseWorkflow('NDVI')
+    await toReview()
+    expect(runButton()).toBeDisabled()
+    expect(screen.getByText(/this item has no link/i)).toBeInTheDocument()
+    fireEvent.click(runButton())
+    expect(fetchWorkspaceTokens).not.toHaveBeenCalled()
+    expect(launchWorkflow).not.toHaveBeenCalled()
+  })
+
+  it('ignores a workflow details response from an earlier opening', async () => {
+    let respond: (record: ProcessDetail) => void = () => undefined
+    vi.mocked(fetchItemById).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          respond = (record) => resolve({ data: record, error: null, notFound: false })
+        }),
+    )
+    const { rerender } = renderDialog({ item })
+    await heading(/choose a workflow/i)
+    fireEvent.click(await screen.findByText('NDVI'))
+    next()
+    await waitFor(() => expect(fetchItemById).toHaveBeenCalledWith('ndvi'))
+
+    rerender(dialogTree({ item, open: false }))
+    rerender(dialogTree({ item, open: true }))
+    await heading(/choose a workflow/i)
+
+    await act(() => Promise.resolve(respond(ndviWorkflow)))
+    expect(screen.getByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /check the inputs/i })).toBeNull()
+    expect(screen.queryByLabelText('Threshold')).toBeNull()
+  })
+
   it('shows the launch error and keeps the inputs', async () => {
     vi.mocked(launchWorkflow).mockRejectedValueOnce(
       new Error('Insufficient permissions to launch this workflow.'),
@@ -333,6 +374,59 @@ describe('RunWorkflowDialog from a workflow', () => {
     expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
     back()
     await heading(/what do you want to run on/i)
+  })
+
+  it("links to the Data Finder at the workflow's dataset", async () => {
+    renderDialog({ workflow: ndviWorkflow })
+    await heading(/what do you want to run on/i)
+    expect(findDataLink()).toHaveAttribute('href', '/finder/sentinel2_ard')
+  })
+
+  it("links to the Data Finder at the workflow's first dataset", async () => {
+    renderDialog({ workflow: multiDatasetWorkflow })
+    await heading(/what do you want to run on/i)
+    expect(findDataLink()).toHaveAttribute('href', '/finder/landsat_c2l2')
+  })
+
+  it('links to the dataset list when the workflow names no dataset', async () => {
+    vi.mocked(useProcessLaunchFromCatalogue).mockReturnValue(
+      picker({
+        collections: [],
+        selectedCollectionUrl: null,
+        selectedCollection: null,
+        items: [],
+        selectedItem: null,
+      }),
+    )
+    renderDialog({ workflow: anyDatasetWorkflow })
+    await heading(/what do you want to run on/i)
+    const link = findDataLink()
+    expect(link).toHaveAttribute('href', '/')
+    // The link comes with a short explanation, not only the link text
+    const dialogText = screen.getByRole('dialog').textContent ?? ''
+    expect(dialogText.replace(link!.textContent ?? '', '')).toMatch(/map|data finder/i)
+  })
+
+  it('starts with no item picked when the dialog opens again', async () => {
+    // A picker that keeps its own state, like the real hook, so a remount shows as an empty pick
+    let pickItem: (id: string | null) => void = () => undefined
+    vi.mocked(useProcessLaunchFromCatalogue).mockImplementation(() => {
+      const [selectedId, setSelectedId] = React.useState<string | null>(null)
+      pickItem = setSelectedId
+      return picker({
+        selectedItem: selectedId === item.id ? item : null,
+        setSelectedItemId: setSelectedId,
+      })
+    })
+    const { rerender } = renderDialog({ workflow: ndviWorkflow })
+    await heading(/what do you want to run on/i)
+    act(() => pickItem(item.id))
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
+
+    rerender(dialogTree({ workflow: ndviWorkflow, open: false }))
+    rerender(dialogTree({ workflow: ndviWorkflow, open: true }))
+    await heading(/what do you want to run on/i)
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
   })
 
   it('runs the workflow on the picked item', async () => {

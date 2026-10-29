@@ -106,6 +106,13 @@ describe('ProcessDetailPage for a workflow', () => {
       currentWorkspace: undefined,
     })
     expect(await runButton()).toBeDisabled()
+    expect(screen.getByText(/sign in to run this workflow/i)).toBeInTheDocument()
+  })
+
+  it('does not ask a signed-in user to sign in', async () => {
+    renderPage(ndviWorkflow)
+    expect(await runButton()).toBeEnabled()
+    expect(screen.queryByText(/sign in to run this workflow/i)).toBeNull()
   })
 })
 
