@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useId, useMemo, useState } from 'react'
+import React, { useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from '@xstate/store/react'
 import {
@@ -99,12 +99,11 @@ const WorkflowFirstDialog: React.FC<RunWorkflowDialogProps & { workflow: Process
   return <RunWorkflowSteps {...props} picker={picker} />
 }
 
-export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = (props) =>
-  props.workflow && !props.item ? (
-    <WorkflowFirstDialog {...props} workflow={props.workflow} />
-  ) : (
-    <RunWorkflowSteps {...props} />
-  )
+export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = (props) => {
+  if (!props.workflow || props.item) return <RunWorkflowSteps {...props} />
+  // Mounted only while open, so the item picker loads on open and starts empty each time
+  return props.open ? <WorkflowFirstDialog {...props} workflow={props.workflow} /> : null
+}
 
 const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> = ({
   open,
@@ -139,12 +138,17 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
   const inputs = useMemo(() => detail?.properties.inputParameters ?? {}, [detail])
   const needsInputs = needsInputsStep(inputs)
 
+  // Changes on every open and close, so a details request from an earlier opening is ignored
+  const openingRef = useRef(0)
+
   // Start fresh every time the dialog opens
   useEffect(() => {
+    openingRef.current += 1
     if (!open) return
     setStep(firstStep())
     setSelectedId(initialWorkflow?.id ?? null)
     setDetail(initialWorkflow ?? null)
+    setIsLoadingDetail(false)
     setDetailError(null)
     setValues(initialUserValues(initialWorkflow?.properties.inputParameters ?? {}))
     setIncludeAoi(!!aoi)
@@ -211,9 +215,11 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
   const chooseWorkflow = async () => {
     if (!selectedId) return
     if (detail?.id !== selectedId) {
+      const opening = openingRef.current
       setIsLoadingDetail(true)
       setDetailError(null)
       const { data, error } = await fetchItemById(selectedId)
+      if (opening !== openingRef.current) return
       setIsLoadingDetail(false)
       if (error != null || !data) {
         setDetailError(error ?? 'Could not load workflow details. Please try again.')
@@ -427,7 +433,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
                 <Callout.Text>
                   The Hub cannot fill in{' '}
                   {missingItemInputs.map(([key, def]) => inputLabel(key, def)).join(', ')} because
-                  this item has no link. Choose a different item.
+                  this item has no link. Close this dialog and choose a different item.
                 </Callout.Text>
               </Callout.Root>
             )}
