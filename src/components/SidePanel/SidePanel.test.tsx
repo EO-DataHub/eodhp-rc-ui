@@ -120,6 +120,7 @@ beforeEach(() => {
 
 afterEach(() => {
   dataFinderStore.send({ type: 'clearTool' })
+  dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
   vi.clearAllMocks()
   vi.unstubAllGlobals()
 })
@@ -296,5 +297,35 @@ describe('SidePanel dataset list with a chosen tool', () => {
     await chooseFromToolsTab(user, ndviWorkflow)
     await waitFor(() => expect(datasetList()).toBeInTheDocument())
     expect(chosenTool()?.id).toBe('ndvi')
+  })
+
+  const queryFilter = () => dataFinderStore.getSnapshot().context.queryFilter
+  const cloudFilter = { op: '<=', args: [{ property: 'eo:cloud_cover' }, 20] }
+
+  it('clears the query filter when a dataset is picked from the list the tool opened', async () => {
+    const user = userEvent.setup()
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
+    renderSidePanel(modis)
+    await chooseFromToolsTab(user, ndviWorkflow)
+    await waitFor(() => expect(datasetList()).toBeInTheDocument())
+
+    // NDVI applies only to Sentinel-2 ARD, so its card is the only one in the list
+    await screen.findByText('Sentinel-2 ARD')
+    await user.click(screen.getByText(/open collection/i))
+
+    expect(queryFilter()).toBeUndefined()
+  })
+
+  it('keeps the query filter when the list the tool opened is closed with Back', async () => {
+    const user = userEvent.setup()
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
+    renderSidePanel(modis)
+    await chooseFromToolsTab(user, ndviWorkflow)
+    await waitFor(() => expect(datasetList()).toBeInTheDocument())
+
+    await user.click(screen.getByRole('button', { name: /back/i }))
+
+    await waitFor(() => expect(datasetList()).toBeNull())
+    expect(queryFilter()).toEqual(cloudFilter)
   })
 })
