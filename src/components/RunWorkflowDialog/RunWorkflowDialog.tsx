@@ -630,7 +630,7 @@ const SourcePicker: React.FC<{ picker: Picker; finderUrl: string; onFindData: ()
         {collections.length === 0 ? (
           <Text size="2" color="gray">
             This workflow does not name a dataset. Find an item on the map, then run the workflow
-            from the item&apos;s Integration tools. {findDataLink}
+            from the item&apos;s Integration Tools. {findDataLink}
           </Text>
         ) : (
           <Select.Root
