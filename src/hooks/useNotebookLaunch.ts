@@ -18,6 +18,8 @@ export interface UseNotebookLaunchParams {
   filterNotebooks: (record: ProcessRecord) => boolean
   /** Select the notebook automatically when it's the only one. */
   autoSelectSingle?: boolean
+  /** Select this notebook once the list loads, when it is listed. */
+  initialNotebookId?: string
   context: NotebookLaunchContext | null
   token: string | undefined
   currentWorkspace: string | undefined
@@ -122,6 +124,7 @@ export function useNotebookLaunch({
   applicableCollections,
   filterNotebooks,
   autoSelectSingle = false,
+  initialNotebookId,
   context,
   token,
   currentWorkspace,
@@ -165,8 +168,11 @@ export function useNotebookLaunch({
     const items = (data?.items ?? []).filter(filterNotebooks)
     setNotebooks(items)
     setNotebooksError(null)
-    setSelectedNotebook(autoSelectSingle && items.length === 1 ? items[0] : null)
-  }, [enabled, applicableCollections, filterNotebooks, autoSelectSingle])
+    const initialNotebook = items.find((notebook) => notebook.id === initialNotebookId)
+    setSelectedNotebook(
+      initialNotebook ?? (autoSelectSingle && items.length === 1 ? items[0] : null),
+    )
+  }, [enabled, applicableCollections, filterNotebooks, autoSelectSingle, initialNotebookId])
 
   useEffect(() => {
     void loadNotebooks()

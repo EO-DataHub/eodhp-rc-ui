@@ -8,7 +8,6 @@ import {
   DataList,
   Dialog,
   Flex,
-  Select,
   Text,
   TextField,
 } from '@radix-ui/themes'
@@ -24,31 +23,29 @@ import {
   getHubInputKind,
   type WorkflowLaunchContext,
 } from '@/services/workflowVariableResolvers'
-import { useProcessLaunchFromCatalogue } from '@/hooks/useProcessLaunchFromCatalogue'
 import { getHubApiOrigin, getWorkflowExecutionUrl } from '@/library/integrationTools'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import styles from './RunWorkflowDialog.module.scss'
 
-type Step = 'source' | 'workflow' | 'inputs' | 'review' | 'started'
+type Step = 'loading' | 'workflow' | 'inputs' | 'review' | 'started'
 
 const STEP_TITLES: Record<Step, string> = {
-  source: 'What do you want to run on?',
+  loading: 'Run workflow',
   workflow: 'Choose a workflow',
   inputs: 'Check the inputs',
   review: 'Review and run',
   started: 'Workflow started',
 }
 
-type Picker = ReturnType<typeof useProcessLaunchFromCatalogue>
 type UserValues = Record<string, string>
 
 interface RunWorkflowDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  /** The item to run on. When set, the source step is skipped. */
+  /** The item to run on. */
   item?: Item
-  /** The workflow to run. When set, the workflow step is skipped. */
-  workflow?: ProcessDetail
+  /** The workflow to run. When set, the workflow step is skipped. A list record is loaded in full on open. */
+  workflow?: ProcessRecord
 }
 
 const inputLabel = (key: string, def: InputParameterEntry) => def.label ?? key
@@ -85,53 +82,39 @@ const toLaunchValues = (inputs: Record<string, InputParameterEntry>, values: Use
   )
 
 /** Lists a workflow for an item when it names the item's dataset or names no dataset. */
-const appliesTo = (workflow: ProcessRecord, item: Item | null) => {
+const appliesTo = (workflow: ProcessRecord, item?: Item) => {
   const collections = workflow.properties.applicableCollections
   if (!collections?.length) return true
   return !!item && collections.includes(item.collection)
 }
 
-/** Opens the Data Finder at the workflow's first dataset, or at the dataset list. */
-const finderUrlFor = (workflow?: ProcessRecord) => {
-  const collectionId = workflow?.properties.applicableCollections?.[0]
-  return collectionId ? `/finder/${collectionId}` : '/'
-}
+/** List records leave out links, so they cannot be run until the full record is loaded. */
+const isFullRecord = (workflow: ProcessRecord): workflow is ProcessDetail =>
+  !!(workflow as ProcessDetail).links
 
-/** Opens the dialog for a workflow, with the item picked in the source step. */
-const WorkflowFirstDialog: React.FC<RunWorkflowDialogProps & { workflow: ProcessDetail }> = (
-  props,
-) => {
-  const picker = useProcessLaunchFromCatalogue({ process: props.workflow })
-  return <RunWorkflowSteps {...props} picker={picker} />
-}
+const stepFor = (workflow: ProcessDetail): Step =>
+  needsInputsStep(workflow.properties.inputParameters ?? {}) ? 'inputs' : 'review'
 
-export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = (props) => {
-  if (!props.workflow || props.item) return <RunWorkflowSteps {...props} />
-  // Mounted only while open, so the item picker loads on open and starts empty each time
-  return props.open ? <WorkflowFirstDialog {...props} workflow={props.workflow} /> : null
-}
-
-const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> = ({
+export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   open,
   onOpenChange,
-  item: initialItem,
+  item,
   workflow: initialWorkflow,
-  picker,
 }) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
+  const initialDetail = initialWorkflow && isFullRecord(initialWorkflow) ? initialWorkflow : null
   const firstStep = (): Step => {
-    if (picker) return 'source'
     if (!initialWorkflow) return 'workflow'
-    return needsInputsStep(initialWorkflow.properties.inputParameters ?? {}) ? 'inputs' : 'review'
+    return initialDetail ? stepFor(initialDetail) : 'loading'
   }
   const [step, setStep] = useState<Step>(firstStep)
   const [workflows, setWorkflows] = useState<ProcessRecord[]>([])
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false)
   const [workflowsError, setWorkflowsError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(initialWorkflow?.id ?? null)
-  const [detail, setDetail] = useState<ProcessDetail | null>(initialWorkflow ?? null)
+  const [detail, setDetail] = useState<ProcessDetail | null>(initialDetail)
   const [isLoadingDetail, setIsLoadingDetail] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [values, setValues] = useState<UserValues>({})
@@ -140,7 +123,6 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [jobId, setJobId] = useState<string | null>(null)
 
-  const item = initialItem ?? picker?.selectedItem ?? null
   const inputs = useMemo(() => detail?.properties.inputParameters ?? {}, [detail])
   const needsInputs = needsInputsStep(inputs)
 
@@ -153,13 +135,14 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
     if (!open) return
     setStep(firstStep())
     setSelectedId(initialWorkflow?.id ?? null)
-    setDetail(initialWorkflow ?? null)
+    setDetail(initialDetail)
     setIsLoadingDetail(false)
     setDetailError(null)
-    setValues(initialUserValues(initialWorkflow?.properties.inputParameters ?? {}))
+    setValues(initialUserValues(initialDetail?.properties.inputParameters ?? {}))
     setIncludeAoi(!!aoi)
     setLaunchError(null)
     setJobId(null)
+    if (initialWorkflow && !initialDetail) void loadDetail(initialWorkflow.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
@@ -218,36 +201,32 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
   const inputValueText = (key: string, def: InputParameterEntry) =>
     getHubInputKind(key, def) ? hubValueText(key, def) : values[key] || 'Not set'
 
+  const loadDetail = async (id: string) => {
+    const opening = openingRef.current
+    setIsLoadingDetail(true)
+    setDetailError(null)
+    const { data, error } = await fetchItemById(id)
+    if (opening !== openingRef.current) return
+    setIsLoadingDetail(false)
+    if (error != null || !data) {
+      setDetailError(error ?? 'Could not load workflow details. Please try again.')
+      return
+    }
+    setDetail(data)
+    setValues(initialUserValues(data.properties.inputParameters ?? {}))
+    setStep(stepFor(data))
+  }
+
   const chooseWorkflow = async () => {
     if (!selectedId) return
     if (detail?.id !== selectedId) {
-      const opening = openingRef.current
-      setIsLoadingDetail(true)
-      setDetailError(null)
-      const { data, error } = await fetchItemById(selectedId)
-      if (opening !== openingRef.current) return
-      setIsLoadingDetail(false)
-      if (error != null || !data) {
-        setDetailError(error ?? 'Could not load workflow details. Please try again.')
-        return
-      }
-      setDetail(data)
-      setValues(initialUserValues(data.properties.inputParameters ?? {}))
-      setStep(needsInputsStep(data.properties.inputParameters ?? {}) ? 'inputs' : 'review')
+      await loadDetail(selectedId)
       return
     }
     setStep(needsInputs ? 'inputs' : 'review')
   }
 
-  const afterSource = () => {
-    if (initialWorkflow) setStep(needsInputs ? 'inputs' : 'review')
-    else setStep('workflow')
-  }
-
-  const beforeInputs = (): Step | null => {
-    if (!initialWorkflow) return 'workflow'
-    return picker ? 'source' : null
-  }
+  const beforeInputs = (): Step | null => (initialWorkflow ? null : 'workflow')
 
   const beforeReview = () => (needsInputs ? 'inputs' : beforeInputs())
 
@@ -298,11 +277,6 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
       <Dialog.Content maxWidth="640px">
         <Dialog.Title mb="1">{STEP_TITLES[step]}</Dialog.Title>
         <Dialog.Description size="2" color="gray" mb="3">
-          {step === 'source' && (
-            <>
-              Choose the item to run <strong>{workflowTitle}</strong> on.
-            </>
-          )}
           {step === 'workflow' && item && `Running on item ${item.id}.`}
           {(step === 'inputs' || step === 'review') && item && (
             <>
@@ -312,18 +286,27 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
           {step === 'started' && `${workflowTitle} has started. It may take a while to finish.`}
         </Dialog.Description>
 
-        {step === 'source' && picker && (
+        {step === 'loading' && (
           <Flex direction="column" gap="3">
-            <SourcePicker
-              picker={picker}
-              finderUrl={finderUrlFor(initialWorkflow)}
-              onFindData={() => onOpenChange(false)}
-            />
-            <Flex justify="between" gap="3" mt="2">
+            {isLoadingDetail && <LoadingIndicator size="2" />}
+            {detailError && (
+              <Flex direction="column" gap="2">
+                <Text size="2" color="red">
+                  {detailError}
+                </Text>
+                {initialWorkflow && (
+                  <Button
+                    variant="soft"
+                    size="2"
+                    onClick={() => void loadDetail(initialWorkflow.id)}
+                  >
+                    Retry
+                  </Button>
+                )}
+              </Flex>
+            )}
+            <Flex justify="start" gap="3" mt="2">
               {backButton(null)}
-              <Button disabled={!picker.selectedItem} onClick={afterSource}>
-                Next
-              </Button>
             </Flex>
           </Flex>
         )}
@@ -373,7 +356,7 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
               </Text>
             )}
             <Flex justify="between" gap="3" mt="2">
-              {backButton(picker ? 'source' : null)}
+              {backButton(null)}
               <Button
                 disabled={!selectedId || isLoadingDetail}
                 onClick={() => void chooseWorkflow()}
@@ -590,132 +573,6 @@ const InputsForm: React.FC<InputsFormProps> = ({
           </div>
         )
       })}
-    </Flex>
-  )
-}
-
-const SourcePicker: React.FC<{ picker: Picker; finderUrl: string; onFindData: () => void }> = ({
-  picker,
-  finderUrl,
-  onFindData,
-}) => {
-  const {
-    collections,
-    selectedCollectionUrl,
-    setSelectedCollectionUrl,
-    startDate,
-    endDate,
-    setStartDate,
-    setEndDate,
-    dateRangeError,
-    items,
-    selectedItem,
-    setSelectedItemId,
-    isLoadingItems,
-    itemsError,
-  } = picker
-
-  const findDataLink = (
-    <Link to={finderUrl} onClick={onFindData}>
-      Find data on the map
-    </Link>
-  )
-
-  return (
-    <Flex direction="column" gap="3">
-      <Flex direction="column" gap="1">
-        <Text size="2" weight="medium">
-          Dataset
-        </Text>
-        {collections.length === 0 ? (
-          <Text size="2" color="gray">
-            This workflow does not name a dataset. Find an item on the map, then run the workflow
-            from the item&apos;s Integration Tools. {findDataLink}
-          </Text>
-        ) : (
-          <Select.Root
-            value={selectedCollectionUrl ?? ''}
-            onValueChange={(value) => setSelectedCollectionUrl(value || null)}
-          >
-            <Select.Trigger placeholder="Select a dataset" />
-            <Select.Content position="popper">
-              {collections.map((c) => (
-                <Select.Item key={c.id} value={c.url}>
-                  {c.label}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
-        )}
-      </Flex>
-
-      <Flex direction="column" gap="1">
-        <Text size="2" weight="medium">
-          Dates (optional)
-        </Text>
-        <Flex gap="2">
-          <input
-            type="date"
-            aria-label="Start date"
-            className={styles.dateInput}
-            value={startDate ?? ''}
-            onChange={(e) => setStartDate(e.target.value || null)}
-          />
-          <input
-            type="date"
-            aria-label="End date"
-            className={styles.dateInput}
-            value={endDate ?? ''}
-            onChange={(e) => setEndDate(e.target.value || null)}
-          />
-        </Flex>
-        {dateRangeError && (
-          <Text size="2" color="red">
-            {dateRangeError}
-          </Text>
-        )}
-      </Flex>
-
-      <Flex direction="column" gap="1">
-        <Text size="2" weight="medium">
-          Item
-        </Text>
-        {!selectedCollectionUrl ? (
-          <Text size="2" color="gray">
-            Select a dataset to see its items.
-          </Text>
-        ) : isLoadingItems ? (
-          <LoadingIndicator size="2" />
-        ) : itemsError ? (
-          <Text size="2" color="red">
-            {itemsError}
-          </Text>
-        ) : items.length === 0 ? (
-          <Text size="2" color="gray">
-            No items found for this dataset and dates.
-          </Text>
-        ) : (
-          <Select.Root
-            value={selectedItem?.id ?? ''}
-            onValueChange={(value) => setSelectedItemId(value || null)}
-          >
-            <Select.Trigger placeholder="Select an item" />
-            <Select.Content position="popper">
-              {items.map((i) => (
-                <Select.Item key={i.id} value={i.id}>
-                  {i.id}
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Root>
-        )}
-      </Flex>
-
-      {collections.length > 0 && (
-        <Text size="2" color="gray">
-          Need a map or filters to find the item? {findDataLink}
-        </Text>
-      )}
     </Flex>
   )
 }

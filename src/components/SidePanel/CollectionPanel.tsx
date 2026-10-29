@@ -114,6 +114,10 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({
   } = useCollections()
 
   // While a tool is chosen, offer only the datasets it can run on. A tool that names none runs on any
+  const isCurrentUserCollection = useSelector(
+    dataFinderStore,
+    (state) => state.context.isUserCollection,
+  )
   const applicableCollections = useSelector(
     dataFinderStore,
     (state) => state.context.chosenTool?.properties.applicableCollections,
@@ -159,7 +163,7 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({
     // A query filter is built for one dataset's properties, so drop it when the dataset changes
     const isSameCollection =
       currentCollection?.id === collection.id &&
-      !!currentCollection.isUserCollection === !!collection.isUserCollection
+      isCurrentUserCollection === !!collection.isUserCollection
     if (!isSameCollection) {
       dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
     }

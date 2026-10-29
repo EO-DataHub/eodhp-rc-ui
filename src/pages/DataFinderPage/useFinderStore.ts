@@ -204,6 +204,11 @@ const dataFinderStore = createStore({
         infoPanelItem: event.item,
       }
     },
+    openIntegrationToolsPanel: (context, event: { item: Item }): typeof context => ({
+      ...context,
+      secondaryPanel: 'integration-tools',
+      infoPanelItem: event.item,
+    }),
     closeSecondaryPanel: (context) => {
       return {
         ...context,

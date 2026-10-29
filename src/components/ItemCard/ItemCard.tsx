@@ -44,6 +44,7 @@ import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools } from '@/library/integrationTools'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 
 interface ItemCardProps {
   item: Item
@@ -196,6 +197,8 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
   }, [isUserCollection, item.isUserCollection])
 
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
+  const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
+  const [isRunDialogOpen, setIsRunDialogOpen] = useState(false)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
@@ -454,6 +457,43 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
+        {isQueryCard && chosenTool?.properties.type === 'workflow' && (
+          <Flex justify="end" pt="2">
+            <Button
+              size="1"
+              variant="soft"
+              disabled={!isAuthenticated}
+              onClick={() => setIsRunDialogOpen(true)}
+            >
+              Run {chosenTool.properties.title}
+            </Button>
+            <RunWorkflowDialog
+              open={isRunDialogOpen}
+              onOpenChange={setIsRunDialogOpen}
+              item={item}
+              workflow={chosenTool}
+            />
+          </Flex>
+        )}
+        {/* Notebooks open from Integration Tools, which only shows for items it supports */}
+        {isQueryCard &&
+          chosenTool?.properties.type === 'notebook' &&
+          supportsIntegrationTools(item, itemRender) && (
+            <Flex justify="end" pt="2">
+              <Button
+                size="1"
+                variant="soft"
+                onClick={() =>
+                  dataFinderStore.send({
+                    type: 'openIntegrationToolsPanel',
+                    item: { ...item, render: itemRender },
+                  })
+                }
+              >
+                Open in {chosenTool.properties.title}
+              </Button>
+            </Flex>
+          )}
         {/* Pinned cards put the style name on its own line so the icons get the full width */}
         <Flex
           direction={isPinnedCard ? 'column' : 'row'}

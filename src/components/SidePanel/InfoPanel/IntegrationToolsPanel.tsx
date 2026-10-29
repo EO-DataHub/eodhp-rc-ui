@@ -273,7 +273,7 @@ const DesktopGisTab: React.FC<{ item: Item }> = ({ item }) => {
 }
 
 // Workflows Tab Component
-const WorkflowsTab: React.FC<{ item: Item }> = ({ item }) => {
+const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item, workflow }) => {
   const { isAuthenticated } = useContext(AuthenticationContext)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -286,7 +286,9 @@ const WorkflowsTab: React.FC<{ item: Item }> = ({ item }) => {
           </Text>
           <Text size="2" color="gray">
             {isAuthenticated
-              ? 'Start a data processing workflow on this item. Choose the workflow and check its inputs before it runs.'
+              ? workflow
+                ? `Run ${workflow.properties.title} on this item. Check its inputs before it runs.`
+                : 'Start a data processing workflow on this item. Choose the workflow and check its inputs before it runs.'
               : 'Start data processing workflows directly with this item. Log in to use this feature.'}
           </Text>
           <Button
@@ -299,7 +301,12 @@ const WorkflowsTab: React.FC<{ item: Item }> = ({ item }) => {
           </Button>
         </Flex>
       </Card>
-      <RunWorkflowDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} item={item} />
+      <RunWorkflowDialog
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        item={item}
+        workflow={workflow}
+      />
     </Flex>
   )
 }
@@ -308,7 +315,11 @@ const WorkflowsTab: React.FC<{ item: Item }> = ({ item }) => {
 const isItemNotebook = (record: ProcessRecord) => !isPinSetNotebook(record)
 
 // Jupyter Tab Component
-const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
+const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: string }> = ({
+  item,
+  collection,
+  notebookId,
+}) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const username = userInfo?.preferred_username
 
@@ -348,6 +359,7 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     enabled: !!collection?.id,
     applicableCollections: collection?.id,
     filterNotebooks: isItemNotebook,
+    initialNotebookId: notebookId,
     context: launchContext,
     token,
     currentWorkspace,
@@ -497,6 +509,9 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   // Get the item's render if it exists (for pinned items or items with attached render)
   const itemRender = item?.render
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
+  const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
+  const chosenNotebookId = chosenTool?.properties.type === 'notebook' ? chosenTool.id : undefined
 
   // Don't render if item doesn't support integration tools
   // For time-variable items, this will check if itemRender is valid
@@ -528,7 +543,11 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
           </Flex>
 
           <Box pt="6">
-            <Tabs.Root defaultValue="desktop-gis">
+            {/* Keyed so a newly chosen notebook or item opens on its tab again */}
+            <Tabs.Root
+              key={`${item.id}-${chosenTool?.id ?? ''}`}
+              defaultValue={chosenNotebookId ? 'jupyter' : 'desktop-gis'}
+            >
               <Tabs.List>
                 <Tabs.Trigger value="desktop-gis">Desktop GIS</Tabs.Trigger>
                 <Tabs.Trigger value="workflows">Workflows</Tabs.Trigger>
@@ -543,13 +562,17 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
 
               <Tabs.Content value="workflows">
                 <Box pt="4">
-                  <WorkflowsTab item={item} />
+                  <WorkflowsTab item={item} workflow={chosenWorkflow} />
                 </Box>
               </Tabs.Content>
 
               <Tabs.Content value="jupyter">
                 <Box pt="4">
-                  <JupyterTab item={item} collection={item.collectionRef ?? collection} />
+                  <JupyterTab
+                    item={item}
+                    collection={item.collectionRef ?? collection}
+                    notebookId={chosenNotebookId}
+                  />
                 </Box>
               </Tabs.Content>
             </Tabs.Root>
