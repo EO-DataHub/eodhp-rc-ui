@@ -20,6 +20,7 @@ import dataFinderStore, { type CollectionInfoTab } from '@/pages/DataFinderPage/
 import { useSelector } from '@xstate/store/react'
 
 interface CollectionPanelProps {
+  currentCollection?: Collection
   onCloseCollectionPanel: () => void
 }
 
@@ -89,7 +90,10 @@ const renderGroupedByCollections = (
   )
 }
 
-export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollectionPanel }) => {
+export const CollectionPanel: React.FC<CollectionPanelProps> = ({
+  currentCollection,
+  onCloseCollectionPanel,
+}) => {
   const { trackCollectionVisualization } = useAnalyticsActions()
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [selectedCollectionInfo, setSelectedCollectionInfo] = useState<Collection | null>(null)
@@ -151,6 +155,14 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({ onCloseCollect
     onCloseCollectionPanel()
     setSelectedCollectionInfo(null)
     setIsFilterOpen(false)
+
+    // A query filter is built for one dataset's properties, so drop it when the dataset changes
+    const isSameCollection =
+      currentCollection?.id === collection.id &&
+      !!currentCollection.isUserCollection === !!collection.isUserCollection
+    if (!isSameCollection) {
+      dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
+    }
 
     const finderUrl = getCollectionFinderUrl(collection)
     void navigate(finderUrl)

@@ -8,6 +8,7 @@ import { Callout } from '@/components/Callout/Callout'
 import type { ProcessRecord } from '@/types'
 import listStyles from '../ItemList.module.scss'
 
+// Fetches only the first page: up to 100 workflows and 100 notebooks
 const fetchTools = async (type: 'workflow' | 'notebook') => {
   const { data, error } = await fetchItems({ type, page: 1, pageSize: 100 })
   if (error) throw new Error(error)
@@ -66,8 +67,8 @@ const ToolsTab = ({ onChooseTool }: ToolsTabProps) => {
                 outline: isChosen ? '2px solid var(--accent-9)' : undefined,
               }}
             >
-              <Flex direction="column" gap="1">
-                <Flex align="center" justify="between" gap="2">
+              <Flex as="span" direction="column" gap="1">
+                <Flex as="span" align="center" justify="between" gap="2">
                   <Text size="2" weight="bold">
                     {tool.properties.title}
                   </Text>

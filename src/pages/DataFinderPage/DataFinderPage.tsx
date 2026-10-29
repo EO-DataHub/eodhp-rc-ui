@@ -106,7 +106,7 @@ export const DataFinderPage: React.FC = () => {
         } else if (notFound) {
           setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
         }
-        // On other failures the parameter stays, so a refresh can try again
+        // On other failures the parameter stays only until the URL next changes
       })
     }
 

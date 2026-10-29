@@ -14,7 +14,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
   return (
     <Flex height={'var(--content-height)'} position="relative" width="100%">
       {showCollectionPanel ? (
-        <CollectionPanel onCloseCollectionPanel={() => setShowCollectionPanel(false)} />
+        <CollectionPanel
+          currentCollection={collection}
+          onCloseCollectionPanel={() => setShowCollectionPanel(false)}
+        />
       ) : (
         <ItemPanel collection={collection} setShowCollectionPanel={setShowCollectionPanel} />
       )}
