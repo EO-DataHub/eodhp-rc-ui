@@ -1,4 +1,4 @@
-import type { Item, InputParameterEntry } from '@/types'
+import type { Item, InputParameterEntry, HubType } from '@/types'
 import { getSelfLinkHref } from '@/library/integrationTools'
 
 /**
@@ -9,29 +9,53 @@ export interface WorkflowLaunchContext {
   item: Item
   aoi: GeoJSON.Feature | null | undefined
   includeAoi: boolean
+  /** Workspace that runs the job. */
+  workspace?: string
+  /** Hub base URL the workflow calls EODH APIs on. */
+  apiBaseUrl?: string
 }
 
 type Resolver = (ctx: WorkflowLaunchContext) => string | undefined
 
+const resolveItemLink: Resolver = (ctx) => getSelfLinkHref(ctx.item)
+const resolveAoi: Resolver = (ctx) =>
+  ctx.includeAoi && ctx.aoi ? JSON.stringify(ctx.aoi) : undefined
+
+/** Resolvers for the Hub types this dialog supports. Other Hub types fall back to variableRef. */
+const HUB_TYPE_RESOLVERS: Partial<Record<HubType, Resolver>> = {
+  'stac-item': resolveItemLink,
+  aoi: resolveAoi,
+}
+
+/** Resolvers for platform variables, looked up by variableRef or by parameter key. */
 const RESOLVERS: Record<string, Resolver> = {
-  STAC_ITEM_LINK: (ctx) => getSelfLinkHref(ctx.item),
+  STAC_ITEM_LINK: resolveItemLink,
   STAC_COLLECTION_NAME: (ctx) => ctx.item.collection,
-  AOI: (ctx) => (ctx.includeAoi && ctx.aoi ? JSON.stringify(ctx.aoi) : undefined),
+  AOI: resolveAoi,
+  WORKSPACE_NAME: (ctx) => ctx.workspace,
+  EODH_BASE_URL: (ctx) => ctx.apiBaseUrl,
 }
 
 /**
- * Returns whether a parameter key has a resolver (auto-filled from context).
- * Used so the UI can compute which parameters need user input for future "unresolved variables" form.
+ * Finds the resolver for a parameter: by hubType first, then by variableRef, then by key name.
+ */
+function getResolver(paramKey: string, paramDef?: InputParameterEntry): Resolver | undefined {
+  const byHubType = paramDef?.hubType && HUB_TYPE_RESOLVERS[paramDef.hubType]
+  if (byHubType) return byHubType
+  if (paramDef?.variableRef) return RESOLVERS[paramDef.variableRef]
+  return RESOLVERS[paramKey]
+}
+
+/**
+ * Returns whether a parameter has a resolver (auto-filled from context).
+ * Used so the UI can compute which parameters need user input.
  *
  * @param paramKey - The parameter key
- * @param paramDef - Optional parameter definition (if provided, checks variableRef first)
- * @returns True if the parameter has a resolvable platform variable
+ * @param paramDef - Optional parameter definition (checked for hubType, then variableRef)
+ * @returns True if the parameter is filled by the Hub
  */
 export function hasResolver(paramKey: string, paramDef?: InputParameterEntry): boolean {
-  if (paramDef?.variableRef) {
-    return paramDef.variableRef in RESOLVERS
-  }
-  return paramKey in RESOLVERS
+  return getResolver(paramKey, paramDef) !== undefined
 }
 
 /**
@@ -43,12 +67,12 @@ export function getResolvedParameterKeys(): string[] {
 
 /**
  * Builds the variables object for a workflow launch request from catalogue inputParameters and launch context.
- * Uses variableRef if present, otherwise falls back to param key.
- * Output key is always the param key, value comes from resolved platform variable.
+ * Resolves each input by hubType, then variableRef, then param key.
+ * Output key is always the param key.
  * Only includes keys that have a resolver and produce a non-empty string value.
  *
  * @param inputParameters - Input parameters object from workflow's inputParameters
- * @param context - Launch context containing item, AOI, and includeAoi flag
+ * @param context - Launch context containing item, AOI, includeAoi flag, workspace and API base URL
  * @returns Record of resolved variables (only keys with resolvers and non-empty values)
  */
 export function buildWorkflowVariables(
@@ -58,19 +82,10 @@ export function buildWorkflowVariables(
   const variables: Record<string, string> = {}
 
   for (const [paramKey, paramDef] of Object.entries(inputParameters)) {
-    // Determine which platform variable to resolve
-    // Use variableRef if present, otherwise fallback to param key
-    const variableToResolve = paramDef.variableRef ?? paramKey
-
-    // Check if this variable has a resolver
-    const resolver = RESOLVERS[variableToResolve]
+    const resolver = getResolver(paramKey, paramDef)
     if (!resolver) continue
 
-    // Resolve the platform variable
     const value = resolver(context)
-
-    // Only include if value is non-empty
-    // Output key is always the param key (not the variableRef)
     if (value != null && value !== '') {
       variables[paramKey] = value
     }

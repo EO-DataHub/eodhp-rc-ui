@@ -3,7 +3,11 @@ import type { Collection, Item, ProcessRecord } from '@/types'
 import { fetchItems, fetchItemById } from '@/services/processCatalogueService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { buildWorkflowVariables } from '@/services/workflowVariableResolvers'
-import { getSelfLinkHref, getWorkflowExecutionUrl } from '@/library/integrationTools'
+import {
+  getHubApiOrigin,
+  getSelfLinkHref,
+  getWorkflowExecutionUrl,
+} from '@/library/integrationTools'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -125,7 +129,13 @@ export function useWorkflowLaunch({
           selectedWorkflow.properties?.type === 'workflow'
             ? detail?.properties?.inputParameters ?? {}
             : {}
-        const context = { item, aoi, includeAoi }
+        const context = {
+          item,
+          aoi,
+          includeAoi,
+          workspace: currentWorkspace,
+          apiBaseUrl: getHubApiOrigin(),
+        }
         const resolvedVariables = buildWorkflowVariables(inputParameters, context)
         const paramKeys = new Set(Object.keys(inputParameters))
         const filteredUserVars =
