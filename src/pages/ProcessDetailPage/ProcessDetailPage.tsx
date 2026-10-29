@@ -1,9 +1,11 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Flex, Box, Text, Container, Button, Badge } from '@radix-ui/themes'
 import { fetchItemById } from '@/services/processCatalogueService'
 import type { ProcessDetail } from '@/types'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 
 export const ProcessDetailPage: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>()
@@ -11,6 +13,8 @@ export const ProcessDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isRunDialogOpen, setIsRunDialogOpen] = useState(false)
+  const { isAuthenticated } = useContext(AuthenticationContext)
 
   useEffect(() => {
     if (!itemId) {
@@ -97,11 +101,6 @@ export const ProcessDetailPage: React.FC = () => {
   const applicableCollections = props?.applicableCollections ?? []
   const contacts = props?.contacts ?? []
   const links = data.links ?? []
-
-  const launchGuidanceMessage =
-    type === 'notebook'
-      ? 'To launch this notebook, go to the Data Catalogue, find your data, open Integration tools, and then select the Notebook tab.'
-      : 'To run this workflow, go to the Data Catalogue, find your data, open Integration tools, and then select the Workflow tab.'
 
   return (
     <Container align="center" maxWidth="1640px">
@@ -206,12 +205,27 @@ export const ProcessDetailPage: React.FC = () => {
           </Box>
         ) : null}
 
-        <Box>
-          <Text size="2" color="gray">
-            {launchGuidanceMessage}
-          </Text>
-        </Box>
+        {type === 'notebook' ? (
+          <Box>
+            <Text size="2" color="gray">
+              To launch this notebook, go to the Data Catalogue, find your data, open Integration
+              tools, and then select the Notebook tab.
+            </Text>
+          </Box>
+        ) : null}
         <Flex gap="3" align="center">
+          {type === 'notebook' ? null : (
+            <>
+              <Button size="2" disabled={!isAuthenticated} onClick={() => setIsRunDialogOpen(true)}>
+                Run workflow
+              </Button>
+              {!isAuthenticated && (
+                <Text size="2" color="gray">
+                  Sign in to run this workflow
+                </Text>
+              )}
+            </>
+          )}
           <Link to="/catalogue/processes">
             <Button variant="soft" size="2">
               Back to Processes Catalogue
@@ -219,6 +233,13 @@ export const ProcessDetailPage: React.FC = () => {
           </Link>
         </Flex>
       </Flex>
+      {type === 'notebook' ? null : (
+        <RunWorkflowDialog
+          open={isRunDialogOpen}
+          onOpenChange={setIsRunDialogOpen}
+          workflow={data}
+        />
+      )}
     </Container>
   )
 }
