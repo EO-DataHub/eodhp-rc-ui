@@ -58,11 +58,21 @@ export function hasResolver(paramKey: string, paramDef?: InputParameterEntry): b
   return getResolver(paramKey, paramDef) !== undefined
 }
 
+/** What the Hub fills a parameter with, so the UI can describe it. */
+export type HubInputKind = 'item' | 'area' | 'context'
+
 /**
- * Returns the set of parameter keys that have resolvers.
+ * Returns what the Hub fills a parameter with, or undefined when the user fills it in.
  */
-export function getResolvedParameterKeys(): string[] {
-  return Object.keys(RESOLVERS)
+export function getHubInputKind(
+  paramKey: string,
+  paramDef?: InputParameterEntry,
+): HubInputKind | undefined {
+  const resolver = getResolver(paramKey, paramDef)
+  if (!resolver) return undefined
+  if (resolver === resolveItemLink) return 'item'
+  if (resolver === resolveAoi) return 'area'
+  return 'context'
 }
 
 /**

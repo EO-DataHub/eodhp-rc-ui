@@ -1,0 +1,41 @@
+.workflowList {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.workflowOption {
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--gray-6);
+  border-radius: var(--radius-3);
+  background: var(--color-panel-solid);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent-8);
+  }
+}
+
+.workflowOptionSelected {
+  border-color: var(--accent-9);
+  box-shadow: 0 0 0 1px var(--accent-9);
+  background-color: var(--accent-2);
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.dateInput {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-7);
+  font-size: 14px;
+}
