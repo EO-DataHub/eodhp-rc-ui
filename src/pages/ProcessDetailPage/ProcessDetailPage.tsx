@@ -215,9 +215,16 @@ export const ProcessDetailPage: React.FC = () => {
         ) : null}
         <Flex gap="3" align="center">
           {type === 'notebook' ? null : (
-            <Button size="2" disabled={!isAuthenticated} onClick={() => setIsRunDialogOpen(true)}>
-              Run workflow
-            </Button>
+            <>
+              <Button size="2" disabled={!isAuthenticated} onClick={() => setIsRunDialogOpen(true)}>
+                Run workflow
+              </Button>
+              {!isAuthenticated && (
+                <Text size="2" color="gray">
+                  Sign in to run this workflow
+                </Text>
+              )}
+            </>
           )}
           <Link to="/catalogue/processes">
             <Button variant="soft" size="2">

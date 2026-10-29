@@ -91,6 +91,12 @@ const appliesTo = (workflow: ProcessRecord, item: Item | null) => {
   return !!item && collections.includes(item.collection)
 }
 
+/** Opens the Data Finder at the workflow's first dataset, or at the dataset list. */
+const finderUrlFor = (workflow?: ProcessRecord) => {
+  const collectionId = workflow?.properties.applicableCollections?.[0]
+  return collectionId ? `/finder/${collectionId}` : '/'
+}
+
 /** Opens the dialog for a workflow, with the item picked in the source step. */
 const WorkflowFirstDialog: React.FC<RunWorkflowDialogProps & { workflow: ProcessDetail }> = (
   props,
@@ -308,7 +314,11 @@ const RunWorkflowSteps: React.FC<RunWorkflowDialogProps & { picker?: Picker }> =
 
         {step === 'source' && picker && (
           <Flex direction="column" gap="3">
-            <SourcePicker picker={picker} />
+            <SourcePicker
+              picker={picker}
+              finderUrl={finderUrlFor(initialWorkflow)}
+              onFindData={() => onOpenChange(false)}
+            />
             <Flex justify="between" gap="3" mt="2">
               {backButton(null)}
               <Button disabled={!picker.selectedItem} onClick={afterSource}>
@@ -584,7 +594,11 @@ const InputsForm: React.FC<InputsFormProps> = ({
   )
 }
 
-const SourcePicker: React.FC<{ picker: Picker }> = ({ picker }) => {
+const SourcePicker: React.FC<{ picker: Picker; finderUrl: string; onFindData: () => void }> = ({
+  picker,
+  finderUrl,
+  onFindData,
+}) => {
   const {
     collections,
     selectedCollectionUrl,
@@ -601,6 +615,12 @@ const SourcePicker: React.FC<{ picker: Picker }> = ({ picker }) => {
     itemsError,
   } = picker
 
+  const findDataLink = (
+    <Link to={finderUrl} onClick={onFindData}>
+      Find data on the map
+    </Link>
+  )
+
   return (
     <Flex direction="column" gap="3">
       <Flex direction="column" gap="1">
@@ -609,7 +629,8 @@ const SourcePicker: React.FC<{ picker: Picker }> = ({ picker }) => {
         </Text>
         {collections.length === 0 ? (
           <Text size="2" color="gray">
-            No datasets are configured for this workflow.
+            This workflow does not name a dataset. Find an item on the map, then run the workflow
+            from the item&apos;s Integration tools. {findDataLink}
           </Text>
         ) : (
           <Select.Root
@@ -689,6 +710,12 @@ const SourcePicker: React.FC<{ picker: Picker }> = ({ picker }) => {
           </Select.Root>
         )}
       </Flex>
+
+      {collections.length > 0 && (
+        <Text size="2" color="gray">
+          Need a map or filters to find the item? {findDataLink}
+        </Text>
+      )}
     </Flex>
   )
 }
