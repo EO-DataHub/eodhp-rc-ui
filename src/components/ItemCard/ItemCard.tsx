@@ -483,6 +483,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
               <Button
                 size="1"
                 variant="soft"
+                disabled={!isAuthenticated}
                 onClick={() =>
                   dataFinderStore.send({
                     type: 'openIntegrationToolsPanel',

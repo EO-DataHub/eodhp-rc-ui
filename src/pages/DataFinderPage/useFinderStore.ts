@@ -65,6 +65,8 @@ interface AppContext {
   collectionRender?: StacRender
   isUserCollection: boolean
   chosenTool?: ProcessRecord
+  /** Counts "Open in" requests so the panel can return to the chosen notebook each time */
+  integrationToolsOpenCount: number
 }
 
 // Build a unique id for pinned items
@@ -95,6 +97,7 @@ const dataFinderStore = createStore({
     collectionRender: undefined,
     isUserCollection: false,
     chosenTool: undefined,
+    integrationToolsOpenCount: 0,
   } as AppContext,
   // Transitions
   on: {
@@ -208,6 +211,7 @@ const dataFinderStore = createStore({
       ...context,
       secondaryPanel: 'integration-tools',
       infoPanelItem: event.item,
+      integrationToolsOpenCount: context.integrationToolsOpenCount + 1,
     }),
     closeSecondaryPanel: (context) => {
       return {

@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItems } from '@/services/processCatalogueService'
-import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
+import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 import { Callout } from '@/components/Callout/Callout'
 import type { ProcessRecord } from '@/types'
 import listStyles from '../ItemList.module.scss'
@@ -40,11 +40,7 @@ const ToolsTab = ({ onChooseTool }: ToolsTabProps) => {
     )
   }
 
-  // Set notebooks need a saved set, not a single item
-  const tools = [
-    ...(workflows.data ?? []),
-    ...(notebooks.data ?? []).filter((notebook) => !isPinSetNotebook(notebook)),
-  ]
+  const tools = [...(workflows.data ?? []), ...(notebooks.data ?? [])].filter(isDataFinderTool)
   const error = workflows.error ?? notebooks.error
 
   return (

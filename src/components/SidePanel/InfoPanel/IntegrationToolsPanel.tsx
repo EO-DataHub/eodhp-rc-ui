@@ -512,6 +512,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
   const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
   const chosenNotebookId = chosenTool?.properties.type === 'notebook' ? chosenTool.id : undefined
+  const openCount = useSelector(dataFinderStore, ({ context }) => context.integrationToolsOpenCount)
 
   // Don't render if item doesn't support integration tools
   // For time-variable items, this will check if itemRender is valid
@@ -543,9 +544,9 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
           </Flex>
 
           <Box pt="6">
-            {/* Keyed so a newly chosen notebook or item opens on its tab again */}
+            {/* Keyed so a new item, a new chosen notebook or another "Open in" click opens on its tab again */}
             <Tabs.Root
-              key={`${item.id}-${chosenTool?.id ?? ''}`}
+              key={`${item.id}-${chosenTool?.id ?? ''}-${openCount}`}
               defaultValue={chosenNotebookId ? 'jupyter' : 'desktop-gis'}
             >
               <Tabs.List>

@@ -16,6 +16,7 @@ import {
 } from './permalinkRestore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import { fetchItemById } from '@/services/processCatalogueService'
+import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 
 import styles from './DataFinderPage.module.scss'
 
@@ -101,9 +102,10 @@ export const DataFinderPage: React.FC = () => {
           setSearchParamsRef.current((prev) => withToolParam(prev, toolChosenMeanwhile.id), {
             replace: true,
           })
-        } else if (data) {
+        } else if (data && isDataFinderTool(data)) {
           dataFinderStore.send({ type: 'chooseTool', tool: data })
-        } else if (notFound) {
+        } else if (notFound || data) {
+          // A record the Tools tab would not list is treated as unknown
           setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
         }
         // On other failures the parameter stays only until the URL next changes

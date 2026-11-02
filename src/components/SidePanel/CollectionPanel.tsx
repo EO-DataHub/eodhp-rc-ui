@@ -113,11 +113,12 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({
     filteredCollections: allFilteredCollections,
   } = useCollections()
 
-  // While a tool is chosen, offer only the datasets it can run on. A tool that names none runs on any
   const isCurrentUserCollection = useSelector(
     dataFinderStore,
     (state) => state.context.isUserCollection,
   )
+
+  // While a tool is chosen, offer only the datasets it can run on. A tool that names none runs on any
   const applicableCollections = useSelector(
     dataFinderStore,
     (state) => state.context.chosenTool?.properties.applicableCollections,
