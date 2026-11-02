@@ -1,10 +1,7 @@
 import { Layer, Source } from 'react-map-gl/maplibre'
 import { Item } from '@/types'
-import {
-  resolveItemRender,
-  resolveTilesUrl,
-  requiresAuthentication,
-} from '@/library/collectionRenderingConfig'
+import { resolveItemRender, resolveTilesUrl } from '@/library/collectionRenderingConfig'
+import { getItemTileTokenType } from '@/library/tileAuth'
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
 import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -24,10 +21,11 @@ export const RasterItemLayer = ({
   const { registerUrl, unregisterUrl } = useAuthenticatedTileUrls()
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
-  const needsAuth = requiresAuthentication(item.render, item.isUserCollection ?? false)
-  const needsWorkspaceToken = needsAuth && item.isUserCollection
+  const tokenType = getItemTileTokenType(item)
+  const needsAuth = tokenType !== undefined
+  const needsWorkspaceToken = tokenType === 'workspace'
 
-  // Fetch workspace tokens for user collection tile requests
+  // Fetch workspace tokens for user and job collection tile requests
   const { data: workspaceTokensData } = useWorkspaceToken(
     currentWorkspace,
     token,
@@ -54,12 +52,11 @@ export const RasterItemLayer = ({
       .replace(/\/\{z\}\/\{x\}\/\{y\}$/, '')
 
     // Only register if auth is needed and token is ready
-    if (needsAuth && isTokenReady) {
-      const tokenType = item.isUserCollection ? 'workspace' : 'keycloak'
+    if (tokenType && isTokenReady) {
       registerUrl(baseUrl, tokenType)
       return () => unregisterUrl(baseUrl)
     }
-  }, [tilesUrl, needsAuth, isTokenReady, item.isUserCollection, registerUrl, unregisterUrl])
+  }, [tilesUrl, tokenType, isTokenReady, registerUrl, unregisterUrl])
 
   if (!tilesUrl) return null
   // Don't render until token is ready for authenticated requests
