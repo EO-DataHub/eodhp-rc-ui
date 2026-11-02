@@ -124,6 +124,12 @@ const splitDateRange = (value: string): [string, string] => {
 
 const joinDateRange = (start: string, end: string) => (start || end ? `${start}/${end}` : '')
 
+/** A range with one date set cannot be sent, so it blocks the run. */
+const isHalfFilledRange = (value: string | undefined) => {
+  const [start, end] = splitDateRange(value ?? '')
+  return !!start !== !!end
+}
+
 const userValueText = (def: InputParameterEntry, value: string | undefined) => {
   if (!value) return 'Not set'
   if (isDateRangeInput(def)) {
@@ -388,19 +394,27 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   const missingRequiredArea =
     outsideDataFinder && !aoi && areaInputs.some(([, def]) => isRequired(def))
 
+  /** Outside the Data Finder a drawn area is always sent to a required area input. */
+  const areaLocked = outsideDataFinder && !!aoi && areaInputs.some(([, def]) => isRequired(def))
+  const sendAoi = includeAoi || areaLocked
+
+  const halfFilledRange = getUserInputs(inputs).some(
+    ([key, def]) => isDateRangeInput(def) && isHalfFilledRange(values[key]),
+  )
+
   const areaText = () => {
     if (!aoi) {
       return outsideDataFinder && !missingRequiredArea
         ? 'Full scene (no area drawn on the map)'
         : 'No area drawn on the map'
     }
-    return includeAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
+    return sendAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
   }
 
   const contextFor = (target: LaunchItem): WorkflowLaunchContext => ({
     item: target,
     aoi,
-    includeAoi,
+    includeAoi: sendAoi,
     workspace: currentWorkspace,
     apiBaseUrl: getHubApiOrigin(),
   })
@@ -524,6 +538,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     targetsWithoutLink.length > 0 ||
     privateTargetCount > 0 ||
     missingRequiredArea ||
+    halfFilledRange ||
     aboveCeiling ||
     (needsConfirmation && !confirmedJobs)
 
@@ -752,7 +767,8 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
               hubValueText={hubValueText}
               area={aoi ?? null}
-              includeAoi={includeAoi}
+              includeAoi={sendAoi}
+              areaLocked={areaLocked}
               onIncludeAoiChange={setIncludeAoi}
               outsideDataFinder={outsideDataFinder}
             />
@@ -783,7 +799,10 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               {changeSourceButton}
               <Flex gap="3">
                 {backButton(beforeInputs())}
-                <Button disabled={missingRequiredArea} onClick={() => setStep('review')}>
+                <Button
+                  disabled={missingRequiredArea || halfFilledRange}
+                  onClick={() => setStep('review')}
+                >
                   Next
                 </Button>
               </Flex>
@@ -1023,6 +1042,8 @@ interface InputsFormProps {
   /** The area drawn on the map, if any. */
   area: GeoJSON.Feature | null
   includeAoi: boolean
+  /** The drawn area is required, so it cannot be left out. */
+  areaLocked: boolean
   onIncludeAoiChange: (include: boolean) => void
   outsideDataFinder: boolean
 }
@@ -1034,6 +1055,7 @@ const InputsForm: React.FC<InputsFormProps> = ({
   hubValueText,
   area,
   includeAoi,
+  areaLocked,
   onIncludeAoiChange,
   outsideDataFinder,
 }) => {
@@ -1067,7 +1089,7 @@ const InputsForm: React.FC<InputsFormProps> = ({
             <Flex gap="2" align="center">
               <Checkbox
                 checked={!!area && includeAoi}
-                disabled={!area}
+                disabled={!area || areaLocked}
                 onCheckedChange={(checked) => onIncludeAoiChange(checked === true)}
               />
               {outsideDataFinder ? 'Use the area drawn on the map' : 'Include area of interest'}
@@ -1125,6 +1147,11 @@ const InputsForm: React.FC<InputsFormProps> = ({
                   />
                 </div>
               </Flex>
+              {!!start !== !!end && (
+                <Text size="1" color="red">
+                  Set both dates, or neither.
+                </Text>
+              )}
             </fieldset>
           )
         }
