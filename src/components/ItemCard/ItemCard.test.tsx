@@ -1,8 +1,9 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { useSelector } from '@xstate/store/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import type { Collection, Item } from '@/types'
@@ -19,6 +20,7 @@ import {
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
+import { IntegrationToolsPanel } from '@/components/SidePanel/InfoPanel/IntegrationToolsPanel'
 import ItemCard from './ItemCard'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -53,14 +55,46 @@ const collection = {
   links: [],
 } as unknown as Collection
 
-const renderCard = (cardItem: Item = item) => {
+const renderCard = (cardItem: Item = item, authValue: AuthValue = auth) => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthenticationContext.Provider value={authValue}>
+          <Theme>
+            <ItemCard item={cardItem} type="query-item" />
+          </Theme>
+        </AuthenticationContext.Provider>
+      </QueryClientProvider>
+    </MemoryRouter>,
+  )
+}
+
+/** Shows Integration Tools when the store opens it, as the item panel does. */
+const IntegrationToolsHost = () => {
+  const {
+    secondaryPanel,
+    infoPanelItem,
+    collection: current,
+  } = useSelector(dataFinderStore, ({ context }) => context)
+  if (secondaryPanel !== 'integration-tools' || !infoPanelItem) return null
+  return (
+    <IntegrationToolsPanel
+      item={{ ...infoPanelItem, collectionRef: current } as Item}
+      onClose={() => dataFinderStore.send({ type: 'closeSecondaryPanel' })}
+    />
+  )
+}
+
+const renderCardWithIntegrationTools = () => {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
     <MemoryRouter>
       <QueryClientProvider client={queryClient}>
         <AuthenticationContext.Provider value={auth}>
           <Theme>
-            <ItemCard item={cardItem} type="query-item" />
+            <ItemCard item={item} type="query-item" />
+            <IntegrationToolsHost />
           </Theme>
         </AuthenticationContext.Provider>
       </QueryClientProvider>
@@ -144,5 +178,26 @@ describe('ItemCard with a chosen notebook', () => {
     const { secondaryPanel, infoPanelItem } = dataFinderStore.getSnapshot().context
     expect(secondaryPanel).toBe('integration-tools')
     expect(infoPanelItem?.id).toBe(item.id)
+  })
+
+  it('returns to the Jupyter tab with the notebook selected when Open in is clicked again', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderCardWithIntegrationTools()
+    const openIn = screen.getByRole('button', { name: 'Open in NDVI notebook' })
+
+    await user.click(openIn)
+    await user.click(await screen.findByRole('tab', { name: /desktop gis/i }))
+    await user.click(openIn)
+
+    expect(screen.getByRole('tab', { name: /jupyter/i })).toHaveAttribute('aria-selected', 'true')
+    const jupyter = screen.getByRole('tabpanel')
+    expect(await within(jupyter).findByRole('radio', { name: /ndvi notebook/i })).toBeChecked()
+  })
+
+  it('disables the Open in button when signed out', () => {
+    choose(itemNotebook)
+    renderCard(item, { ...auth, isAuthenticated: false, token: undefined })
+    expect(screen.getByRole('button', { name: 'Open in NDVI notebook' })).toBeDisabled()
   })
 })

@@ -7,6 +7,7 @@ import {
   fetchToolsFromFixtures,
   listRecord,
   ndviWorkflow,
+  pinSetNotebook,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
 import dataFinderStore from './useFinderStore'
@@ -88,6 +89,12 @@ describe('DataFinderPage tool parameter', () => {
     renderFinder('/finder/sentinel2_ard?tool=no-such-tool')
     // Let the lookup finish before checking nothing was chosen
     await act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+    expect(chosenTool()).toBeUndefined()
+  })
+
+  it('treats a pin-set notebook id as unknown', async () => {
+    renderFinder(`/finder/sentinel2_ard?tool=${pinSetNotebook.id}`)
+    await waitFor(() => expect(toolParam()).toBeNull())
     expect(chosenTool()).toBeUndefined()
   })
 
