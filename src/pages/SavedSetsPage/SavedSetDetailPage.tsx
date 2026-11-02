@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import { Button, Checkbox, Flex, IconButton, Link, Table, Text, Tooltip } from '@radix-ui/themes'
-import { ArrowLeftIcon, CodeIcon, TrashIcon } from '@radix-ui/react-icons'
+import { ArrowLeftIcon, CodeIcon, PlayIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCanEditSavedSet, useSavedSet, useSavedSetMutations } from '@/hooks/useSavedSets'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
@@ -9,6 +9,7 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterDialog'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 import { convertDateToLocalString } from '@/library/dateUtils'
 import {
   getItemDownloadUrl,
@@ -31,6 +32,7 @@ export const SavedSetDetailPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isJupyterOpen, setIsJupyterOpen] = useState(false)
+  const [isRunOpen, setIsRunOpen] = useState(false)
 
   const backLink = (
     <Link asChild size="2">
@@ -111,6 +113,9 @@ export const SavedSetDetailPage: React.FC = () => {
           onClick={() => setIsJupyterOpen(true)}
         >
           <CodeIcon /> Open in Jupyter
+        </Button>
+        <Button variant="soft" disabled={set.items.length === 0} onClick={() => setIsRunOpen(true)}>
+          <PlayIcon /> Run workflow
         </Button>
         {editable && (
           <>
@@ -241,6 +246,7 @@ export const SavedSetDetailPage: React.FC = () => {
         set={isJupyterOpen ? set : undefined}
         onClose={() => setIsJupyterOpen(false)}
       />
+      <RunWorkflowDialog open={isRunOpen} onOpenChange={setIsRunOpen} source="set" savedSet={set} />
       <DeleteSavedSetDialog
         set={isDeleteOpen ? set : undefined}
         onClose={() => setIsDeleteOpen(false)}

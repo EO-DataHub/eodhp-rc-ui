@@ -2,12 +2,13 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useContext, useState } from 'react'
 import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
-import { BookmarkIcon, ListBulletIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
+import { BookmarkIcon, ListBulletIcon, PlayIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { SaveToSetDialog, SaveToSetMode } from '@/components/SavedSets/SaveToSetDialog'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { usePermalink } from '@/hooks/useCopyPermalink'
 import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 import { Cross2Icon, DragHandleDots2Icon } from '@radix-ui/react-icons'
@@ -202,6 +203,40 @@ const SavedSetButtons = () => {
   )
 }
 
+/** Runs a workflow once on each pinned item. Every workflow is offered, since pins can mix datasets. */
+const RunWorkflowButton = () => {
+  const { isAuthenticated } = useContext(AuthenticationContext)
+  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
+  const [isOpen, setIsOpen] = useState(false)
+  const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
+
+  return (
+    <>
+      <Tooltip
+        content={isAuthenticated ? 'Run a workflow on each pinned item' : 'Log in to run workflows'}
+      >
+        <Flex width="fit-content" px="2">
+          <Button
+            variant="ghost"
+            size="2"
+            disabled={!isAuthenticated}
+            onClick={() => setIsOpen(true)}
+          >
+            <PlayIcon width="16px" height="16px" />
+            <Text>Run workflow</Text>
+          </Button>
+        </Flex>
+      </Tooltip>
+      <RunWorkflowDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        source="pinned"
+        workflow={chosenWorkflow}
+      />
+    </>
+  )
+}
+
 // The list only reorders vertically, so don't let cards drift sideways while dragging
 const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 })
 
@@ -280,6 +315,7 @@ const PinnedItemsTab = () => {
           <Flex gap="2" wrap="wrap" align="center">
             <ClearAllButton />
             <ShareViewButton />
+            <RunWorkflowButton />
           </Flex>
         )}
         <Flex gap="2" wrap="wrap" align="center">

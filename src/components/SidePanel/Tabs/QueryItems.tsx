@@ -1,10 +1,15 @@
-import { Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
+import { useContext, useState } from 'react'
+import { Button, Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
+import { PlayIcon } from '@radix-ui/react-icons'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useItemsQuery, MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
+import { toolAppliesTo } from '@/library/integrationTools'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 
@@ -75,6 +80,47 @@ const RenderSelectionButton = () => {
   )
 }
 
+/** Runs a workflow once on every result of the search, not only the page shown. */
+const RunOnResultsButton = () => {
+  const { isAuthenticated } = useContext(AuthenticationContext)
+  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+  const [isOpen, setIsOpen] = useState(false)
+  // A chosen workflow that does not apply to the search's dataset is not filled in
+  const chosenWorkflow =
+    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, collection?.id)
+      ? chosenTool
+      : undefined
+
+  return (
+    <>
+      <Tooltip
+        content={
+          isAuthenticated
+            ? 'Run a workflow on each result of this search'
+            : 'Log in to run workflows'
+        }
+      >
+        <Button
+          variant="ghost"
+          size="2"
+          disabled={!isAuthenticated}
+          onClick={() => setIsOpen(true)}
+        >
+          <PlayIcon width="16px" height="16px" />
+          <Text>Run on results</Text>
+        </Button>
+      </Tooltip>
+      <RunWorkflowDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        source="results"
+        workflow={chosenWorkflow}
+      />
+    </>
+  )
+}
+
 const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
@@ -115,7 +161,10 @@ const QueryItemsTab = () => {
         ) : (
           <Flex width="100%" gap="2" align="center">
             {!error && allItems.length > 0 && (
-              <PageIndicator page={page} totalItemsCount={allItems.length} />
+              <>
+                <PageIndicator page={page} totalItemsCount={allItems.length} />
+                <RunOnResultsButton />
+              </>
             )}
           </Flex>
         )}

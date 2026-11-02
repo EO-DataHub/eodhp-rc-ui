@@ -229,6 +229,7 @@ export interface InputParameterEntry {
   hubType?: HubType // How the Hub fills the input; resolved before variableRef
   cwlType?: string // How the workflow receives the input (workflows only)
   staging?: 'assets' | 'metadata' // How much stage-in fetches for a Directory input
+  required?: boolean // False when the workflow can run without the input
 }
 
 /** How the Hub fills a catalogue input. */
