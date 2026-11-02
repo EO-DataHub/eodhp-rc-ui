@@ -23,7 +23,7 @@ import {
   getHubInputKind,
   type WorkflowLaunchContext,
 } from '@/services/workflowVariableResolvers'
-import { getHubApiOrigin, getWorkflowExecutionUrl } from '@/library/integrationTools'
+import { getHubApiOrigin, getWorkflowExecutionUrl, toolAppliesTo } from '@/library/integrationTools'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import styles from './RunWorkflowDialog.module.scss'
 
@@ -80,13 +80,6 @@ const toLaunchValues = (inputs: Record<string, InputParameterEntry>, values: Use
       return [key, value]
     }),
   )
-
-/** Lists a workflow for an item when it names the item's dataset or names no dataset. */
-const appliesTo = (workflow: ProcessRecord, item?: Item) => {
-  const collections = workflow.properties.applicableCollections
-  if (!collections?.length) return true
-  return !!item && collections.includes(item.collection)
-}
 
 /** List records leave out links, so they cannot be run until the full record is loaded. */
 const isFullRecord = (workflow: ProcessRecord): workflow is ProcessDetail =>
@@ -168,7 +161,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     if (open && !initialWorkflow) void loadWorkflows()
   }, [open, initialWorkflow])
 
-  const listedWorkflows = workflows.filter((w) => appliesTo(w, item))
+  const listedWorkflows = workflows.filter((w) => toolAppliesTo(w, item?.collection))
   const workflowTitle = detail?.properties.title ?? detail?.id ?? ''
 
   const areaText = () => {

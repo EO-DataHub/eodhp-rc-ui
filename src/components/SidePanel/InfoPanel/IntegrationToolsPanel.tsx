@@ -20,6 +20,7 @@ import {
   getHubApiOrigin,
   getTitilerXyzUrl,
   supportsIntegrationTools,
+  toolAppliesTo,
 } from '@/library/integrationTools'
 import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -524,7 +525,12 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
   const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
   const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
-  const chosenNotebook = chosenTool?.properties.type === 'notebook' ? chosenTool : undefined
+  const notebookCollection = item?.collectionRef ?? collection
+  // A chosen notebook that does not apply to this dataset falls back to the notebook select
+  const chosenNotebook =
+    chosenTool?.properties.type === 'notebook' && toolAppliesTo(chosenTool, notebookCollection?.id)
+      ? chosenTool
+      : undefined
   const openCount = useSelector(dataFinderStore, ({ context }) => context.integrationToolsOpenCount)
 
   // Don't render if item doesn't support integration tools
@@ -584,7 +590,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
                 <Box pt="4">
                   <JupyterTab
                     item={item}
-                    collection={item.collectionRef ?? collection}
+                    collection={notebookCollection}
                     notebook={chosenNotebook}
                   />
                 </Box>

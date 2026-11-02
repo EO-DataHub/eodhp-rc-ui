@@ -42,7 +42,7 @@ import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
-import { supportsIntegrationTools } from '@/library/integrationTools'
+import { supportsIntegrationTools, toolAppliesTo } from '@/library/integrationTools'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 
@@ -198,6 +198,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
 
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
+  const chosenToolApplies = !!chosenTool && toolAppliesTo(chosenTool, item.collection)
   const [isRunDialogOpen, setIsRunDialogOpen] = useState(false)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
@@ -457,7 +458,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
-        {chosenTool?.properties.type === 'workflow' && (
+        {chosenTool?.properties.type === 'workflow' && chosenToolApplies && (
           <Flex justify="end" pt="2">
             <Button
               size="1"
@@ -477,6 +478,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
         )}
         {/* Notebooks open from Integration Tools, which only shows for items it supports */}
         {chosenTool?.properties.type === 'notebook' &&
+          chosenToolApplies &&
           supportsIntegrationTools(item, itemRender) && (
             <Flex justify="end" pt="2">
               <Button

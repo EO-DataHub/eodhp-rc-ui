@@ -213,6 +213,7 @@ export function useNotebookLaunch({
 
   return {
     notebooks,
+    // A notebook passed in overrides the user's selection
     selectedNotebook: notebookToLaunch,
     setSelectedNotebook,
     launch,
