@@ -213,7 +213,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
 
   // Source data is only fetched while it can be chosen or is in use
   const onSourceStep = open && step === 'source'
-  const resultsQuery = useSearchResultsQuery(open && (source === 'results' || onSourceStep))
+  const resultsQuery = useSearchResultsQuery(open && (source === 'results' || onSourceStep), true)
   const setsQuery = useSavedSets(open && (source === 'set' || onSourceStep))
   const setQuery = useSavedSet(
     open && source === 'set' && !!setId && setId !== initialSet?.id ? setId : undefined,

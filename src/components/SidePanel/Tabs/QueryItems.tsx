@@ -80,44 +80,21 @@ const RenderSelectionButton = () => {
   )
 }
 
-/** Runs a workflow once on every result of the search, not only the page shown. */
-const RunOnResultsButton = () => {
+/** Opens the dialog that runs a workflow once on every result of the search. */
+const RunOnResultsButton = ({ onClick }: { onClick: () => void }) => {
   const { isAuthenticated } = useContext(AuthenticationContext)
-  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
-  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
-  const [isOpen, setIsOpen] = useState(false)
-  // A chosen workflow that does not apply to the search's dataset is not filled in
-  const chosenWorkflow =
-    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, collection?.id)
-      ? chosenTool
-      : undefined
 
   return (
-    <>
-      <Tooltip
-        content={
-          isAuthenticated
-            ? 'Run a workflow on each result of this search'
-            : 'Log in to run workflows'
-        }
-      >
-        <Button
-          variant="ghost"
-          size="2"
-          disabled={!isAuthenticated}
-          onClick={() => setIsOpen(true)}
-        >
-          <PlayIcon width="16px" height="16px" />
-          <Text>Run on results</Text>
-        </Button>
-      </Tooltip>
-      <RunWorkflowDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        source="results"
-        workflow={chosenWorkflow}
-      />
-    </>
+    <Tooltip
+      content={
+        isAuthenticated ? 'Run a workflow on each result of this search' : 'Log in to run workflows'
+      }
+    >
+      <Button variant="ghost" size="2" disabled={!isAuthenticated} onClick={onClick}>
+        <PlayIcon width="16px" height="16px" />
+        <Text>Run on results</Text>
+      </Button>
+    </Tooltip>
   )
 }
 
@@ -125,6 +102,15 @@ const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
   const isUserCollection = useSelector(dataFinderStore, ({ context }) => context.isUserCollection)
+  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
+  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+  // Kept outside the loading state, so a reload of the results does not close the dialog
+  const [isRunOpen, setIsRunOpen] = useState(false)
+  // A chosen workflow that does not apply to the search's dataset is not filled in
+  const chosenWorkflow =
+    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, collection?.id)
+      ? chosenTool
+      : undefined
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
@@ -163,7 +149,7 @@ const QueryItemsTab = () => {
             {!error && allItems.length > 0 && (
               <>
                 <PageIndicator page={page} totalItemsCount={allItems.length} />
-                <RunOnResultsButton />
+                <RunOnResultsButton onClick={() => setIsRunOpen(true)} />
               </>
             )}
           </Flex>
@@ -211,6 +197,12 @@ const QueryItemsTab = () => {
           />
         </PaginationContainer>
       )}
+      <RunWorkflowDialog
+        open={isRunOpen}
+        onOpenChange={setIsRunOpen}
+        source="results"
+        workflow={chosenWorkflow}
+      />
     </Grid>
   )
 }

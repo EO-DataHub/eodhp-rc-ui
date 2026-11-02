@@ -16,8 +16,11 @@ export const PAGE_SIZE = 10
 /**
  * Every result of the Data Finder's current search, up to the result limit. Shares its cache with
  * the Items tab, so the results are fetched once.
+ *
+ * With `reuseCached`, results already in the cache are used as they are. Turning the query on
+ * then does not fetch them again; it fetches only when nothing is cached for the search.
  */
-export const useSearchResultsQuery = (enabled = true) => {
+export const useSearchResultsQuery = (enabled = true, reuseCached = false) => {
   const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
@@ -94,6 +97,7 @@ export const useSearchResultsQuery = (enabled = true) => {
     queryFn: fetchFunction,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    staleTime: reuseCached ? Infinity : 0,
     enabled:
       enabled &&
       !!collection &&
