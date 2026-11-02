@@ -4,6 +4,7 @@ import { extractCatalogPaths, getCatalog } from '@/library/catalogUtils'
 import { bboxToPolygon } from '@/library/geoUtils'
 import { resolveStacSearchStrategy } from '@/library/stacSearchConfig'
 import { toQueryExtensionFilters } from '@/library/stacQueryTransform'
+import { fetchWithRetry } from '@/library/fetchWithRetry'
 import { canSendWorkspaceToken, resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
@@ -16,6 +17,8 @@ export const fetchCollectionByUrl = async (
   collectionUrl: string,
   workspaceToken?: string,
   workspace?: string,
+  /** Retry rate-limited and gateway errors. Leave off when the caller already retries. */
+  { retry = false }: { retry?: boolean } = {},
 ): Promise<Collection> => {
   if (!collectionUrl) {
     throw new Error('Collection URL is required')
@@ -29,7 +32,7 @@ export const fetchCollectionByUrl = async (
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 
-  const response = await fetch(url, {
+  const response = await (retry ? fetchWithRetry : fetch)(url, {
     method: 'GET',
     headers,
   })
@@ -75,6 +78,8 @@ interface FetchItemFromCollectionParams {
 interface FetchItemByUrlParams {
   itemUrl?: string
   workspaceToken?: string
+  /** Retry rate-limited and gateway errors. Leave off when the caller already retries. */
+  retry?: boolean
 }
 
 export const fetchItems = async ({
@@ -201,6 +206,7 @@ export const fetchItem = async ({
 export const fetchItemByUrl = async ({
   itemUrl,
   workspaceToken,
+  retry = false,
 }: FetchItemByUrlParams): Promise<Item> => {
   if (!itemUrl) {
     throw new Error('Item URL is required')
@@ -217,7 +223,7 @@ export const fetchItemByUrl = async ({
     headers.Authorization = `Bearer ${workspaceToken}`
   }
 
-  const response = await fetch(url, {
+  const response = await (retry ? fetchWithRetry : fetch)(url, {
     method: 'GET',
     headers,
   })
