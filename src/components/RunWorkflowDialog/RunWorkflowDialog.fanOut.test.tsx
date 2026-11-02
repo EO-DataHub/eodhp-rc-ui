@@ -8,9 +8,15 @@ import { fetchItems as searchItems } from '@/services/itemService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
-import { PAGE_SIZE } from '@/hooks/useItemsQuery'
+import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import PinnedItemsTab from '@/components/SidePanel/Tabs/PinnedItems'
-import { item, listRecord, ndviWorkflow, stubBrowserGlobals } from '@/test-data/runWorkflow'
+import {
+  anyDatasetWorkflow,
+  item,
+  listRecord,
+  ndviWorkflow,
+  stubBrowserGlobals,
+} from '@/test-data/runWorkflow'
 import {
   clearPins,
   fanOutItem,
@@ -521,5 +527,59 @@ describe('Stage 2: Private data', () => {
     await toReview(user, dialog, 'Footprint')
     expect(dialog).not.toHaveTextContent(/private/i)
     expect(runButton(dialog)).toBeEnabled()
+  })
+})
+
+describe('Stage 5: Change source and the results cap', () => {
+  const changeSource = async (user: User, dialog: HTMLElement) => {
+    await user.click(within(dialog).getByRole('button', { name: 'Change source' }))
+    await heading(dialog, /what do you want to run on/i)
+  }
+
+  it('goes back to the source step from the inputs step', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(3))
+    dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
+    const dialog = await openFromPinned(user)
+    await heading(dialog, /check the inputs/i)
+    await changeSource(user, dialog)
+  })
+
+  it('goes back to the source step from the review step', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(3))
+    dataFinderStore.send({ type: 'chooseTool', tool: listRecord(anyDatasetWorkflow) })
+    const dialog = await openFromPinned(user)
+    await heading(dialog, /review/i)
+    expect(within(dialog).queryByRole('heading', { name: /check the inputs/i })).toBeNull()
+    await changeSource(user, dialog)
+  })
+
+  it('says the run uses the first results when all results reach the cap', async () => {
+    const user = userEvent.setup()
+    vi.mocked(searchItems).mockResolvedValue(fanOutItems(MAX_TOTAL_ITEMS, 'S2A_CAP'))
+    pinItems(fanOutItems(2))
+    const capText = `The run uses the first ${MAX_TOTAL_ITEMS} results.`
+    const dialog = await openFromPinned(user)
+    await heading(dialog, /choose a workflow/i)
+    await backToSource(user, dialog)
+    await user.click(sourceOption(dialog, /all results/i))
+
+    expect(await within(dialog).findByText(capText)).toBeInTheDocument()
+    await clickNext(user, dialog)
+    await toReview(user, dialog, 'Footprint')
+    expect(dialog).toHaveTextContent(capText)
+  })
+
+  it('does not mention a cap when the results are below it', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(2))
+    const dialog = await openFromPinned(user)
+    await heading(dialog, /choose a workflow/i)
+    await backToSource(user, dialog)
+    await user.click(sourceOption(dialog, /all results/i))
+    await clickNext(user, dialog)
+    await toReview(user, dialog, 'Footprint')
+    expect(dialog).not.toHaveTextContent(/the run uses the first/i)
   })
 })

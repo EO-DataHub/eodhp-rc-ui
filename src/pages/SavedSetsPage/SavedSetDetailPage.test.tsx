@@ -314,3 +314,107 @@ describe('Stage 3: Area and dates from a saved set', () => {
     expect(String(variables.period)).toContain('2025-06-30')
   })
 })
+
+describe('Stage 5: Half-filled date range', () => {
+  /** The Period start and end fields, which are the date fields other than Start date. */
+  const periodFields = (dialog: HTMLElement) => {
+    const start = within(dialog).getByLabelText('Start date')
+    return Array.from(dialog.querySelectorAll<HTMLInputElement>('input[type="date"]')).filter(
+      (field) => field !== start,
+    )
+  }
+
+  const openComposite = async (user: User) => {
+    const dialog = await openRunWorkflow(user)
+    await chooseWorkflow(user, dialog, 'Composite')
+    await heading(dialog, /check the inputs/i)
+    return dialog
+  }
+
+  /** Whether the user is stopped before a job is sent: Next or Run is disabled. */
+  const expectBlocked = async (user: User, dialog: HTMLElement) => {
+    const next = within(dialog).getByRole('button', { name: 'Next' })
+    if (!next.hasAttribute('disabled')) {
+      await user.click(next)
+      await heading(dialog, /review/i)
+      expect(runButton(dialog)).toBeDisabled()
+      await user.click(runButton(dialog)!)
+    }
+    expect(launchWorkflow).not.toHaveBeenCalled()
+  }
+
+  const expectRunnable = async (user: User, dialog: HTMLElement) => {
+    expect(within(dialog).getByRole('button', { name: 'Next' })).toBeEnabled()
+    await toReview(user, dialog)
+    expect(runButton(dialog)).toBeEnabled()
+  }
+
+  it('blocks the run with only the start date set', async () => {
+    const user = userEvent.setup()
+    const dialog = await openComposite(user)
+    const [periodStart] = periodFields(dialog)
+    fireEvent.change(periodStart, { target: { value: '2025-06-01' } })
+    await expectBlocked(user, dialog)
+  })
+
+  it('blocks the run with only the end date set', async () => {
+    const user = userEvent.setup()
+    const dialog = await openComposite(user)
+    const [, periodEnd] = periodFields(dialog)
+    fireEvent.change(periodEnd, { target: { value: '2025-06-30' } })
+    await expectBlocked(user, dialog)
+  })
+
+  it('allows the run with both dates set', async () => {
+    const user = userEvent.setup()
+    const dialog = await openComposite(user)
+    const [periodStart, periodEnd] = periodFields(dialog)
+    fireEvent.change(periodStart, { target: { value: '2025-06-01' } })
+    fireEvent.change(periodEnd, { target: { value: '2025-06-30' } })
+    await expectRunnable(user, dialog)
+  })
+
+  it('allows the run with neither date set', async () => {
+    const user = userEvent.setup()
+    const dialog = await openComposite(user)
+    await expectRunnable(user, dialog)
+  })
+
+  it('allows the run again once a cleared start date leaves both empty', async () => {
+    const user = userEvent.setup()
+    const dialog = await openComposite(user)
+    const [periodStart] = periodFields(dialog)
+    fireEvent.change(periodStart, { target: { value: '2025-06-01' } })
+    fireEvent.change(periodStart, { target: { value: '' } })
+    await expectRunnable(user, dialog)
+  })
+})
+
+describe('Stage 5: Required area locked', () => {
+  const useAreaCheckbox = (dialog: HTMLElement) =>
+    within(dialog).getByRole('checkbox', { name: /use the area drawn on the map/i })
+
+  it('ticks and locks the drawn area for a required area input', async () => {
+    const user = userEvent.setup()
+    drawAreaEarlier()
+    const dialog = await openRunWorkflow(user)
+    await chooseWorkflow(user, dialog, 'Area mask')
+    await heading(dialog, /check the inputs/i)
+
+    expect(useAreaCheckbox(dialog)).toBeChecked()
+    expect(useAreaCheckbox(dialog)).toBeDisabled()
+    await user.click(useAreaCheckbox(dialog))
+    expect(useAreaCheckbox(dialog)).toBeChecked()
+  })
+
+  it('leaves the drawn area box enabled for an optional area input', async () => {
+    const user = userEvent.setup()
+    drawAreaEarlier()
+    const dialog = await openRunWorkflow(user)
+    await chooseWorkflow(user, dialog, 'Optional clip')
+    await heading(dialog, /check the inputs/i)
+
+    expect(useAreaCheckbox(dialog)).toBeChecked()
+    expect(useAreaCheckbox(dialog)).toBeEnabled()
+  })
+})
