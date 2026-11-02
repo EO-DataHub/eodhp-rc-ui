@@ -194,4 +194,19 @@ describe('IntegrationToolsPanel with a chosen notebook that does not apply to th
     const jupyter = screen.getByRole('tabpanel')
     expect(await within(jupyter).findByRole('radio', { name: /ndvi notebook/i })).not.toBeChecked()
   })
+
+  it('does not offer a chosen workflow that does not apply, as with no tool chosen', async () => {
+    const user = userEvent.setup()
+    choose(ndviWorkflow)
+    renderSentinel1Panel()
+
+    await user.click(screen.getByRole('tab', { name: /workflows/i }))
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Run NDVI on this item')
+    await user.click(await screen.findByRole('button', { name: /run workflow/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(await screen.findByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /check the inputs/i })).toBeNull()
+    expect(dialog).toHaveTextContent(sentinel1Item.id)
+  })
 })
