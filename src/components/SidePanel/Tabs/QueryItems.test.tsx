@@ -1,5 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { QueryClient, useQueryClient } from '@tanstack/react-query'
 import userEvent from '@testing-library/user-event'
 import type { Item } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -141,5 +142,70 @@ describe('Stage 1: Items tab Run on results', () => {
     expect(within(dialog).queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
     expect(dialog).toHaveTextContent('NDVI')
     expect(dialog).toHaveTextContent(/all results/i)
+  })
+})
+
+describe('Stage 4: Run on results stays open', () => {
+  let queryClient: QueryClient | undefined
+  const CaptureClient = () => {
+    queryClient = useQueryClient()
+    return null
+  }
+
+  const openWithClient = async (user: User) => {
+    render(
+      withProviders(
+        <>
+          <CaptureClient />
+          <QueryItemsTab />
+        </>,
+      ),
+    )
+    await user.click(await screen.findByRole('button', { name: 'Run on results' }))
+    const dialog = await screen.findByRole('dialog')
+    await heading(dialog, /choose a workflow/i)
+    return dialog
+  }
+
+  it('keeps the dialog open while the search results reload', async () => {
+    const user = userEvent.setup()
+    await openWithClient(user)
+    const callsBefore = vi.mocked(searchItems).mock.calls.length
+
+    let finishReload: ((items: Item[]) => void) | undefined
+    vi.mocked(searchItems).mockImplementation(
+      () => new Promise<Item[]>((resolve) => (finishReload = resolve)),
+    )
+    act(() => {
+      void queryClient!.invalidateQueries({ queryKey: ['Items'] })
+    })
+    await waitFor(() =>
+      expect(vi.mocked(searchItems).mock.calls.length).toBeGreaterThan(callsBefore),
+    )
+
+    // While the reload is in flight
+    const during = screen.getByRole('dialog')
+    expect(within(during).getByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
+
+    act(() => finishReload!(results))
+    const after = await screen.findByRole('dialog')
+    expect(
+      await within(after).findByRole('heading', { name: /choose a workflow/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('does not fetch the results again when the dialog opens', async () => {
+    const user = userEvent.setup()
+    render(withProviders(<QueryItemsTab />))
+    await screen.findByRole('button', { name: 'Run on results' })
+    expect(searchItems).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Run on results' }))
+    const dialog = await screen.findByRole('dialog')
+    await heading(dialog, /choose a workflow/i)
+    // Give any refetch time to start
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(searchItems).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })
