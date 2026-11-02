@@ -246,7 +246,13 @@ export const SavedSetDetailPage: React.FC = () => {
         set={isJupyterOpen ? set : undefined}
         onClose={() => setIsJupyterOpen(false)}
       />
-      <RunWorkflowDialog open={isRunOpen} onOpenChange={setIsRunOpen} source="set" savedSet={set} />
+      <RunWorkflowDialog
+        open={isRunOpen}
+        onOpenChange={setIsRunOpen}
+        source="set"
+        savedSet={set}
+        outsideDataFinder
+      />
       <DeleteSavedSetDialog
         set={isDeleteOpen ? set : undefined}
         onClose={() => setIsDeleteOpen(false)}

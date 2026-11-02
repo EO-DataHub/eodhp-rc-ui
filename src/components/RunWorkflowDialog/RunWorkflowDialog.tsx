@@ -48,6 +48,9 @@ import {
 } from '@/hooks/useItemsQuery'
 import { useSavedSet, useSavedSets } from '@/hooks/useSavedSets'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
+import { restoreAoiFromStorage } from '@/lib/terradraw/helpers/persistence'
+import { AreaPreview } from './AreaPreview'
 import styles from './RunWorkflowDialog.module.scss'
 
 type Step = 'source' | 'loading' | 'workflow' | 'inputs' | 'review' | 'started'
@@ -86,6 +89,8 @@ interface RunWorkflowDialogProps {
   source?: RunSource
   /** The saved set to run on, for the saved set source. */
   savedSet?: SavedSet
+  /** Opened outside the Data Finder, so the drawn area is read from where the map saved it. */
+  outsideDataFinder?: boolean
 }
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
@@ -107,6 +112,30 @@ const hasAreaInput = (inputs: Record<string, InputParameterEntry>) =>
 const needsInputsStep = (inputs: Record<string, InputParameterEntry>) =>
   getUserInputs(inputs).length > 0 || hasAreaInput(inputs)
 
+const isDateInput = (def: InputParameterEntry) => def.hubType === 'date' || def.type === 'date'
+
+const isDateRangeInput = (def: InputParameterEntry) => def.hubType === 'date-range'
+
+/** A date range is held as `start/end`, the ISO 8601 interval form. */
+const splitDateRange = (value: string): [string, string] => {
+  const [start = '', end = ''] = value.split('/')
+  return [start, end]
+}
+
+const joinDateRange = (start: string, end: string) => (start || end ? `${start}/${end}` : '')
+
+const userValueText = (def: InputParameterEntry, value: string | undefined) => {
+  if (!value) return 'Not set'
+  if (isDateRangeInput(def)) {
+    const [start, end] = splitDateRange(value)
+    return `${start || 'Not set'} to ${end || 'Not set'}`
+  }
+  return value
+}
+
+/** An input is required only when the workflow marks it `required: true`. */
+const isRequired = (def: InputParameterEntry) => def.required === true
+
 const initialUserValues = (inputs: Record<string, InputParameterEntry>): UserValues =>
   Object.fromEntries(getUserInputs(inputs).map(([key, def]) => [key, getDefaultValue(def.default)]))
 
@@ -114,6 +143,10 @@ const toLaunchValues = (inputs: Record<string, InputParameterEntry>, values: Use
   Object.fromEntries(
     getUserInputs(inputs).map(([key, def]): [string, string | number | boolean] => {
       const value = values[key] ?? ''
+      if (isDateRangeInput(def)) {
+        const [start, end] = splitDateRange(value)
+        return [key, start && end ? joinDateRange(start, end) : '']
+      }
       if (def.type === 'number') {
         const n = Number(value)
         return [key, value !== '' && !Number.isNaN(n) ? n : value]
@@ -137,10 +170,15 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   workflow: initialWorkflow,
   source: initialSource,
   savedSet: initialSet,
+  outsideDataFinder = false,
 }) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
   const idPrefix = useId()
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const finderAoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const [storedAoi, setStoredAoi] = useState<GeoJSON.Feature | null>(() =>
+    outsideDataFinder ? restoreAoiFromStorage() : null,
+  )
+  const aoi = outsideDataFinder ? storedAoi : finderAoi
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   const searchCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserSearch = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
@@ -249,7 +287,10 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setIsLoadingDetail(false)
     setDetailError(null)
     setValues(initialUserValues(initialDetail?.properties.inputParameters ?? {}))
-    setIncludeAoi(!!aoi)
+    // The area can be drawn or cleared on the map between openings
+    const openingAoi = outsideDataFinder ? restoreAoiFromStorage() : finderAoi
+    setStoredAoi(outsideDataFinder ? openingAoi ?? null : null)
+    setIncludeAoi(!!openingAoi)
     setLaunchError(null)
     setStartedJobs([])
     setFailedJobs([])
@@ -337,9 +378,23 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
 
   const canLeaveSourceStep = !sourceUnavailableReason(source) && (source !== 'set' || !!setId)
 
+  const areaInputs = Object.entries(inputs).filter(
+    ([key, def]) => getHubInputKind(key, def) === 'area',
+  )
+  /**
+   * Outside the Data Finder the user cannot draw an area, so a required area input with no drawn
+   * area blocks the run. In the Data Finder the area checkbox says to draw one.
+   */
+  const missingRequiredArea =
+    outsideDataFinder && !aoi && areaInputs.some(([, def]) => isRequired(def))
+
   const areaText = () => {
-    if (!aoi) return 'No area drawn on the map'
-    return includeAoi ? 'The area drawn on the map' : 'Not included'
+    if (!aoi) {
+      return outsideDataFinder && !missingRequiredArea
+        ? 'Full scene (no area drawn on the map)'
+        : 'No area drawn on the map'
+    }
+    return includeAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
   }
 
   const contextFor = (target: LaunchItem): WorkflowLaunchContext => ({
@@ -386,7 +441,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   }
 
   const inputValueText = (key: string, def: InputParameterEntry) =>
-    getHubInputKind(key, def) ? hubValueText(key, def) : values[key] || 'Not set'
+    getHubInputKind(key, def) ? hubValueText(key, def) : userValueText(def, values[key])
 
   const loadDetail = async (id: string) => {
     const opening = openingRef.current
@@ -468,6 +523,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     targets.length === 0 ||
     targetsWithoutLink.length > 0 ||
     privateTargetCount > 0 ||
+    missingRequiredArea ||
     aboveCeiling ||
     (needsConfirmation && !confirmedJobs)
 
@@ -695,15 +751,41 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
               hubValueText={hubValueText}
-              hasArea={!!aoi}
+              area={aoi ?? null}
               includeAoi={includeAoi}
               onIncludeAoiChange={setIncludeAoi}
+              outsideDataFinder={outsideDataFinder}
             />
+            {missingRequiredArea && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Flex direction="column" gap="2" align="start">
+                  <Callout.Text>
+                    {`${workflowTitle} needs an area, and no area is drawn on the map. `}
+                    {chosenSet
+                      ? 'Open the set on the map, draw an area, then run the workflow from there.'
+                      : 'Draw an area on the map, then run the workflow again.'}
+                  </Callout.Text>
+                  {chosenSet && (
+                    <OpenSetOnMapButton
+                      setId={chosenSet.id}
+                      setName={chosenSet.name}
+                      label="Open the set on the map"
+                      size="1"
+                    />
+                  )}
+                </Flex>
+              </Callout.Root>
+            )}
             <Flex justify="between" gap="3" mt="2">
               {changeSourceButton}
               <Flex gap="3">
                 {backButton(beforeInputs())}
-                <Button onClick={() => setStep('review')}>Next</Button>
+                <Button disabled={missingRequiredArea} onClick={() => setStep('review')}>
+                  Next
+                </Button>
               </Flex>
             </Flex>
           </Flex>
@@ -938,9 +1020,11 @@ interface InputsFormProps {
   values: UserValues
   onChange: (key: string, value: string) => void
   hubValueText: (key: string, def: InputParameterEntry) => string
-  hasArea: boolean
+  /** The area drawn on the map, if any. */
+  area: GeoJSON.Feature | null
   includeAoi: boolean
   onIncludeAoiChange: (include: boolean) => void
+  outsideDataFinder: boolean
 }
 
 const InputsForm: React.FC<InputsFormProps> = ({
@@ -948,13 +1032,16 @@ const InputsForm: React.FC<InputsFormProps> = ({
   values,
   onChange,
   hubValueText,
-  hasArea,
+  area,
   includeAoi,
   onIncludeAoiChange,
+  outsideDataFinder,
 }) => {
   const idPrefix = useId()
   const hubInputs = Object.entries(inputs).filter(([key, def]) => getHubInputKind(key, def))
   const userInputs = getUserInputs(inputs)
+  // Outside the Data Finder there is no area to draw, so only a drawn area is offered
+  const showAreaCheckbox = hasAreaInput(inputs) && (!outsideDataFinder || !!area)
 
   return (
     <Flex direction="column" gap="4">
@@ -974,19 +1061,21 @@ const InputsForm: React.FC<InputsFormProps> = ({
         </Flex>
       )}
 
-      {hasAreaInput(inputs) && (
-        <Flex direction="column" gap="1">
+      {showAreaCheckbox && (
+        <Flex direction="column" gap="2">
           <Text as="label" size="2">
             <Flex gap="2" align="center">
               <Checkbox
-                checked={hasArea && includeAoi}
-                disabled={!hasArea}
+                checked={!!area && includeAoi}
+                disabled={!area}
                 onCheckedChange={(checked) => onIncludeAoiChange(checked === true)}
               />
-              Include area of interest
+              {outsideDataFinder ? 'Use the area drawn on the map' : 'Include area of interest'}
             </Flex>
           </Text>
-          {!hasArea && (
+          {area ? (
+            <AreaPreview area={area} />
+          ) : (
             <Text size="1" color="gray">
               Draw an area on the map to include it.
             </Text>
@@ -996,6 +1085,49 @@ const InputsForm: React.FC<InputsFormProps> = ({
 
       {userInputs.map(([key, def]) => {
         const id = `${idPrefix}-${key}`
+        if (isDateRangeInput(def)) {
+          const [start, end] = splitDateRange(values[key] ?? '')
+          return (
+            <fieldset key={key} className={styles.dateRange}>
+              <Text size="2" weight="medium" asChild>
+                <legend>{inputLabel(key, def)}</legend>
+              </Text>
+              {def.description && (
+                <Text size="1" color="gray">
+                  {def.description}
+                </Text>
+              )}
+              <Flex gap="3" align="end">
+                <div className={styles.formField}>
+                  <Text as="label" htmlFor={`${id}-start`} size="1" color="gray">
+                    From
+                  </Text>
+                  <TextField.Root
+                    id={`${id}-start`}
+                    type="date"
+                    value={start}
+                    max={end || undefined}
+                    onChange={(e) => onChange(key, joinDateRange(e.target.value, end))}
+                    size="2"
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <Text as="label" htmlFor={`${id}-end`} size="1" color="gray">
+                    To
+                  </Text>
+                  <TextField.Root
+                    id={`${id}-end`}
+                    type="date"
+                    value={end}
+                    min={start || undefined}
+                    onChange={(e) => onChange(key, joinDateRange(start, e.target.value))}
+                    size="2"
+                  />
+                </div>
+              </Flex>
+            </fieldset>
+          )
+        }
         return (
           <div key={key} className={styles.formField}>
             <Text as="label" htmlFor={id} size="2" weight="medium">
@@ -1008,7 +1140,7 @@ const InputsForm: React.FC<InputsFormProps> = ({
             )}
             <TextField.Root
               id={id}
-              type={def.type === 'number' ? 'number' : def.type === 'date' ? 'date' : 'text'}
+              type={def.type === 'number' ? 'number' : isDateInput(def) ? 'date' : 'text'}
               value={values[key] ?? ''}
               onChange={(e) => onChange(key, e.target.value)}
               size="2"
