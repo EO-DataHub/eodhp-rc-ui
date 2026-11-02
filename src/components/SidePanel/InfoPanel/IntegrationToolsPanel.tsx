@@ -524,11 +524,15 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   const itemRender = item?.render
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
   const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
-  const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
   const notebookCollection = item?.collectionRef ?? collection
-  // A chosen notebook that does not apply to this dataset falls back to the notebook select
+  const itemDatasetId = item?.collectionRef?.id ?? item?.collection
+  // A chosen tool that does not apply to the item's dataset is not preselected
+  const chosenWorkflow =
+    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, itemDatasetId)
+      ? chosenTool
+      : undefined
   const chosenNotebook =
-    chosenTool?.properties.type === 'notebook' && toolAppliesTo(chosenTool, notebookCollection?.id)
+    chosenTool?.properties.type === 'notebook' && toolAppliesTo(chosenTool, itemDatasetId)
       ? chosenTool
       : undefined
   const openCount = useSelector(dataFinderStore, ({ context }) => context.integrationToolsOpenCount)
