@@ -75,6 +75,12 @@ const openInFinderButton = () => screen.findByRole('button', { name: /open in da
 
 const destination = async () => (await screen.findByTestId('destination')).textContent
 
+/** The destination's path and query parameters, so the parameter order does not matter. */
+const destinationParts = async () => {
+  const [pathname, search = ''] = ((await destination()) ?? '').split('?')
+  return { pathname, params: Object.fromEntries(new URLSearchParams(search)) }
+}
+
 beforeEach(() => {
   stubBrowserGlobals()
 })
@@ -91,10 +97,19 @@ describe('ProcessDetailPage for a workflow', () => {
     expect(await destination()).toBe('/finder/sentinel2_ard?tool=ndvi')
   })
 
-  it("goes to the workflow's first dataset", async () => {
+  it("goes to the workflow's first dataset and asks the user to pick one when there are several", async () => {
     renderPage(multiDatasetWorkflow)
     fireEvent.click(await runButton())
-    expect(await destination()).toBe('/finder/landsat_c2l2?tool=change-detection')
+    expect(await destinationParts()).toEqual({
+      pathname: '/finder/landsat_c2l2',
+      params: { tool: 'change-detection', pickDataset: '1' },
+    })
+  })
+
+  it('does not ask the user to pick a dataset when the workflow names one', async () => {
+    renderPage(ndviWorkflow)
+    fireEvent.click(await runButton())
+    expect((await destinationParts()).params).not.toHaveProperty('pickDataset')
   })
 
   it('goes to the dataset list with no tool chosen when the workflow names no dataset', async () => {
@@ -134,6 +149,28 @@ describe('ProcessDetailPage for an item notebook', () => {
     renderPage(itemNotebook)
     fireEvent.click(await openInFinderButton())
     expect(await destination()).toBe('/finder/sentinel2_ard?tool=ndvi_notebook')
+  })
+
+  it("goes to the notebook's first dataset and asks the user to pick one when there are several", async () => {
+    const multiDatasetNotebook: ProcessDetail = {
+      ...itemNotebook,
+      properties: {
+        ...itemNotebook.properties,
+        applicableCollections: ['sentinel-2-c1-l2a', 'sentinel2_ard'],
+      },
+    }
+    renderPage(multiDatasetNotebook)
+    fireEvent.click(await openInFinderButton())
+    expect(await destinationParts()).toEqual({
+      pathname: '/finder/sentinel-2-c1-l2a',
+      params: { tool: 'ndvi_notebook', pickDataset: '1' },
+    })
+  })
+
+  it('does not ask the user to pick a dataset when the notebook names one', async () => {
+    renderPage(itemNotebook)
+    fireEvent.click(await openInFinderButton())
+    expect((await destinationParts()).params).not.toHaveProperty('pickDataset')
   })
 
   it('goes to the dataset list with no tool chosen when the notebook names no dataset', async () => {

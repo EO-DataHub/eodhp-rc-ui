@@ -105,7 +105,8 @@ describe('IntegrationToolsPanel with a chosen workflow', () => {
 })
 
 describe('IntegrationToolsPanel with a chosen notebook', () => {
-  const notebookOption = () => screen.findByRole('radio', { name: /ndvi notebook/i })
+  // Let the notebook list request finish, so a select that would appear has had the chance to
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)))
 
   it('opens on the Jupyter tab', () => {
     choose(itemNotebook)
@@ -113,21 +114,38 @@ describe('IntegrationToolsPanel with a chosen notebook', () => {
     expect(screen.getByRole('tab', { name: /jupyter/i })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('selects the chosen notebook', async () => {
+  it('shows the chosen notebook as text instead of the notebook select', async () => {
     choose(itemNotebook)
     renderPanel()
+    await settle()
     const jupyter = screen.getByRole('tabpanel')
-    expect(await within(jupyter).findByRole('radio', { name: /ndvi notebook/i })).toBeChecked()
+    expect(jupyter).toHaveTextContent('NDVI notebook')
+    expect(within(jupyter).queryAllByRole('radio')).toHaveLength(0)
+    expect(within(jupyter).queryByRole('radiogroup')).toBeNull()
+    expect(within(jupyter).queryByRole('combobox')).toBeNull()
     expect(within(jupyter).getByRole('button', { name: 'Launch' })).toBeEnabled()
   })
 
-  it('selects the chosen notebook when the user opens the Jupyter tab', async () => {
+  it('shows the chosen notebook when the user opens the Jupyter tab', async () => {
     const user = userEvent.setup()
     choose(itemNotebook)
     renderPanel()
     await user.click(screen.getByRole('tab', { name: /desktop gis/i }))
     await user.click(screen.getByRole('tab', { name: /jupyter/i }))
-    expect(await notebookOption()).toBeChecked()
+    await settle()
+    const jupyter = screen.getByRole('tabpanel')
+    expect(jupyter).toHaveTextContent('NDVI notebook')
+    expect(within(jupyter).queryAllByRole('radio')).toHaveLength(0)
+  })
+
+  it('brings the notebook select back when the tool is cleared', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderPanel()
+    await settle()
+    act(() => dataFinderStore.send({ type: 'clearTool' }))
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+    expect(await screen.findByRole('radio', { name: /ndvi notebook/i })).toBeInTheDocument()
   })
 })
 

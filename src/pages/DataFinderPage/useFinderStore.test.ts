@@ -82,7 +82,10 @@ describe('dataFinderStore chosen tool', () => {
 
   it('keeps the chosen tool when a side panel opens and closes', () => {
     dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
+    // Toggling the panel is not an Open in request
+    const openCountBefore = dataFinderStore.getSnapshot().context.integrationToolsOpenCount
     dataFinderStore.send({ type: 'toggleIntegrationToolsPanel', item })
+    expect(dataFinderStore.getSnapshot().context.integrationToolsOpenCount).toBe(openCountBefore)
     dataFinderStore.send({ type: 'closeSecondaryPanel' })
     expect(chosenTool()?.id).toBe('ndvi')
   })
