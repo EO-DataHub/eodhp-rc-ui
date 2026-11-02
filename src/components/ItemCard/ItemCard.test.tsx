@@ -12,16 +12,20 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import { fetchItem } from '@/services/itemService'
 import {
+  anyDatasetWorkflow,
   fetchToolByIdFromFixtures,
   fetchToolsFromFixtures,
   ITEM_SELF_HREF,
   item,
   itemNotebook,
+  landsatWorkflow,
   listRecord,
+  multiDatasetWorkflow,
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
 import { IntegrationToolsPanel } from '@/components/SidePanel/InfoPanel/IntegrationToolsPanel'
+import { getAvailableRenders } from '@/library/integrationTools'
 import ItemCard from './ItemCard'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -305,5 +309,187 @@ describe('Pinned ItemCard with a chosen tool', () => {
     renderPinnedCard()
     act(() => dataFinderStore.send({ type: 'clearTool' }))
     expect(screen.queryByRole('button', { name: 'Run NDVI' })).toBeNull()
+  })
+})
+
+describe('ItemCard tool buttons for the datasets the tool applies to', () => {
+  const landsat = {
+    id: 'landsat_c2l2',
+    title: 'Landsat C2 L2',
+    links: [],
+  } as unknown as Collection
+
+  const landsatItem = {
+    ...item,
+    id: 'LC09_20250610',
+    collection: 'landsat_c2l2',
+    links: [{ rel: 'self', type: 'application/json', href: `${ITEM_SELF_HREF}-landsat` }],
+  } as unknown as Item
+
+  // Has renders, so Open in can show; the notebook does not list it
+  const sentinel1 = {
+    id: 'sentinel1_ard',
+    title: 'Sentinel-1 ARD',
+    links: [],
+  } as unknown as Collection
+
+  const sentinel1Item = {
+    ...item,
+    id: 'S1A_20250610',
+    collection: 'sentinel1_ard',
+    render: { id: getAvailableRenders('sentinel1_ard')[0].id },
+    links: [{ rel: 'self', type: 'application/json', href: `${ITEM_SELF_HREF}-s1` }],
+  } as unknown as Item
+
+  const anyDatasetNotebook = {
+    ...itemNotebook,
+    id: 'any_notebook',
+    properties: {
+      ...itemNotebook.properties,
+      title: 'Any dataset notebook',
+      applicableCollections: undefined,
+    },
+  }
+
+  const renderCardOfType = (cardItem: Item, type: 'query-item' | 'pinned-item') => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    return render(
+      <MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+          <AuthenticationContext.Provider value={auth}>
+            <Theme>
+              <ItemCard item={cardItem} type={type} />
+            </Theme>
+          </AuthenticationContext.Provider>
+        </QueryClientProvider>
+      </MemoryRouter>,
+    )
+  }
+
+  /** Pins an item while its own dataset is open, then opens another dataset. */
+  const pinFrom = (source: Item, from: Collection, thenOpen: Collection) => {
+    dataFinderStore.send({ type: 'setCollection', collection: from })
+    const { collectionRender } = dataFinderStore.getSnapshot().context
+    dataFinderStore.send({
+      type: 'addPinnedItem',
+      item: source,
+      collectionRender: collectionRender!,
+      isLicenseProprietary: false,
+      isUserCollection: false,
+      collectionName: from.title!,
+      collection: from,
+    })
+    dataFinderStore.send({ type: 'setCollection', collection: thenOpen })
+    return dataFinderStore.getSnapshot().context.pinnedItems.find((p) => p.id === source.id)!
+  }
+
+  const openLandsat = () => dataFinderStore.send({ type: 'setCollection', collection: landsat })
+
+  beforeEach(() => {
+    dataFinderStore.send({ type: 'clearAllPinnedItems' })
+  })
+
+  afterEach(() => {
+    dataFinderStore.send({ type: 'clearAllPinnedItems' })
+  })
+
+  describe('on a result card', () => {
+    it('has no Run button when the workflow does not list the item dataset', () => {
+      openLandsat()
+      choose(ndviWorkflow)
+      renderCardOfType(landsatItem, 'query-item')
+      expect(screen.queryByRole('button', { name: 'Run NDVI' })).toBeNull()
+      expect(screen.queryByRole('button', { name: /^run /i })).toBeNull()
+    })
+
+    it('has no Open in button when the notebook does not list the item dataset', () => {
+      dataFinderStore.send({ type: 'setCollection', collection: sentinel1 })
+      choose(itemNotebook)
+      renderCardOfType(sentinel1Item, 'query-item')
+      expect(screen.queryByRole('button', { name: /^open in /i })).toBeNull()
+    })
+
+    it('has an Open in button on every card when the notebook lists no datasets', () => {
+      choose(anyDatasetNotebook)
+      const { unmount } = renderCardOfType(item, 'query-item')
+      expect(
+        screen.getByRole('button', { name: 'Open in Any dataset notebook' }),
+      ).toBeInTheDocument()
+      unmount()
+
+      dataFinderStore.send({ type: 'setCollection', collection: sentinel1 })
+      renderCardOfType(sentinel1Item, 'query-item')
+      expect(
+        screen.getByRole('button', { name: 'Open in Any dataset notebook' }),
+      ).toBeInTheDocument()
+    })
+
+    it('has a Run button when the workflow lists the item dataset', () => {
+      openLandsat()
+      choose(landsatWorkflow)
+      renderCardOfType(landsatItem, 'query-item')
+      expect(
+        screen.getByRole('button', { name: 'Run Landsat surface temperature' }),
+      ).toBeInTheDocument()
+    })
+
+    it('has a Run button when the item dataset is one of several the workflow lists', () => {
+      openLandsat()
+      choose(multiDatasetWorkflow)
+      renderCardOfType(landsatItem, 'query-item')
+      expect(screen.getByRole('button', { name: 'Run Change detection' })).toBeInTheDocument()
+    })
+
+    it('has a Run button on every card when the workflow lists no datasets', () => {
+      choose(anyDatasetWorkflow)
+      const { unmount } = renderCardOfType(item, 'query-item')
+      expect(screen.getByRole('button', { name: 'Run Footprint' })).toBeInTheDocument()
+      unmount()
+
+      openLandsat()
+      renderCardOfType(landsatItem, 'query-item')
+      expect(screen.getByRole('button', { name: 'Run Footprint' })).toBeInTheDocument()
+    })
+  })
+
+  describe('on a pinned card', () => {
+    it('has no Run button when the workflow does not list the pinned item dataset', () => {
+      const pinned = pinFrom(landsatItem, landsat, collection)
+      choose(ndviWorkflow)
+      renderCardOfType(pinned, 'pinned-item')
+      expect(screen.queryByRole('button', { name: /^run /i })).toBeNull()
+    })
+
+    it('has no Open in button when the notebook does not list the pinned item dataset', () => {
+      const pinned = pinFrom(sentinel1Item, sentinel1, collection)
+      choose(itemNotebook)
+      renderCardOfType(pinned, 'pinned-item')
+      expect(screen.queryByRole('button', { name: /^open in /i })).toBeNull()
+    })
+
+    it('has an Open in button on a pinned card when the notebook lists no datasets', () => {
+      const pinned = pinFrom(sentinel1Item, sentinel1, collection)
+      choose(anyDatasetNotebook)
+      renderCardOfType(pinned, 'pinned-item')
+      expect(
+        screen.getByRole('button', { name: 'Open in Any dataset notebook' }),
+      ).toBeInTheDocument()
+    })
+
+    it('has a Run button when the workflow lists the pinned item dataset, whatever dataset is open', () => {
+      const pinned = pinFrom(item, collection, landsat)
+      choose(ndviWorkflow)
+      renderCardOfType(pinned, 'pinned-item')
+      expect(screen.getByRole('button', { name: 'Run NDVI' })).toBeInTheDocument()
+    })
+
+    it('has a Run button on every pinned card when the workflow lists no datasets', () => {
+      const pinnedSentinel = pinFrom(item, collection, landsat)
+      const pinnedLandsat = pinFrom(landsatItem, landsat, collection)
+      choose(anyDatasetWorkflow)
+      renderCardOfType(pinnedSentinel, 'pinned-item')
+      renderCardOfType(pinnedLandsat, 'pinned-item')
+      expect(screen.getAllByRole('button', { name: 'Run Footprint' })).toHaveLength(2)
+    })
   })
 })

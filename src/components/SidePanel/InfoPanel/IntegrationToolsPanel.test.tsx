@@ -165,3 +165,33 @@ describe('IntegrationToolsPanel with no chosen tool', () => {
     expect(await screen.findByRole('radio', { name: /ndvi notebook/i })).not.toBeChecked()
   })
 })
+
+describe('IntegrationToolsPanel with a chosen notebook that does not apply to the item', () => {
+  // A dataset with renders, so the panel shows, that the notebook does not list
+  const sentinel1Item = {
+    ...item,
+    id: 'S1A_20250610',
+    collection: 'sentinel1_ard',
+    render: { id: getAvailableRenders('sentinel1_ard')[0].id },
+    collectionRef: { id: 'sentinel1_ard' },
+  } as Item
+
+  const renderSentinel1Panel = () =>
+    render(
+      <MemoryRouter>
+        <AuthenticationContext.Provider value={auth}>
+          <IntegrationToolsPanel item={sentinel1Item} onClose={vi.fn()} />
+        </AuthenticationContext.Provider>
+      </MemoryRouter>,
+    )
+
+  it('shows the notebook select, as with no tool chosen', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderSentinel1Panel()
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+
+    const jupyter = screen.getByRole('tabpanel')
+    expect(await within(jupyter).findByRole('radio', { name: /ndvi notebook/i })).not.toBeChecked()
+  })
+})
