@@ -315,10 +315,10 @@ const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item
 const isItemNotebook = (record: ProcessRecord) => !isPinSetNotebook(record)
 
 // Jupyter Tab Component
-const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: string }> = ({
+const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebook?: ProcessRecord }> = ({
   item,
   collection,
-  notebookId,
+  notebook,
 }) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const username = userInfo?.preferred_username
@@ -359,7 +359,7 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: s
     enabled: !!collection?.id,
     applicableCollections: collection?.id,
     filterNotebooks: isItemNotebook,
-    initialNotebookId: notebookId,
+    notebook,
     context: launchContext,
     token,
     currentWorkspace,
@@ -369,8 +369,8 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: s
   const canLaunch =
     isAuthenticated && !!currentWorkspace && !!item && !!selectedNotebook && !isLaunching
   const showContent = isAuthenticated && !!currentWorkspace && !!item
-  const hasNotebooks = notebooks.length > 0
-  const isEmpty = !isLoadingNotebooks && !notebooksError && notebooks.length === 0
+  const hasNotebooks = !!notebook || notebooks.length > 0
+  const isEmpty = !notebook && !isLoadingNotebooks && !notebooksError && notebooks.length === 0
 
   if (!showContent) {
     return (
@@ -396,8 +396,8 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: s
             Jupyter Notebook Integration
           </Text>
           <Text size="2" color="gray">
-            Launch Jupyter notebooks with this data already loaded and ready for analysis. Select a
-            notebook below and click Launch.
+            Launch Jupyter notebooks with this data already loaded and ready for analysis.{' '}
+            {notebook ? 'Click Launch to open it.' : 'Select a notebook below and click Launch.'}
           </Text>
 
           {isLoadingNotebooks && (
@@ -430,33 +430,46 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebookId?: s
 
               {hasNotebooks && (
                 <Flex direction="column" gap="3" pt="2">
-                  <RadioGroup.Root
-                    value={selectedNotebook?.id ?? ''}
-                    onValueChange={(id) => {
-                      const nb = notebooks.find((n) => n.id === id) ?? null
-                      setSelectedNotebook(nb)
-                    }}
-                  >
-                    <Flex direction="column" gap="2">
-                      {notebooks.map((nb) => (
-                        <label key={nb.id} style={{ cursor: 'pointer' }}>
-                          <Flex gap="2" align="center">
-                            <RadioGroup.Item value={nb.id} />
-                            <Flex direction="column" gap="0">
-                              <Text size="2" weight="medium">
-                                {nb.properties?.title ?? nb.id}
-                              </Text>
-                              {nb.properties?.description && (
-                                <Text size="1" color="gray">
-                                  {nb.properties.description}
-                                </Text>
-                              )}
-                            </Flex>
-                          </Flex>
-                        </label>
-                      ))}
+                  {notebook ? (
+                    <Flex direction="column" gap="0">
+                      <Text size="2" weight="medium">
+                        {notebook.properties?.title ?? notebook.id}
+                      </Text>
+                      {notebook.properties?.description && (
+                        <Text size="1" color="gray">
+                          {notebook.properties.description}
+                        </Text>
+                      )}
                     </Flex>
-                  </RadioGroup.Root>
+                  ) : (
+                    <RadioGroup.Root
+                      value={selectedNotebook?.id ?? ''}
+                      onValueChange={(id) => {
+                        const nb = notebooks.find((n) => n.id === id) ?? null
+                        setSelectedNotebook(nb)
+                      }}
+                    >
+                      <Flex direction="column" gap="2">
+                        {notebooks.map((nb) => (
+                          <label key={nb.id} style={{ cursor: 'pointer' }}>
+                            <Flex gap="2" align="center">
+                              <RadioGroup.Item value={nb.id} />
+                              <Flex direction="column" gap="0">
+                                <Text size="2" weight="medium">
+                                  {nb.properties?.title ?? nb.id}
+                                </Text>
+                                {nb.properties?.description && (
+                                  <Text size="1" color="gray">
+                                    {nb.properties.description}
+                                  </Text>
+                                )}
+                              </Flex>
+                            </Flex>
+                          </label>
+                        ))}
+                      </Flex>
+                    </RadioGroup.Root>
+                  )}
 
                   {hasNotebooks && aoi && (
                     <Flex align="center" gap="2">
@@ -511,7 +524,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
   const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
   const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
-  const chosenNotebookId = chosenTool?.properties.type === 'notebook' ? chosenTool.id : undefined
+  const chosenNotebook = chosenTool?.properties.type === 'notebook' ? chosenTool : undefined
   const openCount = useSelector(dataFinderStore, ({ context }) => context.integrationToolsOpenCount)
 
   // Don't render if item doesn't support integration tools
@@ -547,7 +560,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
             {/* Keyed so a new item, a new chosen notebook or another "Open in" click opens on its tab again */}
             <Tabs.Root
               key={`${item.id}-${chosenTool?.id ?? ''}-${openCount}`}
-              defaultValue={chosenNotebookId ? 'jupyter' : 'desktop-gis'}
+              defaultValue={chosenNotebook ? 'jupyter' : 'desktop-gis'}
             >
               <Tabs.List>
                 <Tabs.Trigger value="desktop-gis">Desktop GIS</Tabs.Trigger>
@@ -572,7 +585,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
                   <JupyterTab
                     item={item}
                     collection={item.collectionRef ?? collection}
-                    notebookId={chosenNotebookId}
+                    notebook={chosenNotebook}
                   />
                 </Box>
               </Tabs.Content>

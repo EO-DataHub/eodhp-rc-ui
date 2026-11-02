@@ -7,10 +7,17 @@ import type { ProcessDetail } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
 
-/** The Data Finder at the tool's first dataset with the tool chosen, or the dataset list. */
+/**
+ * The Data Finder at the tool's first dataset with the tool chosen, or the dataset list.
+ * A tool with several datasets opens the Data Finder's dataset list so the user can pick one.
+ */
 const finderUrlFor = (tool: ProcessDetail) => {
-  const collectionId = tool.properties.applicableCollections?.[0]
-  return collectionId ? `/finder/${collectionId}?tool=${encodeURIComponent(tool.id)}` : '/'
+  const collections = tool.properties.applicableCollections ?? []
+  if (collections.length === 0) return '/'
+
+  const params = new URLSearchParams({ tool: tool.id })
+  if (collections.length > 1) params.set('pickDataset', '1')
+  return `/finder/${collections[0]}?${params.toString()}`
 }
 
 export const ProcessDetailPage: React.FC = () => {

@@ -457,7 +457,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
-        {isQueryCard && chosenTool?.properties.type === 'workflow' && (
+        {chosenTool?.properties.type === 'workflow' && (
           <Flex justify="end" pt="2">
             <Button
               size="1"
@@ -476,8 +476,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         {/* Notebooks open from Integration Tools, which only shows for items it supports */}
-        {isQueryCard &&
-          chosenTool?.properties.type === 'notebook' &&
+        {chosenTool?.properties.type === 'notebook' &&
           supportsIntegrationTools(item, itemRender) && (
             <Flex justify="end" pt="2">
               <Button
