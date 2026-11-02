@@ -1,16 +1,16 @@
 import type { Item, InputParameterEntry, HubType } from '@/types'
 import { getSelfLinkHref } from '@/library/integrationTools'
 
-/**
- * Context passed to variable resolvers when building workflow launch variables.
- * Used only for variable resolution; follows the same pattern as notebook integration.
- */
 /** The parts of an item a workflow launch reads. Saved set entries are turned into this shape. */
-export type LaunchItem = Pick<Item, 'id'> & {
+export type LaunchItem = Pick<Item, 'id' | 'isUserCollection' | 'collectionRef'> & {
   collection?: string
   links?: { rel?: string; href?: string }[]
 }
 
+/**
+ * Context passed to variable resolvers when building workflow launch variables.
+ * Used only for variable resolution; follows the same pattern as notebook integration.
+ */
 export interface WorkflowLaunchContext {
   item: LaunchItem
   aoi: GeoJSON.Feature | null | undefined

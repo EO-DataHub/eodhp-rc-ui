@@ -27,12 +27,37 @@ export const getCatalog = (selectedCollection: Collection): string => {
 export const extractWorkspaceFromCollection = (collection: Collection): string | null => {
   const selfLink = collection.links?.find((link) => link.rel === 'self')
   if (!selfLink?.href) return null
+  return extractWorkspaceFromHref(selfLink.href)
+}
 
+/**
+ * Extracts the workspace name from a catalogue URL under a workspace's catalog.
+ * @param href - A collection or item URL
+ * @returns The workspace name or null if the URL is not under a workspace's catalog
+ */
+export const extractWorkspaceFromHref = (href: string): string | null => {
   // Pattern: /catalogs/user/catalogs/{workspace}/catalogs/processing-results/...
   // or: /catalogs/user/catalogs/{workspace}/catalogs/commercial-data/...
-  const match = selfLink.href.match(/\/catalogs\/user\/catalogs\/([^/]+)\//)
+  const match = href.match(/\/catalogs\/user\/catalogs\/([^/]+)\//)
   return match?.[1] ?? null
 }
+
+/**
+ * Whether an item's data is private to a workspace: it comes from a user collection, or from a
+ * collection or URL under a workspace's catalog, such as purchased data or workflow outputs.
+ */
+export const isPrivateItem = ({
+  isUserCollection,
+  collection,
+  href,
+}: {
+  isUserCollection?: boolean
+  collection?: Collection | null
+  href?: string
+}): boolean =>
+  !!isUserCollection ||
+  (!!collection && !!extractWorkspaceFromCollection(collection)) ||
+  (!!href && !!extractWorkspaceFromHref(href))
 
 export interface ParsedCollectionPath {
   type: 'public' | 'purchased' | 'job'

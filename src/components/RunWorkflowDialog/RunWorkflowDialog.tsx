@@ -39,7 +39,13 @@ import {
   type FanOutResult,
   type StartedJob,
 } from '@/library/workflowFanOut'
-import { useSearchResultsQuery } from '@/hooks/useItemsQuery'
+import { isPrivateItem } from '@/library/catalogUtils'
+import { CONFIRM_JOBS_ABOVE, MAX_JOBS_PER_RUN } from '@/constants/workflowRunLimits'
+import {
+  MAX_TOTAL_ITEMS,
+  MAX_USER_COLLECTION_ITEMS,
+  useSearchResultsQuery,
+} from '@/hooks/useItemsQuery'
 import { useSavedSet, useSavedSets } from '@/hooks/useSavedSets'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import styles from './RunWorkflowDialog.module.scss'
@@ -137,6 +143,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   const searchCollection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserSearch = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
 
   const startSource: RunSource = initialSource ?? (item ? 'item' : 'pinned')
   const initialDetail = initialWorkflow && isFullRecord(initialWorkflow) ? initialWorkflow : null
@@ -161,6 +168,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   const [launchError, setLaunchError] = useState<string | null>(null)
   const [startedJobs, setStartedJobs] = useState<StartedJob[]>([])
   const [failedJobs, setFailedJobs] = useState<FailedJob[]>([])
+  const [confirmedJobs, setConfirmedJobs] = useState(false)
 
   const inputs = useMemo(() => detail?.properties.inputParameters ?? {}, [detail])
   const needsInputs = needsInputsStep(inputs)
@@ -198,6 +206,31 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
 
   const isSingleItem = source === 'item'
 
+  // The Items tab holds at most this many results, so "All results" can be cut short
+  const resultsCap =
+    isUserSearch || searchCollection?.isJobCollection ? MAX_USER_COLLECTION_ITEMS : MAX_TOTAL_ITEMS
+  const resultsCapped = !!results && results.length >= resultsCap
+  const resultsCapText = `The run uses the first ${resultsCap} results.`
+
+  const jobCount = targets?.length ?? 0
+  const needsConfirmation = !isSingleItem && jobCount > CONFIRM_JOBS_ABOVE
+  const aboveCeiling = jobCount > MAX_JOBS_PER_RUN
+
+  // A new set of items needs a new confirmation
+  useEffect(() => {
+    setConfirmedJobs(false)
+  }, [source, setId, jobCount])
+
+  const isTargetPrivate = (target: LaunchItem) => {
+    const fromSearch =
+      source === 'results' || (!!searchCollection && target.collection === searchCollection.id)
+    return isPrivateItem({
+      isUserCollection: target.isUserCollection ?? (fromSearch ? isUserSearch : undefined),
+      collection: target.collectionRef ?? (fromSearch ? searchCollection : null),
+      href: getSelfLinkHref(target),
+    })
+  }
+
   // Changes on every open and close, so a details request from an earlier opening is ignored
   const openingRef = useRef(0)
   const workflowsRequestedRef = useRef(false)
@@ -220,6 +253,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setLaunchError(null)
     setStartedJobs([])
     setFailedJobs([])
+    setConfirmedJobs(false)
     if (initialWorkflow && !initialDetail) void loadDetail(initialWorkflow.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -292,6 +326,15 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     }
   }
 
+  const sourceNote = (option: RunSource): string | undefined => {
+    switch (option) {
+      case 'results':
+        return resultsCapped ? resultsCapText : undefined
+      default:
+        return undefined
+    }
+  }
+
   const canLeaveSourceStep = !sourceUnavailableReason(source) && (source !== 'set' || !!setId)
 
   const areaText = () => {
@@ -310,6 +353,13 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   const itemInputs = Object.entries(inputs).filter(
     ([key, def]) => getHubInputKind(key, def) === 'item',
   )
+
+  /** Item inputs the workflow reads by link, without staging the data in first. */
+  const linkOnlyItemInputs = itemInputs.filter(([, def]) => def.cwlType !== 'Directory')
+
+  /** Private items cannot be read by link, because the job has no access to them. */
+  const privateTargetCount =
+    linkOnlyItemInputs.length > 0 && targets ? targets.filter(isTargetPrivate).length : 0
 
   /** Items the Hub cannot fill the item inputs for, because they have no self link. */
   const targetsWithoutLink =
@@ -413,8 +463,16 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     }
   }
 
+  const runBlocked =
+    !targets ||
+    targets.length === 0 ||
+    targetsWithoutLink.length > 0 ||
+    privateTargetCount > 0 ||
+    aboveCeiling ||
+    (needsConfirmation && !confirmedJobs)
+
   const run = async () => {
-    if (!targets || targets.length === 0 || targetsWithoutLink.length > 0) return
+    if (!targets || runBlocked) return
     const result = await submit(targets)
     if (!result) return
     // A single job that fails stays on the review step, so the user can change the inputs
@@ -433,6 +491,12 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setStartedJobs((prev) => [...prev, ...result.started])
     setFailedJobs(result.failed)
   }
+
+  const changeSourceButton = (
+    <Button variant="soft" color="gray" onClick={() => goBack('source')}>
+      Change source
+    </Button>
+  )
 
   const backButton = (to: Step | null) => (
     <Button variant="soft" color="gray" onClick={() => goBack(to)}>
@@ -493,6 +557,11 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
                     {reason && (
                       <Text id={hintId} size="1" color="gray" className={styles.sourceHint}>
                         {reason}
+                      </Text>
+                    )}
+                    {!reason && sourceNote(option) && (
+                      <Text size="1" color="gray" className={styles.sourceHint}>
+                        {sourceNote(option)}
                       </Text>
                     )}
                     {option === 'set' && source === 'set' && !reason && (
@@ -605,9 +674,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               </Text>
             )}
             <Flex justify="between" gap="3" mt="2">
-              <Button variant="soft" color="gray" onClick={() => setStep('source')}>
-                Change source
-              </Button>
+              {changeSourceButton}
               <Flex gap="3">
                 {backButton(null)}
                 <Button
@@ -633,8 +700,11 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               onIncludeAoiChange={setIncludeAoi}
             />
             <Flex justify="between" gap="3" mt="2">
-              {backButton(beforeInputs())}
-              <Button onClick={() => setStep('review')}>Next</Button>
+              {changeSourceButton}
+              <Flex gap="3">
+                {backButton(beforeInputs())}
+                <Button onClick={() => setStep('review')}>Next</Button>
+              </Flex>
             </Flex>
           </Flex>
         )}
@@ -675,9 +745,27 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
 
             {!isSingleItem &&
               (targets ? (
-                <Text size="2">
-                  This starts <strong>{plural(targets.length, 'job')}</strong>, one for each item.
-                </Text>
+                <Flex direction="column" gap="2">
+                  <Text size="2">
+                    This starts <strong>{plural(targets.length, 'job')}</strong>, one for each item.
+                  </Text>
+                  {source === 'results' && resultsCapped && (
+                    <Text size="2" color="gray">
+                      {resultsCapText}
+                    </Text>
+                  )}
+                  {needsConfirmation && !aboveCeiling && (
+                    <Text as="label" size="2">
+                      <Flex gap="2" align="center">
+                        <Checkbox
+                          checked={confirmedJobs}
+                          onCheckedChange={(checked) => setConfirmedJobs(checked === true)}
+                        />
+                        {`Yes, start ${plural(targets.length, 'job')}`}
+                      </Flex>
+                    </Text>
+                  )}
+                </Flex>
               ) : (
                 <Flex gap="2" align="center">
                   <LoadingIndicator size="1" />
@@ -707,6 +795,30 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
                 </Callout.Text>
               </Callout.Root>
             )}
+            {aboveCeiling && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  {`A run can start at most ${MAX_JOBS_PER_RUN} jobs. Choose fewer items to run on.`}
+                </Callout.Text>
+              </Callout.Root>
+            )}
+            {privateTargetCount > 0 && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  {`${workflowTitle} cannot read private data, and ${
+                    privateTargetCount === 1
+                      ? '1 item is private'
+                      : `${privateTargetCount} items are private`
+                  }. Choose public items only.`}
+                </Callout.Text>
+              </Callout.Root>
+            )}
             {targets?.length === 0 && (
               <Callout.Root color="amber" size="1">
                 <Callout.Text>There are no items to run on.</Callout.Text>
@@ -719,20 +831,16 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
             )}
 
             <Flex justify="between" gap="3" mt="2">
-              {backButton(beforeReview())}
-              <Button
-                disabled={
-                  !currentWorkspace ||
-                  !token ||
-                  !targets ||
-                  targets.length === 0 ||
-                  targetsWithoutLink.length > 0 ||
-                  isLaunching
-                }
-                onClick={() => void run()}
-              >
-                {isLaunching ? 'Running…' : 'Run workflow'}
-              </Button>
+              {changeSourceButton}
+              <Flex gap="3">
+                {backButton(beforeReview())}
+                <Button
+                  disabled={!currentWorkspace || !token || runBlocked || isLaunching}
+                  onClick={() => void run()}
+                >
+                  {isLaunching ? 'Running…' : 'Run workflow'}
+                </Button>
+              </Flex>
             </Flex>
           </Flex>
         )}

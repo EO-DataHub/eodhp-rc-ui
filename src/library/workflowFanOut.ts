@@ -10,6 +10,7 @@ export const savedSetLaunchItems = (set: SavedSet): LaunchItem[] =>
     id: entry.itemId,
     collection: entry.collectionId,
     links: [{ rel: 'self', href: entry.selfHref }],
+    isUserCollection: entry.display?.isUserCollection,
   }))
 
 export interface StartedJob {

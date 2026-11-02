@@ -11,7 +11,7 @@ import { AdditionalResourcesSection } from './AdditionalResourcesSection'
 import { AssetSection } from './AssetSection'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
-import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
+import { extractWorkspaceFromCollection, isPrivateItem } from '@/library/catalogUtils'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore, { InfoPanelTab } from '@/pages/DataFinderPage/useFinderStore'
 import { SaveToSetDialog } from '@/components/SavedSets/SaveToSetDialog'
@@ -105,7 +105,10 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
   const downloadWorkspace = downloadCollection
     ? extractWorkspaceFromCollection(downloadCollection)
     : null
-  const isPrivateItem = !!(item?.isUserCollection ?? isUserItem) || !!downloadWorkspace
+  const isPrivate = isPrivateItem({
+    isUserCollection: item?.isUserCollection ?? isUserItem,
+    collection: downloadCollection,
+  })
 
   const handleTabChange = (value: string) => {
     dataFinderStore.send({ type: 'setInfoPanelTab', tab: value as InfoPanelTab })
@@ -192,7 +195,7 @@ export const ItemInfoPanel: React.FC<ItemInfoPanelProps> = ({ item, isUserItem, 
                   <ItemDownloads
                     item={itemWithCollectionContext}
                     collection={downloadCollection}
-                    isPrivate={isPrivateItem}
+                    isPrivate={isPrivate}
                     workspace={downloadWorkspace ?? currentWorkspace}
                   />
                 ) : null}
