@@ -111,7 +111,7 @@ export const areaWorkflow = workflowRecord('area-mask', {
   applicableCollections: ['sentinel2_ard'],
   inputParameters: {
     stac_item: { label: 'STAC item', hubType: 'stac-item', cwlType: 'string' },
-    aoi: { label: 'Area of interest', hubType: 'aoi', cwlType: 'string' },
+    aoi: { label: 'Area of interest', hubType: 'aoi', cwlType: 'string', required: true },
   },
 })
 
