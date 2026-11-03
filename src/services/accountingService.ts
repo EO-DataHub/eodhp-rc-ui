@@ -336,6 +336,9 @@ export const fetchAllWorkspaceUsageData = async (
   return events
 }
 
+// Aggregated reads use large pages: each page costs the server a full aggregation, so a typical
+// range should come back in one request.
+const AGGREGATED_USAGE_PAGE_SIZE = 5000
 // Hub-wide reads group by workspace and SKU per period, so a bounded range stays well under
 // this many pages; the cap only stops a runaway loop.
 const MAX_HUB_USAGE_PAGES = 100
@@ -355,7 +358,7 @@ const fetchAllUsagePages = async (
   for (let page = 0; page < MAX_HUB_USAGE_PAGES; page += 1) {
     let batch: BillingEvent[]
     try {
-      batch = await fetchPage({ ...params, limit: USAGE_PAGE_SIZE, after })
+      batch = await fetchPage({ ...params, limit: AGGREGATED_USAGE_PAGE_SIZE, after })
     } catch (error) {
       if (after && error instanceof UsageRequestError && error.status === 404) {
         throw new StaleCursorError(error.message)
@@ -363,7 +366,7 @@ const fetchAllUsagePages = async (
       throw error
     }
     events.push(...batch)
-    if (batch.length < USAGE_PAGE_SIZE) return events
+    if (batch.length < AGGREGATED_USAGE_PAGE_SIZE) return events
     after = batch[batch.length - 1].uuid
   }
   throw new Error('Too much usage data to show for this range.')

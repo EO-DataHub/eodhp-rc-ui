@@ -19,6 +19,9 @@ interface Column {
   align?: 'right'
 }
 
+/** Where the balances read is: balances fill in after the ranking shows. */
+export type BalancesState = 'loading' | 'error' | 'ready'
+
 interface RankingTableProps {
   rows: RankingRow[]
   total: Credits
@@ -32,6 +35,7 @@ interface RankingTableProps {
   /** Shown in place of rows when there are none. */
   emptyMessage: string
   skuName: (sku: string) => string
+  balances: BalancesState
 }
 
 export const RankingTable: React.FC<RankingTableProps> = ({
@@ -46,6 +50,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   workspaceLink,
   emptyMessage,
   skuName,
+  balances,
 }) => {
   const columns: Column[] = [
     { key: 'workspace', label: 'Workspace' },
@@ -111,9 +116,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             <Table.Cell align="right">{formatShare(row.share)}</Table.Cell>
             {showTopSku && <Table.Cell>{skuName(row.topSku)}</Table.Cell>}
             {showChange && <Table.Cell align="right">{formatChange(row.change)}</Table.Cell>}
-            <Table.Cell align="right">
-              {row.balance === undefined ? '' : formatCredits(row.balance)}
-            </Table.Cell>
+            <BalanceCell balance={row.balance} state={balances} />
           </Table.Row>
         ))}
         <Table.Row className={styles.totalsRow}>
@@ -126,5 +129,24 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         </Table.Row>
       </Table.Body>
     </Table.Root>
+  )
+}
+
+const BalanceCell: React.FC<{ balance: Credits | undefined; state: BalancesState }> = ({
+  balance,
+  state,
+}) => {
+  if (state === 'loading') {
+    return (
+      <Table.Cell align="right" aria-busy="true">
+        <Text color="gray" aria-label="Loading balance">
+          …
+        </Text>
+      </Table.Cell>
+    )
+  }
+  if (state === 'error') return <Table.Cell align="right">—</Table.Cell>
+  return (
+    <Table.Cell align="right">{balance === undefined ? '' : formatCredits(balance)}</Table.Cell>
   )
 }

@@ -11,6 +11,7 @@ import {
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { HUB_QUERY_CACHE } from './hubQueryOptions'
 import { PeriodControls } from './PeriodControls'
 import {
   buildRanking,
@@ -20,13 +21,14 @@ import {
   SortDirection,
   sortRanking,
 } from './hubRanking'
-import { RankingTable } from './RankingTable'
+import { BalancesState, RankingTable } from './RankingTable'
 import { useHubUsageSearchParams } from './useHubUsageSearchParams'
 
 const ALL_SKUS = 'all'
 
 export const HubUsagePage: React.FC = () => {
-  const { token } = useContext(AuthenticationContext)
+  const { token, userInfo } = useContext(AuthenticationContext)
+  const user = userInfo?.sub
   const state = useHubUsageSearchParams()
   const { periodType, period, previousPeriod, sku, name, inProgress } = state
   const navigate = useNavigate()
@@ -35,15 +37,17 @@ export const HubUsagePage: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<SortDirection>('descending')
 
   const summariesQuery = useQuery({
-    queryKey: ['hubWorkspaceSummaries', token],
+    queryKey: ['hubWorkspaceSummaries', user],
     queryFn: () => fetchWorkspaceSummaries(token!),
     enabled: Boolean(token),
+    ...HUB_QUERY_CACHE,
   })
 
   const skusQuery = useQuery({
-    queryKey: ['skus', token],
+    queryKey: ['skus', user],
     queryFn: () => fetchSkus(token!),
     enabled: Boolean(token),
+    ...HUB_QUERY_CACHE,
     // The ranking waits for this list, so a failure should not hold it back for long.
     retry: 1,
   })
@@ -57,7 +61,7 @@ export const HubUsagePage: React.FC = () => {
   const rangeStart = previousPeriod.start.toISOString()
   const rangeEnd = period.end.toISOString()
   const usageQuery = useQuery({
-    queryKey: ['hubUsage', token, periodType, rangeStart, rangeEnd, sku],
+    queryKey: ['hubUsage', user, periodType, rangeStart, rangeEnd, sku],
     queryFn: () =>
       fetchAllHubUsageData(token!, {
         start: rangeStart,
@@ -69,6 +73,7 @@ export const HubUsagePage: React.FC = () => {
     // Waits for the SKU list to settle so rows first render with SKU names, but a failed
     // list does not block the ranking: names then fall back to the SKU code.
     enabled: Boolean(token) && !skusQuery.isPending,
+    ...HUB_QUERY_CACHE,
   })
 
   const ranking = useMemo(() => {
@@ -120,10 +125,15 @@ export const HubUsagePage: React.FC = () => {
   })
   const openWorkspace = (workspace: string) => navigate(workspaceLink(workspace))
 
-  // SKUs only supply display names, so a failed SKU list does not block the ranking.
-  const error = summariesQuery.error ?? usageQuery.error
-  // A disabled usage query is pending but not loading, so pending is what holds the ranking back.
-  const isLoading = summariesQuery.isPending || usageQuery.isPending
+  // SKUs only supply display names and the summaries only supply balances, so neither blocks
+  // the ranking. A disabled usage query is pending but not loading, so pending holds it back.
+  const error = usageQuery.error
+  const isLoading = usageQuery.isPending
+  const balances: BalancesState = summariesQuery.isPending
+    ? 'loading'
+    : summariesQuery.isError
+      ? 'error'
+      : 'ready'
 
   return (
     <Flex direction="column" gap="4" p="4">
@@ -166,6 +176,12 @@ export const HubUsagePage: React.FC = () => {
       {skusQuery.error && !error && (
         <Callout type="warning" message={`SKU names are unavailable: ${skusQuery.error.message}`} />
       )}
+      {summariesQuery.error && !error && (
+        <Callout
+          type="warning"
+          message={`Balances could not be loaded: ${summariesQuery.error.message}`}
+        />
+      )}
 
       {!isLoading && !error && (
         <Flex direction="column" gap="2">
@@ -181,6 +197,7 @@ export const HubUsagePage: React.FC = () => {
             workspaceLink={workspaceLink}
             emptyMessage={emptyMessage}
             skuName={skuName}
+            balances={balances}
           />
           {idleCount !== undefined && idleCount > 0 && (
             <Text size="2" color="gray">

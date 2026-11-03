@@ -11,6 +11,7 @@ import {
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
+import { HUB_QUERY_CACHE } from './hubQueryOptions'
 import { PeriodControls } from './PeriodControls'
 import {
   buildSkuUsage,
@@ -29,7 +30,8 @@ type ValueMode = 'credits' | 'raw'
 const RANKING_PARAMS = ['type', 'start', 'sku', 'name']
 
 export const HubWorkspaceUsagePage: React.FC = () => {
-  const { token } = useContext(AuthenticationContext)
+  const { token, userInfo } = useContext(AuthenticationContext)
+  const user = userInfo?.sub
   const { workspace = '' } = useParams<{ workspace: string }>()
   const state = useHubUsageSearchParams()
   const { periodType, period, previousPeriod, sku, inProgress } = state
@@ -37,15 +39,17 @@ export const HubWorkspaceUsagePage: React.FC = () => {
   const [mode, setMode] = useState<ValueMode>('credits')
 
   const summariesQuery = useQuery({
-    queryKey: ['hubWorkspaceSummaries', token],
+    queryKey: ['hubWorkspaceSummaries', user],
     queryFn: () => fetchWorkspaceSummaries(token!),
     enabled: Boolean(token),
+    ...HUB_QUERY_CACHE,
   })
 
   const skusQuery = useQuery({
-    queryKey: ['skus', token],
+    queryKey: ['skus', user],
     queryFn: () => fetchSkus(token!),
     enabled: Boolean(token),
+    ...HUB_QUERY_CACHE,
     retry: 1,
   })
 
@@ -58,7 +62,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
   const rangeEnd = period.end.toISOString()
   // Every SKU the workspace used is listed, so the ranking's SKU filter is not sent here.
   const usageQuery = useQuery({
-    queryKey: ['hubWorkspaceUsage', token, workspace, periodType, rangeStart, rangeEnd],
+    queryKey: ['hubWorkspaceUsage', user, workspace, periodType, rangeStart, rangeEnd],
     queryFn: () =>
       fetchAllAggregatedWorkspaceUsageData(workspace, token!, {
         start: rangeStart,
@@ -67,6 +71,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
         groupBy: ['sku'],
       }),
     enabled: Boolean(token) && Boolean(workspace) && !skusQuery.isPending,
+    ...HUB_QUERY_CACHE,
   })
 
   const rows = useMemo(
@@ -87,8 +92,9 @@ export const HubWorkspaceUsagePage: React.FC = () => {
     return text ? `?${text}` : ''
   }, [searchParams])
 
-  const error = summariesQuery.error ?? usageQuery.error
-  const isLoading = summariesQuery.isPending || usageQuery.isPending
+  // The balance, account and category fill in when they arrive; only usage holds the table back.
+  const error = usageQuery.error
+  const isLoading = usageQuery.isPending
   const raw = mode === 'raw'
 
   return (
@@ -131,6 +137,12 @@ export const HubWorkspaceUsagePage: React.FC = () => {
       {error && <Callout type="error" message={error.message} />}
       {skusQuery.error && !error && (
         <Callout type="warning" message={`SKU names are unavailable: ${skusQuery.error.message}`} />
+      )}
+      {summariesQuery.error && (
+        <Callout
+          type="warning"
+          message={`Balance and account could not be loaded: ${summariesQuery.error.message}`}
+        />
       )}
 
       {!isLoading && !error && (
