@@ -116,11 +116,15 @@ describe('Stage 2: period controls and URL state', () => {
   })
 
   it('steps to the previous and next period', async () => {
-    const { user } = await openRanking()
+    const { user, location } = await openRanking()
+    const startParam = () => new URLSearchParams(location().split('?')[1] ?? '').get('start')
     await user.click(previousButton())
     await expectUsageRange(api, SEPTEMBER)
+    await waitFor(() => expect(startParam()).toMatch(/^2026-09-01/))
     await user.click(nextButton())
-    await expectUsageRange(api, OCTOBER)
+    await waitFor(() => expect(startParam()).toMatch(/^2026-10-01/))
+    await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma']))
+    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
   })
 
   it('selects the period containing the picked date', async () => {
