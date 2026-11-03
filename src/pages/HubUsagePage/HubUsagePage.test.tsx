@@ -371,3 +371,75 @@ describe('Stage 3: ranking table and filters', () => {
     expect(await screen.findByText(/Requires the hub_admin role/)).toBeInTheDocument()
   })
 })
+
+describe('Stage 3: loading, empty ranking and exact credit sums', () => {
+  const pause = () => new Promise((resolve) => setTimeout(resolve, 100))
+
+  it('shows no empty or zero ranking while the SKU list is still loading', async () => {
+    api = installHubApi({ holdSkus: true })
+    renderHub('/accounting/hub')
+    await waitFor(() =>
+      expect(api.requests.some((request) => request.path === '/api/accounting/skus')).toBe(true),
+    )
+    await pause()
+
+    expect(screen.queryByText(/No workspaces match/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/No usage/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/workspaces? had no usage/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^0\.00$/)).not.toBeInTheDocument()
+    if (screen.queryByRole('table')) {
+      expect(totalsRow()).toBeUndefined()
+    }
+
+    api.releaseSkus()
+    await screen.findAllByText('ws-alpha')
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+    expect(totalsRow()).toHaveTextContent('3,000.00')
+  })
+
+  it('says No usage in this period when no workspace used anything and there is no name filter', async () => {
+    api = installHubApi({ usage: [] })
+    renderHub('/accounting/hub')
+    await expectUsageRange(api, OCTOBER)
+    expect(await within(table()).findByText('No usage in this period')).toBeInTheDocument()
+    expect(screen.queryByText('No workspaces match')).not.toBeInTheDocument()
+    expect(rankedNames()).toEqual([])
+  })
+
+  it('says No usage of this SKU in this period when no workspace used the filtered SKU', async () => {
+    const { user } = await openRanking()
+    await chooseSku(user, 'GPU hours')
+    await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('gpu'))
+    expect(
+      await within(table()).findByText('No usage of this SKU in this period'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('No workspaces match')).not.toBeInTheDocument()
+    expect(rankedNames()).toEqual([])
+  })
+
+  // In floating point 1000.060 + 1.005 is 1001.0649999..., which rounds to 1,001.06, and
+  // 1001.065 - 0.120 is 1000.9449999..., which rounds to +1,000.94.
+  const preciseUsage = [
+    {
+      workspace: 'ws-alpha',
+      sku: 'wfcpu',
+      current: { credits: '1000.060', quantity: 2000 },
+      previous: { credits: '0.120', quantity: 1 },
+    },
+    { workspace: 'ws-alpha', sku: 'storage', current: { credits: '1.005', quantity: 1 } },
+  ]
+
+  it('sums 3-decimal credit strings exactly and rounds the total half away from zero', async () => {
+    api = installHubApi({ usage: preciseUsage })
+    await openRanking()
+    expect(rankedNames()).toEqual(['ws-alpha'])
+    expect(cellText('ws-alpha', /^Total/i)).toBe('1,001.07')
+    expect(totalsRow()).toHaveTextContent('1,001.07')
+  })
+
+  it('works out the change exactly from 3-decimal credit strings', async () => {
+    api = installHubApi({ usage: preciseUsage })
+    await openRanking()
+    expect(cellText('ws-alpha', /^Change/i)).toBe('+1,000.95')
+  })
+})

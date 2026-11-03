@@ -90,7 +90,7 @@ interface UsageFigures {
   quantity: number
 }
 
-interface UsageEntry {
+export interface UsageEntry {
   workspace: string
   sku: string
   /** Usage in the selected period. */
@@ -176,8 +176,22 @@ const page = (rows: { uuid: string }[], params: URLSearchParams) => {
  * page asks for: the first period of the range gets the `previous` figures, the next one the
  * `current` figures. `sku=` filters rows as the API does, and `limit`/`after` page them.
  */
-export const installHubApi = () => {
+export interface HubApiOptions {
+  /** Usage entries to serve instead of the default `usage`. */
+  usage?: UsageEntry[]
+  /** Leave `GET /accounting/skus` unanswered until `releaseSkus()` is called. */
+  holdSkus?: boolean
+}
+
+export const installHubApi = (options: HubApiOptions = {}) => {
   const requests: RecordedRequest[] = []
+  const usageEntries = options.usage ?? usage
+  let releaseHeldSkus: (() => void) | undefined
+  const skusHeld = options.holdSkus
+    ? new Promise<void>((resolve) => {
+        releaseHeldSkus = resolve
+      })
+    : Promise.resolve()
   const failures = new Map<string, { status: number; body: unknown }>()
 
   const usageRows = (params: URLSearchParams, workspace?: string) => {
@@ -187,7 +201,7 @@ export const installHubApi = () => {
     const boundaryEnd = nextPeriodStart(type, boundary)
     const sku = params.get('sku')
     const rows: Record<string, unknown>[] = []
-    usage
+    usageEntries
       .filter((entry) => (workspace ? entry.workspace === workspace : true))
       .filter((entry) => (sku ? entry.sku === sku : true))
       .forEach((entry) => {
@@ -222,7 +236,7 @@ export const installHubApi = () => {
     const failure = [...failures.entries()].find(([prefix]) => path.startsWith(prefix))
     if (failure) return Promise.resolve(respond(failure[1].status, failure[1].body))
 
-    if (path === '/api/accounting/skus') return Promise.resolve(respond(200, skus))
+    if (path === '/api/accounting/skus') return skusHeld.then(() => respond(200, skus))
     if (path === '/api/accounting/workspaces') {
       return Promise.resolve(respond(200, workspaceSummaries))
     }
@@ -256,6 +270,8 @@ export const installHubApi = () => {
       failures.set(pathPrefix, { status, body })
     },
     usageRequests,
+    /** Answers the held `GET /accounting/skus` requests. */
+    releaseSkus: () => releaseHeldSkus?.(),
     lastUsageRequest: (pathPrefix = '/api/accounting/usage-data') => {
       const matching = usageRequests(pathPrefix)
       return matching[matching.length - 1]
