@@ -15,6 +15,7 @@ import { PeriodControls } from './PeriodControls'
 import {
   buildRanking,
   defaultDirection,
+  parseCredits,
   SortColumn,
   SortDirection,
   sortRanking,
@@ -43,6 +44,8 @@ export const HubUsagePage: React.FC = () => {
     queryKey: ['skus', token],
     queryFn: () => fetchSkus(token!),
     enabled: Boolean(token),
+    // The ranking waits for this list, so a failure should not hold it back for long.
+    retry: 1,
   })
 
   const skuName = useCallback(
@@ -70,7 +73,7 @@ export const HubUsagePage: React.FC = () => {
 
   const ranking = useMemo(() => {
     const balances = new Map(
-      (summariesQuery.data ?? []).map((ws) => [ws.workspace, Number(ws.balance)]),
+      (summariesQuery.data ?? []).map((ws) => [ws.workspace, parseCredits(ws.balance)]),
     )
     return buildRanking(usageQuery.data ?? [], period.start, balances)
   }, [usageQuery.data, summariesQuery.data, period])
@@ -82,6 +85,13 @@ export const HubUsagePage: React.FC = () => {
   const activeDirection = hidesSortColumn ? 'descending' : sortDirection
 
   // The name filter only hides rows; share and the totals row still cover every workspace.
+  const emptyMessage =
+    ranking.rows.length > 0
+      ? 'No workspaces match'
+      : sku
+        ? 'No usage of this SKU in this period'
+        : 'No usage in this period'
+
   const visibleRows = useMemo(() => {
     const needle = name.toLowerCase()
     const matching = ranking.rows.filter((row) => row.workspace.toLowerCase().includes(needle))
@@ -104,12 +114,16 @@ export const HubUsagePage: React.FC = () => {
     }
   }
 
-  const openWorkspace = (workspace: string) =>
-    navigate({ pathname: `/accounting/hub/${encodeURIComponent(workspace)}`, search })
+  const workspaceLink = (workspace: string) => ({
+    pathname: `/accounting/hub/${encodeURIComponent(workspace)}`,
+    search,
+  })
+  const openWorkspace = (workspace: string) => navigate(workspaceLink(workspace))
 
   // SKUs only supply display names, so a failed SKU list does not block the ranking.
   const error = summariesQuery.error ?? usageQuery.error
-  const isLoading = summariesQuery.isLoading || usageQuery.isLoading
+  // A disabled usage query is pending but not loading, so pending is what holds the ranking back.
+  const isLoading = summariesQuery.isPending || usageQuery.isPending
 
   return (
     <Flex direction="column" gap="4" p="4">
@@ -164,6 +178,8 @@ export const HubUsagePage: React.FC = () => {
             sortDirection={activeDirection}
             onSort={handleSort}
             onOpen={openWorkspace}
+            workspaceLink={workspaceLink}
+            emptyMessage={emptyMessage}
             skuName={skuName}
           />
           {idleCount !== undefined && idleCount > 0 && (

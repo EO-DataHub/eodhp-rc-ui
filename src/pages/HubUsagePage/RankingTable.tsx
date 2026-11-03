@@ -1,7 +1,9 @@
 import React from 'react'
 import { Table, Text } from '@radix-ui/themes'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
+import { Link, To } from 'react-router-dom'
 import {
+  Credits,
   formatChange,
   formatCredits,
   formatShare,
@@ -19,13 +21,16 @@ interface Column {
 
 interface RankingTableProps {
   rows: RankingRow[]
-  total: number
+  total: Credits
   showTopSku: boolean
   showChange: boolean
   sortColumn: SortColumn
   sortDirection: SortDirection
   onSort: (column: SortColumn) => void
   onOpen: (workspace: string) => void
+  workspaceLink: (workspace: string) => To
+  /** Shown in place of rows when there are none. */
+  emptyMessage: string
   skuName: (sku: string) => string
 }
 
@@ -38,6 +43,8 @@ export const RankingTable: React.FC<RankingTableProps> = ({
   sortDirection,
   onSort,
   onOpen,
+  workspaceLink,
+  emptyMessage,
   skuName,
 }) => {
   const columns: Column[] = [
@@ -83,7 +90,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         {rows.length === 0 && (
           <Table.Row>
             <Table.Cell colSpan={columns.length}>
-              <Text color="gray">No workspaces match</Text>
+              <Text color="gray">{emptyMessage}</Text>
             </Table.Cell>
           </Table.Row>
         )}
@@ -91,13 +98,15 @@ export const RankingTable: React.FC<RankingTableProps> = ({
           <Table.Row
             key={row.workspace}
             className={styles.clickableRow}
-            tabIndex={0}
-            onClick={() => onOpen(row.workspace)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter') onOpen(row.workspace)
+            onClick={(event) => {
+              // The workspace link navigates by itself; the row is only a mouse shortcut.
+              if ((event.target as Element).closest('a')) return
+              onOpen(row.workspace)
             }}
           >
-            <Table.Cell>{row.workspace}</Table.Cell>
+            <Table.Cell>
+              <Link to={workspaceLink(row.workspace)}>{row.workspace}</Link>
+            </Table.Cell>
             <Table.Cell align="right">{formatCredits(row.total)}</Table.Cell>
             <Table.Cell align="right">{formatShare(row.share)}</Table.Cell>
             {showTopSku && <Table.Cell>{skuName(row.topSku)}</Table.Cell>}
@@ -110,7 +119,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
         <Table.Row className={styles.totalsRow}>
           <Table.Cell>Total, all workspaces</Table.Cell>
           <Table.Cell align="right">{formatCredits(total)}</Table.Cell>
-          <Table.Cell align="right">{total > 0 ? formatShare(100) : ''}</Table.Cell>
+          <Table.Cell align="right">{total > 0n ? formatShare(100) : ''}</Table.Cell>
           {showTopSku && <Table.Cell />}
           {showChange && <Table.Cell />}
           <Table.Cell />

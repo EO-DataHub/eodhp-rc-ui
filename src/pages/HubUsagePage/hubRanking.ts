@@ -1,20 +1,58 @@
 import { BillingEvent } from '@/services/accountingService'
 
+/**
+ * Credits are held as whole units of 10^-CREDIT_SCALE so that sums and differences of the
+ * API's decimal strings stay exact.
+ */
+export type Credits = bigint
+
+const CREDIT_SCALE = 9
+const CREDIT_UNIT = 10n ** BigInt(CREDIT_SCALE)
+
+const roundedDivide = (value: bigint, divisor: bigint): bigint => {
+  const negative = value < 0n
+  const magnitude = negative ? -value : value
+  const quotient = (magnitude + divisor / 2n) / divisor
+  return negative ? -quotient : quotient
+}
+
+/** Parses a decimal credit string exactly, or returns undefined when it is not a number. */
+export const parseCredits = (value: string | number | null | undefined): Credits | undefined => {
+  if (value === null || value === undefined) return undefined
+  let text = String(value).trim()
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(text)) {
+    const number = Number(text)
+    if (text === '' || !Number.isFinite(number)) return undefined
+    text = number.toFixed(CREDIT_SCALE)
+  }
+  const negative = text.startsWith('-')
+  const unsigned = text.replace(/^[+-]/, '')
+  const [whole, fraction = ''] = unsigned.split('.')
+  let units = BigInt(whole || '0') * CREDIT_UNIT
+  if (fraction.length <= CREDIT_SCALE) {
+    units += BigInt(fraction.padEnd(CREDIT_SCALE, '0') || '0')
+  } else {
+    const excess = 10n ** BigInt(fraction.length - CREDIT_SCALE)
+    units += roundedDivide(BigInt(fraction), excess)
+  }
+  return negative ? -units : units
+}
+
 export interface RankingRow {
   workspace: string
-  total: number
+  total: Credits
   share: number
   /** SKU code with the most credits in the selected period. */
   topSku: string
   /** Credit difference against the previous period, or undefined when it had no usage. */
-  change: number | undefined
+  change: Credits | undefined
   /** Current balance, or undefined when the workspace is not in the summaries. */
-  balance: number | undefined
+  balance: Credits | undefined
 }
 
 export interface Ranking {
   rows: RankingRow[]
-  total: number
+  total: Credits
 }
 
 /**
@@ -24,33 +62,33 @@ export interface Ranking {
 export const buildRanking = (
   events: BillingEvent[],
   periodStart: Date,
-  balances: Map<string, number>,
+  balances: Map<string, Credits | undefined>,
 ): Ranking => {
   const startTime = periodStart.getTime()
-  const current = new Map<string, Map<string, number>>()
-  const previous = new Map<string, number>()
+  const current = new Map<string, Map<string, Credits>>()
+  const previous = new Map<string, Credits>()
 
   events.forEach((event) => {
-    const credits = Number(event.credits)
-    if (!Number.isFinite(credits)) return
+    const credits = parseCredits(event.credits)
+    if (credits === undefined) return
     if (new Date(event.event_start).getTime() >= startTime) {
-      const bySku = current.get(event.workspace) ?? new Map<string, number>()
-      bySku.set(event.item, (bySku.get(event.item) ?? 0) + credits)
+      const bySku = current.get(event.workspace) ?? new Map<string, Credits>()
+      bySku.set(event.item, (bySku.get(event.item) ?? 0n) + credits)
       current.set(event.workspace, bySku)
     } else {
-      previous.set(event.workspace, (previous.get(event.workspace) ?? 0) + credits)
+      previous.set(event.workspace, (previous.get(event.workspace) ?? 0n) + credits)
     }
   })
 
   const totals = [...current.entries()].map(([workspace, bySku]) => {
-    let total = 0
+    let total = 0n
     let topSku = ''
-    let topCredits = -Infinity
+    let topCredits: Credits | undefined
     ;[...bySku.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([sku, credits]) => {
         total += credits
-        if (credits > topCredits) {
+        if (topCredits === undefined || credits > topCredits) {
           topSku = sku
           topCredits = credits
         }
@@ -58,13 +96,13 @@ export const buildRanking = (
     return { workspace, total, topSku }
   })
 
-  const grandTotal = totals.reduce((sum, row) => sum + row.total, 0)
+  const grandTotal = totals.reduce((sum, row) => sum + row.total, 0n)
   const rows = totals.map(({ workspace, total, topSku }) => {
     const before = previous.get(workspace)
     return {
       workspace,
       total,
-      share: grandTotal > 0 ? (total / grandTotal) * 100 : 0,
+      share: grandTotal > 0n ? (Number(total) / Number(grandTotal)) * 100 : 0,
       topSku,
       change: before === undefined ? undefined : total - before,
       balance: balances.get(workspace),
@@ -81,7 +119,9 @@ export type SortDirection = 'ascending' | 'descending'
 export const defaultDirection = (column: SortColumn): SortDirection =>
   column === 'workspace' || column === 'topSku' ? 'ascending' : 'descending'
 
-const numericValue = (row: RankingRow, column: SortColumn): number => {
+type SortValue = number | bigint
+
+const numericValue = (row: RankingRow, column: SortColumn): SortValue => {
   switch (column) {
     case 'total':
       return row.total
@@ -117,17 +157,27 @@ export const sortRanking = (
   })
 }
 
-const creditFormat = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-const changeFormat = new Intl.NumberFormat('en-US', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-  signDisplay: 'exceptZero',
-})
+const groupFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
+const CENT_DIVISOR = 10n ** BigInt(CREDIT_SCALE - 2)
 
-export const formatCredits = (value: number) => creditFormat.format(value)
-export const formatChange = (value: number | undefined) =>
-  value === undefined ? 'New' : changeFormat.format(value)
+/** Rounds half away from zero to 2 decimals and returns the sign and grouped digits. */
+const roundToCents = (value: Credits) => {
+  const cents = roundedDivide(value, CENT_DIVISOR)
+  const magnitude = cents < 0n ? -cents : cents
+  const fraction = (magnitude % 100n).toString().padStart(2, '0')
+  return {
+    sign: cents < 0n ? -1 : cents > 0n ? 1 : 0,
+    digits: `${groupFormat.format(magnitude / 100n)}.${fraction}`,
+  }
+}
+
+export const formatCredits = (value: Credits) => {
+  const { sign, digits } = roundToCents(value)
+  return sign < 0 ? `-${digits}` : digits
+}
+export const formatChange = (value: Credits | undefined) => {
+  if (value === undefined) return 'New'
+  const { sign, digits } = roundToCents(value)
+  return sign < 0 ? `-${digits}` : sign > 0 ? `+${digits}` : digits
+}
 export const formatShare = (value: number) => `${value.toFixed(1)}%`
