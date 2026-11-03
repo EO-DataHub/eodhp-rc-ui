@@ -121,8 +121,11 @@ describe('Stage 2: period controls and URL state', () => {
     await user.click(previousButton())
     await expectUsageRange(api, SEPTEMBER)
     await waitFor(() => expect(startParam()).toMatch(/^2026-09-01/))
+    expect(await screen.findByText('September 2026')).toBeInTheDocument()
     await user.click(nextButton())
     await waitFor(() => expect(startParam()).toMatch(/^2026-10-01/))
+    expect(await screen.findByText('October 2026')).toBeInTheDocument()
+    expect(screen.queryByText('September 2026')).not.toBeInTheDocument()
     await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma']))
     expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
   })
@@ -530,6 +533,26 @@ describe('Stage 5: ranking token refresh and caching', () => {
     await userEvent.setup().click(previousButton())
     await expectUsageRange(api, SEPTEMBER)
     expect(api.lastUsageRequest().headers.Authorization).toBe('Bearer tok-2')
+  })
+
+  it('sends no hub read until the user is known, then each read once', async () => {
+    const { updateAuth } = renderHub('/accounting/hub', { userInfo: undefined })
+    await settle()
+    expect(countOf(USAGE)).toBe(0)
+    expect(countOf(WORKSPACES)).toBe(0)
+    expect(countOf(SKUS)).toBe(0)
+
+    updateAuth({ userInfo: { preferred_username: 'alice', sub: 'user-1' } })
+    await screen.findAllByText('ws-alpha')
+    await waitFor(() => expect(countOf(WORKSPACES)).toBe(1))
+    await waitFor(() => expect(countOf(SKUS)).toBe(1))
+    await settle()
+
+    expect({
+      usage: countOf(USAGE),
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual({ usage: 1, workspaces: 1, skus: 1 })
   })
 
   it('refetches when a different user signs in', async () => {

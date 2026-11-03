@@ -21,6 +21,7 @@ import {
   rankedNames,
   renderHub,
   rowFor,
+  skuControl,
   table,
 } from '@/test-data/hubUsagePage'
 
@@ -179,6 +180,17 @@ describe('Stage 4: workspace drill-down', () => {
     await user.click(screen.getByRole('link', { name: /back to all workspaces/i }))
 
     await waitFor(() => expect(location()).toMatch(/^\/accounting\/hub(\?|#|$)/))
+    const params = new URLSearchParams(location().split('?')[1]?.split('#')[0] ?? '')
+    expect(params.get('start')).toMatch(/^2026-09-01/)
+    expect(params.get('sku')).toBe('storage')
+    expect([...params.values()].some((value) => value === 'ALP')).toBe(true)
+    expect(await screen.findByText('September 2026')).toBeInTheDocument()
+    const control = skuControl()
+    if (control instanceof HTMLSelectElement) {
+      expect(control.selectedOptions[0]?.textContent).toBe('Storage')
+    } else {
+      expect(control).toHaveTextContent('Storage')
+    }
     await expectUsageRange(api, SEPTEMBER)
     expect(api.lastUsageRequest().params.get('sku')).toBe('storage')
     expect(nameInput()).toHaveValue('ALP')
@@ -257,6 +269,29 @@ describe('Stage 5: drill-down token refresh and caching', () => {
     await user.click(previousButton())
     await expectUsageRange(api, SEPTEMBER, ALPHA_USAGE)
     expect(api.lastUsageRequest(ALPHA_USAGE).headers.Authorization).toBe('Bearer tok-2')
+  })
+
+  it('sends no hub read until the user is known, then each read once', async () => {
+    const usageReads = () =>
+      api.requests.filter((request) => request.path.endsWith('/usage-data')).length
+    const { updateAuth } = renderHub('/accounting/hub/ws-alpha', { userInfo: undefined })
+    await settle()
+    expect(usageReads()).toBe(0)
+    expect(countOf(WORKSPACES)).toBe(0)
+    expect(countOf(SKUS)).toBe(0)
+
+    updateAuth({ userInfo: { preferred_username: 'alice', sub: 'user-1' } })
+    await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+    await waitFor(() => expect(countOf(WORKSPACES)).toBe(1))
+    await waitFor(() => expect(countOf(SKUS)).toBe(1))
+    await settle()
+
+    expect({
+      usage: usageReads(),
+      alphaUsage: api.usageRequests(ALPHA_USAGE).length,
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual({ usage: 1, alphaUsage: 1, workspaces: 1, skus: 1 })
   })
 
   it('does not read a period again when returning to it within 5 minutes', async () => {
