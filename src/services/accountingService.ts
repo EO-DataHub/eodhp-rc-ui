@@ -129,45 +129,68 @@ export interface BillingEvent {
   event_end: string
   item: string
   workspace: string
+  user?: string | null
   quantity: number
   credits: string
 }
+
+export type UsageGroupBy = 'workspace' | 'sku' | 'user'
 
 export interface FetchUsageDataParams {
   start?: string
   end?: string
   limit?: number
   after?: string
-  timeAggregation?: 'day' | 'month'
+  timeAggregation?: 'day' | 'week' | 'month' | 'quarter'
+  groupBy?: UsageGroupBy[]
+  sku?: string
 }
 
-export const fetchWorkspaceUsageData = async (
-  workspace: string,
-  token: string,
-  params: FetchUsageDataParams = {},
-): Promise<BillingEvent[]> => {
+// Carries the HTTP status so callers can tell a stale paging cursor (404) from other errors.
+export class UsageRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'UsageRequestError'
+    this.status = status
+  }
+}
+
+// The API rejects unknown or empty query parameters with a 422, so only set what has a value.
+const usageSearchParams = (params: FetchUsageDataParams): URLSearchParams => {
   const searchParams = new URLSearchParams()
   if (params.start) searchParams.set('start', params.start)
   if (params.end) searchParams.set('end', params.end)
   if (params.limit) searchParams.set('limit', String(params.limit))
   if (params.after) searchParams.set('after', params.after)
   if (params.timeAggregation) searchParams.set('time-aggregation', params.timeAggregation)
-  const queryString = searchParams.toString()
+  if (params.groupBy && params.groupBy.length > 0) {
+    searchParams.set('group-by', params.groupBy.join(','))
+  }
+  if (params.sku) searchParams.set('sku', params.sku)
+  return searchParams
+}
 
-  const response = await fetch(
-    `${HUB_BASE_URL}/api/workspaces/${workspace}/accounting/usage-data${queryString ? `?${queryString}` : ''}`,
-    {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+const fetchUsageData = async (
+  path: string,
+  token: string,
+  params: FetchUsageDataParams,
+): Promise<BillingEvent[]> => {
+  const queryString = usageSearchParams(params).toString()
+
+  const response = await fetch(`${HUB_BASE_URL}${path}${queryString ? `?${queryString}` : ''}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-  )
+  })
 
   if (!response.ok) {
     const detail = await extractErrorDetail(response)
-    throw new Error(
+    throw new UsageRequestError(
       detail ?? `Failed to fetch usage data: ${response.status} ${response.statusText}`,
+      response.status,
     )
   }
 
@@ -178,6 +201,55 @@ export const fetchWorkspaceUsageData = async (
   }
 
   return events as BillingEvent[]
+}
+
+export const fetchWorkspaceUsageData = async (
+  workspace: string,
+  token: string,
+  params: FetchUsageDataParams = {},
+): Promise<BillingEvent[]> =>
+  fetchUsageData(`/api/workspaces/${workspace}/accounting/usage-data`, token, params)
+
+// Usage across every workspace. The API only allows this for hub admins.
+export const fetchHubUsageData = async (
+  token: string,
+  params: FetchUsageDataParams = {},
+): Promise<BillingEvent[]> => fetchUsageData('/api/accounting/usage-data', token, params)
+
+export interface WorkspaceSummary {
+  workspace: string
+  account: string | null
+  category: string
+  assigned_category: string | null
+  balance: string
+  as_of: string
+  last_usage: string | null
+  total_granted: string
+}
+
+// Every workspace with its current balance, account and category. Hub admins only.
+export const fetchWorkspaceSummaries = async (token: string): Promise<WorkspaceSummary[]> => {
+  const response = await fetch(`${HUB_BASE_URL}/api/accounting/workspaces`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const detail = await extractErrorDetail(response)
+    throw new Error(
+      detail ?? `Failed to fetch workspaces: ${response.status} ${response.statusText}`,
+    )
+  }
+
+  const summaries = await response.json()
+
+  if (!Array.isArray(summaries)) {
+    throw new Error('Unexpected response format when fetching workspaces.')
+  }
+
+  return summaries as WorkspaceSummary[]
 }
 
 export interface LedgerTransaction {
@@ -262,4 +334,50 @@ export const fetchAllWorkspaceUsageData = async (
     after = batch[batch.length - 1].uuid
   }
   return events
+}
+
+// Hub-wide reads group by workspace and SKU per period, so a bounded range stays well under
+// this many pages; the cap only stops a runaway loop.
+const MAX_HUB_USAGE_PAGES = 100
+
+type PagedUsageParams = Omit<FetchUsageDataParams, 'limit' | 'after'>
+
+class StaleCursorError extends Error {}
+
+const fetchAllHubUsagePages = async (
+  token: string,
+  params: PagedUsageParams,
+): Promise<BillingEvent[]> => {
+  const events: BillingEvent[] = []
+  let after: string | undefined
+  for (let page = 0; page < MAX_HUB_USAGE_PAGES; page += 1) {
+    let batch: BillingEvent[]
+    try {
+      batch = await fetchHubUsageData(token, { ...params, limit: USAGE_PAGE_SIZE, after })
+    } catch (error) {
+      if (after && error instanceof UsageRequestError && error.status === 404) {
+        throw new StaleCursorError(error.message)
+      }
+      throw error
+    }
+    events.push(...batch)
+    if (batch.length < USAGE_PAGE_SIZE) return events
+    after = batch[batch.length - 1].uuid
+  }
+  throw new Error('Too much usage data to show for this range.')
+}
+
+// Fetches every hub-wide usage row in a bounded range by following the `after` cursor. Rows
+// are aggregates, so a total can change under the cursor while paging and the API answers
+// 404 for it; the whole fetch is then retried once from the start.
+export const fetchAllHubUsageData = async (
+  token: string,
+  params: PagedUsageParams = {},
+): Promise<BillingEvent[]> => {
+  try {
+    return await fetchAllHubUsagePages(token, params)
+  } catch (error) {
+    if (!(error instanceof StaleCursorError)) throw error
+    return fetchAllHubUsagePages(token, params)
+  }
 }
