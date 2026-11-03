@@ -8,6 +8,7 @@ export type Credits = bigint
 
 const CREDIT_SCALE = 9
 const CREDIT_UNIT = 10n ** BigInt(CREDIT_SCALE)
+const PLAIN_DECIMAL = /^[+-]?(\d+\.?\d*|\.\d+)$/
 
 const roundedDivide = (value: bigint, divisor: bigint): bigint => {
   const negative = value < 0n
@@ -20,10 +21,12 @@ const roundedDivide = (value: bigint, divisor: bigint): bigint => {
 export const parseCredits = (value: string | number | null | undefined): Credits | undefined => {
   if (value === null || value === undefined) return undefined
   let text = String(value).trim()
-  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(text)) {
+  if (!PLAIN_DECIMAL.test(text)) {
     const number = Number(text)
     if (text === '' || !Number.isFinite(number)) return undefined
     text = number.toFixed(CREDIT_SCALE)
+    // toFixed falls back to exponent form for magnitudes of 1e21 and above.
+    if (!PLAIN_DECIMAL.test(text)) return undefined
   }
   const negative = text.startsWith('-')
   const unsigned = text.replace(/^[+-]/, '')
@@ -181,3 +184,65 @@ export const formatChange = (value: Credits | undefined) => {
   return sign < 0 ? `-${digits}` : sign > 0 ? `+${digits}` : digits
 }
 export const formatShare = (value: number) => `${value.toFixed(1)}%`
+
+export interface SkuUsageRow {
+  sku: string
+  credits: Credits
+  quantity: number
+  /** Credit difference against the previous period, or undefined when it had no usage. */
+  creditChange: Credits | undefined
+  /** Quantity difference against the previous period, or undefined when it had no usage. */
+  quantityChange: number | undefined
+}
+
+interface SkuFigures {
+  credits: Credits
+  quantity: number
+}
+
+/**
+ * Builds one row per SKU with usage in the selected period, largest credits first. Events
+ * that start before `periodStart` belong to the previous period and only feed the change.
+ */
+export const buildSkuUsage = (events: BillingEvent[], periodStart: Date): SkuUsageRow[] => {
+  const startTime = periodStart.getTime()
+  const current = new Map<string, SkuFigures>()
+  const previous = new Map<string, SkuFigures>()
+
+  events.forEach((event) => {
+    const credits = parseCredits(event.credits)
+    if (credits === undefined) return
+    const quantity = Number.isFinite(event.quantity) ? event.quantity : 0
+    const target = new Date(event.event_start).getTime() >= startTime ? current : previous
+    const figures = target.get(event.item) ?? { credits: 0n, quantity: 0 }
+    target.set(event.item, {
+      credits: figures.credits + credits,
+      quantity: figures.quantity + quantity,
+    })
+  })
+
+  return [...current.entries()]
+    .map(([sku, figures]) => {
+      const before = previous.get(sku)
+      return {
+        sku,
+        credits: figures.credits,
+        quantity: figures.quantity,
+        creditChange: before === undefined ? undefined : figures.credits - before.credits,
+        quantityChange: before === undefined ? undefined : figures.quantity - before.quantity,
+      }
+    })
+    .sort((a, b) =>
+      a.credits === b.credits ? a.sku.localeCompare(b.sku) : a.credits > b.credits ? -1 : 1,
+    )
+}
+
+const quantityFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 })
+
+export const formatQuantity = (value: number) => quantityFormat.format(value)
+export const formatQuantityChange = (value: number | undefined) => {
+  if (value === undefined) return 'New'
+  const text = quantityFormat.format(Math.abs(value))
+  if (text === '0') return text
+  return value < 0 ? `-${text}` : `+${text}`
+}

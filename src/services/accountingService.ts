@@ -344,8 +344,10 @@ type PagedUsageParams = Omit<FetchUsageDataParams, 'limit' | 'after'>
 
 class StaleCursorError extends Error {}
 
-const fetchAllHubUsagePages = async (
-  token: string,
+type UsagePageFetcher = (params: FetchUsageDataParams) => Promise<BillingEvent[]>
+
+const fetchAllUsagePages = async (
+  fetchPage: UsagePageFetcher,
   params: PagedUsageParams,
 ): Promise<BillingEvent[]> => {
   const events: BillingEvent[] = []
@@ -353,7 +355,7 @@ const fetchAllHubUsagePages = async (
   for (let page = 0; page < MAX_HUB_USAGE_PAGES; page += 1) {
     let batch: BillingEvent[]
     try {
-      batch = await fetchHubUsageData(token, { ...params, limit: USAGE_PAGE_SIZE, after })
+      batch = await fetchPage({ ...params, limit: USAGE_PAGE_SIZE, after })
     } catch (error) {
       if (after && error instanceof UsageRequestError && error.status === 404) {
         throw new StaleCursorError(error.message)
@@ -367,17 +369,35 @@ const fetchAllHubUsagePages = async (
   throw new Error('Too much usage data to show for this range.')
 }
 
-// Fetches every hub-wide usage row in a bounded range by following the `after` cursor. Rows
-// are aggregates, so a total can change under the cursor while paging and the API answers
-// 404 for it; the whole fetch is then retried once from the start.
+// Rows are aggregates, so a total can change under the cursor while paging and the API
+// answers 404 for it; the whole fetch is then retried once from the start.
+const fetchAllUsageWithRetry = async (
+  fetchPage: UsagePageFetcher,
+  params: PagedUsageParams,
+): Promise<BillingEvent[]> => {
+  try {
+    return await fetchAllUsagePages(fetchPage, params)
+  } catch (error) {
+    if (!(error instanceof StaleCursorError)) throw error
+    return fetchAllUsagePages(fetchPage, params)
+  }
+}
+
+// Fetches every hub-wide usage row in a bounded range by following the `after` cursor.
 export const fetchAllHubUsageData = async (
   token: string,
   params: PagedUsageParams = {},
-): Promise<BillingEvent[]> => {
-  try {
-    return await fetchAllHubUsagePages(token, params)
-  } catch (error) {
-    if (!(error instanceof StaleCursorError)) throw error
-    return fetchAllHubUsagePages(token, params)
-  }
-}
+): Promise<BillingEvent[]> =>
+  fetchAllUsageWithRetry((pageParams) => fetchHubUsageData(token, pageParams), params)
+
+// Fetches every aggregated usage row of one workspace in a bounded range, paging and
+// retrying as the hub-wide read does.
+export const fetchAllAggregatedWorkspaceUsageData = async (
+  workspace: string,
+  token: string,
+  params: PagedUsageParams = {},
+): Promise<BillingEvent[]> =>
+  fetchAllUsageWithRetry(
+    (pageParams) => fetchWorkspaceUsageData(workspace, token, pageParams),
+    params,
+  )
