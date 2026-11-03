@@ -181,6 +181,8 @@ export interface HubApiOptions {
   usage?: UsageEntry[]
   /** Leave `GET /accounting/skus` unanswered until `releaseSkus()` is called. */
   holdSkus?: boolean
+  /** Leave `GET /accounting/workspaces` unanswered until `releaseWorkspaces()` is called. */
+  holdWorkspaces?: boolean
 }
 
 export const installHubApi = (options: HubApiOptions = {}) => {
@@ -190,6 +192,12 @@ export const installHubApi = (options: HubApiOptions = {}) => {
   const skusHeld = options.holdSkus
     ? new Promise<void>((resolve) => {
         releaseHeldSkus = resolve
+      })
+    : Promise.resolve()
+  let releaseHeldWorkspaces: (() => void) | undefined
+  const workspacesHeld = options.holdWorkspaces
+    ? new Promise<void>((resolve) => {
+        releaseHeldWorkspaces = resolve
       })
     : Promise.resolve()
   const failures = new Map<string, { status: number; body: unknown }>()
@@ -238,7 +246,7 @@ export const installHubApi = (options: HubApiOptions = {}) => {
 
     if (path === '/api/accounting/skus') return skusHeld.then(() => respond(200, skus))
     if (path === '/api/accounting/workspaces') {
-      return Promise.resolve(respond(200, workspaceSummaries))
+      return workspacesHeld.then(() => respond(200, workspaceSummaries))
     }
     if (path === '/api/accounting/usage-data') {
       return Promise.resolve(respond(200, page(usageRows(params), params)))
@@ -272,6 +280,8 @@ export const installHubApi = (options: HubApiOptions = {}) => {
     usageRequests,
     /** Answers the held `GET /accounting/skus` requests. */
     releaseSkus: () => releaseHeldSkus?.(),
+    /** Answers the held `GET /accounting/workspaces` requests. */
+    releaseWorkspaces: () => releaseHeldWorkspaces?.(),
     lastUsageRequest: (pathPrefix = '/api/accounting/usage-data') => {
       const matching = usageRequests(pathPrefix)
       return matching[matching.length - 1]

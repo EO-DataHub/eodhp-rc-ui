@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import {
   ALPHA_ACCOUNT,
@@ -190,5 +190,116 @@ describe('Stage 4: workspace drill-down', () => {
     const { user } = await openRanking()
     await user.click(within(table()).getByText('ws-alpha'))
     expect(await screen.findByText(/Requires the hub_admin role/)).toBeInTheDocument()
+  })
+})
+
+const WORKSPACES = '/api/accounting/workspaces'
+const SKUS = '/api/accounting/skus'
+
+const countOf = (path: string) => api.requests.filter((request) => request.path === path).length
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 100))
+
+const openAlphaDirectly = async () => {
+  const user = userEvent.setup()
+  const view = renderHub('/accounting/hub/ws-alpha')
+  await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+  return { user, ...view }
+}
+
+describe('Stage 5: drill-down while the workspace details load', () => {
+  it('shows the SKU table while /accounting/workspaces is pending, then the balance', async () => {
+    api = installHubApi({ holdWorkspaces: true })
+    renderHub('/accounting/hub/ws-alpha')
+    await waitFor(() => expect(countOf(WORKSPACES)).toBeGreaterThan(0))
+    await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+    expect(skuRow('Workflow CPU')).toHaveTextContent('1,500.00')
+    expect(skuRow('Storage')).toBeDefined()
+    expect(document.body).not.toHaveTextContent(ALPHA_ACCOUNT)
+
+    api.releaseWorkspaces()
+
+    await waitFor(() => expect(document.body).toHaveTextContent('1,250.50'))
+    expect(document.body).toHaveTextContent(ALPHA_ACCOUNT)
+    expect(skuRow('Workflow CPU')).toBeDefined()
+  })
+
+  it('shows the SKU table when /accounting/workspaces fails', async () => {
+    api.fail(WORKSPACES, 500, { detail: 'Upstream timed out' })
+    renderHub('/accounting/hub/ws-alpha')
+    await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+    await settle()
+    expect(skuRow('Workflow CPU')).toHaveTextContent('1,500.00')
+    expect(skuRow('Storage')).toHaveTextContent('300.00')
+  })
+})
+
+describe('Stage 5: drill-down token refresh and caching', () => {
+  it('does not refetch when the token changes for the same user, and uses the new token next', async () => {
+    const { updateAuth, user } = await openAlphaDirectly()
+    await settle()
+    const before = {
+      usage: api.usageRequests(ALPHA_USAGE).length,
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }
+
+    updateAuth({ token: 'tok-2', userInfo: { preferred_username: 'alice', sub: 'user-1' } })
+    await settle()
+
+    expect({
+      usage: api.usageRequests(ALPHA_USAGE).length,
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual(before)
+    expect(skuRow('Workflow CPU')).toBeDefined()
+
+    await user.click(previousButton())
+    await expectUsageRange(api, SEPTEMBER, ALPHA_USAGE)
+    expect(api.lastUsageRequest(ALPHA_USAGE).headers.Authorization).toBe('Bearer tok-2')
+  })
+
+  it('does not read a period again when returning to it within 5 minutes', async () => {
+    const { user } = await openAlphaDirectly()
+    await expectUsageRange(api, OCTOBER, ALPHA_USAGE)
+    const octoberReads = () =>
+      api
+        .usageRequests(ALPHA_USAGE)
+        .filter(
+          (request) =>
+            new Date(request.params.get('start') ?? '').getTime() ===
+            new Date(OCTOBER.start).getTime(),
+        ).length
+    expect(octoberReads()).toBe(1)
+
+    await user.click(previousButton())
+    await expectUsageRange(api, SEPTEMBER, ALPHA_USAGE)
+    await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+    await user.click(nextButton())
+    await waitFor(() => expect(skuRow('Workflow CPU')).toHaveTextContent('1,500.00'))
+    await settle()
+
+    expect(octoberReads()).toBe(1)
+  })
+
+  it('does not refetch on a window focus and keeps the SKU table shown', async () => {
+    await openAlphaDirectly()
+    await settle()
+    const before = {
+      usage: api.usageRequests(ALPHA_USAGE).length,
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }
+
+    fireEvent(window, new Event('visibilitychange'))
+    fireEvent(window, new Event('focus'))
+    await settle()
+
+    expect({
+      usage: api.usageRequests(ALPHA_USAGE).length,
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual(before)
+    expect(skuRow('Workflow CPU')).toBeDefined()
   })
 })

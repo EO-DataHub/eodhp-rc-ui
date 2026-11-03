@@ -30,20 +30,27 @@ export const renderHub = (entry: string, auth: Partial<AuthValue> = {}) => {
     current = `${pathname}${search}${hash}`
     return useRoutes([accountingRoute() as RouteObject])
   }
-  const utils = render(
+  const tree = (authOverrides: Partial<AuthValue>) => (
     <Theme>
       <QueryClientProvider client={queryClient}>
-        <AuthenticationContext.Provider value={authValue({ isHubAdmin: true, ...auth })}>
+        <AuthenticationContext.Provider value={authValue({ isHubAdmin: true, ...authOverrides })}>
           <MemoryRouter initialEntries={[entry]}>
             <AccountingRoutes />
           </MemoryRouter>
         </AuthenticationContext.Provider>
       </QueryClientProvider>
-    </Theme>,
+    </Theme>
   )
+  let currentAuth = auth
+  const utils = render(tree(currentAuth))
+  /** Rerenders in place with these auth values merged over the current ones, as a token refresh does. */
+  const updateAuth = (overrides: Partial<AuthValue>) => {
+    currentAuth = { ...currentAuth, ...overrides }
+    utils.rerender(tree(currentAuth))
+  }
   /** The current router location: pathname, search and hash. */
   const location = () => current
-  return { ...utils, location }
+  return { ...utils, location, updateAuth, queryClient }
 }
 
 // Period controls
@@ -148,11 +155,21 @@ const bodyRows = () =>
 export const rowFor = (name: string) =>
   bodyRows().find((row) => cellsOf(row).some((cell) => cell.textContent?.trim() === name))
 
-export const cellText = (rowName: string, column: RegExp) => {
+/** The cell of the row for `rowName` under the column whose header matches `column`. */
+export const cellOf = (rowName: string, column: RegExp) => {
   const row = rowFor(rowName)
   if (!row) throw new Error(`No row for ${rowName}`)
-  return cellsOf(row)[columnIndex(column)]?.textContent?.trim() ?? ''
+  const cell = cellsOf(row)[columnIndex(column)]
+  if (!cell) throw new Error(`No ${column} cell for ${rowName}`)
+  return cell
 }
+
+export const cellText = (rowName: string, column: RegExp) =>
+  cellOf(rowName, column).textContent?.trim() ?? ''
+
+/** True when the cell, or an element in it, is marked aria-busy="true". */
+export const isBusy = (cell: Element) =>
+  cell.getAttribute('aria-busy') === 'true' || cell.querySelector('[aria-busy="true"]') !== null
 
 /** The fixture workspaces listed in the ranking, in row order. */
 export const rankedNames = () =>

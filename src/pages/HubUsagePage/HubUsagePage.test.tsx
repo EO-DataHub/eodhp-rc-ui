@@ -1,8 +1,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HubApi, installHubApi, NOW, stubRadixBrowserApis } from '@/test-data/hubUsage'
 import {
+  cellOf,
   cellText,
   chooseSku,
   clickColumnHeader,
@@ -10,6 +11,7 @@ import {
   columnValues,
   expectUsageRange,
   groupByOf,
+  isBusy,
   nameInput,
   nextButton,
   parseCredits,
@@ -441,5 +443,141 @@ describe('Stage 3: loading, empty ranking and exact credit sums', () => {
     api = installHubApi({ usage: preciseUsage })
     await openRanking()
     expect(cellText('ws-alpha', /^Change/i)).toBe('+1,000.95')
+  })
+})
+
+const WORKSPACES = '/api/accounting/workspaces'
+const SKUS = '/api/accounting/skus'
+const USAGE = '/api/accounting/usage-data'
+
+const countOf = (path: string) => api.requests.filter((request) => request.path === path).length
+
+const usageRequestsFor = (range: { start: string }) =>
+  api
+    .usageRequests(USAGE)
+    .filter(
+      (request) =>
+        new Date(request.params.get('start') ?? '').getTime() === new Date(range.start).getTime(),
+    )
+
+const settle = () => new Promise((resolve) => setTimeout(resolve, 100))
+
+describe('Stage 5: ranking while the balances load', () => {
+  it('shows the ranking with loading balances while /accounting/workspaces is pending, then the balances', async () => {
+    api = installHubApi({ holdWorkspaces: true })
+    renderHub('/accounting/hub')
+    await screen.findAllByText('ws-alpha')
+    await waitFor(() => expect(countOf(WORKSPACES)).toBeGreaterThan(0))
+
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    for (const name of ['ws-alpha', 'ws-beta', 'ws-gamma']) {
+      expect(isBusy(cellOf(name, /^Balance/i)), `${name} balance is not busy`).toBe(true)
+      expect(cellText(name, /^Balance/i)).not.toMatch(/\d/)
+    }
+    expect(screen.queryByText(/workspaces? had no usage/i)).not.toBeInTheDocument()
+
+    api.releaseWorkspaces()
+
+    await waitFor(() => expect(cellText('ws-alpha', /^Balance/i)).toBe('1,250.50'))
+    expect(cellText('ws-beta', /^Balance/i)).toBe('20.00')
+    expect(cellText('ws-gamma', /^Balance/i)).toBe('5,000.00')
+    for (const name of ['ws-alpha', 'ws-beta', 'ws-gamma']) {
+      expect(isBusy(cellOf(name, /^Balance/i))).toBe(false)
+    }
+    expect(await screen.findByText(/2 workspaces had no usage in this period/)).toBeInTheDocument()
+  })
+
+  it('shows the ranking with — balances and a warning when /accounting/workspaces fails', async () => {
+    api.fail(WORKSPACES, 500, { detail: 'Upstream timed out' })
+    renderHub('/accounting/hub')
+    await screen.findAllByText('ws-alpha')
+
+    expect(await screen.findByText(/balances could not be loaded/i)).toBeInTheDocument()
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(totalsRow()).toHaveTextContent('3,000.00')
+    for (const name of ['ws-alpha', 'ws-beta', 'ws-gamma']) {
+      expect(cellText(name, /^Balance/i)).toBe('—')
+      expect(isBusy(cellOf(name, /^Balance/i))).toBe(false)
+    }
+    expect(screen.queryByText(/workspaces? had no usage/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('Stage 5: ranking token refresh and caching', () => {
+  it('does not refetch when the token changes for the same user, and uses the new token next', async () => {
+    const { updateAuth } = await openRanking()
+    await waitFor(() => expect(countOf(WORKSPACES)).toBe(1))
+    await waitFor(() => expect(countOf(SKUS)).toBe(1))
+    await settle()
+    const before = { usage: countOf(USAGE), workspaces: countOf(WORKSPACES), skus: countOf(SKUS) }
+
+    updateAuth({ token: 'tok-2', userInfo: { preferred_username: 'alice', sub: 'user-1' } })
+    await settle()
+
+    expect({
+      usage: countOf(USAGE),
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual(before)
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+
+    await userEvent.setup().click(previousButton())
+    await expectUsageRange(api, SEPTEMBER)
+    expect(api.lastUsageRequest().headers.Authorization).toBe('Bearer tok-2')
+  })
+
+  it('refetches when a different user signs in', async () => {
+    const { updateAuth } = await openRanking()
+    await settle()
+    const before = countOf(USAGE)
+    updateAuth({ token: 'tok-2', userInfo: { preferred_username: 'bob', sub: 'user-2' } })
+    await waitFor(() => expect(countOf(USAGE)).toBeGreaterThan(before))
+  })
+
+  it('does not read a period again when returning to it within 5 minutes', async () => {
+    const { user } = await openRanking()
+    await expectUsageRange(api, OCTOBER)
+    expect(usageRequestsFor(OCTOBER)).toHaveLength(1)
+
+    await user.click(previousButton())
+    await expectUsageRange(api, SEPTEMBER)
+    await waitFor(() => expect(totalsRow()).toBeDefined())
+    vi.setSystemTime(new Date(NOW.getTime() + 4 * 60 * 1000))
+    await user.click(nextButton())
+    await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma']))
+    await settle()
+
+    expect(usageRequestsFor(OCTOBER)).toHaveLength(1)
+    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+  })
+
+  it('reads a period again when returning to it after more than 5 minutes', async () => {
+    const { user } = await openRanking()
+    await user.click(previousButton())
+    await expectUsageRange(api, SEPTEMBER)
+    await waitFor(() => expect(totalsRow()).toBeDefined())
+    vi.setSystemTime(new Date(NOW.getTime() + 6 * 60 * 1000))
+    await user.click(nextButton())
+    await waitFor(() => expect(usageRequestsFor(OCTOBER)).toHaveLength(2))
+  })
+
+  it('does not refetch on a window focus and keeps the ranking shown', async () => {
+    await openRanking()
+    await waitFor(() => expect(countOf(WORKSPACES)).toBe(1))
+    await settle()
+    const before = { usage: countOf(USAGE), workspaces: countOf(WORKSPACES), skus: countOf(SKUS) }
+
+    fireEvent(window, new Event('visibilitychange'))
+    fireEvent(window, new Event('focus'))
+    await settle()
+
+    expect({
+      usage: countOf(USAGE),
+      workspaces: countOf(WORKSPACES),
+      skus: countOf(SKUS),
+    }).toEqual(before)
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
   })
 })

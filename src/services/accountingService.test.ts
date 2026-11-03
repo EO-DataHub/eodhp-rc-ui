@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  fetchAllAggregatedWorkspaceUsageData,
   fetchAllHubUsageData,
+  fetchAllWorkspaceUsageData,
   fetchWorkspaceSummaries,
   fetchWorkspaceUsageData,
 } from './accountingService'
@@ -257,5 +259,52 @@ describe('Stage 1: accounting service query strings', () => {
       fetchMock.mockResolvedValue(respond(403, { detail: 'Requires the hub_admin role' }))
       await expect(fetchWorkspaceSummaries('tok')).rejects.toThrow('Requires the hub_admin role')
     })
+  })
+})
+
+describe('Stage 5: hub usage page size', () => {
+  const params = {
+    start: START,
+    end: END,
+    timeAggregation: 'month' as const,
+    groupBy: ['workspace' as const, 'sku' as const],
+  }
+  const readers = [
+    ['fetchAllHubUsageData', () => fetchAllHubUsageData('tok', params)],
+    [
+      'fetchAllAggregatedWorkspaceUsageData',
+      () => fetchAllAggregatedWorkspaceUsageData('ws-alpha', 'tok', params),
+    ],
+  ] as const
+
+  describe.each(readers)('%s', (_name, read) => {
+    it('sends one request with limit=5000 when fewer rows come back', async () => {
+      fetchMock.mockResolvedValue(respond(200, []))
+      fetchMock.mockResolvedValueOnce(respond(200, rows('a', 4999)))
+      const result = await read()
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+      expect(callParams(0).get('limit')).toBe('5000')
+      expect(callParams(0).has('after')).toBe(false)
+      expect(result).toHaveLength(4999)
+    })
+
+    it('sends a second request with after when exactly 5,000 rows come back', async () => {
+      fetchMock.mockImplementation((url) =>
+        Promise.resolve(respond(200, afterOf(url) ? rows('b', 3) : rows('a', 5000))),
+      )
+      const result = await read()
+      expect(fetchMock).toHaveBeenCalledTimes(2)
+      expect(callParams(0).get('limit')).toBe('5000')
+      expect(callParams(1).get('limit')).toBe('5000')
+      expect(afterOf(callUrl(1))).toBe('a-4999')
+      expect(result).toHaveLength(5003)
+    })
+  })
+
+  it('fetchAllWorkspaceUsageData keeps its own page size for raw events', async () => {
+    fetchMock.mockResolvedValue(respond(200, rows('a', 2)))
+    await fetchAllWorkspaceUsageData('ws-alpha', 'tok', { start: START, end: END })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(callParams(0).get('limit')).not.toBe('5000')
   })
 })
