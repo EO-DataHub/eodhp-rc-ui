@@ -136,7 +136,10 @@ describe('Stage 4: workspace drill-down', () => {
     expect(cpu?.textContent).toMatch(/\+1,?809/)
     expect(cpu).toHaveTextContent('cpu-seconds')
     const storage = skuRow('Storage')
-    expect(storage?.textContent).toMatch(/\b30\b/)
+    const storageCells = Array.from(storage?.querySelectorAll('th, td') ?? []).map(
+      (cell) => cell.textContent?.trim() ?? '',
+    )
+    expect(storageCells.some((text) => /^30(?![\d.,]*\d)/.test(text))).toBe(true)
     expect(storage).toHaveTextContent('GB-hours')
     expect(storage).toHaveTextContent('New')
   })
