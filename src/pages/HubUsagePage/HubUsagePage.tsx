@@ -29,6 +29,8 @@ const ALL_SKUS = 'all'
 export const HubUsagePage: React.FC = () => {
   const { token, userInfo } = useContext(AuthenticationContext)
   const user = userInfo?.sub
+  // Queries are keyed on the user, so reading before the user is known would read twice.
+  const ready = Boolean(token) && Boolean(user)
   const state = useHubUsageSearchParams()
   const { periodType, period, previousPeriod, sku, name, inProgress } = state
   const navigate = useNavigate()
@@ -39,14 +41,14 @@ export const HubUsagePage: React.FC = () => {
   const summariesQuery = useQuery({
     queryKey: ['hubWorkspaceSummaries', user],
     queryFn: () => fetchWorkspaceSummaries(token!),
-    enabled: Boolean(token),
+    enabled: ready,
     ...HUB_QUERY_CACHE,
   })
 
   const skusQuery = useQuery({
     queryKey: ['skus', user],
     queryFn: () => fetchSkus(token!),
-    enabled: Boolean(token),
+    enabled: ready,
     ...HUB_QUERY_CACHE,
     // The ranking waits for this list, so a failure should not hold it back for long.
     retry: 1,
@@ -72,7 +74,7 @@ export const HubUsagePage: React.FC = () => {
       }),
     // Waits for the SKU list to settle so rows first render with SKU names, but a failed
     // list does not block the ranking: names then fall back to the SKU code.
-    enabled: Boolean(token) && !skusQuery.isPending,
+    enabled: ready && !skusQuery.isPending,
     ...HUB_QUERY_CACHE,
   })
 

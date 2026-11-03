@@ -32,6 +32,8 @@ const RANKING_PARAMS = ['type', 'start', 'sku', 'name']
 export const HubWorkspaceUsagePage: React.FC = () => {
   const { token, userInfo } = useContext(AuthenticationContext)
   const user = userInfo?.sub
+  // Queries are keyed on the user, so reading before the user is known would read twice.
+  const ready = Boolean(token) && Boolean(user)
   const { workspace = '' } = useParams<{ workspace: string }>()
   const state = useHubUsageSearchParams()
   const { periodType, period, previousPeriod, sku, inProgress } = state
@@ -41,14 +43,14 @@ export const HubWorkspaceUsagePage: React.FC = () => {
   const summariesQuery = useQuery({
     queryKey: ['hubWorkspaceSummaries', user],
     queryFn: () => fetchWorkspaceSummaries(token!),
-    enabled: Boolean(token),
+    enabled: ready,
     ...HUB_QUERY_CACHE,
   })
 
   const skusQuery = useQuery({
     queryKey: ['skus', user],
     queryFn: () => fetchSkus(token!),
-    enabled: Boolean(token),
+    enabled: ready,
     ...HUB_QUERY_CACHE,
     retry: 1,
   })
@@ -70,7 +72,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
         timeAggregation: periodType,
         groupBy: ['sku'],
       }),
-    enabled: Boolean(token) && Boolean(workspace) && !skusQuery.isPending,
+    enabled: ready && Boolean(workspace) && !skusQuery.isPending,
     ...HUB_QUERY_CACHE,
   })
 
