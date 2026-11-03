@@ -1,0 +1,24 @@
+.sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  user-select: none;
+}
+
+.clickableRow {
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--gray-a3);
+  }
+}
+
+.totalsRow {
+  font-weight: bold;
+}
