@@ -1,0 +1,41 @@
+name: Deploy to test or staging
+
+# Deploys any branch, tag or commit to the test or staging hub, built with
+# that environment's config. Each environment holds one build at a time: the
+# latest deploy wins. <site>/version.json shows which ref is running.
+#
+#   gh workflow run deploy-environment.yml -f environment=test -f ref=feat/my-branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment
+        type: choice
+        options:
+          - test
+          - staging
+        required: true
+      ref:
+        description: Branch, tag or commit SHA to deploy
+        type: string
+        default: main
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: ${{ inputs.environment }}
+      ref: ${{ inputs.ref }}
+      url: https://${{ inputs.environment }}.eodatahub.org.uk/static-apps/sg-rc-ui/${{ inputs.environment }}/

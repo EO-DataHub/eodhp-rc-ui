@@ -1,0 +1,166 @@
+name: Build and deploy (reusable)
+
+# Builds one ref with one GitHub environment's variables and uploads it to S3.
+# Called by deploy-latest.yml, release.yml and deploy-environment.yml.
+#
+# Variables are read from the GitHub environment named in `environment`, with
+# repository-level variables as the fallback (GitHub merges them). Each
+# environment must set:
+#   DEPLOYMENT_BUCKET                   S3 bucket
+#   <role_var>                          IAM role ARN to assume
+#   DEPLOYMENT_FOLDER, VITE_BASE_PATH   unless base_path/s3_prefix are passed
+# Vite writes VITE_* values into the build, so every environment needs its
+# own build: a build cannot be promoted from one environment to another.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub environment to deploy to (selects variables and protection rules)
+        type: string
+        required: true
+      ref:
+        description: Branch, tag or commit to build
+        type: string
+        required: true
+      role_var:
+        description: Name of the variable holding the IAM role ARN
+        type: string
+        default: GHA_AWS_DEPLOY_ROLE_EODH
+      base_path:
+        description: Vite base path. Defaults to the environment's VITE_BASE_PATH
+        type: string
+        default: ''
+      s3_prefix:
+        description: Folder in the bucket, with a trailing slash. Defaults to the environment's DEPLOYMENT_FOLDER
+        type: string
+        default: ''
+      url:
+        description: URL shown on the GitHub deployment
+        type: string
+        default: ''
+      analytics:
+        description: Build with the environment's Google Analytics ID
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.ref }} to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ inputs.url }}
+    env:
+      BASE_PATH: ${{ inputs.base_path || vars.VITE_BASE_PATH }}
+      S3_PREFIX: ${{ inputs.s3_prefix || vars.DEPLOYMENT_FOLDER }}
+    steps:
+      - name: Check configuration
+        env:
+          BUCKET: ${{ vars.DEPLOYMENT_BUCKET }}
+          ROLE: ${{ vars[inputs.role_var] }}
+        run: |
+          missing=0
+          for name in BUCKET ROLE BASE_PATH S3_PREFIX; do
+            if [ -z "${!name}" ]; then
+              echo "::error::${name} is not set for environment '${{ inputs.environment }}'"
+              missing=1
+            fi
+          done
+          case "$S3_PREFIX" in
+            */) ;;
+            *) echo "::error::S3 prefix '$S3_PREFIX' must end with /"; missing=1 ;;
+          esac
+          exit $missing
+
+      - name: Checkout ${{ inputs.ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          VITE_BASE_PATH: ${{ env.BASE_PATH }}
+          VITE_HUB_BASE_URL: ${{ vars.VITE_HUB_BASE_URL }}
+          VITE_CATALOGUE_API_URL: ${{ vars.VITE_CATALOGUE_API_URL }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
+          VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
+          VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
+          VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
+          VITE_RC_SUPPORT_UTILS_URL: ${{ vars.VITE_RC_SUPPORT_UTILS_URL }}
+          VITE_WORKFLOW_RESULTS_WORKSPACE_NAME: ${{ vars.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME }}
+          VITE_WORKSPACES_DOMAIN: ${{ vars.VITE_WORKSPACES_DOMAIN }}
+          VITE_GA_MEASUREMENT_ID: ${{ inputs.analytics && vars.VITE_GA_MEASUREMENT_ID || '' }}
+          VITE_OPEN_COSMOS_AUTH_DOMAIN: ${{ vars.VITE_OPEN_COSMOS_AUTH_DOMAIN }}
+          VITE_OPEN_COSMOS_CLIENT_ID: ${{ vars.VITE_OPEN_COSMOS_CLIENT_ID }}
+          VITE_OPEN_COSMOS_AUDIENCE: ${{ vars.VITE_OPEN_COSMOS_AUDIENCE }}
+          VITE_OPEN_COSMOS_REDIRECT_URI: ${{ vars.VITE_OPEN_COSMOS_REDIRECT_URI }}
+          VITE_OPEN_COSMOS_SCOPE: ${{ vars.VITE_OPEN_COSMOS_SCOPE }}
+
+      # Shows which ref an environment is running: <site>/version.json
+      - name: Write version.json
+        env:
+          REF: ${{ inputs.ref }}
+          ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          jq -n \
+            --arg ref "$REF" \
+            --arg sha "$(git rev-parse HEAD)" \
+            --arg environment "$ENVIRONMENT" \
+            --arg built "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg run "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            '{ref: $ref, sha: $sha, environment: $environment, built: $built, run: $run}' \
+            > dist/version.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars[inputs.role_var] }}
+          aws-region: ${{ vars.DEPLOYMENT_REGION }}
+
+      # cp, not sync: cp re-uploads every file, which also resets object ages
+      # for buckets with expiry rules.
+      - name: Upload to S3
+        env:
+          DEST: s3://${{ vars.DEPLOYMENT_BUCKET }}/${{ env.S3_PREFIX }}
+        run: |
+          # Vite's hashed bundles never change, so cache them for a long time.
+          if [ -d dist/assets ]; then
+            aws s3 cp dist/assets "${DEST}assets" --recursive \
+              --cache-control "public,max-age=31536000,immutable"
+          fi
+          # index.html, silent-check-sso.html, version.json and public/ files
+          # can change between deploys, so browsers must revalidate them.
+          aws s3 cp dist "${DEST}" --recursive --exclude "assets/*" \
+            --cache-control "max-age=0,must-revalidate"
+          # The hub serves "<folder>/" by fetching an object whose key is the
+          # folder itself, so upload index.html there too.
+          aws s3 cp dist/index.html "${DEST}" \
+            --cache-control "max-age=0,must-revalidate" --content-type text/html
+
+      - name: Summary
+        env:
+          REF: ${{ inputs.ref }}
+          URL: ${{ inputs.url }}
+        run: |
+          {
+            echo "### Deployed \`${REF}\` to ${{ inputs.environment }}"
+            echo "- Commit: \`$(git rev-parse --short HEAD)\`"
+            echo "- Location: \`s3://${{ vars.DEPLOYMENT_BUCKET }}/${S3_PREFIX}\`"
+            if [ -n "$URL" ]; then echo "- URL: ${URL}"; fi
+          } >> "$GITHUB_STEP_SUMMARY"
