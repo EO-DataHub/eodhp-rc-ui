@@ -30,3 +30,4 @@ jobs:
       base_path: /rc/latest/
       s3_prefix: rc/latest/
       url: https://preview.eodatahub.org.uk/rc/latest/
+      analytics: true
