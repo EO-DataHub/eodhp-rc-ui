@@ -142,6 +142,34 @@ export const usageWithZeroCredits: UsageEntry[] = [
   },
 ]
 
+/**
+ * The default usage plus usage whose previous period cost exactly 0 credits: epsilon used
+ * 50.00 in the selected period after two 0-credit SKUs in the previous one, and alpha used
+ * GPU hours (25.00) after a 0-credit GPU row. Both count as "New" in credits.
+ */
+export const usageWithZeroCreditPrevious: UsageEntry[] = [
+  ...usage,
+  {
+    workspace: 'ws-epsilon',
+    sku: 'wfcpu',
+    current: { credits: '50.00', quantity: 100 },
+    previous: { credits: '0.000', quantity: 4 },
+  },
+  { workspace: 'ws-epsilon', sku: 'storage', previous: { credits: '0.000', quantity: 1 } },
+  {
+    workspace: 'ws-alpha',
+    sku: 'gpu',
+    current: { credits: '25.00', quantity: 5 },
+    previous: { credits: '0.000', quantity: 2 },
+  },
+]
+
+/** The default usage plus epsilon using 0.001 credits in the selected period. */
+export const usageWithTinyCredits: UsageEntry[] = [
+  ...usage,
+  { workspace: 'ws-epsilon', sku: 'wfcpu', current: { credits: '0.001', quantity: 1 } },
+]
+
 export const RANKED_WORKSPACES = ['ws-alpha', 'ws-beta', 'ws-gamma']
 
 /** The start of the period after the one starting at `start`, in UTC. */

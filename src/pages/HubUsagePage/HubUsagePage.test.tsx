@@ -6,6 +6,8 @@ import {
   installHubApi,
   NOW,
   stubRadixBrowserApis,
+  usageWithTinyCredits,
+  usageWithZeroCreditPrevious,
   usageWithZeroCredits,
 } from '@/test-data/hubUsage'
 import {
@@ -673,6 +675,20 @@ describe('Stage 6: default period in the URL', () => {
   })
 })
 
+/** Switches the ranking to `type` and checks its period menu lists `expected`, in order. */
+const expectRecentPeriods = async (
+  type: 'Day' | 'Week' | 'Month' | 'Quarter',
+  label: RegExp,
+  expected: readonly string[],
+) => {
+  const { user } = await openRanking()
+  await user.click(periodTypeRadio(type))
+  await waitFor(() => expect(periodMenuButton(label)).toBeInTheDocument())
+  const names = await periodMenuItemNames(user, label)
+  expect(names).toHaveLength(12)
+  expected.forEach((period, index) => expect(names[index]).toMatch(new RegExp(`^${period}`)))
+}
+
 describe('Stage 7: period menu', () => {
   const MONTHS = [
     'November 2026',
@@ -708,14 +724,7 @@ describe('Stage 7: period menu', () => {
     ['Quarter', /^Q3 2026/, QUARTERS],
   ] as const)(
     'lists the 12 most recent %s periods, newest first, ending at the current one',
-    async (type, label, expected) => {
-      const { user } = await openRanking()
-      await user.click(periodTypeRadio(type))
-      await waitFor(() => expect(periodMenuButton(label)).toBeInTheDocument())
-      const names = await periodMenuItemNames(user, label)
-      expect(names).toHaveLength(12)
-      expected.forEach((period, index) => expect(names[index]).toMatch(new RegExp(`^${period}`)))
-    },
+    expectRecentPeriods,
   )
 
   it('moves to the chosen period, updates the URL start and closes the menu', async () => {
@@ -780,5 +789,73 @@ describe('Stage 7: no SKU filter on the ranking', () => {
     expect(cellText('ws-alpha', /^Top SKU/i)).toBe('Workflow CPU')
     expect(await screen.findByText(/2 workspaces had no usage in this period/)).toBeInTheDocument()
     expect(screen.queryByText(/of this SKU/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('Stage 8: period menu for days and weeks', () => {
+  const DAYS = [
+    '3 Nov 2026',
+    '2 Nov 2026',
+    '1 Nov 2026',
+    '31 Oct 2026',
+    '30 Oct 2026',
+    '29 Oct 2026',
+    '28 Oct 2026',
+    '27 Oct 2026',
+    '26 Oct 2026',
+    '25 Oct 2026',
+    '24 Oct 2026',
+    '23 Oct 2026',
+  ]
+  const WEEKS = [
+    'Week of 2 Nov 2026',
+    'Week of 26 Oct 2026',
+    'Week of 19 Oct 2026',
+    'Week of 12 Oct 2026',
+    'Week of 5 Oct 2026',
+    'Week of 28 Sept? 2026',
+    'Week of 21 Sept? 2026',
+    'Week of 14 Sept? 2026',
+    'Week of 7 Sept? 2026',
+    'Week of 31 Aug 2026',
+    'Week of 24 Aug 2026',
+    'Week of 17 Aug 2026',
+  ]
+
+  it.each([
+    ['Day', /^2 Nov 2026/, DAYS],
+    ['Week', /^Week of 26 Oct 2026/, WEEKS],
+  ] as const)(
+    'lists the 12 most recent %s periods, newest first, ending at the current one',
+    expectRecentPeriods,
+  )
+})
+
+describe('Stage 8: 0-credit previous usage counts as New', () => {
+  it('shows New for a workspace whose previous usage cost 0 credits and sorts it with the other New rows', async () => {
+    api = installHubApi({ usage: usageWithZeroCreditPrevious })
+    const { user } = await openRanking()
+    await waitFor(() => expect(rowFor('ws-epsilon')).toBeDefined())
+    expect(cellText('ws-epsilon', /^Change/i)).toBe('New')
+
+    await clickColumnHeader(user, /^Change/i)
+    if (columnHeader(/^Change/i)?.getAttribute('aria-sort') !== 'descending') {
+      await clickColumnHeader(user, /^Change/i)
+    }
+    expect(columnHeader(/^Change/i)).toHaveAttribute('aria-sort', 'descending')
+    const names = rankedNames()
+    expect([...names.slice(0, 2)].sort()).toEqual(['ws-beta', 'ws-epsilon'])
+    expect(names.slice(2)).toEqual(['ws-alpha', 'ws-gamma'])
+  })
+})
+
+describe('Stage 8: workspaces with tiny credits', () => {
+  it('lists a workspace whose credits sum to 0.001 and does not count it as idle', async () => {
+    api = installHubApi({ usage: usageWithTinyCredits })
+    await openRanking()
+    await waitFor(() => expect(rowFor('ws-epsilon')).toBeDefined())
+    expect(cellText('ws-epsilon', /^Total/i)).toBe('0.00')
+    expect(rowFor('ws-delta')).toBeUndefined()
+    expect(await screen.findByText(/^1 workspace had no usage in this period/)).toBeInTheDocument()
   })
 })

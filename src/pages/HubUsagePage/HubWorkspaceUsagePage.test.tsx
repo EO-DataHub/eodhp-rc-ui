@@ -7,8 +7,10 @@ import {
   installHubApi,
   NOW,
   stubRadixBrowserApis,
+  usageWithZeroCreditPrevious,
 } from '@/test-data/hubUsage'
 import {
+  choosePeriod,
   columnHeader,
   expectUsageRange,
   groupByOf,
@@ -16,6 +18,8 @@ import {
   loadingIndicator,
   nameInput,
   nextButton,
+  periodMenuButton,
+  periodMenuItemNames,
   periodTypeRadio,
   previousButton,
   rankedNames,
@@ -324,5 +328,44 @@ describe('Stage 7: drill-down without a SKU highlight', () => {
     expect(isHighlighted(skuRow('Storage'))).toBe(false)
     expect(isHighlighted(skuRow('Workflow CPU'))).toBe(false)
     expect(api.lastUsageRequest(ALPHA_USAGE).params.has('sku')).toBe(false)
+  })
+})
+
+describe('Stage 8: 0-credit previous usage in the drill-down', () => {
+  it('shows New in credits for a SKU whose previous usage cost 0 credits', async () => {
+    api = installHubApi({ usage: usageWithZeroCreditPrevious })
+    renderHub('/accounting/hub/ws-alpha?type=month&start=2026-10-01')
+    await waitFor(() => expect(skuRow('GPU hours')).toBeDefined())
+    expect(screen.getByRole('radio', { name: 'Credits' })).toHaveAttribute('aria-checked', 'true')
+    expect(skuRow('GPU hours')).toHaveTextContent('25.00')
+    expect(skuRow('GPU hours')).toHaveTextContent('New')
+  })
+})
+
+describe('Stage 8: period menu on the drill-down', () => {
+  it('lists 12 periods and moves to the chosen one, updating the URL start', async () => {
+    const user = userEvent.setup()
+    const { location } = renderHub('/accounting/hub/ws-alpha')
+    await waitFor(() => expect(skuRow('Workflow CPU')).toBeDefined())
+
+    const names = await periodMenuItemNames(user, /^October 2026/)
+    expect(names).toHaveLength(12)
+    expect(names[0]).toMatch(/^November 2026/)
+    expect(names[11]).toMatch(/^December 2025/)
+    await user.keyboard('{Escape}')
+
+    await choosePeriod(user, /^October 2026/, 'May 2026')
+    await expectUsageRange(
+      api,
+      { start: '2026-04-01T00:00:00Z', end: '2026-06-01T00:00:00Z', type: 'month' },
+      ALPHA_USAGE,
+    )
+    await waitFor(() =>
+      expect(new URLSearchParams(location().split('?')[1] ?? '').get('start')).toMatch(
+        /^2026-05-01/,
+      ),
+    )
+    expect(location()).toMatch(/^\/accounting\/hub\/ws-alpha\?/)
+    expect(periodMenuButton(/^May 2026/)).toBeInTheDocument()
   })
 })
