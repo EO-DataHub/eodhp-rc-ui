@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { fetchJobsForWorkspace, fetchJobsForSharedWorkspace } from '@/services/workflowJobService'
@@ -21,6 +21,11 @@ export const WorkflowOutputsPage: React.FC = () => {
     jobId?: string
   }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Set by the Run workflow dialog, to show the jobs of the workflow it started
+  const workflowFilter = searchParams.get('workflow') ?? ''
+  // Keeps the workflow filter when a job opens and closes
+  const filterQuery = workflowFilter ? `?workflow=${encodeURIComponent(workflowFilter)}` : ''
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const [searchText, setSearchText] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
@@ -46,13 +51,21 @@ export const WorkflowOutputsPage: React.FC = () => {
   const handleJobModalOpenChange = (open: boolean) => {
     setIsJobModalOpen(open)
     if (!open && jobIdParam) {
-      void navigate('/my-data/workflow-outputs')
+      void navigate(`/my-data/workflow-outputs${filterQuery}`)
     }
   }
 
   const handleResetFilters = () => {
     setSelectedStatus('all')
     setSearchText('')
+    if (workflowFilter) clearWorkflowFilter()
+  }
+
+  const clearWorkflowFilter = () => {
+    setSearchParams((params) => {
+      params.delete('workflow')
+      return params
+    })
   }
 
   const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
@@ -127,6 +140,9 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   const filteredJobs = useMemo(() => {
     let filtered = allJobs
+    if (workflowFilter) {
+      filtered = filtered.filter((job) => job.processID === workflowFilter)
+    }
     if (selectedStatus !== 'all') {
       filtered = filtered.filter((job) => job.status === selectedStatus)
     }
@@ -141,7 +157,7 @@ export const WorkflowOutputsPage: React.FC = () => {
       )
     }
     return filtered
-  }, [allJobs, searchText, selectedStatus])
+  }, [allJobs, searchText, selectedStatus, workflowFilter])
 
   const displayJobs = useMemo(() => {
     const workspace = workflowWorkspace || ''
@@ -156,7 +172,7 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   useEffect(() => {
     setWorkflowJobsPage(0)
-  }, [selectedStatus, searchText, currentWorkspace])
+  }, [selectedStatus, searchText, currentWorkspace, workflowFilter])
 
   return (
     <>
@@ -227,8 +243,18 @@ export const WorkflowOutputsPage: React.FC = () => {
                     displayJobs.length,
                   )} of ${displayJobs.length} jobs`
                 : `Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
-              {(selectedStatus !== 'all' || searchText.trim()) && ' (filtered)'}
+              {(selectedStatus !== 'all' || searchText.trim() || workflowFilter) && ' (filtered)'}
             </Text>
+            {workflowFilter && (
+              <Flex align="center" gap="2">
+                <Text size="2">
+                  Workflow: <strong>{workflowFilter}</strong>
+                </Text>
+                <Button size="1" variant="soft" color="gray" onClick={clearWorkflowFilter}>
+                  Show all workflows
+                </Button>
+              </Flex>
+            )}
           </Flex>
           {isLoadingJobs ? (
             <LoadingIndicator size="3" />
@@ -271,7 +297,7 @@ export const WorkflowOutputsPage: React.FC = () => {
                             setIsJobModalOpen(true)
                             if (workflowWorkspace) {
                               void navigate(
-                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}`,
+                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}${filterQuery}`,
                               )
                             }
                           }

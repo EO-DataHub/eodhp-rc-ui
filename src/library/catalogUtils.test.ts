@@ -6,6 +6,7 @@ import {
   getItemDownloadUrl,
   getWorkflowOutputDownloadUrl,
   getWorkflowOutputDownloadUrlFromItemHref,
+  isPrivateItem,
   parseProcessingResultsHref,
   parseCollectionPath,
   parseItemDownloadSearch,
@@ -192,5 +193,45 @@ describe('workflow outputs on the workspace host', () => {
       ],
     } as unknown as Item
     expect(getWorkflowOutputDownloadUrl(item)).toContain('/collections/col_b445?')
+  })
+})
+
+describe('Stage 5: isPrivateItem', () => {
+  const publicHref =
+    'https://hub.example/api/catalogue/stac/catalogs/public/collections/sentinel2_ard/items/S2A_1'
+  const workspaceItemHref =
+    'https://hub.example/api/catalogue/stac/catalogs/user/catalogs/my-ws/catalogs/commercial-data/collections/purchased_s2/items/PURCHASED_1'
+
+  it('treats an item from a user collection as private', () => {
+    expect(isPrivateItem({ isUserCollection: true, href: publicHref })).toBe(true)
+  })
+
+  it('treats an item from a collection under a workspace catalog as private', () => {
+    const purchased = collection({
+      id: 'purchased_s2',
+      links: [
+        {
+          rel: 'self',
+          href: 'https://hub.example/api/catalogue/stac/catalogs/user/catalogs/my-ws/catalogs/commercial-data/collections/purchased_s2',
+        },
+      ] as Collection['links'],
+    })
+    expect(isPrivateItem({ collection: purchased, href: publicHref })).toBe(true)
+    expect(isPrivateItem({ collection: jobCollection })).toBe(true)
+  })
+
+  it('treats an item whose self link is under a workspace catalog as private', () => {
+    expect(isPrivateItem({ href: workspaceItemHref })).toBe(true)
+    expect(
+      isPrivateItem({ isUserCollection: false, collection: null, href: workspaceItemHref }),
+    ).toBe(true)
+  })
+
+  it('treats a public item as not private', () => {
+    expect(
+      isPrivateItem({ isUserCollection: false, collection: collection(), href: publicHref }),
+    ).toBe(false)
+    expect(isPrivateItem({ href: publicHref })).toBe(false)
+    expect(isPrivateItem({})).toBe(false)
   })
 })

@@ -36,3 +36,65 @@
   flex-direction: column;
   gap: var(--space-1);
 }
+
+.sourceList {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sourceOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+
+  &:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+.sourceHint {
+  padding-left: calc(var(--space-2) + 13px);
+}
+
+.setList {
+  max-height: 30vh;
+  overflow-y: auto;
+  padding-left: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.failedList {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+.areaThumbnail {
+  flex-shrink: 0;
+  border: 1px solid var(--gray-6);
+  border-radius: var(--radius-2);
+  background: var(--gray-2);
+
+  path {
+    fill: var(--accent-a4);
+    stroke: var(--accent-9);
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+  }
+}
+
+.dateRange {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}

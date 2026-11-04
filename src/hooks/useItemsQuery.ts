@@ -13,14 +13,20 @@ export const MAX_TOTAL_ITEMS = 100
 export const MAX_USER_COLLECTION_ITEMS = 10000
 export const PAGE_SIZE = 10
 
-export const useItemsQuery = () => {
+/**
+ * Every result of the Data Finder's current search, up to the result limit. Shares its cache with
+ * the Items tab, so the results are fetched once.
+ *
+ * With `reuseCached`, results already in the cache are used as they are. Turning the query on
+ * then does not fetch them again; it fetches only when nothing is cached for the search.
+ */
+export const useSearchResultsQuery = (enabled = true, reuseCached = false) => {
   const { currentWorkspace, token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserCollection = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
   const mapBounds = useSelector(dataFinderStore, (state) => state.context.mapBounds)
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-  const page = useSelector(dataFinderStore, (state) => state.context.page)
 
   // Determine if this is a job collection that needs authenticated fetching
   const isJobCollection = collection?.isJobCollection ?? false
@@ -42,7 +48,7 @@ export const useItemsQuery = () => {
     currentWorkspace,
     token,
     userInfo?.sub,
-    !!isUserCollection,
+    enabled && !!isUserCollection,
   )
 
   // Fetch workspace tokens for job collections (using collection's workspace)
@@ -50,7 +56,7 @@ export const useItemsQuery = () => {
     collectionWorkspace,
     token,
     userInfo?.sub,
-    !!isJobCollection && isAuthenticated,
+    enabled && !!isJobCollection && isAuthenticated,
   )
 
   const fetchFunction = () => {
@@ -86,17 +92,14 @@ export const useItemsQuery = () => {
     })
   }
 
-  const {
-    data: allItems = [],
-    isFetching,
-    isFetched,
-    error,
-  } = useQuery<Item[]>({
+  return useQuery<Item[]>({
     queryKey: ['Items', queryKey],
     queryFn: fetchFunction,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    staleTime: reuseCached ? Infinity : 0,
     enabled:
+      enabled &&
       !!collection &&
       (!!queryFilter || !!aoi || !!mapBounds) &&
       // For job collections, wait for workspace tokens
@@ -105,6 +108,11 @@ export const useItemsQuery = () => {
       (!isUserCollection || !!workspaceTokensData),
     placeholderData: (previousValue: Item[] | undefined): Item[] => previousValue ?? [],
   })
+}
+
+export const useItemsQuery = () => {
+  const page = useSelector(dataFinderStore, (state) => state.context.page)
+  const { data: allItems = [], isFetching, isFetched, error } = useSearchResultsQuery()
 
   const pageCount = Math.ceil(allItems.length / PAGE_SIZE)
 

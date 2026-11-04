@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import type { Item } from '@/types'
@@ -51,9 +52,11 @@ const auth: AuthValue = {
 const renderPanel = () =>
   render(
     <MemoryRouter>
-      <AuthenticationContext.Provider value={auth}>
-        <IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />
-      </AuthenticationContext.Provider>
+      <QueryClientProvider client={new QueryClient()}>
+        <AuthenticationContext.Provider value={auth}>
+          <IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />
+        </AuthenticationContext.Provider>
+      </QueryClientProvider>
     </MemoryRouter>,
   )
 
@@ -179,9 +182,11 @@ describe('IntegrationToolsPanel with a chosen notebook that does not apply to th
   const renderSentinel1Panel = () =>
     render(
       <MemoryRouter>
-        <AuthenticationContext.Provider value={auth}>
-          <IntegrationToolsPanel item={sentinel1Item} onClose={vi.fn()} />
-        </AuthenticationContext.Provider>
+        <QueryClientProvider client={new QueryClient()}>
+          <AuthenticationContext.Provider value={auth}>
+            <IntegrationToolsPanel item={sentinel1Item} onClose={vi.fn()} />
+          </AuthenticationContext.Provider>
+        </QueryClientProvider>
       </MemoryRouter>,
     )
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ProcessDetail } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -29,6 +30,16 @@ vi.mock('@/services/processCatalogueService', () => ({
 }))
 vi.mock('@/services/workflowLaunchService', () => ({ launchWorkflow: vi.fn() }))
 vi.mock('@/services/workspaceTokenService', () => ({ fetchWorkspaceTokens: vi.fn() }))
+// Data for the other sources, which these tests do not use
+vi.mock('@/services/savedSetsService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/savedSetsService')>()),
+  fetchSavedSets: vi.fn(() => Promise.resolve([])),
+  fetchSavedSet: vi.fn(),
+}))
+vi.mock('@/services/itemService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/itemService')>()),
+  fetchItems: vi.fn(() => Promise.resolve([])),
+}))
 
 type DialogProps = Partial<React.ComponentProps<typeof RunWorkflowDialog>>
 type AuthValue = React.ContextType<typeof AuthenticationContext>
@@ -47,11 +58,16 @@ const auth = (overrides: Partial<AuthValue> = {}): AuthValue => ({
   ...overrides,
 })
 
+// One client for the whole file, so a rerender keeps the same cache
+const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
 const dialogTree = (props: DialogProps = {}, authOverrides: Partial<AuthValue> = {}) => (
   <MemoryRouter>
-    <AuthenticationContext.Provider value={auth(authOverrides)}>
-      <RunWorkflowDialog open onOpenChange={vi.fn()} {...props} />
-    </AuthenticationContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <AuthenticationContext.Provider value={auth(authOverrides)}>
+        <RunWorkflowDialog open onOpenChange={vi.fn()} {...props} />
+      </AuthenticationContext.Provider>
+    </QueryClientProvider>
   </MemoryRouter>
 )
 
@@ -112,6 +128,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
+  queryClient.clear()
   vi.clearAllMocks()
   vi.unstubAllEnvs()
   vi.unstubAllGlobals()

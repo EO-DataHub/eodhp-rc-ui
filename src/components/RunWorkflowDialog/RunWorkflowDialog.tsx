@@ -10,32 +10,71 @@ import {
   Flex,
   Text,
   TextField,
+  VisuallyHidden,
 } from '@radix-ui/themes'
-import { CheckCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons'
+import { CheckCircledIcon, CrossCircledIcon, InfoCircledIcon } from '@radix-ui/react-icons'
 import type { InputParameterEntry, Item, ProcessDetail, ProcessRecord } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import type { SavedSet } from '@/services/savedSetsService'
 import {
   buildWorkflowVariables,
   getHubInputKind,
+  type LaunchItem,
   type WorkflowLaunchContext,
 } from '@/services/workflowVariableResolvers'
-import { getHubApiOrigin, getWorkflowExecutionUrl, toolAppliesTo } from '@/library/integrationTools'
+import {
+  getHubApiOrigin,
+  getSelfLinkHref,
+  getWorkflowExecutionUrl,
+  toolAppliesTo,
+} from '@/library/integrationTools'
+import {
+  savedSetLaunchItems,
+  submitJobs,
+  type FailedJob,
+  type FanOutResult,
+  type StartedJob,
+} from '@/library/workflowFanOut'
+import { isPrivateItem } from '@/library/catalogUtils'
+import { CONFIRM_JOBS_ABOVE, MAX_JOBS_PER_RUN } from '@/constants/workflowRunLimits'
+import {
+  MAX_TOTAL_ITEMS,
+  MAX_USER_COLLECTION_ITEMS,
+  useSearchResultsQuery,
+} from '@/hooks/useItemsQuery'
+import { useSavedSet, useSavedSets } from '@/hooks/useSavedSets'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
+import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
+import { restoreAoiFromStorage } from '@/lib/terradraw/helpers/persistence'
+import { AreaPreview } from './AreaPreview'
 import styles from './RunWorkflowDialog.module.scss'
 
-type Step = 'loading' | 'workflow' | 'inputs' | 'review' | 'started'
+type Step = 'source' | 'loading' | 'workflow' | 'inputs' | 'review' | 'started'
+
+/** What the workflow runs on. Each item in the source gets its own job. */
+export type RunSource = 'item' | 'pinned' | 'set' | 'results'
 
 const STEP_TITLES: Record<Step, string> = {
+  source: 'What do you want to run on?',
   loading: 'Run workflow',
   workflow: 'Choose a workflow',
   inputs: 'Check the inputs',
   review: 'Review and run',
   started: 'Workflow started',
 }
+
+const SOURCE_LABELS: Record<RunSource, string> = {
+  item: 'This item',
+  pinned: 'Pinned items',
+  set: 'Saved set',
+  results: 'All results',
+}
+
+const SOURCES: RunSource[] = ['item', 'pinned', 'set', 'results']
 
 type UserValues = Record<string, string>
 
@@ -46,7 +85,15 @@ interface RunWorkflowDialogProps {
   item?: Item
   /** The workflow to run. When set, the workflow step is skipped. A list record is loaded in full on open. */
   workflow?: ProcessRecord
+  /** What to run on when the dialog opens. Defaults to the item. */
+  source?: RunSource
+  /** The saved set to run on, for the saved set source. */
+  savedSet?: SavedSet
+  /** Opened outside the Data Finder, so the drawn area is read from where the map saved it. */
+  outsideDataFinder?: boolean
 }
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
 const inputLabel = (key: string, def: InputParameterEntry) => def.label ?? key
 
@@ -65,6 +112,36 @@ const hasAreaInput = (inputs: Record<string, InputParameterEntry>) =>
 const needsInputsStep = (inputs: Record<string, InputParameterEntry>) =>
   getUserInputs(inputs).length > 0 || hasAreaInput(inputs)
 
+const isDateInput = (def: InputParameterEntry) => def.hubType === 'date' || def.type === 'date'
+
+const isDateRangeInput = (def: InputParameterEntry) => def.hubType === 'date-range'
+
+/** A date range is held as `start/end`, the ISO 8601 interval form. */
+const splitDateRange = (value: string): [string, string] => {
+  const [start = '', end = ''] = value.split('/')
+  return [start, end]
+}
+
+const joinDateRange = (start: string, end: string) => (start || end ? `${start}/${end}` : '')
+
+/** A range with one date set cannot be sent, so it blocks the run. */
+const isHalfFilledRange = (value: string | undefined) => {
+  const [start, end] = splitDateRange(value ?? '')
+  return !!start !== !!end
+}
+
+const userValueText = (def: InputParameterEntry, value: string | undefined) => {
+  if (!value) return 'Not set'
+  if (isDateRangeInput(def)) {
+    const [start, end] = splitDateRange(value)
+    return `${start || 'Not set'} to ${end || 'Not set'}`
+  }
+  return value
+}
+
+/** An input is required only when the workflow marks it `required: true`. */
+const isRequired = (def: InputParameterEntry) => def.required === true
+
 const initialUserValues = (inputs: Record<string, InputParameterEntry>): UserValues =>
   Object.fromEntries(getUserInputs(inputs).map(([key, def]) => [key, getDefaultValue(def.default)]))
 
@@ -72,6 +149,10 @@ const toLaunchValues = (inputs: Record<string, InputParameterEntry>, values: Use
   Object.fromEntries(
     getUserInputs(inputs).map(([key, def]): [string, string | number | boolean] => {
       const value = values[key] ?? ''
+      if (isDateRangeInput(def)) {
+        const [start, end] = splitDateRange(value)
+        return [key, start && end ? joinDateRange(start, end) : '']
+      }
       if (def.type === 'number') {
         const n = Number(value)
         return [key, value !== '' && !Number.isNaN(n) ? n : value]
@@ -93,16 +174,31 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   onOpenChange,
   item,
   workflow: initialWorkflow,
+  source: initialSource,
+  savedSet: initialSet,
+  outsideDataFinder = false,
 }) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const idPrefix = useId()
+  const finderAoi = useSelector(dataFinderStore, (state) => state.context.aoi)
+  const [storedAoi, setStoredAoi] = useState<GeoJSON.Feature | null>(() =>
+    outsideDataFinder ? restoreAoiFromStorage() : null,
+  )
+  const aoi = outsideDataFinder ? storedAoi : finderAoi
+  const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
+  const searchCollection = useSelector(dataFinderStore, (state) => state.context.collection)
+  const isUserSearch = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
 
+  const startSource: RunSource = initialSource ?? (item ? 'item' : 'pinned')
   const initialDetail = initialWorkflow && isFullRecord(initialWorkflow) ? initialWorkflow : null
   const firstStep = (): Step => {
     if (!initialWorkflow) return 'workflow'
     return initialDetail ? stepFor(initialDetail) : 'loading'
   }
   const [step, setStep] = useState<Step>(firstStep)
+  const [source, setSource] = useState<RunSource>(startSource)
+  const [setId, setSetId] = useState<string | null>(initialSet?.id ?? null)
+  const [showedWorkflowStep, setShowedWorkflowStep] = useState(!initialWorkflow)
   const [workflows, setWorkflows] = useState<ProcessRecord[]>([])
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false)
   const [workflowsError, setWorkflowsError] = useState<string | null>(null)
@@ -114,27 +210,97 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
   const [includeAoi, setIncludeAoi] = useState(!!aoi)
   const [isLaunching, setIsLaunching] = useState(false)
   const [launchError, setLaunchError] = useState<string | null>(null)
-  const [jobId, setJobId] = useState<string | null>(null)
+  const [startedJobs, setStartedJobs] = useState<StartedJob[]>([])
+  const [failedJobs, setFailedJobs] = useState<FailedJob[]>([])
+  const [confirmedJobs, setConfirmedJobs] = useState(false)
 
   const inputs = useMemo(() => detail?.properties.inputParameters ?? {}, [detail])
   const needsInputs = needsInputsStep(inputs)
 
+  // Source data is only fetched while it can be chosen or is in use
+  const onSourceStep = open && step === 'source'
+  const resultsQuery = useSearchResultsQuery(open && (source === 'results' || onSourceStep), true)
+  const setsQuery = useSavedSets(open && (source === 'set' || onSourceStep))
+  const setQuery = useSavedSet(
+    open && source === 'set' && !!setId && setId !== initialSet?.id ? setId : undefined,
+  )
+
+  const chosenSet =
+    source === 'set' ? (setId === initialSet?.id ? initialSet : setQuery.data) : null
+  const chosenSetName =
+    setId === initialSet?.id
+      ? initialSet?.name
+      : setsQuery.data?.find((summary) => summary.id === setId)?.name
+  const results =
+    resultsQuery.isSuccess && !resultsQuery.isPlaceholderData ? resultsQuery.data : undefined
+
+  /** The items to run on, one job each. Undefined while they load. */
+  const targets: LaunchItem[] | undefined = useMemo(() => {
+    switch (source) {
+      case 'item':
+        return item ? [item] : []
+      case 'pinned':
+        return pinnedItems
+      case 'set':
+        return chosenSet ? savedSetLaunchItems(chosenSet) : undefined
+      case 'results':
+        return results
+    }
+  }, [source, item, pinnedItems, chosenSet, results])
+
+  const isSingleItem = source === 'item'
+
+  // The Items tab holds at most this many results, so "All results" can be cut short
+  const resultsCap =
+    isUserSearch || searchCollection?.isJobCollection ? MAX_USER_COLLECTION_ITEMS : MAX_TOTAL_ITEMS
+  const resultsCapped = !!results && results.length >= resultsCap
+  const resultsCapText = `The run uses the first ${resultsCap} results.`
+
+  const jobCount = targets?.length ?? 0
+  const needsConfirmation = !isSingleItem && jobCount > CONFIRM_JOBS_ABOVE
+  const aboveCeiling = jobCount > MAX_JOBS_PER_RUN
+
+  // A new set of items needs a new confirmation
+  useEffect(() => {
+    setConfirmedJobs(false)
+  }, [source, setId, jobCount])
+
+  const isTargetPrivate = (target: LaunchItem) => {
+    const fromSearch =
+      source === 'results' || (!!searchCollection && target.collection === searchCollection.id)
+    return isPrivateItem({
+      isUserCollection: target.isUserCollection ?? (fromSearch ? isUserSearch : undefined),
+      collection: target.collectionRef ?? (fromSearch ? searchCollection : null),
+      href: getSelfLinkHref(target),
+    })
+  }
+
   // Changes on every open and close, so a details request from an earlier opening is ignored
   const openingRef = useRef(0)
+  const workflowsRequestedRef = useRef(false)
 
   // Start fresh every time the dialog opens
   useEffect(() => {
     openingRef.current += 1
+    workflowsRequestedRef.current = false
     if (!open) return
     setStep(firstStep())
+    setSource(startSource)
+    setSetId(initialSet?.id ?? null)
+    setShowedWorkflowStep(!initialWorkflow)
     setSelectedId(initialWorkflow?.id ?? null)
     setDetail(initialDetail)
     setIsLoadingDetail(false)
     setDetailError(null)
     setValues(initialUserValues(initialDetail?.properties.inputParameters ?? {}))
-    setIncludeAoi(!!aoi)
+    // The area can be drawn or cleared on the map between openings
+    const openingAoi = outsideDataFinder ? restoreAoiFromStorage() : finderAoi
+    setStoredAoi(outsideDataFinder ? openingAoi ?? null : null)
+    setIncludeAoi(!!openingAoi)
     setLaunchError(null)
-    setJobId(null)
+    setStartedJobs([])
+    setFailedJobs([])
+    setConfirmedJobs(false)
     if (initialWorkflow && !initialDetail) void loadDetail(initialWorkflow.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -157,42 +323,139 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setWorkflows(data?.items ?? [])
   }
 
+  // The workflow list loads the first time the workflow step shows in each opening
   useEffect(() => {
-    if (open && !initialWorkflow) void loadWorkflows()
-  }, [open, initialWorkflow])
+    if (open && step === 'workflow' && !workflowsRequestedRef.current) {
+      workflowsRequestedRef.current = true
+      void loadWorkflows()
+    }
+  }, [open, step])
 
-  const listedWorkflows = workflows.filter((w) => toolAppliesTo(w, item?.collection))
+  // Workflows are filtered by dataset when every item comes from one dataset
+  const datasetFilter =
+    source === 'item'
+      ? { collection: item?.collection }
+      : source === 'results'
+        ? { collection: searchCollection?.id }
+        : null
+  const listedWorkflows = datasetFilter
+    ? workflows.filter((w) => toolAppliesTo(w, datasetFilter.collection))
+    : workflows
   const workflowTitle = detail?.properties.title ?? detail?.id ?? ''
 
-  const areaText = () => {
-    if (!aoi) return 'No area drawn on the map'
-    return includeAoi ? 'The area drawn on the map' : 'Not included'
+  const sourceText = (): string => {
+    const count = targets ? ` (${plural(targets.length, 'item')})` : ''
+    switch (source) {
+      case 'item':
+        return `item ${item?.id ?? ''}`
+      case 'pinned':
+        return `${plural(pinnedItems.length, 'pinned item')}`
+      case 'set':
+        return chosenSetName ? `the saved set ${chosenSetName}${count}` : 'a saved set'
+      case 'results':
+        return `all results of the search${count}`
+    }
   }
 
-  const launchContext: WorkflowLaunchContext | null = item
-    ? { item, aoi, includeAoi, workspace: currentWorkspace, apiBaseUrl: getHubApiOrigin() }
-    : null
+  const sourceUnavailableReason = (option: RunSource): string | undefined => {
+    switch (option) {
+      case 'item':
+        return item ? undefined : 'Open an item on the map to run on it'
+      case 'pinned':
+        return pinnedItems.length > 0 ? undefined : 'Pin some items on the map first'
+      case 'set':
+        if (!token || !currentWorkspace) return 'Select a workspace to use saved sets'
+        if (setsQuery.error) return setsQuery.error.message
+        return setsQuery.data && setsQuery.data.length === 0 ? 'Save a set first' : undefined
+      case 'results':
+        if (!searchCollection) return 'Search for items in the Data Finder first'
+        return results && results.length === 0 ? 'The search has no results' : undefined
+    }
+  }
 
-  const resolvedHubValues = launchContext ? buildWorkflowVariables(inputs, launchContext) : {}
+  const sourceNote = (option: RunSource): string | undefined => {
+    switch (option) {
+      case 'results':
+        return resultsCapped ? resultsCapText : undefined
+      default:
+        return undefined
+    }
+  }
 
-  /** Item inputs the Hub cannot fill, for example when the item has no self link. */
-  const missingItemInputs = Object.entries(inputs).filter(
-    ([key, def]) => getHubInputKind(key, def) === 'item' && !resolvedHubValues[key],
+  const canLeaveSourceStep = !sourceUnavailableReason(source) && (source !== 'set' || !!setId)
+
+  const areaInputs = Object.entries(inputs).filter(
+    ([key, def]) => getHubInputKind(key, def) === 'area',
   )
+  /**
+   * Outside the Data Finder the user cannot draw an area, so a required area input with no drawn
+   * area blocks the run. In the Data Finder the area checkbox says to draw one.
+   */
+  const missingRequiredArea =
+    outsideDataFinder && !aoi && areaInputs.some(([, def]) => isRequired(def))
+
+  /** Outside the Data Finder a drawn area is always sent to a required area input. */
+  const areaLocked = outsideDataFinder && !!aoi && areaInputs.some(([, def]) => isRequired(def))
+  const sendAoi = includeAoi || areaLocked
+
+  const halfFilledRange = getUserInputs(inputs).some(
+    ([key, def]) => isDateRangeInput(def) && isHalfFilledRange(values[key]),
+  )
+
+  const areaText = () => {
+    if (!aoi) {
+      return outsideDataFinder && !missingRequiredArea
+        ? 'Full scene (no area drawn on the map)'
+        : 'No area drawn on the map'
+    }
+    return sendAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
+  }
+
+  const contextFor = (target: LaunchItem): WorkflowLaunchContext => ({
+    item: target,
+    aoi,
+    includeAoi: sendAoi,
+    workspace: currentWorkspace,
+    apiBaseUrl: getHubApiOrigin(),
+  })
+
+  const itemInputs = Object.entries(inputs).filter(
+    ([key, def]) => getHubInputKind(key, def) === 'item',
+  )
+
+  /** Item inputs the workflow reads by link, without staging the data in first. */
+  const linkOnlyItemInputs = itemInputs.filter(([, def]) => def.cwlType !== 'Directory')
+
+  /** Private items cannot be read by link, because the job has no access to them. */
+  const privateTargetCount =
+    linkOnlyItemInputs.length > 0 && targets ? targets.filter(isTargetPrivate).length : 0
+
+  /** Items the Hub cannot fill the item inputs for, because they have no self link. */
+  const targetsWithoutLink =
+    itemInputs.length > 0 && targets ? targets.filter((target) => !getSelfLinkHref(target)) : []
 
   const hubValueText = (key: string, def: InputParameterEntry) => {
     switch (getHubInputKind(key, def)) {
       case 'item':
-        return item && resolvedHubValues[key] ? `Item ${item.id}` : 'Not available'
+        if (isSingleItem) {
+          return item && getSelfLinkHref(item) ? `Item ${item.id}` : 'Not available'
+        }
+        return 'The link of each item'
       case 'area':
         return areaText()
-      default:
-        return resolvedHubValues[key] ?? 'Not available'
+      default: {
+        const resolved = new Set(
+          (targets ?? []).map((target) => buildWorkflowVariables(inputs, contextFor(target))[key]),
+        )
+        if (resolved.size > 1) return 'Set for each item'
+        const [value] = Array.from(resolved)
+        return value ?? 'Not available'
+      }
     }
   }
 
   const inputValueText = (key: string, def: InputParameterEntry) =>
-    getHubInputKind(key, def) ? hubValueText(key, def) : values[key] || 'Not set'
+    getHubInputKind(key, def) ? hubValueText(key, def) : userValueText(def, values[key])
 
   const loadDetail = async (id: string) => {
     const opening = openingRef.current
@@ -210,6 +473,14 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setStep(stepFor(data))
   }
 
+  const showWorkflowStep = () => {
+    setShowedWorkflowStep(true)
+    if (selectedId && !listedWorkflows.some((w) => w.id === selectedId) && workflows.length > 0) {
+      setSelectedId(null)
+    }
+    setStep('workflow')
+  }
+
   const chooseWorkflow = async () => {
     if (!selectedId) return
     if (detail?.id !== selectedId) {
@@ -219,7 +490,7 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     setStep(needsInputs ? 'inputs' : 'review')
   }
 
-  const beforeInputs = (): Step | null => (initialWorkflow ? null : 'workflow')
+  const beforeInputs = (): Step | null => (showedWorkflowStep ? 'workflow' : null)
 
   const beforeReview = () => (needsInputs ? 'inputs' : beforeInputs())
 
@@ -229,35 +500,74 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     else onOpenChange(false)
   }
 
-  const run = async () => {
-    if (!detail || !launchContext || !token || !currentWorkspace) return
-    if (missingItemInputs.length > 0) return
+  /** Starts a job for each item. Returns null when no job could be sent. */
+  const submit = async (items: LaunchItem[]): Promise<FanOutResult | null> => {
+    if (!detail || !token || !currentWorkspace) return null
 
     const executionUrl = getWorkflowExecutionUrl(detail)
     if (!executionUrl) {
       setLaunchError('Workflow execution URL not found. Please contact support.')
-      return
+      return null
     }
 
     setIsLaunching(true)
     setLaunchError(null)
     try {
-      const variables = {
-        ...resolvedHubValues,
-        ...toLaunchValues(inputs, values),
-      }
       const { access } = await fetchWorkspaceTokens(currentWorkspace, token)
-      const response = await launchWorkflow(executionUrl, variables, access)
-      setJobId(response.workflowId?.trim() || null)
-      setStep('started')
+      const userValues = toLaunchValues(inputs, values)
+      return await submitJobs(items, (target) =>
+        launchWorkflow(
+          executionUrl,
+          { ...buildWorkflowVariables(inputs, contextFor(target)), ...userValues },
+          access,
+        ),
+      )
     } catch (err) {
       setLaunchError(
         err instanceof Error ? err.message : 'Failed to launch workflow. Please try again.',
       )
+      return null
     } finally {
       setIsLaunching(false)
     }
   }
+
+  const runBlocked =
+    !targets ||
+    targets.length === 0 ||
+    targetsWithoutLink.length > 0 ||
+    privateTargetCount > 0 ||
+    missingRequiredArea ||
+    halfFilledRange ||
+    aboveCeiling ||
+    (needsConfirmation && !confirmedJobs)
+
+  const run = async () => {
+    if (!targets || runBlocked) return
+    const result = await submit(targets)
+    if (!result) return
+    // A single job that fails stays on the review step, so the user can change the inputs
+    if (targets.length === 1 && result.failed.length === 1) {
+      setLaunchError(result.failed[0].error)
+      return
+    }
+    setStartedJobs(result.started)
+    setFailedJobs(result.failed)
+    setStep('started')
+  }
+
+  const retryFailed = async () => {
+    const result = await submit(failedJobs.map((job) => job.item))
+    if (!result) return
+    setStartedJobs((prev) => [...prev, ...result.started])
+    setFailedJobs(result.failed)
+  }
+
+  const changeSourceButton = (
+    <Button variant="soft" color="gray" onClick={() => goBack('source')}>
+      Change source
+    </Button>
+  )
 
   const backButton = (to: Step | null) => (
     <Button variant="soft" color="gray" onClick={() => goBack(to)}>
@@ -265,19 +575,103 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
     </Button>
   )
 
+  const singleJobStarted = isSingleItem && startedJobs.length === 1 && failedJobs.length === 0
+  const singleJobId = singleJobStarted ? startedJobs[0].jobId : null
+  const outputsLink = detail
+    ? `/my-data/workflow-outputs?workflow=${encodeURIComponent(detail.id)}`
+    : '/my-data/workflow-outputs'
+
+  const title =
+    step === 'started' && failedJobs.length > 0 ? 'Some jobs did not start' : STEP_TITLES[step]
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Content maxWidth="640px">
-        <Dialog.Title mb="1">{STEP_TITLES[step]}</Dialog.Title>
+        <Dialog.Title mb="1">{title}</Dialog.Title>
         <Dialog.Description size="2" color="gray" mb="3">
-          {step === 'workflow' && item && `Running on item ${item.id}.`}
-          {(step === 'inputs' || step === 'review') && item && (
+          {step === 'source' && 'The workflow runs once on each item.'}
+          {step === 'workflow' && `Running on ${sourceText()}.`}
+          {(step === 'inputs' || step === 'review') && (
             <>
-              <strong>{workflowTitle}</strong> · running on item {item.id}
+              <strong>{workflowTitle}</strong> · running on {sourceText()}
             </>
           )}
-          {step === 'started' && `${workflowTitle} has started. It may take a while to finish.`}
+          {step === 'started' &&
+            (isSingleItem
+              ? `${workflowTitle} has started. It may take a while to finish.`
+              : `${workflowTitle} on ${sourceText()}. Jobs may take a while to finish.`)}
         </Dialog.Description>
+
+        {step === 'source' && (
+          <Flex direction="column" gap="3">
+            <fieldset className={styles.sourceList}>
+              <VisuallyHidden asChild>
+                <legend>Source</legend>
+              </VisuallyHidden>
+              {SOURCES.map((option) => {
+                const reason = sourceUnavailableReason(option)
+                const hintId = `${idPrefix}-${option}-hint`
+                return (
+                  <Flex key={option} direction="column" gap="1">
+                    <Text as="label" size="2" className={styles.sourceOption}>
+                      <input
+                        type="radio"
+                        name="run-source"
+                        value={option}
+                        checked={source === option}
+                        disabled={!!reason}
+                        aria-describedby={reason ? hintId : undefined}
+                        onChange={() => setSource(option)}
+                      />
+                      {SOURCE_LABELS[option]}
+                    </Text>
+                    {reason && (
+                      <Text id={hintId} size="1" color="gray" className={styles.sourceHint}>
+                        {reason}
+                      </Text>
+                    )}
+                    {!reason && sourceNote(option) && (
+                      <Text size="1" color="gray" className={styles.sourceHint}>
+                        {sourceNote(option)}
+                      </Text>
+                    )}
+                    {option === 'set' && source === 'set' && !reason && (
+                      <div className={styles.setList}>
+                        {setsQuery.isLoading && <LoadingIndicator size="1" />}
+                        {setsQuery.data?.map((summary) => (
+                          <Text
+                            key={summary.id}
+                            as="label"
+                            size="2"
+                            className={styles.sourceOption}
+                          >
+                            <input
+                              type="radio"
+                              name="run-source-set"
+                              value={summary.id}
+                              checked={setId === summary.id}
+                              onChange={() => setSetId(summary.id)}
+                            />
+                            <span>{summary.name}</span>
+                            <Text size="1" color="gray">
+                              {plural(summary.itemCount, 'item')}
+                            </Text>
+                          </Text>
+                        ))}
+                      </div>
+                    )}
+                  </Flex>
+                )
+              })}
+            </fieldset>
+            <Flex justify="between" gap="3" mt="2">
+              {backButton(null)}
+              <Button disabled={!canLeaveSourceStep} onClick={showWorkflowStep}>
+                Next
+              </Button>
+            </Flex>
+          </Flex>
+        )}
 
         {step === 'loading' && (
           <Flex direction="column" gap="3">
@@ -319,7 +713,9 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
             )}
             {!isLoadingWorkflows && !workflowsError && listedWorkflows.length === 0 && (
               <Text size="2" color="gray">
-                No workflows are available for this dataset.
+                {datasetFilter
+                  ? 'No workflows are available for this dataset.'
+                  : 'No workflows are available.'}
               </Text>
             )}
             <Flex direction="column" gap="2" className={styles.workflowList}>
@@ -349,13 +745,16 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               </Text>
             )}
             <Flex justify="between" gap="3" mt="2">
-              {backButton(null)}
-              <Button
-                disabled={!selectedId || isLoadingDetail}
-                onClick={() => void chooseWorkflow()}
-              >
-                {isLoadingDetail ? 'Loading…' : 'Next'}
-              </Button>
+              {changeSourceButton}
+              <Flex gap="3">
+                {backButton(null)}
+                <Button
+                  disabled={!selectedId || isLoadingDetail}
+                  onClick={() => void chooseWorkflow()}
+                >
+                  {isLoadingDetail ? 'Loading…' : 'Next'}
+                </Button>
+              </Flex>
             </Flex>
           </Flex>
         )}
@@ -367,13 +766,46 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               values={values}
               onChange={(key, value) => setValues((prev) => ({ ...prev, [key]: value }))}
               hubValueText={hubValueText}
-              hasArea={!!aoi}
-              includeAoi={includeAoi}
+              area={aoi ?? null}
+              includeAoi={sendAoi}
+              areaLocked={areaLocked}
               onIncludeAoiChange={setIncludeAoi}
+              outsideDataFinder={outsideDataFinder}
             />
+            {missingRequiredArea && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Flex direction="column" gap="2" align="start">
+                  <Callout.Text>
+                    {`${workflowTitle} needs an area, and no area is drawn on the map. `}
+                    {chosenSet
+                      ? 'Open the set on the map, draw an area, then run the workflow from there.'
+                      : 'Draw an area on the map, then run the workflow again.'}
+                  </Callout.Text>
+                  {chosenSet && (
+                    <OpenSetOnMapButton
+                      setId={chosenSet.id}
+                      setName={chosenSet.name}
+                      label="Open the set on the map"
+                      size="1"
+                    />
+                  )}
+                </Flex>
+              </Callout.Root>
+            )}
             <Flex justify="between" gap="3" mt="2">
-              {backButton(beforeInputs())}
-              <Button onClick={() => setStep('review')}>Next</Button>
+              {changeSourceButton}
+              <Flex gap="3">
+                {backButton(beforeInputs())}
+                <Button
+                  disabled={missingRequiredArea || halfFilledRange}
+                  onClick={() => setStep('review')}
+                >
+                  Next
+                </Button>
+              </Flex>
             </Flex>
           </Flex>
         )}
@@ -385,10 +817,17 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
                 <DataList.Label>Workflow</DataList.Label>
                 <DataList.Value>{workflowTitle}</DataList.Value>
               </DataList.Item>
-              <DataList.Item>
-                <DataList.Label>Item</DataList.Label>
-                <DataList.Value>{item?.id}</DataList.Value>
-              </DataList.Item>
+              {isSingleItem ? (
+                <DataList.Item>
+                  <DataList.Label>Item</DataList.Label>
+                  <DataList.Value>{item?.id}</DataList.Value>
+                </DataList.Item>
+              ) : (
+                <DataList.Item>
+                  <DataList.Label>Run on</DataList.Label>
+                  <DataList.Value>{SOURCE_LABELS[source]}</DataList.Value>
+                </DataList.Item>
+              )}
               {Object.entries(inputs).map(([key, def]) => (
                 <DataList.Item key={key}>
                   <DataList.Label>{inputLabel(key, def)}</DataList.Label>
@@ -398,10 +837,42 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               <DataList.Item>
                 <DataList.Label>Workspace</DataList.Label>
                 <DataList.Value>
-                  {currentWorkspace ? `${currentWorkspace} (the job runs here)` : 'None'}
+                  {currentWorkspace
+                    ? `${currentWorkspace} (${isSingleItem ? 'the job runs' : 'the jobs run'} here)`
+                    : 'None'}
                 </DataList.Value>
               </DataList.Item>
             </DataList.Root>
+
+            {!isSingleItem &&
+              (targets ? (
+                <Flex direction="column" gap="2">
+                  <Text size="2">
+                    This starts <strong>{plural(targets.length, 'job')}</strong>, one for each item.
+                  </Text>
+                  {source === 'results' && resultsCapped && (
+                    <Text size="2" color="gray">
+                      {resultsCapText}
+                    </Text>
+                  )}
+                  {needsConfirmation && !aboveCeiling && (
+                    <Text as="label" size="2">
+                      <Flex gap="2" align="center">
+                        <Checkbox
+                          checked={confirmedJobs}
+                          onCheckedChange={(checked) => setConfirmedJobs(checked === true)}
+                        />
+                        {`Yes, start ${plural(targets.length, 'job')}`}
+                      </Flex>
+                    </Text>
+                  )}
+                </Flex>
+              ) : (
+                <Flex gap="2" align="center">
+                  <LoadingIndicator size="1" />
+                  <Text size="2">Loading the items…</Text>
+                </Flex>
+              ))}
 
             {!currentWorkspace && (
               <Callout.Root color="amber" size="1">
@@ -411,16 +882,47 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
                 <Callout.Text>Select a workspace to run this workflow.</Callout.Text>
               </Callout.Root>
             )}
-            {missingItemInputs.length > 0 && (
+            {targetsWithoutLink.length > 0 && (
               <Callout.Root color="red" size="1">
                 <Callout.Icon>
                   <InfoCircledIcon />
                 </Callout.Icon>
                 <Callout.Text>
                   The Hub cannot fill in{' '}
-                  {missingItemInputs.map(([key, def]) => inputLabel(key, def)).join(', ')} because
-                  this item has no link. Close this dialog and choose a different item.
+                  {itemInputs.map(([key, def]) => inputLabel(key, def)).join(', ')} because{' '}
+                  {isSingleItem
+                    ? 'this item has no link. Close this dialog and choose a different item.'
+                    : `${plural(targetsWithoutLink.length, 'item')} ${targetsWithoutLink.length === 1 ? 'has' : 'have'} no link: ${targetsWithoutLink.map((target) => target.id).join(', ')}.`}
                 </Callout.Text>
+              </Callout.Root>
+            )}
+            {aboveCeiling && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  {`A run can start at most ${MAX_JOBS_PER_RUN} jobs. Choose fewer items to run on.`}
+                </Callout.Text>
+              </Callout.Root>
+            )}
+            {privateTargetCount > 0 && (
+              <Callout.Root color="red" size="1">
+                <Callout.Icon>
+                  <InfoCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  {`${workflowTitle} cannot read private data, and ${
+                    privateTargetCount === 1
+                      ? '1 item is private'
+                      : `${privateTargetCount} items are private`
+                  }. Choose public items only.`}
+                </Callout.Text>
+              </Callout.Root>
+            )}
+            {targets?.length === 0 && (
+              <Callout.Root color="amber" size="1">
+                <Callout.Text>There are no items to run on.</Callout.Text>
               </Callout.Root>
             )}
             {launchError && (
@@ -430,34 +932,83 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
             )}
 
             <Flex justify="between" gap="3" mt="2">
-              {backButton(beforeReview())}
-              <Button
-                disabled={
-                  !currentWorkspace ||
-                  !token ||
-                  !item ||
-                  missingItemInputs.length > 0 ||
-                  isLaunching
-                }
-                onClick={() => void run()}
-              >
-                {isLaunching ? 'Running…' : 'Run workflow'}
-              </Button>
+              {changeSourceButton}
+              <Flex gap="3">
+                {backButton(beforeReview())}
+                <Button
+                  disabled={!currentWorkspace || !token || runBlocked || isLaunching}
+                  onClick={() => void run()}
+                >
+                  {isLaunching ? 'Running…' : 'Run workflow'}
+                </Button>
+              </Flex>
             </Flex>
           </Flex>
         )}
 
         {step === 'started' && (
           <Flex direction="column" gap="4">
-            <Callout.Root color="green">
-              <Callout.Icon>
-                <CheckCircledIcon />
-              </Callout.Icon>
-              <Callout.Text>
-                You can follow the job in <strong>My data → Workflow outputs</strong>.
-              </Callout.Text>
-            </Callout.Root>
+            {singleJobStarted ? (
+              <Callout.Root color="green">
+                <Callout.Icon>
+                  <CheckCircledIcon />
+                </Callout.Icon>
+                <Callout.Text>
+                  You can follow the job in <strong>My data → Workflow outputs</strong>.
+                </Callout.Text>
+              </Callout.Root>
+            ) : (
+              <>
+                {startedJobs.length > 0 && (
+                  <Callout.Root color="green">
+                    <Callout.Icon>
+                      <CheckCircledIcon />
+                    </Callout.Icon>
+                    <Callout.Text>
+                      <strong>{`${plural(startedJobs.length, 'job')} started`}</strong>. You can
+                      follow them in <strong>My data → Workflow outputs</strong>.
+                    </Callout.Text>
+                  </Callout.Root>
+                )}
+                {failedJobs.length > 0 && (
+                  <Callout.Root color="red">
+                    <Callout.Icon>
+                      <CrossCircledIcon />
+                    </Callout.Icon>
+                    <Flex direction="column" gap="2">
+                      <Callout.Text>
+                        <strong>{`${failedJobs.length} failed to start:`}</strong>
+                      </Callout.Text>
+                      <ul className={styles.failedList}>
+                        {failedJobs.map(({ item: failedItem, error }) => (
+                          <li key={failedItem.id}>
+                            <Text size="2">
+                              <strong>{failedItem.id}</strong>: {error}
+                            </Text>
+                          </li>
+                        ))}
+                      </ul>
+                    </Flex>
+                  </Callout.Root>
+                )}
+                {launchError && (
+                  <Callout.Root color="red" size="1">
+                    <Callout.Text>{launchError}</Callout.Text>
+                  </Callout.Root>
+                )}
+              </>
+            )}
             <Flex justify="end" gap="3">
+              {failedJobs.length > 0 && (
+                <Button
+                  variant="soft"
+                  color="red"
+                  disabled={isLaunching}
+                  onClick={() => void retryFailed()}
+                >
+                  {isLaunching ? 'Retrying…' : 'Retry these'}
+                </Button>
+              )}
               <Dialog.Close>
                 <Button variant="soft" color="gray">
                   Close
@@ -466,13 +1017,13 @@ export const RunWorkflowDialog: React.FC<RunWorkflowDialogProps> = ({
               <Button asChild>
                 <Link
                   to={
-                    jobId
-                      ? `/my-data/workflow-outputs/${currentWorkspace}/${jobId}`
-                      : '/my-data/workflow-outputs'
+                    singleJobStarted && singleJobId
+                      ? `/my-data/workflow-outputs/${currentWorkspace}/${singleJobId}`
+                      : outputsLink
                   }
                   onClick={() => onOpenChange(false)}
                 >
-                  View job
+                  {singleJobStarted ? 'View job' : 'View in Workflow outputs'}
                 </Link>
               </Button>
             </Flex>
@@ -488,9 +1039,13 @@ interface InputsFormProps {
   values: UserValues
   onChange: (key: string, value: string) => void
   hubValueText: (key: string, def: InputParameterEntry) => string
-  hasArea: boolean
+  /** The area drawn on the map, if any. */
+  area: GeoJSON.Feature | null
   includeAoi: boolean
+  /** The drawn area is required, so it cannot be left out. */
+  areaLocked: boolean
   onIncludeAoiChange: (include: boolean) => void
+  outsideDataFinder: boolean
 }
 
 const InputsForm: React.FC<InputsFormProps> = ({
@@ -498,13 +1053,17 @@ const InputsForm: React.FC<InputsFormProps> = ({
   values,
   onChange,
   hubValueText,
-  hasArea,
+  area,
   includeAoi,
+  areaLocked,
   onIncludeAoiChange,
+  outsideDataFinder,
 }) => {
   const idPrefix = useId()
   const hubInputs = Object.entries(inputs).filter(([key, def]) => getHubInputKind(key, def))
   const userInputs = getUserInputs(inputs)
+  // Outside the Data Finder there is no area to draw, so only a drawn area is offered
+  const showAreaCheckbox = hasAreaInput(inputs) && (!outsideDataFinder || !!area)
 
   return (
     <Flex direction="column" gap="4">
@@ -524,19 +1083,21 @@ const InputsForm: React.FC<InputsFormProps> = ({
         </Flex>
       )}
 
-      {hasAreaInput(inputs) && (
-        <Flex direction="column" gap="1">
+      {showAreaCheckbox && (
+        <Flex direction="column" gap="2">
           <Text as="label" size="2">
             <Flex gap="2" align="center">
               <Checkbox
-                checked={hasArea && includeAoi}
-                disabled={!hasArea}
+                checked={!!area && includeAoi}
+                disabled={!area || areaLocked}
                 onCheckedChange={(checked) => onIncludeAoiChange(checked === true)}
               />
-              Include area of interest
+              {outsideDataFinder ? 'Use the area drawn on the map' : 'Include area of interest'}
             </Flex>
           </Text>
-          {!hasArea && (
+          {area ? (
+            <AreaPreview area={area} />
+          ) : (
             <Text size="1" color="gray">
               Draw an area on the map to include it.
             </Text>
@@ -546,6 +1107,54 @@ const InputsForm: React.FC<InputsFormProps> = ({
 
       {userInputs.map(([key, def]) => {
         const id = `${idPrefix}-${key}`
+        if (isDateRangeInput(def)) {
+          const [start, end] = splitDateRange(values[key] ?? '')
+          return (
+            <fieldset key={key} className={styles.dateRange}>
+              <Text size="2" weight="medium" asChild>
+                <legend>{inputLabel(key, def)}</legend>
+              </Text>
+              {def.description && (
+                <Text size="1" color="gray">
+                  {def.description}
+                </Text>
+              )}
+              <Flex gap="3" align="end">
+                <div className={styles.formField}>
+                  <Text as="label" htmlFor={`${id}-start`} size="1" color="gray">
+                    From
+                  </Text>
+                  <TextField.Root
+                    id={`${id}-start`}
+                    type="date"
+                    value={start}
+                    max={end || undefined}
+                    onChange={(e) => onChange(key, joinDateRange(e.target.value, end))}
+                    size="2"
+                  />
+                </div>
+                <div className={styles.formField}>
+                  <Text as="label" htmlFor={`${id}-end`} size="1" color="gray">
+                    To
+                  </Text>
+                  <TextField.Root
+                    id={`${id}-end`}
+                    type="date"
+                    value={end}
+                    min={start || undefined}
+                    onChange={(e) => onChange(key, joinDateRange(start, e.target.value))}
+                    size="2"
+                  />
+                </div>
+              </Flex>
+              {!!start !== !!end && (
+                <Text size="1" color="red">
+                  Set both dates, or neither.
+                </Text>
+              )}
+            </fieldset>
+          )
+        }
         return (
           <div key={key} className={styles.formField}>
             <Text as="label" htmlFor={id} size="2" weight="medium">
@@ -558,7 +1167,7 @@ const InputsForm: React.FC<InputsFormProps> = ({
             )}
             <TextField.Root
               id={id}
-              type={def.type === 'number' ? 'number' : def.type === 'date' ? 'date' : 'text'}
+              type={def.type === 'number' ? 'number' : isDateInput(def) ? 'date' : 'text'}
               value={values[key] ?? ''}
               onChange={(e) => onChange(key, e.target.value)}
               size="2"
