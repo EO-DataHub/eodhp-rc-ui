@@ -50,6 +50,14 @@ export function isPinSetNotebook(record: ProcessRecord): boolean {
   )
 }
 
+/** Whether the Data Finder Tools tab lists this record. Set notebooks need a saved set, not a single item. */
+export function isDataFinderTool(record: ProcessRecord): boolean {
+  return (
+    record.properties.type === 'workflow' ||
+    (record.properties.type === 'notebook' && !isPinSetNotebook(record))
+  )
+}
+
 /**
  * Returns whether a parameter key has a resolver (auto-filled from context).
  * Used so the UI can compute which parameters need user input for the future "unresolved variables" form.

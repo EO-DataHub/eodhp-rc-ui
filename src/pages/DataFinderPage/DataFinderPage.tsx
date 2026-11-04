@@ -15,8 +15,20 @@ import {
   restoreFromPermalinkSingleCollection,
 } from './permalinkRestore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { fetchItemById } from '@/services/processCatalogueService'
+import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 
 import styles from './DataFinderPage.module.scss'
+
+const withToolParam = (params: URLSearchParams, toolId: string | undefined) => {
+  const next = new URLSearchParams(params)
+  if (toolId) {
+    next.set('tool', toolId)
+  } else {
+    next.delete('tool')
+  }
+  return next
+}
 
 export const DataFinderPage: React.FC = () => {
   const { currentWorkspace } = useContext(AuthenticationContext)
@@ -24,11 +36,19 @@ export const DataFinderPage: React.FC = () => {
   const params = useParams<{ '*': string }>()
   const collectionPath = params['*'] ?? ''
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const permalinkRestoreDoneRef = useRef(false)
+  // The tool id the page opened with; the URL is left alone until its lookup finishes
+  const initialToolIdRef = useRef(searchParams.get('tool'))
+  // A ref, not state: it only gates the URL sync effect and must not cause a render of its own
+  const isToolLookupPendingRef = useRef(false)
+  // setSearchParams changes with every URL change, so the mount-only effect reads it from a ref
+  const setSearchParamsRef = useRef(setSearchParams)
+  setSearchParamsRef.current = setSearchParams
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const chosenToolId = useSelector(dataFinderStore, (state) => state.context.chosenTool?.id)
 
   const {
     status: collectionStatus,
@@ -64,6 +84,47 @@ export const DataFinderPage: React.FC = () => {
     }
     // Otherwise still loading, or waiting for sign-in
   }, [collectionPath, collectionStatus, resolvedCollection, isResolvedUserCollection, navigate])
+
+  // Choose the tool named in the URL, and clear the chosen tool when the Data Finder closes
+  useEffect(() => {
+    const toolId = initialToolIdRef.current
+    let isCancelled = false
+
+    if (toolId) {
+      isToolLookupPendingRef.current = true
+      void fetchItemById(toolId).then(({ data, notFound }) => {
+        if (isCancelled) return
+        isToolLookupPendingRef.current = false
+
+        // The user chose a tool from the Tools tab while the lookup ran, so keep their choice
+        const toolChosenMeanwhile = dataFinderStore.getSnapshot().context.chosenTool
+        if (toolChosenMeanwhile) {
+          setSearchParamsRef.current((prev) => withToolParam(prev, toolChosenMeanwhile.id), {
+            replace: true,
+          })
+        } else if (data && isDataFinderTool(data)) {
+          dataFinderStore.send({ type: 'chooseTool', tool: data })
+        } else if (notFound || data) {
+          // A record the Tools tab would not list is treated as unknown
+          setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
+        }
+        // On other failures the parameter stays only until the URL next changes
+      })
+    }
+
+    return () => {
+      isCancelled = true
+      dataFinderStore.send({ type: 'clearTool' })
+    }
+  }, [])
+
+  // Keep the tool parameter in step with the chosen tool, including after a dataset change
+  useEffect(() => {
+    if (isToolLookupPendingRef.current) return
+    if ((searchParams.get('tool') ?? undefined) === chosenToolId) return
+
+    setSearchParams((prev) => withToolParam(prev, chosenToolId), { replace: true })
+  }, [chosenToolId, searchParams, setSearchParams])
 
   // Remove AOI from local storage on mount
   useEffect(() => {

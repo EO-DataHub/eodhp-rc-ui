@@ -312,3 +312,10 @@ export function supportsIntegrationTools(item: Item, itemRender?: StacRender | u
     return !(isPreviewTitle || isThumbnailOnly || hasQuicklookGeoreference)
   })
 }
+
+/** A tool applies to a dataset when it names that dataset or names no dataset. */
+export function toolAppliesTo(tool: ProcessRecord, collectionId?: string): boolean {
+  const collections = tool.properties.applicableCollections
+  if (!collections?.length) return true
+  return !!collectionId && collections.includes(collectionId)
+}

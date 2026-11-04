@@ -1,7 +1,7 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Collection, StacRender, Item } from '@/types'
+import { Collection, StacRender, Item, ProcessRecord } from '@/types'
 import {
   collectionRenderingConfig,
   resolveTilesUrl,
@@ -64,6 +64,9 @@ interface AppContext {
   collectionRenderOptions: StacRender[]
   collectionRender?: StacRender
   isUserCollection: boolean
+  chosenTool?: ProcessRecord
+  /** Counts "Open in" requests so the panel can return to the chosen notebook each time */
+  integrationToolsOpenCount: number
 }
 
 // Build a unique id for pinned items
@@ -93,6 +96,8 @@ const dataFinderStore = createStore({
     collectionRenderOptions: [],
     collectionRender: undefined,
     isUserCollection: false,
+    chosenTool: undefined,
+    integrationToolsOpenCount: 0,
   } as AppContext,
   // Transitions
   on: {
@@ -202,6 +207,12 @@ const dataFinderStore = createStore({
         infoPanelItem: event.item,
       }
     },
+    openIntegrationToolsPanel: (context, event: { item: Item }): typeof context => ({
+      ...context,
+      secondaryPanel: 'integration-tools',
+      infoPanelItem: event.item,
+      integrationToolsOpenCount: context.integrationToolsOpenCount + 1,
+    }),
     closeSecondaryPanel: (context) => {
       return {
         ...context,
@@ -529,6 +540,11 @@ const dataFinderStore = createStore({
       }
       return { ...context, aoi: event.aoi }
     },
+    chooseTool: (context, event: { tool: ProcessRecord }) => ({
+      ...context,
+      chosenTool: event.tool,
+    }),
+    clearTool: (context) => ({ ...context, chosenTool: undefined }),
   },
 })
 

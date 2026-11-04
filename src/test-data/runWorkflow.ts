@@ -177,3 +177,47 @@ export const stubBrowserGlobals = () => {
     clear: () => values.clear(),
   })
 }
+
+const withDetails = (record: ProcessDetail, title: string, description: string): ProcessDetail => ({
+  ...record,
+  properties: { ...record.properties, title, description },
+})
+
+/** A notebook that runs on one item, as listed in the Data Finder's Tools tab. */
+export const itemNotebook = withDetails(
+  notebookRecord('ndvi_notebook', { STAC_ITEM_LINK: { hubType: 'stac-item', type: 'text' } }),
+  'NDVI notebook',
+  'Explore NDVI for one item in Jupyter.',
+)
+
+/** A notebook that runs on a saved set, so it is not offered for a single item. */
+export const pinSetNotebook = withDetails(
+  notebookRecord('set_stats', { PIN_SET_ID: { hubType: 'pin-set', type: 'text' } }),
+  'Set statistics',
+  'Summarises a saved set.',
+)
+
+export const allNotebooks = [itemNotebook, pinSetNotebook]
+
+export const allTools = [...allWorkflows, multiDatasetWorkflow, ...allNotebooks]
+
+/** Answers catalogue list requests from the fixtures, filtered by type when one is asked for. */
+export const fetchToolsFromFixtures = (params: { type?: string } = {}) =>
+  Promise.resolve({
+    data: {
+      items: allTools
+        .filter((record) => !params.type || record.properties.type === params.type)
+        .map(listRecord),
+    } as never,
+    error: null,
+  })
+
+/** Answers catalogue record requests from the fixtures. Unknown ids are not found. */
+export const fetchToolByIdFromFixtures = (id: string) => {
+  const record = allTools.find((tool) => tool.id === id)
+  return Promise.resolve(
+    record
+      ? { data: record, error: null, notFound: false }
+      : { data: null, error: 'Not found', notFound: true },
+  )
+}

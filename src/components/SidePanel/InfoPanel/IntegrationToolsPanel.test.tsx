@@ -1,13 +1,22 @@
 import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import type { Item } from '@/types'
 import { getAvailableRenders } from '@/library/integrationTools'
-import { allWorkflows, item, listRecord, stubBrowserGlobals } from '@/test-data/runWorkflow'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import {
+  fetchToolByIdFromFixtures,
+  fetchToolsFromFixtures,
+  item,
+  itemNotebook,
+  listRecord,
+  ndviWorkflow,
+  stubBrowserGlobals,
+} from '@/test-data/runWorkflow'
 import { IntegrationToolsPanel } from './IntegrationToolsPanel'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -18,7 +27,11 @@ vi.mock('@/services/workflowLaunchService', () => ({ launchWorkflow: vi.fn() }))
 vi.mock('@/services/workspaceTokenService', () => ({ fetchWorkspaceTokens: vi.fn() }))
 
 // The panel only shows for items with a render to open in desktop GIS
-const renderedItem = { ...item, render: { id: getAvailableRenders(item.collection)[0].id } } as Item
+const renderedItem = {
+  ...item,
+  render: { id: getAvailableRenders(item.collection)[0].id },
+  collectionRef: { id: 'sentinel2_ard' },
+} as Item
 
 type AuthValue = React.ContextType<typeof AuthenticationContext>
 
@@ -35,22 +48,27 @@ const auth: AuthValue = {
   clearCurrentWorkspace: vi.fn(),
 }
 
+const renderPanel = () =>
+  render(
+    <MemoryRouter>
+      <AuthenticationContext.Provider value={auth}>
+        <IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />
+      </AuthenticationContext.Provider>
+    </MemoryRouter>,
+  )
+
+const choose = (tool: Parameters<typeof listRecord>[0]) =>
+  act(() => dataFinderStore.send({ type: 'chooseTool', tool: listRecord(tool) }))
+
 beforeEach(() => {
   stubBrowserGlobals()
-  vi.mocked(fetchItems).mockResolvedValue({
-    data: { items: allWorkflows.map(listRecord) } as never,
-    error: null,
-  })
-  vi.mocked(fetchItemById).mockImplementation((id) =>
-    Promise.resolve({
-      data: allWorkflows.find((w) => w.id === id)!,
-      error: null,
-      notFound: false,
-    }),
-  )
+  dataFinderStore.send({ type: 'clearTool' })
+  vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
+  vi.mocked(fetchItemById).mockImplementation(fetchToolByIdFromFixtures)
 })
 
 afterEach(() => {
+  dataFinderStore.send({ type: 'clearTool' })
   vi.clearAllMocks()
   vi.unstubAllGlobals()
 })
@@ -58,13 +76,7 @@ afterEach(() => {
 describe('IntegrationToolsPanel Workflows tab', () => {
   it('opens the Run workflow dialog with this item filled in', async () => {
     const user = userEvent.setup()
-    render(
-      <MemoryRouter>
-        <AuthenticationContext.Provider value={auth}>
-          <IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />
-        </AuthenticationContext.Provider>
-      </MemoryRouter>,
-    )
+    renderPanel()
 
     await user.click(screen.getByRole('tab', { name: /workflows/i }))
     await user.click(await screen.findByRole('button', { name: /run workflow/i }))
@@ -72,5 +84,129 @@ describe('IntegrationToolsPanel Workflows tab', () => {
     const dialog = await screen.findByRole('dialog')
     expect(await screen.findByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
     expect(dialog).toHaveTextContent(item.id)
+  })
+})
+
+describe('IntegrationToolsPanel with a chosen workflow', () => {
+  it('opens the Run workflow dialog with the item and the chosen workflow filled in', async () => {
+    const user = userEvent.setup()
+    choose(ndviWorkflow)
+    renderPanel()
+
+    await user.click(screen.getByRole('tab', { name: /workflows/i }))
+    await user.click(await screen.findByRole('button', { name: /run workflow/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(await screen.findByRole('heading', { name: /check the inputs/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
+    expect(dialog).toHaveTextContent('NDVI')
+    expect(dialog).toHaveTextContent(item.id)
+  })
+})
+
+describe('IntegrationToolsPanel with a chosen notebook', () => {
+  // Let the notebook list request finish, so a select that would appear has had the chance to
+  const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)))
+
+  it('opens on the Jupyter tab', () => {
+    choose(itemNotebook)
+    renderPanel()
+    expect(screen.getByRole('tab', { name: /jupyter/i })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('shows the chosen notebook as text instead of the notebook select', async () => {
+    choose(itemNotebook)
+    renderPanel()
+    await settle()
+    const jupyter = screen.getByRole('tabpanel')
+    expect(jupyter).toHaveTextContent('NDVI notebook')
+    expect(within(jupyter).queryAllByRole('radio')).toHaveLength(0)
+    expect(within(jupyter).queryByRole('radiogroup')).toBeNull()
+    expect(within(jupyter).queryByRole('combobox')).toBeNull()
+    expect(within(jupyter).getByRole('button', { name: 'Launch' })).toBeEnabled()
+  })
+
+  it('shows the chosen notebook when the user opens the Jupyter tab', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderPanel()
+    await user.click(screen.getByRole('tab', { name: /desktop gis/i }))
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+    await settle()
+    const jupyter = screen.getByRole('tabpanel')
+    expect(jupyter).toHaveTextContent('NDVI notebook')
+    expect(within(jupyter).queryAllByRole('radio')).toHaveLength(0)
+  })
+
+  it('brings the notebook select back when the tool is cleared', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderPanel()
+    await settle()
+    act(() => dataFinderStore.send({ type: 'clearTool' }))
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+    expect(await screen.findByRole('radio', { name: /ndvi notebook/i })).toBeInTheDocument()
+  })
+})
+
+describe('IntegrationToolsPanel with no chosen tool', () => {
+  it('opens on the Desktop GIS tab', () => {
+    renderPanel()
+    expect(screen.getByRole('tab', { name: /desktop gis/i })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
+  it('selects no notebook', async () => {
+    const user = userEvent.setup()
+    renderPanel()
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+    expect(await screen.findByRole('radio', { name: /ndvi notebook/i })).not.toBeChecked()
+  })
+})
+
+describe('IntegrationToolsPanel with a chosen notebook that does not apply to the item', () => {
+  // A dataset with renders, so the panel shows, that the notebook does not list
+  const sentinel1Item = {
+    ...item,
+    id: 'S1A_20250610',
+    collection: 'sentinel1_ard',
+    render: { id: getAvailableRenders('sentinel1_ard')[0].id },
+    collectionRef: { id: 'sentinel1_ard' },
+  } as Item
+
+  const renderSentinel1Panel = () =>
+    render(
+      <MemoryRouter>
+        <AuthenticationContext.Provider value={auth}>
+          <IntegrationToolsPanel item={sentinel1Item} onClose={vi.fn()} />
+        </AuthenticationContext.Provider>
+      </MemoryRouter>,
+    )
+
+  it('shows the notebook select, as with no tool chosen', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    renderSentinel1Panel()
+    await user.click(screen.getByRole('tab', { name: /jupyter/i }))
+
+    const jupyter = screen.getByRole('tabpanel')
+    expect(await within(jupyter).findByRole('radio', { name: /ndvi notebook/i })).not.toBeChecked()
+  })
+
+  it('does not offer a chosen workflow that does not apply, as with no tool chosen', async () => {
+    const user = userEvent.setup()
+    choose(ndviWorkflow)
+    renderSentinel1Panel()
+
+    await user.click(screen.getByRole('tab', { name: /workflows/i }))
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Run NDVI on this item')
+    await user.click(await screen.findByRole('button', { name: /run workflow/i }))
+
+    const dialog = await screen.findByRole('dialog')
+    expect(await screen.findByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /check the inputs/i })).toBeNull()
+    expect(dialog).toHaveTextContent(sentinel1Item.id)
   })
 })

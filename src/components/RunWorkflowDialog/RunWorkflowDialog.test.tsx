@@ -2,13 +2,12 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import type { Collection, ProcessDetail } from '@/types'
+import type { ProcessDetail } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { useProcessLaunchFromCatalogue } from '@/hooks/useProcessLaunchFromCatalogue'
 import {
   allWorkflows,
   anyDatasetWorkflow,
@@ -19,7 +18,6 @@ import {
   itemWithoutLink,
   legacyWorkflow,
   listRecord,
-  multiDatasetWorkflow,
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
@@ -31,9 +29,6 @@ vi.mock('@/services/processCatalogueService', () => ({
 }))
 vi.mock('@/services/workflowLaunchService', () => ({ launchWorkflow: vi.fn() }))
 vi.mock('@/services/workspaceTokenService', () => ({ fetchWorkspaceTokens: vi.fn() }))
-vi.mock('@/hooks/useProcessLaunchFromCatalogue', () => ({
-  useProcessLaunchFromCatalogue: vi.fn(),
-}))
 
 type DialogProps = Partial<React.ComponentProps<typeof RunWorkflowDialog>>
 type AuthValue = React.ContextType<typeof AuthenticationContext>
@@ -91,32 +86,6 @@ const toReview = async () => {
 
 const drawArea = () => dataFinderStore.send({ type: 'storeAoi', aoi })
 
-const findDataLink = () => screen.queryByRole('link', { name: /find data on the map/i })
-
-const collection = { id: 'sentinel2_ard' } as Collection
-const collectionUrl = 'https://hub.example/collections/sentinel2_ard'
-
-const picker = (
-  overrides: Partial<ReturnType<typeof useProcessLaunchFromCatalogue>> = {},
-): ReturnType<typeof useProcessLaunchFromCatalogue> => ({
-  collections: [{ id: 'sentinel2_ard', label: 'Sentinel-2 ARD', url: collectionUrl }],
-  selectedCollectionUrl: collectionUrl,
-  selectedCollection: collection,
-  setSelectedCollectionUrl: vi.fn(),
-  startDate: null,
-  endDate: null,
-  setStartDate: vi.fn(),
-  setEndDate: vi.fn(),
-  items: [item],
-  selectedItem: item,
-  setSelectedItemId: vi.fn(),
-  isLoadingItems: false,
-  itemsError: null,
-  dateRangeError: null,
-  reset: vi.fn(),
-  ...overrides,
-})
-
 beforeEach(() => {
   stubBrowserGlobals()
   vi.stubEnv('VITE_HUB_BASE_URL', 'https://hub.example')
@@ -140,7 +109,6 @@ beforeEach(() => {
     status: 'accepted',
     submittedAt: '2026-10-29T10:00:00Z',
   })
-  vi.mocked(useProcessLaunchFromCatalogue).mockReturnValue(picker())
 })
 
 afterEach(() => {
@@ -349,97 +317,37 @@ describe('RunWorkflowDialog from an item', () => {
   })
 })
 
-describe('RunWorkflowDialog from a workflow', () => {
-  it('starts at the source step with the workflow filled in', async () => {
-    renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    expect(screen.getAllByText(/NDVI/).length).toBeGreaterThan(0)
-    expect(useProcessLaunchFromCatalogue).toHaveBeenCalledWith({ process: ndviWorkflow })
-  })
-
-  it('cannot go on until an item is picked', async () => {
-    vi.mocked(useProcessLaunchFromCatalogue).mockReturnValue(
-      picker({ items: [], selectedItem: null }),
-    )
-    renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-  })
-
-  it('skips the workflow step', async () => {
-    renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    next()
+describe('RunWorkflowDialog from an item and a workflow', () => {
+  it('starts at the inputs step with both filled in', async () => {
+    renderDialog({ item, workflow: ndviWorkflow })
     await heading(/check the inputs/i)
     expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
-    back()
-    await heading(/what do you want to run on/i)
+    expect(screen.queryByRole('heading', { name: /what do you want to run on/i })).toBeNull()
+    expect(screen.getAllByText(/NDVI/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(new RegExp(item.id)).length).toBeGreaterThan(0)
   })
 
-  it("links to the Data Finder at the workflow's dataset", async () => {
-    renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    expect(findDataLink()).toHaveAttribute('href', '/finder/sentinel2_ard')
-  })
-
-  it("links to the Data Finder at the workflow's first dataset", async () => {
-    renderDialog({ workflow: multiDatasetWorkflow })
-    await heading(/what do you want to run on/i)
-    expect(findDataLink()).toHaveAttribute('href', '/finder/landsat_c2l2')
-  })
-
-  it('links to the dataset list when the workflow names no dataset', async () => {
-    vi.mocked(useProcessLaunchFromCatalogue).mockReturnValue(
-      picker({
-        collections: [],
-        selectedCollectionUrl: null,
-        selectedCollection: null,
-        items: [],
-        selectedItem: null,
-      }),
-    )
-    renderDialog({ workflow: anyDatasetWorkflow })
-    await heading(/what do you want to run on/i)
-    const link = findDataLink()
-    expect(link).toHaveAttribute('href', '/')
-    // The link comes with a short explanation, not only the link text
-    const dialogText = screen.getByRole('dialog').textContent ?? ''
-    expect(dialogText.replace(link!.textContent ?? '', '')).toMatch(/map|data finder/i)
-  })
-
-  it('starts with no item picked when the dialog opens again', async () => {
-    // A picker that keeps its own state, like the real hook, so a remount shows as an empty pick
-    let pickItem: (id: string | null) => void = () => undefined
-    vi.mocked(useProcessLaunchFromCatalogue).mockImplementation(() => {
-      const [selectedId, setSelectedId] = React.useState<string | null>(null)
-      pickItem = setSelectedId
-      return picker({
-        selectedItem: selectedId === item.id ? item : null,
-        setSelectedItemId: setSelectedId,
-      })
-    })
-    const { rerender } = renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    act(() => pickItem(item.id))
-    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled()
-
-    rerender(dialogTree({ workflow: ndviWorkflow, open: false }))
-    rerender(dialogTree({ workflow: ndviWorkflow, open: true }))
-    await heading(/what do you want to run on/i)
-    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled()
-  })
-
-  it('runs the workflow on the picked item', async () => {
-    renderDialog({ workflow: ndviWorkflow })
-    await heading(/what do you want to run on/i)
-    next()
+  it('runs the workflow on the item', async () => {
+    renderDialog({ item, workflow: ndviWorkflow })
     await heading(/check the inputs/i)
     await toReview()
-    expect(screen.getAllByText(new RegExp(item.id)).length).toBeGreaterThan(0)
     fireEvent.click(runButton())
 
     await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(1))
     expect(sentVariables()).toMatchObject({ stac_item: ITEM_SELF_HREF })
+  })
+
+  it('keeps the tool chosen in the Data Finder after a run', async () => {
+    dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
+    renderDialog({ item, workflow: ndviWorkflow })
+    await heading(/check the inputs/i)
+    await toReview()
+    fireEvent.click(runButton())
+
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(1))
+    await screen.findByText(/has started/i)
+    expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe('ndvi')
+    dataFinderStore.send({ type: 'clearTool' })
   })
 })
 
@@ -457,14 +365,10 @@ describe('RunWorkflowDialog inputs step', () => {
     await heading(/choose a workflow/i)
   })
 
-  it('is skipped from a workflow when it has no user fields and no area checkbox', async () => {
-    renderDialog({ workflow: anyDatasetWorkflow })
-    await heading(/what do you want to run on/i)
-    next()
+  it('is skipped from an item and a workflow when it has no user fields and no area checkbox', async () => {
+    renderDialog({ item, workflow: anyDatasetWorkflow })
     await heading(/review/i)
     expect(inputsHeading()).toBeNull()
-    back()
-    await heading(/what do you want to run on/i)
   })
 
   it('is shown when the workflow has an area checkbox', async () => {
@@ -478,6 +382,12 @@ describe('RunWorkflowDialog inputs step', () => {
     renderDialog({ item })
     await chooseWorkflow('NDVI')
     expect(screen.getByLabelText('Threshold')).toBeInTheDocument()
+  })
+})
+
+describe('workflow-first source step', () => {
+  it('removes the item picker hook', () => {
+    expect(Object.keys(import.meta.glob('/src/hooks/useProcessLaunchFromCatalogue.ts'))).toEqual([])
   })
 })
 
