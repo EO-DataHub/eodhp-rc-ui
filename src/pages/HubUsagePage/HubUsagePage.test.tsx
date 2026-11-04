@@ -637,9 +637,17 @@ describe('Stage 6: the current period ends while the page is open', () => {
   // The last minute of 3 November 2026; the day period ends at midnight UTC.
   const JUST_BEFORE_MIDNIGHT = new Date('2026-11-03T23:59:30Z')
 
+  // Load the lazy pages with real timers, so a cold import does not race the fake clock.
+  beforeAll(async () => {
+    await import('@/pages/HubUsagePage/HubUsagePage')
+    await import('@/pages/HubUsagePage/HubWorkspaceUsagePage')
+  })
+
   it.each(['/accounting/hub', '/accounting/hub/ws-alpha'])(
     'at %s, drops the in-progress label and enables Next within a minute of the end',
     async (path) => {
+      // beforeEach fakes only Date; vitest ignores a second useFakeTimers call while time is faked.
+      vi.useRealTimers()
       vi.useFakeTimers({ shouldAdvanceTime: true })
       vi.setSystemTime(JUST_BEFORE_MIDNIGHT)
       renderHub(`${path}?type=day&start=2026-11-03`)
