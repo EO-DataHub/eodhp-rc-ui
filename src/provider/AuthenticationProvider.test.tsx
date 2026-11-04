@@ -2,6 +2,7 @@ import { useContext } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { getAuthenticatedAxios } from '@/library/axios'
 import { AuthenticationContextProvider } from './AuthenticationProvider'
 
 interface FakeKeycloak {
@@ -117,5 +118,39 @@ describe('Stage 1: isHubAdmin in the authentication context', () => {
 
     await waitFor(() => expect(screen.getByTestId('token')).toHaveTextContent('tok-3'))
     expect(screen.getByTestId('hub-admin')).toHaveTextContent('true')
+  })
+})
+
+describe('Stage 6: isHubAdmin after an axios token refresh', () => {
+  const latestGetUpdatedToken = () => {
+    const calls = vi.mocked(getAuthenticatedAxios).mock.calls
+    const options = calls[calls.length - 1]?.[0] as
+      | { getUpdatedToken: () => Promise<string | undefined> }
+      | undefined
+    if (!options) throw new Error('getAuthenticatedAxios was not called')
+    return options.getUpdatedToken
+  }
+
+  it('follows the realm roles of the token getUpdatedToken gets', async () => {
+    renderProvider()
+    await waitFor(() => expect(screen.getByTestId('hub-admin')).toHaveTextContent('true'))
+    await waitFor(() => expect(getAuthenticatedAxios).toHaveBeenCalled())
+
+    keycloak.roles = []
+    keycloak.instance.token = 'tok-2'
+    let refreshed: string | undefined
+    await act(async () => {
+      refreshed = await latestGetUpdatedToken()()
+    })
+    expect(refreshed).toBe('tok-2')
+    await waitFor(() => expect(screen.getByTestId('hub-admin')).toHaveTextContent('false'))
+
+    keycloak.roles = ['hub_admin']
+    keycloak.instance.token = 'tok-3'
+    await act(async () => {
+      refreshed = await latestGetUpdatedToken()()
+    })
+    expect(refreshed).toBe('tok-3')
+    await waitFor(() => expect(screen.getByTestId('hub-admin')).toHaveTextContent('true'))
   })
 })

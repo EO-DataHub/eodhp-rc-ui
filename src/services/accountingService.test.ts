@@ -308,3 +308,80 @@ describe('Stage 5: hub usage page size', () => {
     expect(callParams(0).get('limit')).not.toBe('5000')
   })
 })
+
+describe('Stage 6: drill-down paging', () => {
+  const params = {
+    start: START,
+    end: END,
+    timeAggregation: 'month' as const,
+    groupBy: ['sku' as const],
+  }
+  const read = () => fetchAllAggregatedWorkspaceUsageData('ws-alpha', 'tok', params)
+
+  it('reads a full page from the workspace path, then the rest after the cursor', async () => {
+    fetchMock.mockImplementation((url) =>
+      Promise.resolve(respond(200, afterOf(url) ? rows('b', 3) : rows('a', limitOf(url)))),
+    )
+    const result = await read()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    for (const index of [0, 1]) {
+      expect(callPath(index)).toMatch(/\/api\/workspaces\/ws-alpha\/accounting\/usage-data$/)
+      expect(callParams(index).get('start')).toBe(START)
+      expect(callParams(index).get('end')).toBe(END)
+      expect(groupBy(callParams(index))).toEqual(['sku'])
+    }
+    expect(callParams(0).has('after')).toBe(false)
+    expect(afterOf(callUrl(1))).toBe(`a-${limitOf(callUrl(0)) - 1}`)
+    expect(result).toHaveLength(limitOf(callUrl(0)) + 3)
+  })
+
+  it('retries the whole fetch once when a cursor page answers 404', async () => {
+    let attempt = 0
+    fetchMock.mockImplementation((url) => {
+      if (!afterOf(url)) {
+        attempt += 1
+        return Promise.resolve(respond(200, rows(`attempt${attempt}`, limitOf(url))))
+      }
+      if (attempt === 1) return Promise.resolve(respond(404, { detail: 'Cursor not found' }))
+      return Promise.resolve(respond(200, rows('tail', 1)))
+    })
+    const result = await read()
+    expect(attempt).toBe(2)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    const uuids = result.map((event: { uuid: string }) => event.uuid)
+    expect(uuids.some((uuid) => uuid.startsWith('attempt1'))).toBe(false)
+    expect(uuids.filter((uuid) => uuid.startsWith('attempt2'))).toHaveLength(limitOf(callUrl(0)))
+    expect(uuids).toContain('tail-0')
+  })
+
+  it('gives up when the retry hits a 404 too', async () => {
+    fetchMock.mockImplementation((url) => {
+      if (!afterOf(url)) return Promise.resolve(respond(200, rows('a', limitOf(url))))
+      return Promise.resolve(respond(404, { detail: 'Cursor not found' }))
+    })
+    await expect(read()).rejects.toThrow()
+    expect(fetchMock.mock.calls.filter(([url]) => !afterOf(url))).toHaveLength(2)
+  })
+
+  it('does not retry a 404 on the first page', async () => {
+    fetchMock.mockResolvedValue(respond(404, { detail: 'Workspace not found' }))
+    await expect(read()).rejects.toThrow('Workspace not found')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Stage 6: workspace name in the usage path', () => {
+  it.each(['ws a/b', 'ws#1', 'ws?x=1'])('encodes %s as one path segment', async (workspace) => {
+    fetchMock.mockResolvedValue(respond(200, []))
+    await fetchWorkspaceUsageData(workspace, 'tok', { start: START, end: END })
+    const url = callUrl(0)
+    expect(url).toContain(`/api/workspaces/${encodeURIComponent(workspace)}/accounting/usage-data?`)
+    expect(new URLSearchParams(url.split('?').slice(1).join('?')).get('start')).toBe(START)
+  })
+
+  it('encodes the name in the paged drill-down read', async () => {
+    fetchMock.mockResolvedValue(respond(200, []))
+    await fetchAllAggregatedWorkspaceUsageData('ws a/b', 'tok', { start: START, end: END })
+    expect(callUrl(0)).toContain('/api/workspaces/ws%20a%2Fb/accounting/usage-data?')
+  })
+})

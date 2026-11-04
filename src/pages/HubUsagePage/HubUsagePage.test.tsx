@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HubApi, installHubApi, NOW, stubRadixBrowserApis } from '@/test-data/hubUsage'
 import {
@@ -12,6 +12,7 @@ import {
   expectUsageRange,
   groupByOf,
   isBusy,
+  loadingIndicator,
   nameInput,
   nextButton,
   parseCredits,
@@ -538,6 +539,7 @@ describe('Stage 5: ranking token refresh and caching', () => {
   it('sends no hub read until the user is known, then each read once', async () => {
     const { updateAuth } = renderHub('/accounting/hub', { userInfo: undefined })
     await settle()
+    expect(loadingIndicator()).not.toBeNull()
     expect(countOf(USAGE)).toBe(0)
     expect(countOf(WORKSPACES)).toBe(0)
     expect(countOf(SKUS)).toBe(0)
@@ -607,4 +609,50 @@ describe('Stage 5: ranking token refresh and caching', () => {
     }).toEqual(before)
     expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
   })
+})
+
+describe('Stage 6: a start date that does not exist', () => {
+  it.each(['2026-02-30', '2026-04-31', 'not-a-date'])(
+    'opens the last complete month for ?type=month&start=%s',
+    async (start) => {
+      renderHub(`/accounting/hub?type=month&start=${start}`)
+      await screen.findAllByText('ws-alpha')
+      await expectUsageRange(api, OCTOBER)
+      expect(await screen.findByText('October 2026')).toBeInTheDocument()
+      expect(screen.queryByText(/March 2026|May 2026/)).not.toBeInTheDocument()
+    },
+  )
+
+  it('still opens a real leap day', async () => {
+    renderHub('/accounting/hub?type=month&start=2024-02-29')
+    await expectUsageRange(api, {
+      start: '2024-01-01T00:00:00Z',
+      end: '2024-03-01T00:00:00Z',
+      type: 'month',
+    })
+  })
+})
+
+describe('Stage 6: the current period ends while the page is open', () => {
+  // The last minute of 3 November 2026; the day period ends at midnight UTC.
+  const JUST_BEFORE_MIDNIGHT = new Date('2026-11-03T23:59:30Z')
+
+  it.each(['/accounting/hub', '/accounting/hub/ws-alpha'])(
+    'at %s, drops the in-progress label and enables Next within a minute of the end',
+    async (path) => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      vi.setSystemTime(JUST_BEFORE_MIDNIGHT)
+      renderHub(`${path}?type=day&start=2026-11-03`)
+      expect(await screen.findByText(/\(in progress\)/)).toBeInTheDocument()
+      expect(nextButton()).toBeDisabled()
+
+      // 30 seconds to the end of the day, then up to a minute for the page to notice.
+      act(() => {
+        vi.advanceTimersByTime(90 * 1000)
+      })
+
+      await waitFor(() => expect(screen.queryByText(/\(in progress\)/)).not.toBeInTheDocument())
+      expect(nextButton()).not.toBeDisabled()
+    },
+  )
 })

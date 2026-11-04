@@ -208,3 +208,7 @@ export const parseCredits = (text: string) =>
 
 export const isHighlighted = (row: Element | undefined) =>
   row?.getAttribute('aria-selected') === 'true' || row?.getAttribute('aria-current') === 'true'
+
+/** The page's loading spinner, or null when none is shown. */
+export const loadingIndicator = () =>
+  document.querySelector('.rt-Spinner, [role="progressbar"], [role="status"]')

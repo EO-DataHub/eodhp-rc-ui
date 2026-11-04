@@ -14,6 +14,7 @@ import {
   expectUsageRange,
   groupByOf,
   isHighlighted,
+  loadingIndicator,
   nameInput,
   nextButton,
   periodTypeRadio,
@@ -276,6 +277,7 @@ describe('Stage 5: drill-down token refresh and caching', () => {
       api.requests.filter((request) => request.path.endsWith('/usage-data')).length
     const { updateAuth } = renderHub('/accounting/hub/ws-alpha', { userInfo: undefined })
     await settle()
+    expect(loadingIndicator()).not.toBeNull()
     expect(usageReads()).toBe(0)
     expect(countOf(WORKSPACES)).toBe(0)
     expect(countOf(SKUS)).toBe(0)
