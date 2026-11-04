@@ -1,0 +1,136 @@
+name: PR preview
+
+# Builds each pull request with the production config and publishes it at
+#   https://preview.eodatahub.org.uk/rc/pr-<number>/
+# The preview is deleted when the PR is closed or merged.
+#
+# Hosting (bucket, CloudFront, deploy role) is in EO-DataHub/eodhp-frontend-previews.
+# The "preview" GitHub environment must set:
+#   GHA_AWS_PREVIEW_ROLE  arn:aws:iam::235494775127:role/PreviewDeploy-rc
+#   DEPLOYMENT_BUCKET     eodh-frontend-previews
+#   DEPLOYMENT_REGION     eu-west-2
+# All VITE_* values come from the repository-level (production) variables.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  PREVIEW_HOST: preview.eodatahub.org.uk
+  APP_PREFIX: rc
+
+jobs:
+  deploy:
+    name: Deploy preview
+    # Only PRs from branches in this repo. Fork and Dependabot runs cannot get
+    # the deploy role, and must not run unreviewed code with it.
+    if: >-
+      github.event.action != 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    environment:
+      name: preview
+      url: ${{ steps.target.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Work out preview path
+        id: target
+        run: |
+          path="${APP_PREFIX}/pr-${{ github.event.pull_request.number }}/"
+          echo "path=${path}" >> "$GITHUB_OUTPUT"
+          echo "url=https://${PREVIEW_HOST}/${path}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build
+        run: yarn build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=4096'
+          VITE_BASE_PATH: /${{ steps.target.outputs.path }}
+          VITE_HUB_BASE_URL: ${{ vars.VITE_HUB_BASE_URL }}
+          VITE_CATALOGUE_API_URL: ${{ vars.VITE_CATALOGUE_API_URL }}
+          VITE_KEYCLOAK_CLIENT_ID: ${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
+          VITE_KEYCLOAK_REALM: ${{ vars.VITE_KEYCLOAK_REALM }}
+          VITE_KEYCLOAK_URL: ${{ vars.VITE_KEYCLOAK_URL }}
+          VITE_TITILER_BASE_URL: ${{ vars.VITE_TITILER_BASE_URL }}
+          VITE_RC_SUPPORT_UTILS_URL: ${{ vars.VITE_RC_SUPPORT_UTILS_URL }}
+          VITE_WORKFLOW_RESULTS_WORKSPACE_NAME: ${{ vars.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME }}
+          VITE_WORKSPACES_DOMAIN: ${{ vars.VITE_WORKSPACES_DOMAIN }}
+          VITE_OPEN_COSMOS_AUTH_DOMAIN: ${{ vars.VITE_OPEN_COSMOS_AUTH_DOMAIN }}
+          VITE_OPEN_COSMOS_CLIENT_ID: ${{ vars.VITE_OPEN_COSMOS_CLIENT_ID }}
+          VITE_OPEN_COSMOS_AUDIENCE: ${{ vars.VITE_OPEN_COSMOS_AUDIENCE }}
+          VITE_OPEN_COSMOS_REDIRECT_URI: ${{ vars.VITE_OPEN_COSMOS_REDIRECT_URI }}
+          VITE_OPEN_COSMOS_SCOPE: ${{ vars.VITE_OPEN_COSMOS_SCOPE }}
+          # VITE_GA_MEASUREMENT_ID is left unset so previews do not report to analytics.
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.GHA_AWS_PREVIEW_ROLE }}
+          aws-region: ${{ vars.DEPLOYMENT_REGION }}
+
+      # Use cp, not sync. cp re-uploads every file, which resets each object's
+      # age, so the bucket's 60-day expiry never removes files from an open PR.
+      - name: Upload to S3
+        env:
+          DEST: s3://${{ vars.DEPLOYMENT_BUCKET }}/${{ steps.target.outputs.path }}
+        run: |
+          # Vite's hashed bundles never change, so cache them for a long time.
+          if [ -d dist/assets ]; then
+            aws s3 cp dist/assets "${DEST}assets" --recursive \
+              --cache-control "public,max-age=31536000,immutable"
+          fi
+          # Everything else (index.html, silent-check-sso.html, public/ files)
+          # can change between pushes, so browsers must revalidate it.
+          aws s3 cp dist "${DEST}" --recursive --exclude "assets/*" \
+            --cache-control "max-age=0,must-revalidate"
+
+      - name: Summary
+        run: |
+          echo "Preview: ${{ steps.target.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup:
+    name: Remove preview
+    if: >-
+      github.event.action == 'closed' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    # The deploy role only trusts jobs in the "preview" environment.
+    environment:
+      name: preview
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.GHA_AWS_PREVIEW_ROLE }}
+          aws-region: ${{ vars.DEPLOYMENT_REGION }}
+
+      - name: Delete preview from S3
+        run: |
+          aws s3 rm "s3://${{ vars.DEPLOYMENT_BUCKET }}/${APP_PREFIX}/pr-${{ github.event.pull_request.number }}/" --recursive
