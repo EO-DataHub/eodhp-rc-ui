@@ -41,20 +41,18 @@ export interface HubUsageState {
   period: Period
   previousPeriod: Period
   inProgress: boolean
-  sku: string
   name: string
 }
 
 export interface HubUsageActions {
   setPeriodType: (type: PeriodType) => void
   stepPeriod: (direction: -1 | 1) => void
-  selectDate: (date: Date) => void
-  setSku: (sku: string) => void
+  selectPeriod: (start: Date) => void
   setName: (name: string) => void
 }
 
-// The ranking and the drill-down keep the period type, period start, SKU filter and name
-// filter in the query string, so a URL restores the view and the back link keeps it.
+// The ranking and the drill-down keep the period type, period start and name filter in
+// the query string, so a URL restores the view and the back link keeps it.
 export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
   const [searchParams, setSearchParams] = useSearchParams()
   const now = new Date()
@@ -64,7 +62,6 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
   const period = requestedStart
     ? clampedPeriod(periodType, requestedStart, now)
     : getLastCompletePeriod(periodType, now)
-  const sku = searchParams.get('sku') ?? ''
   const name = searchParams.get('name') ?? ''
   const periodStartTime = period.start.getTime()
   const periodEndTime = period.end.getTime()
@@ -115,15 +112,14 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
     [periodStartTime, periodType, update],
   )
 
-  const selectDate = useCallback(
-    (date: Date) => {
-      const target = clampedPeriod(periodType, date, new Date())
+  const selectPeriod = useCallback(
+    (start: Date) => {
+      const target = clampedPeriod(periodType, start, new Date())
       update({ type: periodType, start: toDateParam(target.start) })
     },
     [periodType, update],
   )
 
-  const setSku = useCallback((value: string) => update({ sku: value }), [update])
   // Typing replaces the history entry so each keystroke is not a step back.
   const setName = useCallback((value: string) => update({ name: value }, true), [update])
 
@@ -148,12 +144,10 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
   return {
     periodType,
     ...derived,
-    sku,
     name,
     setPeriodType,
     stepPeriod,
-    selectDate,
-    setSku,
+    selectPeriod,
     setName,
   }
 }

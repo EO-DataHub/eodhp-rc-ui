@@ -1,8 +1,14 @@
 import React from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@radix-ui/react-icons'
-import { Flex, IconButton, SegmentedControl, Text } from '@radix-ui/themes'
-import { Period, PeriodType } from '@/library/usagePeriods'
-import { parseDateParam, toDateParam } from './useHubUsageSearchParams'
+import { Button, DropdownMenu, Flex, IconButton, SegmentedControl } from '@radix-ui/themes'
+import {
+  getPeriodBounds,
+  getPreviousPeriod,
+  isPeriodInProgress,
+  Period,
+  PeriodType,
+} from '@/library/usagePeriods'
+import { toDateParam } from './useHubUsageSearchParams'
 
 const TYPE_LABELS: Record<PeriodType, string> = {
   day: 'Day',
@@ -10,6 +16,9 @@ const TYPE_LABELS: Record<PeriodType, string> = {
   month: 'Month',
   quarter: 'Quarter',
 }
+
+// How many periods the period menu offers, ending at the current one.
+const MENU_PERIODS = 12
 
 const utcFormat = (options: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', ...options })
@@ -30,13 +39,22 @@ const formatPeriod = (type: PeriodType, period: Period): string => {
   }
 }
 
+/** The most recent periods of this type, newest first, starting with the current one. */
+const recentPeriods = (type: PeriodType, now: Date): Period[] => {
+  const periods = [getPeriodBounds(type, now)]
+  while (periods.length < MENU_PERIODS) {
+    periods.push(getPreviousPeriod(type, periods[periods.length - 1]))
+  }
+  return periods
+}
+
 interface PeriodControlsProps {
   periodType: PeriodType
   period: Period
   inProgress: boolean
   onPeriodTypeChange: (type: PeriodType) => void
   onStep: (direction: -1 | 1) => void
-  onSelectDate: (date: Date) => void
+  onSelectPeriod: (start: Date) => void
 }
 
 export const PeriodControls: React.FC<PeriodControlsProps> = ({
@@ -45,9 +63,10 @@ export const PeriodControls: React.FC<PeriodControlsProps> = ({
   inProgress,
   onPeriodTypeChange,
   onStep,
-  onSelectDate,
+  onSelectPeriod,
 }) => {
-  const today = toDateParam(new Date())
+  const now = new Date()
+  const periods = recentPeriods(periodType, now)
 
   return (
     <Flex gap="3" align="center" wrap="wrap">
@@ -66,10 +85,31 @@ export const PeriodControls: React.FC<PeriodControlsProps> = ({
         <IconButton variant="soft" aria-label="Previous period" onClick={() => onStep(-1)}>
           <ChevronLeftIcon />
         </IconButton>
-        <Text weight="medium" aria-live="polite">
-          {formatPeriod(periodType, period)}
-          {inProgress && ' (in progress)'}
-        </Text>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger>
+            <Button variant="soft" color="gray" aria-live="polite">
+              {`${formatPeriod(periodType, period)}${inProgress ? ' (in progress)' : ''}`}
+              <DropdownMenu.TriggerIcon />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            <DropdownMenu.RadioGroup
+              value={toDateParam(period.start)}
+              onValueChange={(value) => {
+                const chosen = periods.find((item) => toDateParam(item.start) === value)
+                if (chosen) onSelectPeriod(chosen.start)
+              }}
+            >
+              {periods.map((item) => (
+                <DropdownMenu.RadioItem key={item.start.getTime()} value={toDateParam(item.start)}>
+                  {`${formatPeriod(periodType, item)}${
+                    isPeriodInProgress(item, now) ? ' (in progress)' : ''
+                  }`}
+                </DropdownMenu.RadioItem>
+              ))}
+            </DropdownMenu.RadioGroup>
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
         <IconButton
           variant="soft"
           aria-label="Next period"
@@ -78,21 +118,6 @@ export const PeriodControls: React.FC<PeriodControlsProps> = ({
         >
           <ChevronRightIcon />
         </IconButton>
-      </Flex>
-
-      <Flex gap="2" align="center" asChild>
-        <label>
-          <Text size="2">Go to date</Text>
-          <input
-            type="date"
-            value={toDateParam(period.start)}
-            max={today}
-            onChange={(event) => {
-              const date = parseDateParam(event.target.value)
-              if (date) onSelectDate(date)
-            }}
-          />
-        </label>
       </Flex>
     </Flex>
   )

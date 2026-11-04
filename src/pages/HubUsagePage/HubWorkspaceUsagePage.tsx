@@ -12,6 +12,7 @@ import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { HUB_QUERY_CACHE } from './hubQueryOptions'
+import { ChangeText } from './ChangeText'
 import { PeriodControls } from './PeriodControls'
 import {
   buildSkuUsage,
@@ -27,7 +28,7 @@ import styles from './HubUsagePage.module.scss'
 type ValueMode = 'credits' | 'raw'
 
 // The ranking's own state, carried back by the back link.
-const RANKING_PARAMS = ['type', 'start', 'sku', 'name']
+const RANKING_PARAMS = ['type', 'start', 'name']
 
 export const HubWorkspaceUsagePage: React.FC = () => {
   const { token, userInfo } = useContext(AuthenticationContext)
@@ -36,7 +37,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
   const ready = Boolean(token) && Boolean(user)
   const { workspace = '' } = useParams<{ workspace: string }>()
   const state = useHubUsageSearchParams()
-  const { periodType, period, previousPeriod, sku, inProgress } = state
+  const { periodType, period, previousPeriod, inProgress } = state
   const [searchParams] = useSearchParams()
   const [mode, setMode] = useState<ValueMode>('credits')
 
@@ -62,7 +63,6 @@ export const HubWorkspaceUsagePage: React.FC = () => {
 
   const rangeStart = previousPeriod.start.toISOString()
   const rangeEnd = period.end.toISOString()
-  // Every SKU the workspace used is listed, so the ranking's SKU filter is not sent here.
   const usageQuery = useQuery({
     queryKey: ['hubWorkspaceUsage', user, workspace, periodType, rangeStart, rangeEnd],
     queryFn: () =>
@@ -127,7 +127,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
         inProgress={inProgress}
         onPeriodTypeChange={state.setPeriodType}
         onStep={state.stepPeriod}
-        onSelectDate={state.selectDate}
+        onSelectPeriod={state.selectPeriod}
       />
 
       <SegmentedControl.Root value={mode} onValueChange={(value) => setMode(value as ValueMode)}>
@@ -168,25 +168,24 @@ export const HubWorkspaceUsagePage: React.FC = () => {
             )}
             {rows.map((row) => {
               const info = skuInfo(row.sku)
-              const selected = Boolean(sku) && row.sku === sku
               const withUnit = (value: string) => (info?.unit ? `${value} ${info.unit}` : value)
               return (
-                <Table.Row
-                  key={row.sku}
-                  aria-selected={selected}
-                  className={selected ? styles.selectedRow : undefined}
-                >
+                <Table.Row key={row.sku}>
                   <Table.Cell>{info?.name ?? row.sku}</Table.Cell>
-                  <Table.Cell align="right">
+                  <Table.Cell align="right" className={styles.number}>
                     {raw ? withUnit(formatQuantity(row.quantity)) : formatCredits(row.credits)}
                   </Table.Cell>
                   {!inProgress && (
-                    <Table.Cell align="right">
-                      {raw
-                        ? row.quantityChange === undefined
-                          ? formatQuantityChange(undefined)
-                          : withUnit(formatQuantityChange(row.quantityChange))
-                        : formatChange(row.creditChange)}
+                    <Table.Cell align="right" className={styles.number}>
+                      <ChangeText
+                        text={
+                          raw
+                            ? row.quantityChange === undefined
+                              ? formatQuantityChange(undefined)
+                              : withUnit(formatQuantityChange(row.quantityChange))
+                            : formatChange(row.creditChange)
+                        }
+                      />
                     </Table.Cell>
                   )}
                 </Table.Row>

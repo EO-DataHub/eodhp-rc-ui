@@ -1,7 +1,8 @@
 import React from 'react'
-import { Table, Text } from '@radix-ui/themes'
+import { Link, Table, Text } from '@radix-ui/themes'
 import { CaretDownIcon, CaretSortIcon, CaretUpIcon } from '@radix-ui/react-icons'
-import { Link, To } from 'react-router-dom'
+import { Link as RouterLink, To } from 'react-router-dom'
+import { ChangeText } from './ChangeText'
 import {
   Credits,
   formatChange,
@@ -25,7 +26,6 @@ export type BalancesState = 'loading' | 'error' | 'ready'
 interface RankingTableProps {
   rows: RankingRow[]
   total: Credits
-  showTopSku: boolean
   showChange: boolean
   sortColumn: SortColumn
   sortDirection: SortDirection
@@ -41,7 +41,6 @@ interface RankingTableProps {
 export const RankingTable: React.FC<RankingTableProps> = ({
   rows,
   total,
-  showTopSku,
   showChange,
   sortColumn,
   sortDirection,
@@ -56,7 +55,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
     { key: 'workspace', label: 'Workspace' },
     { key: 'total', label: 'Total credits', align: 'right' },
     { key: 'share', label: 'Share', align: 'right' },
-    ...(showTopSku ? [{ key: 'topSku' as const, label: 'Top SKU' }] : []),
+    { key: 'topSku', label: 'Top SKU' },
     ...(showChange ? [{ key: 'change' as const, label: 'Change', align: 'right' as const }] : []),
     { key: 'balance', label: 'Balance now', align: 'right' },
   ]
@@ -110,20 +109,34 @@ export const RankingTable: React.FC<RankingTableProps> = ({
             }}
           >
             <Table.Cell>
-              <Link to={workspaceLink(row.workspace)}>{row.workspace}</Link>
+              <Link asChild>
+                <RouterLink to={workspaceLink(row.workspace)}>{row.workspace}</RouterLink>
+              </Link>
             </Table.Cell>
-            <Table.Cell align="right">{formatCredits(row.total)}</Table.Cell>
-            <Table.Cell align="right">{formatShare(row.share)}</Table.Cell>
-            {showTopSku && <Table.Cell>{skuName(row.topSku)}</Table.Cell>}
-            {showChange && <Table.Cell align="right">{formatChange(row.change)}</Table.Cell>}
+            <Table.Cell align="right" className={styles.number}>
+              {formatCredits(row.total)}
+            </Table.Cell>
+            <Table.Cell align="right" className={styles.number}>
+              {formatShare(row.share)}
+            </Table.Cell>
+            <Table.Cell>{skuName(row.topSku)}</Table.Cell>
+            {showChange && (
+              <Table.Cell align="right" className={styles.number}>
+                <ChangeText text={formatChange(row.change)} />
+              </Table.Cell>
+            )}
             <BalanceCell balance={row.balance} state={balances} />
           </Table.Row>
         ))}
         <Table.Row className={styles.totalsRow}>
           <Table.Cell>Total, all workspaces</Table.Cell>
-          <Table.Cell align="right">{formatCredits(total)}</Table.Cell>
-          <Table.Cell align="right">{total > 0n ? formatShare(100) : ''}</Table.Cell>
-          {showTopSku && <Table.Cell />}
+          <Table.Cell align="right" className={styles.number}>
+            {formatCredits(total)}
+          </Table.Cell>
+          <Table.Cell align="right" className={styles.number}>
+            {total > 0n ? formatShare(100) : ''}
+          </Table.Cell>
+          <Table.Cell />
           {showChange && <Table.Cell />}
           <Table.Cell />
         </Table.Row>
@@ -147,6 +160,8 @@ const BalanceCell: React.FC<{ balance: Credits | undefined; state: BalancesState
   }
   if (state === 'error') return <Table.Cell align="right">—</Table.Cell>
   return (
-    <Table.Cell align="right">{balance === undefined ? '' : formatCredits(balance)}</Table.Cell>
+    <Table.Cell align="right" className={styles.number}>
+      {balance === undefined ? '' : formatCredits(balance)}
+    </Table.Cell>
   )
 }

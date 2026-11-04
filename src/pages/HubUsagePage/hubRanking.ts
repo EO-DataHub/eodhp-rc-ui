@@ -59,8 +59,8 @@ export interface Ranking {
 }
 
 /**
- * Builds one row per workspace with usage in the selected period. Events that start before
- * `periodStart` belong to the previous period and only feed the change.
+ * Builds one row per workspace whose credits in the selected period are not 0. Events that
+ * start before `periodStart` belong to the previous period and only feed the change.
  */
 export const buildRanking = (
   events: BillingEvent[],
@@ -83,21 +83,24 @@ export const buildRanking = (
     }
   })
 
-  const totals = [...current.entries()].map(([workspace, bySku]) => {
-    let total = 0n
-    let topSku = ''
-    let topCredits: Credits | undefined
-    ;[...bySku.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .forEach(([sku, credits]) => {
-        total += credits
-        if (topCredits === undefined || credits > topCredits) {
-          topSku = sku
-          topCredits = credits
-        }
-      })
-    return { workspace, total, topSku }
-  })
+  const totals = [...current.entries()]
+    .map(([workspace, bySku]) => {
+      let total = 0n
+      let topSku = ''
+      let topCredits: Credits | undefined
+      ;[...bySku.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .forEach(([sku, credits]) => {
+          total += credits
+          if (topCredits === undefined || credits > topCredits) {
+            topSku = sku
+            topCredits = credits
+          }
+        })
+      return { workspace, total, topSku }
+    })
+    // Usage that cost nothing does not rank; the workspace counts as idle.
+    .filter((row) => row.total !== 0n)
 
   const grandTotal = totals.reduce((sum, row) => sum + row.total, 0n)
   const rows = totals.map(({ workspace, total, topSku }) => {

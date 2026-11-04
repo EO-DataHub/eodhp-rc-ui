@@ -1,5 +1,6 @@
 import React, { useCallback, useContext, useMemo, useState } from 'react'
-import { Flex, Select, Text, TextField } from '@radix-ui/themes'
+import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
+import { Flex, Text, TextField } from '@radix-ui/themes'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -24,15 +25,13 @@ import {
 import { BalancesState, RankingTable } from './RankingTable'
 import { useHubUsageSearchParams } from './useHubUsageSearchParams'
 
-const ALL_SKUS = 'all'
-
 export const HubUsagePage: React.FC = () => {
   const { token, userInfo } = useContext(AuthenticationContext)
   const user = userInfo?.sub
   // Queries are keyed on the user, so reading before the user is known would read twice.
   const ready = Boolean(token) && Boolean(user)
   const state = useHubUsageSearchParams()
-  const { periodType, period, previousPeriod, sku, name, inProgress } = state
+  const { periodType, period, previousPeriod, name, inProgress } = state
   const navigate = useNavigate()
   const { search } = useLocation()
   const [sortColumn, setSortColumn] = useState<SortColumn>('total')
@@ -58,19 +57,17 @@ export const HubUsagePage: React.FC = () => {
     (code: string) => skusQuery.data?.find((item) => item.sku === code)?.name ?? code,
     [skusQuery.data],
   )
-  const skuLabel = sku ? skuName(sku) : 'All SKUs'
 
   const rangeStart = previousPeriod.start.toISOString()
   const rangeEnd = period.end.toISOString()
   const usageQuery = useQuery({
-    queryKey: ['hubUsage', user, periodType, rangeStart, rangeEnd, sku],
+    queryKey: ['hubUsage', user, periodType, rangeStart, rangeEnd],
     queryFn: () =>
       fetchAllHubUsageData(token!, {
         start: rangeStart,
         end: rangeEnd,
         timeAggregation: periodType,
         groupBy: ['workspace', 'sku'],
-        sku: sku || undefined,
       }),
     // Waits for the SKU list to settle so rows first render with SKU names, but a failed
     // list does not block the ranking: names then fall back to the SKU code.
@@ -86,18 +83,12 @@ export const HubUsagePage: React.FC = () => {
   }, [usageQuery.data, summariesQuery.data, period])
 
   // Change is hidden while the period is in progress, so its sort falls back to total.
-  const hidesSortColumn =
-    (sortColumn === 'change' && inProgress) || (sortColumn === 'topSku' && Boolean(sku))
+  const hidesSortColumn = sortColumn === 'change' && inProgress
   const activeColumn = hidesSortColumn ? 'total' : sortColumn
   const activeDirection = hidesSortColumn ? 'descending' : sortDirection
 
   // The name filter only hides rows; share and the totals row still cover every workspace.
-  const emptyMessage =
-    ranking.rows.length > 0
-      ? 'No workspaces match'
-      : sku
-        ? 'No usage of this SKU in this period'
-        : 'No usage in this period'
+  const emptyMessage = ranking.rows.length > 0 ? 'No workspaces match' : 'No usage in this period'
 
   const visibleRows = useMemo(() => {
     const needle = name.toLowerCase()
@@ -141,36 +132,25 @@ export const HubUsagePage: React.FC = () => {
     <Flex direction="column" gap="4" p="4">
       <PageHeading title="All workspaces" badge="none" />
 
-      <PeriodControls
-        periodType={periodType}
-        period={period}
-        inProgress={state.inProgress}
-        onPeriodTypeChange={state.setPeriodType}
-        onStep={state.stepPeriod}
-        onSelectDate={state.selectDate}
-      />
-
-      <Flex gap="3" align="center" wrap="wrap">
-        <Select.Root
-          value={sku || ALL_SKUS}
-          onValueChange={(value) => state.setSku(value === ALL_SKUS ? '' : value)}
-        >
-          <Select.Trigger aria-label="SKU">{skuLabel}</Select.Trigger>
-          <Select.Content position="popper">
-            <Select.Item value={ALL_SKUS}>All SKUs</Select.Item>
-            {(skusQuery.data ?? []).map((item) => (
-              <Select.Item key={item.sku} value={item.sku}>
-                {item.name}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
+      <Flex gap="3" align="center" justify="between" wrap="wrap">
+        <PeriodControls
+          periodType={periodType}
+          period={period}
+          inProgress={inProgress}
+          onPeriodTypeChange={state.setPeriodType}
+          onStep={state.stepPeriod}
+          onSelectPeriod={state.selectPeriod}
+        />
         <TextField.Root
           aria-label="Workspace name"
           placeholder="Filter by workspace name"
           value={name}
           onChange={(event) => state.setName(event.target.value)}
-        />
+        >
+          <TextField.Slot>
+            <MagnifyingGlassIcon height="16" width="16" />
+          </TextField.Slot>
+        </TextField.Root>
       </Flex>
 
       {isLoading && <LoadingIndicator />}
@@ -190,7 +170,6 @@ export const HubUsagePage: React.FC = () => {
           <RankingTable
             rows={visibleRows}
             total={ranking.total}
-            showTopSku={!sku}
             showChange={!inProgress}
             sortColumn={activeColumn}
             sortDirection={activeDirection}
@@ -203,9 +182,7 @@ export const HubUsagePage: React.FC = () => {
           />
           {idleCount !== undefined && idleCount > 0 && (
             <Text size="2" color="gray">
-              {`${idleCount} ${idleCount === 1 ? 'workspace' : 'workspaces'} had no usage${
-                sku ? ' of this SKU' : ''
-              } in this period`}
+              {`${idleCount} ${idleCount === 1 ? 'workspace' : 'workspaces'} had no usage in this period`}
             </Text>
           )}
         </Flex>
