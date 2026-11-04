@@ -1,0 +1,32 @@
+name: Deploy main to latest
+
+# Every merge to main is published at https://preview.eodatahub.org.uk/rc/latest/
+# with the production config. This replaces the old develop site.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-latest
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      # The PreviewDeploy-rc role only trusts the "preview" environment.
+      environment: preview
+      role_var: GHA_AWS_PREVIEW_ROLE
+      ref: ${{ github.sha }}
+      base_path: /rc/latest/
+      s3_prefix: rc/latest/
+      url: https://preview.eodatahub.org.uk/rc/latest/
