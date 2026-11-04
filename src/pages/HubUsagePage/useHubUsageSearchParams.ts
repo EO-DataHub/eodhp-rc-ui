@@ -88,6 +88,13 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
     [setSearchParams],
   )
 
+  // Pin the default period in the URL, so the view does not move when a period ends.
+  const hasStart = requestedStart !== undefined
+  useEffect(() => {
+    if (hasStart) return
+    update({ type: periodType, start: toDateParam(new Date(periodStartTime)) }, true)
+  }, [hasStart, periodType, periodStartTime, update])
+
   const setPeriodType = useCallback(
     (type: PeriodType) => {
       const last = getLastCompletePeriod(type, new Date())
