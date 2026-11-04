@@ -1,5 +1,19 @@
 # EO Data Hub Resource Catalogue User Interface Project
 
+## Deployments
+
+| Site | URL | Updated by |
+|---|---|---|
+| Production | https://eodatahub.org.uk/static-apps/sg-rc-ui/prod/ | Pushing a `vX.Y.Z` tag |
+| Latest `main` | https://preview.eodatahub.org.uk/rc/latest/ | Every merge to `main` |
+| Pull request previews | `https://preview.eodatahub.org.uk/rc/pr-<number>/` | Every push to a PR. Removed when the PR closes |
+| Test hub | https://test.eodatahub.org.uk/static-apps/sg-rc-ui/test/index.html | Started by hand, any branch or tag |
+| Staging hub | https://staging.eodatahub.org.uk/static-apps/sg-rc-ui/staging/index.html | Started by hand, any branch or tag |
+
+`main` is the only long-lived branch. Work reaches it through PRs, and each PR gets its own preview. Production, latest and previews use the production backend. Each site has a `version.json` that shows which commit it is running, for example https://preview.eodatahub.org.uk/rc/latest/version.json.
+
+See [Deployments](.github/workflows/README.md) for how to release, how to deploy to test or staging, and the GitHub environment settings.
+
 ## Installation and Usage
 
 Follow the steps below to set up your own instance of the project.
