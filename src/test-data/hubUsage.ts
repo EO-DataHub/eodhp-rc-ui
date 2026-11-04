@@ -125,6 +125,23 @@ export const usage: UsageEntry[] = [
   { workspace: 'ws-delta', sku: 'storage', previous: { credits: '80.00', quantity: 8 } },
 ]
 
+/**
+ * The default usage plus usage that cost nothing in the selected period: delta has two
+ * 0-credit rows (and Storage in the previous period), epsilon one 0-credit row in each period.
+ * Both sum to exactly 0 credits in the selected period, so they are idle.
+ */
+export const usageWithZeroCredits: UsageEntry[] = [
+  ...usage,
+  { workspace: 'ws-delta', sku: 'wfcpu', current: { credits: '0.000', quantity: 12 } },
+  { workspace: 'ws-delta', sku: 'gpu', current: { credits: '0.000', quantity: 0 } },
+  {
+    workspace: 'ws-epsilon',
+    sku: 'wfcpu',
+    current: { credits: '0.000', quantity: 5 },
+    previous: { credits: '0.000', quantity: 3 },
+  },
+]
+
 export const RANKED_WORKSPACES = ['ws-alpha', 'ws-beta', 'ws-gamma']
 
 /** The start of the period after the one starting at `start`, in UTC. */

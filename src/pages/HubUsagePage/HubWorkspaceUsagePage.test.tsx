@@ -9,7 +9,6 @@ import {
   stubRadixBrowserApis,
 } from '@/test-data/hubUsage'
 import {
-  chooseSku,
   columnHeader,
   expectUsageRange,
   groupByOf,
@@ -22,7 +21,6 @@ import {
   rankedNames,
   renderHub,
   rowFor,
-  skuControl,
   table,
 } from '@/test-data/hubUsagePage'
 
@@ -114,19 +112,6 @@ describe('Stage 4: workspace drill-down', () => {
     expect(storage).toHaveTextContent('New')
   })
 
-  it('shows every SKU the workspace used under a SKU filter, highlighting the filtered one', async () => {
-    await openAlpha(async (user) => {
-      await chooseSku(user, 'Storage')
-      await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('storage'))
-      await waitFor(() => expect(rankedNames()).toEqual(['ws-beta', 'ws-alpha']))
-    })
-    expect(api.lastUsageRequest(ALPHA_USAGE).params.has('sku')).toBe(false)
-    expect(skuRow('Workflow CPU')).toBeDefined()
-    expect(skuRow('Storage')).toBeDefined()
-    expect(isHighlighted(skuRow('Storage'))).toBe(true)
-    expect(isHighlighted(skuRow('Workflow CPU'))).toBe(false)
-  })
-
   it('shows values and change in each SKU unit in Raw usage', async () => {
     const { user } = await openAlpha()
     expect(screen.getByRole('radio', { name: 'Credits' })).toHaveAttribute('aria-checked', 'true')
@@ -168,12 +153,10 @@ describe('Stage 4: workspace drill-down', () => {
     )
   })
 
-  it('goes back to the ranking with its period, SKU filter and name filter', async () => {
+  it('goes back to the ranking with its period and name filter', async () => {
     const { user, location } = await openAlpha(async (rankingUser) => {
       await rankingUser.click(previousButton())
       await expectUsageRange(api, SEPTEMBER)
-      await chooseSku(rankingUser, 'Storage')
-      await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('storage'))
       await rankingUser.type(nameInput(), 'ALP')
       await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha']))
     })
@@ -183,17 +166,9 @@ describe('Stage 4: workspace drill-down', () => {
     await waitFor(() => expect(location()).toMatch(/^\/accounting\/hub(\?|#|$)/))
     const params = new URLSearchParams(location().split('?')[1]?.split('#')[0] ?? '')
     expect(params.get('start')).toMatch(/^2026-09-01/)
-    expect(params.get('sku')).toBe('storage')
     expect([...params.values()].some((value) => value === 'ALP')).toBe(true)
     expect(await screen.findByText('September 2026')).toBeInTheDocument()
-    const control = skuControl()
-    if (control instanceof HTMLSelectElement) {
-      expect(control.selectedOptions[0]?.textContent).toBe('Storage')
-    } else {
-      expect(control).toHaveTextContent('Storage')
-    }
     await expectUsageRange(api, SEPTEMBER)
-    expect(api.lastUsageRequest().params.get('sku')).toBe('storage')
     expect(nameInput()).toHaveValue('ALP')
     await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha']))
   })
@@ -338,5 +313,16 @@ describe('Stage 5: drill-down token refresh and caching', () => {
       skus: countOf(SKUS),
     }).toEqual(before)
     expect(skuRow('Workflow CPU')).toBeDefined()
+  })
+})
+
+describe('Stage 7: drill-down without a SKU highlight', () => {
+  it('shows every SKU with none highlighted when opened with a sku in the URL', async () => {
+    renderHub('/accounting/hub/ws-alpha?type=month&start=2026-10-01&sku=storage')
+    await waitFor(() => expect(skuRow('Storage')).toBeDefined())
+    expect(skuRow('Workflow CPU')).toBeDefined()
+    expect(isHighlighted(skuRow('Storage'))).toBe(false)
+    expect(isHighlighted(skuRow('Workflow CPU'))).toBe(false)
+    expect(api.lastUsageRequest(ALPHA_USAGE).params.has('sku')).toBe(false)
   })
 })

@@ -1,11 +1,17 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { HubApi, installHubApi, NOW, stubRadixBrowserApis } from '@/test-data/hubUsage'
+import {
+  HubApi,
+  installHubApi,
+  NOW,
+  stubRadixBrowserApis,
+  usageWithZeroCredits,
+} from '@/test-data/hubUsage'
 import {
   cellOf,
   cellText,
-  chooseSku,
+  choosePeriod,
   clickColumnHeader,
   columnHeader,
   columnValues,
@@ -17,13 +23,13 @@ import {
   nextButton,
   parseCredits,
   periodTypeRadio,
-  pickDate,
   previousButton,
   rankedNames,
   renderHub,
   rowFor,
-  skuControl,
-  skuOptionNames,
+  periodMenuButton,
+  periodMenuIsOpen,
+  periodMenuItemNames,
   table,
   totalsRow,
 } from '@/test-data/hubUsagePage'
@@ -105,7 +111,7 @@ describe('Stage 2: period controls and URL state', () => {
 
   it('moves to the last complete period of the new type, not the one containing the old period', async () => {
     const { user } = await openRanking()
-    pickDate('2026-05-14')
+    await choosePeriod(user, /^October 2026/, 'May 2026')
     await expectUsageRange(api, MAY)
     await user.click(periodTypeRadio('Quarter'))
     // The third quarter, not the second quarter that contains May.
@@ -131,12 +137,6 @@ describe('Stage 2: period controls and URL state', () => {
     expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
   })
 
-  it('selects the period containing the picked date', async () => {
-    await openRanking()
-    pickDate('2026-05-14')
-    await expectUsageRange(api, MAY)
-  })
-
   it('steps to the current period, labels it in progress, and goes no further', async () => {
     const { user } = await openRanking()
     await user.click(nextButton())
@@ -145,22 +145,10 @@ describe('Stage 2: period controls and URL state', () => {
     expect(nextButton()).toBeDisabled()
   })
 
-  it('does not let the date picker go past the current period', async () => {
-    await openRanking()
-    pickDate('2027-01-15')
-    await new Promise((resolve) => setTimeout(resolve, 50))
-    const latestEnd = Math.max(
-      ...api.usageRequests().map((request) => new Date(request.params.get('end')!).getTime()),
-    )
-    expect(latestEnd).toBeLessThanOrEqual(new Date(NOVEMBER.end).getTime())
-  })
-
-  it('restores the period, SKU filter and name filter from the URL', async () => {
+  it('restores the period and name filter from the URL', async () => {
     const { user, location, unmount } = await openRanking()
-    pickDate('2026-05-14')
+    await choosePeriod(user, /^October 2026/, 'May 2026')
     await expectUsageRange(api, MAY)
-    await chooseSku(user, 'Storage')
-    await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('storage'))
     await user.type(nameInput(), 'ALP')
     await waitFor(() => expect(location()).toMatch(/ALP/i))
     const url = location()
@@ -169,15 +157,9 @@ describe('Stage 2: period controls and URL state', () => {
     const restoredApi = installHubApi()
     renderHub(url)
     await expectUsageRange(restoredApi, MAY)
-    expect(restoredApi.lastUsageRequest().params.get('sku')).toBe('storage')
     expect(periodTypeRadio('Month')).toHaveAttribute('aria-checked', 'true')
+    expect(await screen.findByText('May 2026')).toBeInTheDocument()
     expect(nameInput()).toHaveValue('ALP')
-    const control = skuControl()
-    if (control instanceof HTMLSelectElement) {
-      expect(control.selectedOptions[0]?.textContent).toBe('Storage')
-    } else {
-      expect(control).toHaveTextContent('Storage')
-    }
   })
 
   it('restores the period type from the URL', async () => {
@@ -319,46 +301,6 @@ describe('Stage 3: ranking table and filters', () => {
     expect(screen.queryByText(/raw usage/i)).not.toBeInTheDocument()
   })
 
-  it('lists SKUs by name in the SKU filter', async () => {
-    const { user } = await openRanking()
-    const names = await skuOptionNames(user)
-    expect(names).toEqual(expect.arrayContaining(['Workflow CPU', 'Storage', 'GPU hours']))
-    await waitFor(() =>
-      expect(api.requests.some((request) => request.path === '/api/accounting/skus')).toBe(true),
-    )
-  })
-
-  it('counts only the filtered SKU and hides the top SKU column', async () => {
-    const { user } = await openRanking()
-    await chooseSku(user, 'Storage')
-    await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('storage'))
-    await waitFor(() => expect(rowFor('ws-gamma')).toBeUndefined())
-
-    expect(rankedNames()).toEqual(['ws-beta', 'ws-alpha'])
-    expect(cellText('ws-alpha', /^Total/i)).toBe('300.00')
-    expect(cellText('ws-alpha', /^Share/i)).toMatch(/^30(\.0+)?\s?%$/)
-    expect(cellText('ws-alpha', /^Change/i)).toBe('New')
-    expect(cellText('ws-beta', /^Total/i)).toBe('700.00')
-    expect(cellText('ws-beta', /^Share/i)).toMatch(/^70(\.0+)?\s?%$/)
-    expect(totalsRow()).toHaveTextContent('1,000.00')
-    expect(columnHeader(/^Top SKU/i)).toBeUndefined()
-  })
-
-  it('under a SKU filter, counts every workspace not in the table as idle and says so for the SKU', async () => {
-    const { user } = await openRanking()
-    await chooseSku(user, 'Storage')
-    await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('storage'))
-    await waitFor(() => expect(rowFor('ws-gamma')).toBeUndefined())
-    expect(rankedNames()).toEqual(['ws-beta', 'ws-alpha'])
-
-    // Gamma used only Workflow CPU, delta used Storage only in the previous period, epsilon
-    // used nothing: all three are missing from the table.
-    expect(
-      await screen.findByText(/3 workspaces had no usage of this SKU in this period/),
-    ).toBeInTheDocument()
-    expect(screen.queryByText(/workspaces had no usage in this period/)).not.toBeInTheDocument()
-  })
-
   it('hides rows that do not match the name filter, ignoring case, without changing share or totals', async () => {
     const { user } = await openRanking()
     await user.type(nameInput(), 'ALP')
@@ -412,17 +354,6 @@ describe('Stage 3: loading, empty ranking and exact credit sums', () => {
     renderHub('/accounting/hub')
     await expectUsageRange(api, OCTOBER)
     expect(await within(table()).findByText('No usage in this period')).toBeInTheDocument()
-    expect(screen.queryByText('No workspaces match')).not.toBeInTheDocument()
-    expect(rankedNames()).toEqual([])
-  })
-
-  it('says No usage of this SKU in this period when no workspace used the filtered SKU', async () => {
-    const { user } = await openRanking()
-    await chooseSku(user, 'GPU hours')
-    await waitFor(() => expect(api.lastUsageRequest().params.get('sku')).toBe('gpu'))
-    expect(
-      await within(table()).findByText('No usage of this SKU in this period'),
-    ).toBeInTheDocument()
     expect(screen.queryByText('No workspaces match')).not.toBeInTheDocument()
     expect(rankedNames()).toEqual([])
   })
@@ -739,5 +670,115 @@ describe('Stage 6: default period in the URL', () => {
     expect(usageRequestsFor(SECOND_NOVEMBER).length).toBe(api.usageRequests(USAGE).length)
     expect(paramsOf(location()).get('start') ?? '').toMatch(/^2026-11-02/)
     expect(paramsOf(location()).get('type')).toBe('day')
+  })
+})
+
+describe('Stage 7: period menu', () => {
+  const MONTHS = [
+    'November 2026',
+    'October 2026',
+    'September 2026',
+    'August 2026',
+    'July 2026',
+    'June 2026',
+    'May 2026',
+    'April 2026',
+    'March 2026',
+    'February 2026',
+    'January 2026',
+    'December 2025',
+  ]
+  const QUARTERS = [
+    'Q4 2026',
+    'Q3 2026',
+    'Q2 2026',
+    'Q1 2026',
+    'Q4 2025',
+    'Q3 2025',
+    'Q2 2025',
+    'Q1 2025',
+    'Q4 2024',
+    'Q3 2024',
+    'Q2 2024',
+    'Q1 2024',
+  ]
+
+  it.each([
+    ['Month', /^October 2026/, MONTHS],
+    ['Quarter', /^Q3 2026/, QUARTERS],
+  ] as const)(
+    'lists the 12 most recent %s periods, newest first, ending at the current one',
+    async (type, label, expected) => {
+      const { user } = await openRanking()
+      await user.click(periodTypeRadio(type))
+      await waitFor(() => expect(periodMenuButton(label)).toBeInTheDocument())
+      const names = await periodMenuItemNames(user, label)
+      expect(names).toHaveLength(12)
+      expected.forEach((period, index) => expect(names[index]).toMatch(new RegExp(`^${period}`)))
+    },
+  )
+
+  it('moves to the chosen period, updates the URL start and closes the menu', async () => {
+    const { user, location } = await openRanking()
+    await choosePeriod(user, /^October 2026/, 'May 2026')
+    await expectUsageRange(api, MAY)
+    await waitFor(() =>
+      expect(new URLSearchParams(location().split('?')[1] ?? '').get('start')).toMatch(
+        /^2026-05-01/,
+      ),
+    )
+    await waitFor(() => expect(periodMenuIsOpen()).toBe(false))
+    expect(periodMenuButton(/^May 2026/)).toBeInTheDocument()
+    await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma']))
+  })
+
+  it('has no date input', async () => {
+    await openRanking()
+    expect(document.querySelector('input[type="date"]')).toBeNull()
+    expect(screen.queryByText(/go to date/i)).not.toBeInTheDocument()
+  })
+
+  it('keeps the period menu open and reads once more when the ranking is refetched', async () => {
+    const { user, queryClient } = await openRanking()
+    await settle()
+    await periodMenuItemNames(user, /^October 2026/)
+    const before = countOf(USAGE)
+
+    await act(() => queryClient.invalidateQueries())
+    await settle()
+
+    expect(periodMenuIsOpen()).toBe(true)
+    expect(countOf(USAGE)).toBe(before + 1)
+    await user.keyboard('{Escape}')
+    await waitFor(() => expect(periodMenuIsOpen()).toBe(false))
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+  })
+})
+
+describe('Stage 7: workspaces with 0 credits are idle', () => {
+  it('does not list a workspace whose credits in the period sum to 0 and counts it as idle', async () => {
+    api = installHubApi({ usage: usageWithZeroCredits })
+    await openRanking()
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+    expect(rowFor('ws-delta')).toBeUndefined()
+    expect(rowFor('ws-epsilon')).toBeUndefined()
+    expect(totalsRow()).toHaveTextContent('3,000.00')
+    expect(await screen.findByText(/2 workspaces had no usage in this period/)).toBeInTheDocument()
+  })
+})
+
+describe('Stage 7: no SKU filter on the ranking', () => {
+  it('has no SKU select and ignores a sku in the URL', async () => {
+    await openRanking('/accounting/hub?type=month&start=2026-10-01&sku=storage')
+    expect(screen.queryByRole('combobox', { name: /sku/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('listbox', { name: /sku/i })).not.toBeInTheDocument()
+
+    await expectUsageRange(api, OCTOBER)
+    expect(api.usageRequests(USAGE).every((request) => !request.params.has('sku'))).toBe(true)
+    expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
+    expect(totalsRow()).toHaveTextContent('3,000.00')
+    expect(cellText('ws-alpha', /^Top SKU/i)).toBe('Workflow CPU')
+    expect(await screen.findByText(/2 workspaces had no usage in this period/)).toBeInTheDocument()
+    expect(screen.queryByText(/of this SKU/i)).not.toBeInTheDocument()
   })
 })

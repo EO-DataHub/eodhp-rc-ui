@@ -1,6 +1,6 @@
 import { URL as NodeURL } from 'node:url'
 import { expect, vi } from 'vitest'
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, RouteObject, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -69,41 +69,40 @@ export const periodTypeRadio = (name: 'Day' | 'Week' | 'Month' | 'Quarter') =>
 
 export const previousButton = () => screen.getByRole('button', { name: /previous period/i })
 export const nextButton = () => screen.getByRole('button', { name: /next period/i })
-export const dateInput = () => screen.getByLabelText(/date/i, { selector: 'input' })
-
-export const pickDate = (value: string) => {
-  fireEvent.change(dateInput(), { target: { value } })
-}
-
 export const nameInput = () => screen.getByRole('textbox', { name: /name/i })
 
-export const skuControl = () => screen.getByRole('combobox', { name: /sku/i })
+/**
+ * The period label in the stepper: a button (or a Radix Select trigger) named by the label,
+ * for example "October 2026" or "November 2026 (in progress)".
+ */
+export const periodMenuButton = (label: RegExp) =>
+  screen.queryByRole('button', { name: label }) ?? screen.getByRole('combobox', { name: label })
 
-/** Opens the SKU filter and returns the names of its options. */
-export const skuOptionNames = async (user: User) => {
-  const control = skuControl()
-  if (control instanceof HTMLSelectElement) {
-    return within(control)
-      .getAllByRole('option')
-      .map((option) => option.textContent?.trim() ?? '')
-  }
-  await user.click(control)
-  const options = await screen.findAllByRole('option')
-  const names = options.map((option) => option.textContent?.trim() ?? '')
-  await user.keyboard('{Escape}')
-  return names
+const PERIOD_ITEM_SELECTOR = '[role="menuitem"], [role="menuitemradio"], [role="option"]'
+
+/** Opens the period menu from the label and returns its items, in order. */
+export const openPeriodMenu = async (user: User, label: RegExp) => {
+  await user.click(periodMenuButton(label))
+  await waitFor(() =>
+    expect(document.querySelectorAll(PERIOD_ITEM_SELECTOR).length).toBeGreaterThan(0),
+  )
+  return Array.from(document.querySelectorAll<HTMLElement>(PERIOD_ITEM_SELECTOR))
 }
 
-export const chooseSku = async (user: User, name: string) => {
-  const control = skuControl()
-  if (control instanceof HTMLSelectElement) {
-    const option = within(control).getByRole<HTMLOptionElement>('option', { name })
-    fireEvent.change(control, { target: { value: option.value } })
-    return
-  }
-  await user.click(control)
-  await user.click(await screen.findByRole('option', { name }))
+/** Opens the period menu and returns the text of each item, in order. */
+export const periodMenuItemNames = async (user: User, label: RegExp) =>
+  (await openPeriodMenu(user, label)).map((item) => item.textContent?.trim() ?? '')
+
+/** Opens the period menu from `label` and chooses the item whose text starts with `item`. */
+export const choosePeriod = async (user: User, label: RegExp, item: string) => {
+  const items = await openPeriodMenu(user, label)
+  const target = items.find((element) => element.textContent?.trim().startsWith(item))
+  if (!target) throw new Error(`No period menu item ${item}`)
+  await user.click(target)
 }
+
+/** True while any period menu item is shown. */
+export const periodMenuIsOpen = () => document.querySelectorAll(PERIOD_ITEM_SELECTOR).length > 0
 
 // Requests
 
