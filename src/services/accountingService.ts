@@ -208,7 +208,11 @@ export const fetchWorkspaceUsageData = async (
   token: string,
   params: FetchUsageDataParams = {},
 ): Promise<BillingEvent[]> =>
-  fetchUsageData(`/api/workspaces/${workspace}/accounting/usage-data`, token, params)
+  fetchUsageData(
+    `/api/workspaces/${encodeURIComponent(workspace)}/accounting/usage-data`,
+    token,
+    params,
+  )
 
 // Usage across every workspace. The API only allows this for hub admins.
 export const fetchHubUsageData = async (

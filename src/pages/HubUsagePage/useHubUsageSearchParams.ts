@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   getLastCompletePeriod,
@@ -15,12 +15,17 @@ const DEFAULT_TYPE: PeriodType = 'month'
 /** Formats a UTC date as YYYY-MM-DD. */
 export const toDateParam = (date: Date): string => date.toISOString().slice(0, 10)
 
-/** Parses YYYY-MM-DD as midnight UTC, or returns undefined. */
+/** Parses YYYY-MM-DD as midnight UTC, or returns undefined if it is not a real date. */
 export const parseDateParam = (value: string | null): Date | undefined => {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return undefined
   const date = new Date(`${value}T00:00:00Z`)
-  return Number.isNaN(date.getTime()) ? undefined : date
+  if (Number.isNaN(date.getTime())) return undefined
+  // Date rolls over days that do not exist, such as 2026-02-30, so require a round trip.
+  return toDateParam(date) === value ? date : undefined
 }
+
+// Longest wait between checks, so long periods stay under the setTimeout limit.
+const MAX_END_WAIT_MS = 60 * 60 * 1000
 
 const parseType = (value: string | null): PeriodType =>
   PERIOD_TYPES.includes(value as PeriodType) ? (value as PeriodType) : DEFAULT_TYPE
@@ -62,6 +67,9 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
   const sku = searchParams.get('sku') ?? ''
   const name = searchParams.get('name') ?? ''
   const periodStartTime = period.start.getTime()
+  const periodEndTime = period.end.getTime()
+  // Set when the current period ends, so the in-progress state is worked out again.
+  const [checkedAt, setCheckedAt] = useState(() => Date.now())
 
   const update = useCallback(
     (changes: Record<string, string | undefined>, replace = false) => {
@@ -114,13 +122,21 @@ export const useHubUsageSearchParams = (): HubUsageState & HubUsageActions => {
 
   const derived = useMemo(() => {
     const bounds = getPeriodBounds(periodType, new Date(periodStartTime))
-    const inProgress = isPeriodInProgress(bounds, new Date())
+    const inProgress = isPeriodInProgress(bounds, new Date(Math.max(checkedAt, Date.now())))
     return {
       period: bounds,
       previousPeriod: getPreviousPeriod(periodType, bounds),
       inProgress,
     }
-  }, [periodStartTime, periodType])
+  }, [periodStartTime, periodType, checkedAt])
+
+  const { inProgress } = derived
+  useEffect(() => {
+    if (!inProgress) return
+    const wait = Math.min(Math.max(periodEndTime - Date.now(), 0) + 1000, MAX_END_WAIT_MS)
+    const timer = setTimeout(() => setCheckedAt(Date.now()), wait)
+    return () => clearTimeout(timer)
+  }, [inProgress, periodEndTime, checkedAt])
 
   return {
     periodType,

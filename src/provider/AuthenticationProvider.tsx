@@ -156,6 +156,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       if (isAuthenticated && !!token) {
         const getUpdatedToken = async () => {
           await authenticationInstance.updateToken()
+          setToken(authenticationInstance.token)
+          setIsHubAdmin(authenticationInstance.hasRealmRole('hub_admin'))
 
           return authenticationInstance.token
         }
