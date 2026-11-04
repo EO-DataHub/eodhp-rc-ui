@@ -1,5 +1,9 @@
 import type { Item } from '@/types'
-import type { SavedSetItemDisplay, SavedSetItemInput } from '@/services/savedSetsService'
+import type {
+  SavedSetItem,
+  SavedSetItemDisplay,
+  SavedSetItemInput,
+} from '@/services/savedSetsService'
 import { resolveApiUrl } from '@/services/apiUrlUtils'
 
 /** The item's own URL: its `self` link, or `{collection}/items/{id}` when the link is missing. */
@@ -75,4 +79,65 @@ export const mapWithConcurrency = async <T, R>(
   }
   await Promise.all(Array.from({ length: Math.min(limit, values.length) }, worker))
   return results
+}
+
+/**
+ * Finds the pinned item an entry would add, so add mode can skip fetching it. Only matches when
+ * the entry names its render: without one the render comes from the collection, which isn't
+ * known until it loads.
+ */
+export const findPinnedEntry = (entry: SavedSetItem, pinnedItems: Item[]): Item | undefined => {
+  const renderId = entry.display?.renderId
+  if (!renderId) return undefined
+  return pinnedItems.find(
+    (pinned) => pinned.render?.id === renderId && getItemSelfHref(pinned) === entry.selfHref,
+  )
+}
+
+interface OpenSetCounts {
+  /** Entries asked for. */
+  total: number
+  newlyPinned: number
+  alreadyPinned: number
+  failed: number
+  /** Item id to name when the set has one entry. */
+  singleItemId?: string
+}
+
+/** The toast after opening a set: what was pinned, what was already pinned, and what failed. */
+export const openSetMessage = (
+  setName: string,
+  { total, newlyPinned, alreadyPinned, failed, singleItemId }: OpenSetCounts,
+): { level: 'success' | 'warning' | 'error'; text: string } => {
+  if (newlyPinned === 0 && alreadyPinned === 0) {
+    return {
+      level: 'error',
+      text: `None of the items in '${setName}' could be loaded. Try again. They may have been deleted, or you may not have access to them.`,
+    }
+  }
+
+  let pinned: string
+  if (newlyPinned === 0) {
+    pinned =
+      alreadyPinned === 1 && total === 1
+        ? 'This item is already pinned'
+        : `${failed === 0 ? 'All ' : ''}${alreadyPinned} ${alreadyPinned === 1 ? 'item is' : 'items are'} already pinned`
+  } else {
+    const what =
+      newlyPinned === 1
+        ? total === 1 && singleItemId
+          ? singleItemId
+          : '1 item'
+        : `${newlyPinned} items`
+    pinned =
+      alreadyPinned === 0
+        ? `Pinned ${what} from '${setName}'`
+        : `Pinned ${what} from '${setName}' (${alreadyPinned} already pinned)`
+  }
+
+  if (failed === 0) return { level: 'success', text: pinned }
+  return {
+    level: 'warning',
+    text: `${pinned}. ${failed} of ${total} ${total === 1 ? 'item' : 'items'} couldn't be loaded. Try again. They may have been deleted, or you may not have access to them.`,
+  }
 }
