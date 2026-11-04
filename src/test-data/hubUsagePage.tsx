@@ -1,8 +1,8 @@
 import { URL as NodeURL } from 'node:url'
 import { expect, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, RouteObject, useLocation, useRoutes } from 'react-router-dom'
+import { MemoryRouter, RouteObject, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -19,22 +19,29 @@ const accountingRoute = () => {
   return route
 }
 
-/** Renders the app's accounting routes at `entry`, signed in, as a hub admin by default. */
-export const renderHub = (entry: string, auth: Partial<AuthValue> = {}) => {
+/**
+ * Renders the app's accounting routes at `entry`, signed in, as a hub admin by default.
+ * Given a list of entries, the history holds them all and the page opens at the last one.
+ */
+export const renderHub = (entry: string | string[], auth: Partial<AuthValue> = {}) => {
   // The shared test setup replaces URL with a stub; the router needs a real one.
   vi.stubGlobal('URL', NodeURL)
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  let current = entry
+  const entries = Array.isArray(entry) ? entry : [entry]
+  let current = entries[entries.length - 1]
+  let navigateBack: () => void = () => undefined
   const AccountingRoutes = () => {
     const { pathname, search, hash } = useLocation()
+    const navigate = useNavigate()
     current = `${pathname}${search}${hash}`
+    navigateBack = () => navigate(-1)
     return useRoutes([accountingRoute() as RouteObject])
   }
   const tree = (authOverrides: Partial<AuthValue>) => (
     <Theme>
       <QueryClientProvider client={queryClient}>
         <AuthenticationContext.Provider value={authValue({ isHubAdmin: true, ...authOverrides })}>
-          <MemoryRouter initialEntries={[entry]}>
+          <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
             <AccountingRoutes />
           </MemoryRouter>
         </AuthenticationContext.Provider>
@@ -50,7 +57,9 @@ export const renderHub = (entry: string, auth: Partial<AuthValue> = {}) => {
   }
   /** The current router location: pathname, search and hash. */
   const location = () => current
-  return { ...utils, location, updateAuth, queryClient }
+  /** Goes one step back in the router history, as the browser's back button does. */
+  const back = () => act(() => navigateBack())
+  return { ...utils, location, back, updateAuth, queryClient }
 }
 
 // Period controls

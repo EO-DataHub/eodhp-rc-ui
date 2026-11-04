@@ -664,3 +664,80 @@ describe('Stage 6: the current period ends while the page is open', () => {
     },
   )
 })
+
+describe('Stage 6: default period in the URL', () => {
+  const ALPHA_USAGE = '/api/workspaces/ws-alpha/accounting/usage-data'
+  // A ranking URL with a start, so going back has somewhere to land other than the page itself.
+  const EARLIER = '/accounting/hub?type=week&start=2026-10-26'
+
+  const paramsOf = (url: string) => new URLSearchParams(url.split('?')[1]?.split('#')[0] ?? '')
+
+  beforeAll(async () => {
+    await import('@/pages/HubUsagePage/HubUsagePage')
+    await import('@/pages/HubUsagePage/HubWorkspaceUsagePage')
+  })
+
+  it.each([
+    ['/accounting/hub', 'month', '2026-10-01'],
+    ['/accounting/hub?type=week', 'week', '2026-10-26'],
+  ])(
+    'opening %s writes the last complete period into the URL in place of the entry',
+    async (entry, type, start) => {
+      const { location, back } = renderHub([EARLIER, entry])
+      await screen.findAllByText('ws-alpha')
+
+      await waitFor(() =>
+        expect(paramsOf(location()).get('start') ?? '').toMatch(new RegExp(`^${start}`)),
+      )
+      expect(location()).toMatch(/^\/accounting\/hub\?/)
+      expect(paramsOf(location()).get('type')).toBe(type)
+
+      back()
+      await waitFor(() => expect(location()).toBe(EARLIER))
+    },
+  )
+
+  it('opening the drill-down with no start writes the last complete period into the URL in place of the entry', async () => {
+    const { location, back } = renderHub([EARLIER, '/accounting/hub/ws-alpha'])
+    await waitFor(() => expect(api.lastUsageRequest(ALPHA_USAGE)).toBeDefined())
+    await expectUsageRange(api, OCTOBER, ALPHA_USAGE)
+
+    await waitFor(() => expect(paramsOf(location()).get('start') ?? '').toMatch(/^2026-10-01/))
+    expect(location()).toMatch(/^\/accounting\/hub\/ws-alpha\?/)
+    expect(paramsOf(location()).get('type')).toBe('month')
+
+    back()
+    await waitFor(() => expect(location()).toBe(EARLIER))
+  })
+
+  it('opened with no start, keeps showing the same period when the current period ends', async () => {
+    // beforeEach fakes only Date; vitest ignores a second useFakeTimers call while time is faked.
+    vi.useRealTimers()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    vi.setSystemTime(new Date('2026-11-03T23:59:30Z'))
+    // The last complete day is 2 November; the ranking asks for 1 and 2 November.
+    const SECOND_NOVEMBER = {
+      start: '2026-11-01T00:00:00Z',
+      end: '2026-11-03T00:00:00Z',
+      type: 'day',
+    }
+    const { location, updateAuth } = renderHub('/accounting/hub?type=day')
+    expect(await screen.findByText('2 Nov 2026')).toBeInTheDocument()
+    await expectUsageRange(api, SECOND_NOVEMBER)
+
+    // Past midnight, then up to a minute for any timer on the page.
+    act(() => {
+      vi.advanceTimersByTime(90 * 1000)
+    })
+    // A token refresh for the same user renders the page again without any user action.
+    updateAuth({ token: 'tok-2', userInfo: { preferred_username: 'alice', sub: 'user-1' } })
+    await act(() => vi.advanceTimersByTimeAsync(200))
+
+    expect(screen.getByText('2 Nov 2026')).toBeInTheDocument()
+    expect(screen.queryByText('3 Nov 2026')).not.toBeInTheDocument()
+    await expectUsageRange(api, SECOND_NOVEMBER)
+    expect(usageRequestsFor(SECOND_NOVEMBER).length).toBe(api.usageRequests(USAGE).length)
+    expect(paramsOf(location()).get('start') ?? '').toMatch(/^2026-11-02/)
+    expect(paramsOf(location()).get('type')).toBe('day')
+  })
+})
