@@ -47,7 +47,7 @@ export interface RankingRow {
   share: number
   /** SKU code with the most credits in the selected period. */
   topSku: string
-  /** Credit difference against the previous period, or undefined when it had no usage. */
+  /** Credit difference against the previous period, or undefined when it cost 0 credits. */
   change: Credits | undefined
   /** Current balance, or undefined when the workspace is not in the summaries. */
   balance: Credits | undefined
@@ -110,7 +110,7 @@ export const buildRanking = (
       total,
       share: grandTotal > 0n ? (Number(total) / Number(grandTotal)) * 100 : 0,
       topSku,
-      change: before === undefined ? undefined : total - before,
+      change: before === undefined || before === 0n ? undefined : total - before,
       balance: balances.get(workspace),
     }
   })
@@ -192,7 +192,7 @@ export interface SkuUsageRow {
   sku: string
   credits: Credits
   quantity: number
-  /** Credit difference against the previous period, or undefined when it had no usage. */
+  /** Credit difference against the previous period, or undefined when it cost 0 credits. */
   creditChange: Credits | undefined
   /** Quantity difference against the previous period, or undefined when it had no usage. */
   quantityChange: number | undefined
@@ -231,7 +231,10 @@ export const buildSkuUsage = (events: BillingEvent[], periodStart: Date): SkuUsa
         sku,
         credits: figures.credits,
         quantity: figures.quantity,
-        creditChange: before === undefined ? undefined : figures.credits - before.credits,
+        creditChange:
+          before === undefined || before.credits === 0n
+            ? undefined
+            : figures.credits - before.credits,
         quantityChange: before === undefined ? undefined : figures.quantity - before.quantity,
       }
     })
