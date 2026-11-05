@@ -1,5 +1,5 @@
-// @vitest-environment node
-// jsdom Blob has no text(); browsers and Node do.
+// jsdom's Blob has no text(); browsers and Node's Blob do.
+import { Blob } from 'node:buffer'
 import { describe, expect, it } from 'vitest'
 import { getTileErrorMessage } from './tileErrors'
 
