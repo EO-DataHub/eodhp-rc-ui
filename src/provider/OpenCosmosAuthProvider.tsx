@@ -2,11 +2,13 @@ import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useStat
 import { toast } from 'react-toastify'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { OpenCosmosAuthContext, OpenCosmosUser } from '@/context/OpenCosmosAuthContext'
+import { router } from '@/app/router'
+import { APP_BASE_PATH, hashRouteToPath } from '@/app/routerBase'
 
 // Ported from eodhp-workspace-ui's OpenCosmosAuthContext, with three fixes: a `state` param
 // is now generated and checked on callback (the original had none), the redirect-back
-// handling accounts for this app's hash router — the original had no router at all, so it
-// could rely on `window.location.pathname` alone to know where to return to — and it now
+// handling returns to the route `connect()` was called from — the original had no router at
+// all, so it could rely on `window.location.pathname` alone — and it now
 // checks/revokes the session via the backend GET/DELETE endpoints (see below), which the
 // original didn't have available when it was written (docs/pending-backend-apis.md).
 
@@ -23,7 +25,10 @@ interface OpenCosmosSession {
 interface OpenCosmosTransaction {
   codeVerifier: string
   state: string
-  returnToHash: string
+  /** Route to return to after sign-in, relative to the app's base path. */
+  returnTo?: string
+  /** Older transactions, stored before the switch from hash routing, hold '#/route' here. */
+  returnToHash?: string
   workspaceName: string
   organizationId: number
 }
@@ -49,19 +54,27 @@ const HUB_BASE_URL = import.meta.env.VITE_HUB_BASE_URL
 const TRANSACTION_STORAGE_KEY = 'openCosmosAuthTransaction'
 const CODE_VERIFIER_BYTE_LENGTH = 64
 const STATE_BYTE_LENGTH = 16
-const DEFAULT_RETURN_HASH = '#/settings/provider-accounts'
+const DEFAULT_RETURN_PATH = '/settings/provider-accounts'
 
-// The redirect_uri is a static URL with no hash or query — the hash router's own route lives
-// in the fragment, which the browser strips before sending the request, so the fallback below
-// (origin + pathname) is stable regardless of which route `connect()` was called from.
+// The redirect_uri must be a fixed URL registered with Open Cosmos, so it is always the app
+// root, whichever route `connect()` was called from. The route to return to is kept in the
+// transaction instead. The deployed redirect URI ends in '/index.html'; routerBase rewrites
+// that to the app root on load and keeps the ?code=&state= query.
 const getRedirectUri = () => {
   if (OPEN_COSMOS_REDIRECT_URI) return OPEN_COSMOS_REDIRECT_URI
-  return `${window.location.origin}${window.location.pathname}`
+  return `${window.location.origin}${APP_BASE_PATH}/`
 }
 
-const getReturnHash = () => {
-  if (window.location.hash) return window.location.hash
-  return DEFAULT_RETURN_HASH
+const getReturnPath = () => {
+  const { pathname, search } = router.state.location
+  return pathname + search
+}
+
+const resolveReturnPath = (transaction: OpenCosmosTransaction) => {
+  if (transaction.returnTo) return transaction.returnTo
+  if (transaction.returnToHash)
+    return hashRouteToPath(transaction.returnToHash) ?? DEFAULT_RETURN_PATH
+  return DEFAULT_RETURN_PATH
 }
 
 const persistTransaction = (transaction: OpenCosmosTransaction) => {
@@ -290,12 +303,9 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
     // so mark this callback as handled before starting the asynchronous token exchange.
     callbackHandledRef.current = true
 
-    const returnToRoute = (returnToHash: string) => {
-      // Strip the ?code=/?error= query first, then assign `.hash` directly (rather than
-      // folding it into one replaceState call) so the hash router's hashchange listener
-      // actually picks up the route change and renders the right page.
-      window.history.replaceState({}, document.title, window.location.pathname)
-      window.location.hash = returnToHash
+    const returnToRoute = (path: string) => {
+      // Replacing the location also drops the ?code=/?error= callback query.
+      void router.navigate(path, { replace: true })
     }
 
     const handleCallback = async () => {
@@ -336,13 +346,13 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
         await storeSession(transaction.workspaceName, nextSession)
         setSession(nextSession)
         setError(undefined)
-        returnToRoute(transaction.returnToHash)
+        returnToRoute(resolveReturnPath(transaction))
       } catch (callbackError) {
         const message = toErrorMessage(callbackError, 'Open Cosmos sign-in failed.')
         setSession(undefined)
         setError(message)
         toast.error(message)
-        returnToRoute(transaction.returnToHash)
+        returnToRoute(resolveReturnPath(transaction))
       } finally {
         clearTransaction()
         setIsLoading(false)
@@ -379,7 +389,7 @@ export const OpenCosmosAuthProvider = ({ children }: { children: ReactNode }) =>
         persistTransaction({
           codeVerifier,
           state,
-          returnToHash: getReturnHash(),
+          returnTo: getReturnPath(),
           workspaceName: currentWorkspace,
           organizationId,
         })

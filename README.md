@@ -14,6 +14,14 @@
 
 See [Deployments](.github/workflows/README.md) for how to release, how to deploy to test or staging, and the GitHub environment settings.
 
+## Routing
+
+The app uses path URLs, for example `…/prod/my-data/saved-sets`. The router `basename` is the build's base path (`VITE_BASE_PATH`).
+
+- **The host must serve `index.html` for app routes.** Otherwise a deep link or a page refresh returns 404. On the hub and preview sites a CloudFront Function does this: browser page loads (`Accept: text/html`) of paths that do not end in a known file extension get the site's `index.html`. Preview: `terraform/files/directory-index.js` in [eodhp-frontend-previews](https://github.com/EO-DataHub/eodhp-frontend-previews). Hub: `eodhp-deploy-infrastucture`.
+- **Old hash links still work.** The site used hash routing (`…/prod/#/my-data/saved-sets`) until late 2026, so bookmarks and shared permalinks use that form. On load, `src/app/routerBase.ts` rewrites `#/route` to `/route`, and `…/index.html` to the app root, before the router starts. Keep this.
+- To check a route with curl, send the browser's Accept header: `curl -sI -H 'Accept: text/html' <site>/my-data/saved-sets`.
+
 ## Installation and Usage
 
 Follow the steps below to set up your own instance of the project.
