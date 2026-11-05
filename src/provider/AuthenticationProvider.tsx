@@ -6,8 +6,28 @@ import { getAuthenticatedAxios } from '../library/axios'
 import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
+import { router } from '@/app/router'
+import { pathnameToRoute, withoutKeycloakCallbackParams } from '@/app/routerBase'
 
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
+
+/**
+ * After a login redirect, keycloak-js removes its ?state=&code= query from the address bar
+ * with history.replaceState. React Router does not see that change, so its location keeps
+ * the used login query, and pages that update the URL from it (setSearchParams) write the
+ * query back. Remove the params from the router's location, which also updates the address
+ * bar. Removing them, rather than copying the address bar into the router, also cleans up
+ * after a page that wrote them back before this ran.
+ */
+const removeKeycloakParamsFromRouter = () => {
+  const { pathname, search, hash, state } = router.state.location
+  const cleaned = withoutKeycloakCallbackParams(search)
+  if (cleaned === null) return
+  void router.navigate(
+    { pathname: pathnameToRoute(pathname), search: cleaned, hash },
+    { replace: true, state },
+  )
+}
 
 const initOptions = {
   url: import.meta.env.VITE_KEYCLOAK_URL as string,
@@ -98,6 +118,10 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         silentCheckSsoRedirectUri: `${location.origin}${BASE_PATH}/silent-check-sso.html`,
         responseMode: 'query',
       })
+      // As soon as init settles, not after loadUserInfo, so pages see the login query for as
+      // short a time as possible. This also runs before isAuthenticating clears, so the Open
+      // Cosmos callback (which waits for it) navigates from the cleaned route.
+      .finally(removeKeycloakParamsFromRouter)
       .then((auth) => {
         setIsAuthenticated(auth)
 

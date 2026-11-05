@@ -6,6 +6,7 @@
  */
 
 import type { Item } from '@/types'
+import { APP_BASE_PATH } from '@/app/routerBase'
 
 export type MapBounds = [number, number, number, number]
 
@@ -162,10 +163,12 @@ export function parsePermalinkParams(searchParams: URLSearchParams): ParsedPerma
 }
 
 /**
- * Build the hash part of a permalink URL (path + query).
+ * Build the route part of a permalink URL (path + query), relative to the app's base path.
  * primaryCollectionId is the route param (e.g. "sentinel-2" or "my-xyz"); items are encoded as collectionId/itemId for multi-collection support.
+ * Old permalinks used the same route in a hash ("#/finder/…"). Those still open, because
+ * routerBase rewrites them to path URLs on load.
  */
-export function buildPermalinkHash(
+export function buildPermalinkPath(
   primaryCollectionId: string,
   items: Item[],
   bounds: MapBounds,
@@ -176,8 +179,11 @@ export function buildPermalinkHash(
   }
   params.set('bounds', bounds.join(','))
   const query = params.toString()
-  return `#/finder/${encodeURIComponent(primaryCollectionId)}${query ? `?${query}` : ''}`
+  return `/finder/${encodeURIComponent(primaryCollectionId)}${query ? `?${query}` : ''}`
 }
+
+/** The app's absolute root URL without the trailing slash, e.g. "https://host/static-apps/sg-rc-ui/prod". */
+const appRootUrl = () => `${window.location.origin}${APP_BASE_PATH}`
 
 /**
  * Build full absolute URL for a permalink (for copying to clipboard).
@@ -187,8 +193,7 @@ export function buildPermalinkUrl(
   items: Item[],
   bounds: MapBounds,
 ): string {
-  const hash = buildPermalinkHash(primaryCollectionId, items, bounds)
-  return `${window.location.origin}${window.location.pathname}${hash}`
+  return appRootUrl() + buildPermalinkPath(primaryCollectionId, items, bounds)
 }
 
 export interface BuildPermalinkResult {
@@ -206,12 +211,12 @@ export function buildPermalinkUrlWithLimit(
   bounds: MapBounds,
   maxLength: number = MAX_PERMALINK_URL_LENGTH,
 ): BuildPermalinkResult {
-  const base = `${window.location.origin}${window.location.pathname}`
+  const base = appRootUrl()
   let n = items.length
-  let url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds)
+  let url = base + buildPermalinkPath(primaryCollectionId, items.slice(0, n), bounds)
   while (url.length > maxLength && n > 1) {
     n -= 1
-    url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds)
+    url = base + buildPermalinkPath(primaryCollectionId, items.slice(0, n), bounds)
   }
   return { url, itemsIncluded: n }
 }

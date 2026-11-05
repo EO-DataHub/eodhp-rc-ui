@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Dialog, Button, Flex, Text, Select, Checkbox } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import type { ProcessDetail } from '@/types'
@@ -168,13 +169,13 @@ export const ProcessLaunchModal: React.FC<ProcessLaunchModalProps> = ({
                   variant="solid"
                   color="blue"
                 >
-                  <a href={`#/my-data/workflow-outputs/${currentWorkspace}/${workflowId}`}>
+                  <Link to={`/my-data/workflow-outputs/${currentWorkspace}/${workflowId}`}>
                     View job details
-                  </a>
+                  </Link>
                 </Button>
               ) : (
                 <Button asChild size="2" onClick={() => handleClose(false)} variant="solid">
-                  <a href="#/my-data/workflow-outputs">View workflow outputs</a>
+                  <Link to="/my-data/workflow-outputs">View workflow outputs</Link>
                 </Button>
               )}
               <Button color="gray" variant="soft" onClick={() => handleClose(false)}>

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { createHashRouter } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
+import { redirectLegacyUrl, ROUTER_BASENAME } from './routerBase'
 import { AppLayout } from '../components/Layout/AppLayout'
 import { DataDiscoveryPage } from '../pages/DataDiscoveryPage/DataDiscoveryPage'
 import { DataFinderPage } from '../pages/DataFinderPage/DataFinderPage'
@@ -167,7 +168,12 @@ const routesWithErrorFallback = routes.map((route) => ({
   errorElement: <div>&nbsp;We&apos;re sorry. Something is broken. </div>,
 }))
 
-export const router = createHashRouter(
+// Old '#/route' links and '/index.html' links become path URLs before the router reads the
+// URL. Deep links need the host to serve index.html for app routes: see "Routing" in the
+// README.
+redirectLegacyUrl()
+
+export const router = createBrowserRouter(
   [
     {
       element: <AppLayout />,
@@ -175,6 +181,7 @@ export const router = createHashRouter(
     },
   ],
   {
+    basename: ROUTER_BASENAME,
     future: {
       v7_startTransition: true,
       v7_relativeSplatPath: true,

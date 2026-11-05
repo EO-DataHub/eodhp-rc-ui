@@ -14,7 +14,9 @@ export const useGoogleAnalytics = (router: DataRouter) => {
 
     initGA(GA_MEASUREMENT_ID)
 
-    safeSendPageView(window.location.pathname + window.location.search)
+    // Use the router's location so the first page view matches the paths sent on later
+    // navigations. Both include the base path.
+    safeSendPageView(router.state.location.pathname + router.state.location.search)
 
     const unsubscribe = router.subscribe((state) => {
       safeSendPageView(state.location.pathname + state.location.search)
