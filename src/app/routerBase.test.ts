@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { hashRouteToPath, legacyUrlToPathUrl, withoutKeycloakCallbackParams } from './routerBase'
+import {
+  hashRouteToPath,
+  legacyUrlToPathUrl,
+  pathnameToRoute,
+  withoutKeycloakCallbackParams,
+} from './routerBase'
 
 const BASE = '/static-apps/sg-rc-ui/prod'
 const url = (pathname: string, search = '', hash = '') => ({ pathname, search, hash })
@@ -88,5 +93,24 @@ describe('withoutKeycloakCallbackParams', () => {
   it('returns null when there is nothing to remove', () => {
     expect(withoutKeycloakCallbackParams('')).toBeNull()
     expect(withoutKeycloakCallbackParams('?q=sentinel&page=2')).toBeNull()
+  })
+})
+
+describe('pathnameToRoute', () => {
+  it('removes the base path', () => {
+    expect(pathnameToRoute(`${BASE}/my-data/saved-sets`, BASE)).toBe('/my-data/saved-sets')
+  })
+
+  it('turns the app root into "/", with or without the trailing slash', () => {
+    expect(pathnameToRoute(`${BASE}/`, BASE)).toBe('/')
+    expect(pathnameToRoute(BASE, BASE)).toBe('/')
+  })
+
+  it('leaves the pathname alone when the app is served from the root', () => {
+    expect(pathnameToRoute('/my-data', '')).toBe('/my-data')
+  })
+
+  it('does not strip a base path that only matches part of a segment', () => {
+    expect(pathnameToRoute(`${BASE}-other/x`, BASE)).toBe(`${BASE}-other/x`)
   })
 })

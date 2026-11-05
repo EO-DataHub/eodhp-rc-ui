@@ -55,6 +55,22 @@ export function legacyUrlToPathUrl(url: UrlParts, basePath: string = APP_BASE_PA
 }
 
 /**
+ * The route for a full pathname: the pathname without the base path, for example
+ * '/static-apps/sg-rc-ui/prod/my-data' -> '/my-data'. The app root is '/'.
+ *
+ * Use this on `router.state.location.pathname` before passing it to `router.navigate()`.
+ * In React Router 7 the router's own location keeps the base path, and `navigate()` adds the
+ * base path again, so navigating to the unchanged pathname doubles it
+ * ('/rc/pr-1/rc/pr-1/'). Hooks such as useLocation() strip it already.
+ */
+export function pathnameToRoute(pathname: string, basePath: string = APP_BASE_PATH): string {
+  if (basePath && (pathname === basePath || pathname.startsWith(`${basePath}/`))) {
+    return pathname.slice(basePath.length) || '/'
+  }
+  return pathname
+}
+
+/**
  * The query parameters keycloak-js reads from a login redirect (responseMode 'query') and then
  * removes from the address bar. Matches `supportedParams` in keycloak-js 26 for the standard
  * flow, plus the error params.

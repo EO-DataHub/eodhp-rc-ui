@@ -3,7 +3,7 @@ import { toast } from 'react-toastify'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { OpenCosmosAuthContext, OpenCosmosUser } from '@/context/OpenCosmosAuthContext'
 import { router } from '@/app/router'
-import { APP_BASE_PATH, hashRouteToPath } from '@/app/routerBase'
+import { APP_BASE_PATH, hashRouteToPath, pathnameToRoute } from '@/app/routerBase'
 
 // Ported from eodhp-workspace-ui's OpenCosmosAuthContext, with three fixes: a `state` param
 // is now generated and checked on callback (the original had none), the redirect-back
@@ -66,8 +66,9 @@ const getRedirectUri = () => {
 }
 
 const getReturnPath = () => {
+  // router.navigate() adds the base path, so store the route without it.
   const { pathname, search } = router.state.location
-  return pathname + search
+  return pathnameToRoute(pathname) + search
 }
 
 const resolveReturnPath = (transaction: OpenCosmosTransaction) => {

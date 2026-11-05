@@ -7,7 +7,7 @@ import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 import { router } from '@/app/router'
-import { withoutKeycloakCallbackParams } from '@/app/routerBase'
+import { pathnameToRoute, withoutKeycloakCallbackParams } from '@/app/routerBase'
 
 const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
 
@@ -23,7 +23,10 @@ const removeKeycloakParamsFromRouter = () => {
   const { pathname, search, hash, state } = router.state.location
   const cleaned = withoutKeycloakCallbackParams(search)
   if (cleaned === null) return
-  void router.navigate({ pathname, search: cleaned, hash }, { replace: true, state })
+  void router.navigate(
+    { pathname: pathnameToRoute(pathname), search: cleaned, hash },
+    { replace: true, state },
+  )
 }
 
 const initOptions = {
