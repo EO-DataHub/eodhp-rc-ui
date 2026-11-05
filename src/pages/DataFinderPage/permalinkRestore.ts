@@ -5,35 +5,23 @@
 
 import { fetchItem } from '@/services/itemService'
 import dataFinderStore from './useFinderStore'
-import {
-  collectionRenderingConfig,
-  getCollectionConfigKey,
-} from '@/library/collectionRenderingConfig'
+import { FALLBACK_RENDER, getCollectionRenders } from '@/library/collectionRenderingConfig'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import type { Collection, Item, StacRender } from '@/types'
 import type { ItemByCollection } from '@/utils/permalink'
-
-const PLACEHOLDER_RENDER: StacRender = {
-  id: 'default',
-  title: 'Default visualization',
-  assets: [],
-}
 
 export function getDefaultCollectionRender(
   collection: Collection,
   isUserCollection: boolean,
   renderId?: string,
 ): StacRender {
-  const configKey = getCollectionConfigKey(collection.id, isUserCollection)
-  const collectionConfig = collectionRenderingConfig[configKey]
-  const baseRenders = collectionConfig?.renders ?? {}
-  const renders = { ...baseRenders, ...collection.renders }
+  const renders = getCollectionRenders(collection, isUserCollection)
   const options = Object.entries(renders).map(([id, render]) => ({ ...render, id }))
   if (renderId) {
     const match = options.find((option) => option.id === renderId)
     if (match) return match
   }
-  return options.length > 0 ? options[0] : PLACEHOLDER_RENDER
+  return options.length > 0 ? options[0] : FALLBACK_RENDER
 }
 
 export type ResolveCollection = (

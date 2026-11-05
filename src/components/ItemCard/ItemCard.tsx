@@ -195,6 +195,9 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
     return isUserCollection
   }, [isUserCollection, item.isUserCollection])
 
+  const tileError = useSelector(dataFinderStore, ({ context }) =>
+    item.pinId ? context.tileErrors[item.pinId] : undefined,
+  )
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
@@ -454,6 +457,11 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
+        {isPinnedCard && tileError && (
+          <Text size="1" color="red">
+            Map tiles failed to load: {tileError}
+          </Text>
+        )}
         {/* Pinned cards put the style name on its own line so the icons get the full width */}
         <Flex
           direction={isPinnedCard ? 'column' : 'row'}

@@ -7,6 +7,8 @@ import area from '@turf/area'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useAuthenticatedTileUrls } from '@/hooks/useAuthenticatedTileUrls'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
+import { pinIdFromSourceId } from '@/library/pinnedLayerOrder'
+import { getTileErrorMessage } from '@/library/tileErrors'
 
 import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -36,6 +38,12 @@ export const Map = () => {
     isDrawing: () => boolean
   } | null>(null)
   const { pageItems } = useItemsQuery()
+  const firstItem = pageItems?.[0]
+
+  useEffect(() => {
+    if (firstItem) dataFinderStore.send({ type: 'setItemRenderOptions', item: firstItem })
+  }, [firstItem])
+
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const { isAuthenticated, getTokenType } = useAuthenticatedTileUrls()
 
@@ -68,6 +76,14 @@ export const Map = () => {
   const initialBounds = useSelector(dataFinderStore, (state) => state.context.initialBounds)
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
 
+  // The store outlives this component, so drop the map instance on unmount. Otherwise, coming
+  // back to the finder, initial bounds are applied to the removed map and then cleared.
+  useEffect(() => {
+    return () => {
+      dataFinderStore.send({ type: 'mapLoad', mapInstance: undefined })
+    }
+  }, [])
+
   // Apply permalink initial bounds when map is ready
   useEffect(() => {
     if (!mapInstance || !initialBounds) return
@@ -81,6 +97,22 @@ export const Map = () => {
     )
     dataFinderStore.send({ type: 'clearInitialBounds' })
   }, [mapInstance, initialBounds])
+
+  // Record tile errors against the pinned item whose source failed
+  useEffect(() => {
+    if (!mapInstance) return
+    const onError = (event: { error: unknown; sourceId?: string }) => {
+      const pinId = pinIdFromSourceId(event.sourceId)
+      if (!pinId) return
+      void getTileErrorMessage(event.error).then((message) => {
+        if (message) dataFinderStore.send({ type: 'setTileError', pinId, message })
+      })
+    }
+    mapInstance.on('error', onError)
+    return () => {
+      mapInstance.off('error', onError)
+    }
+  }, [mapInstance])
 
   // Calculate AOI area from the feature
   const aoiArea = useMemo(() => {

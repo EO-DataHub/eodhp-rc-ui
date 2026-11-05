@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import { getPinnedLayerMoves, movePinnedItem, PINNED_LAYERS_ANCHOR_ID } from './pinnedLayerOrder'
+import {
+  getPinnedLayerMoves,
+  movePinnedItem,
+  pinIdFromSourceId,
+  pinnedSourceId,
+  PINNED_LAYERS_ANCHOR_ID,
+} from './pinnedLayerOrder'
 
 const items = ['a', 'b', 'c', 'd'].map((pinId) => ({ pinId }))
 const ids = (list: { pinId?: string }[]) => list.map((item) => item.pinId)
@@ -70,4 +76,10 @@ describe('getPinnedLayerMoves', () => {
   test('waits for the anchor before moving anything', () => {
     expect(getPinnedLayerMoves(['base', 'c', 'a'], ['a', 'b', 'c'])).toEqual([])
   })
+})
+
+test('pinIdFromSourceId reads back the pin id of a pinned source', () => {
+  expect(pinIdFromSourceId(pinnedSourceId('item-1-Natural Color'))).toBe('item-1-Natural Color')
+  expect(pinIdFromSourceId('jsx-source-3')).toBeUndefined()
+  expect(pinIdFromSourceId(undefined)).toBeUndefined()
 })

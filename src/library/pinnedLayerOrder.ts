@@ -5,6 +5,16 @@
 
 export const pinnedLayerId = (pinId: string) => `pinned-item-${pinId}`
 
+const PINNED_SOURCE_PREFIX = 'pinned-source-'
+
+/** Source ids let map errors, which name the source, be matched back to the pinned item. */
+export const pinnedSourceId = (pinId: string) => `${PINNED_SOURCE_PREFIX}${pinId}`
+
+export const pinIdFromSourceId = (sourceId: string | undefined) =>
+  sourceId?.startsWith(PINNED_SOURCE_PREFIX)
+    ? sourceId.slice(PINNED_SOURCE_PREFIX.length)
+    : undefined
+
 /** Moves the item with `fromPinId` to where `toPinId` is. Works the same on the reversed list. */
 export const movePinnedItem = <T extends { pinId?: string }>(
   items: T[],

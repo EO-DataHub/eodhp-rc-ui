@@ -5,6 +5,7 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import {
   getPinnedLayerMoves,
   pinnedLayerId,
+  pinnedSourceId,
   PINNED_LAYERS_ANCHOR_ID,
 } from '@/library/pinnedLayerOrder'
 import { ItemLayer } from './ItemLayer'
@@ -41,7 +42,12 @@ const PinnedItemsLayer = () => {
       {/* Rendered before the query and hover layers in Map.tsx, so it's added below them */}
       <Layer id={PINNED_LAYERS_ANCHOR_ID} type="background" layout={{ visibility: 'none' }} />
       {pinnedItems.map((item) => (
-        <ItemLayer key={item.pinId} item={item} layerId={pinnedLayerId(item.pinId ?? item.id)} />
+        <ItemLayer
+          key={item.pinId}
+          item={item}
+          layerId={pinnedLayerId(item.pinId ?? item.id)}
+          sourceId={pinnedSourceId(item.pinId ?? item.id)}
+        />
       ))}
     </>
   )

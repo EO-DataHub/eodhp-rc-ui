@@ -48,30 +48,37 @@ const RenderSelectionButton = () => {
   }
 
   return (
-    <Select.Root
-      value={collectionRender.id}
-      onValueChange={(renderId) =>
-        dataFinderStore.send({
-          type: 'setCollectionRender',
-          collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
-        })
-      }
-    >
-      <Select.Trigger
-        style={{
-          width: '100%',
-        }}
-      />
-      <Select.Content>
-        <Select.Group>
-          {collectionRenderOptions.map((option) => (
-            <Select.Item key={option.id} value={option.id}>
-              {option.title ?? option.id}
-            </Select.Item>
-          ))}
-        </Select.Group>
-      </Select.Content>
-    </Select.Root>
+    <Flex direction="column" gap="1">
+      <Select.Root
+        value={collectionRender.id}
+        onValueChange={(renderId) =>
+          dataFinderStore.send({
+            type: 'setCollectionRender',
+            collectionRender: collectionRenderOptions.find((r) => r.id === renderId),
+          })
+        }
+      >
+        <Select.Trigger
+          style={{
+            width: '100%',
+          }}
+        />
+        <Select.Content>
+          <Select.Group>
+            {collectionRenderOptions.map((option) => (
+              <Select.Item key={option.id} value={option.id}>
+                {option.title ?? option.id}
+              </Select.Item>
+            ))}
+          </Select.Group>
+        </Select.Content>
+      </Select.Root>
+      {collectionRender.isFallback && (
+        <Text size="1" color="gray">
+          No render is defined for this collection, so items use default styling.
+        </Text>
+      )}
+    </Flex>
   )
 }
 
