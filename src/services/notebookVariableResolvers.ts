@@ -41,8 +41,13 @@ const OPTIONAL_KEYS = new Set(['AOI'])
 /** Notebooks that declare this parameter work on a saved set rather than a single item. */
 export const PIN_SET_PARAMETER = 'PIN_SET_ID'
 
+/** A notebook works on a saved set if an input has the pin-set Hub type or the PIN_SET_ID key. */
 export function isPinSetNotebook(record: ProcessRecord): boolean {
-  return PIN_SET_PARAMETER in (record.properties?.inputParameters ?? {})
+  const inputParameters = record.properties?.inputParameters ?? {}
+  return (
+    PIN_SET_PARAMETER in inputParameters ||
+    Object.values(inputParameters).some((param) => param.hubType === 'pin-set')
+  )
 }
 
 /**

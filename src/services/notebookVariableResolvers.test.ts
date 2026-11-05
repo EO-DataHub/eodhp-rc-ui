@@ -105,6 +105,20 @@ describe('isPinSetNotebook', () => {
     expect(isPinSetNotebook(notebook({ PIN_SET_ID: {}, WORKSPACE_NAME: {} }))).toBe(true)
   })
 
+  it('is true when a notebook input has the pin-set Hub type', () => {
+    expect(isPinSetNotebook(notebook({ SET: { hubType: 'pin-set' }, WORKSPACE_NAME: {} }))).toBe(
+      true,
+    )
+  })
+
+  it('is false when the only Hub types are for an item', () => {
+    expect(
+      isPinSetNotebook(
+        notebook({ STAC_ITEM_LINK: { hubType: 'stac-item' }, AOI: { hubType: 'aoi' } }),
+      ),
+    ).toBe(false)
+  })
+
   it('is false for item notebooks and records without parameters', () => {
     expect(isPinSetNotebook(notebook({ STAC_ITEM_LINK: {} }))).toBe(false)
     expect(isPinSetNotebook(notebook())).toBe(false)

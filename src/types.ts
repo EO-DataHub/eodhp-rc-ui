@@ -226,7 +226,21 @@ export interface InputParameterEntry {
   description?: string
   default?: unknown
   variableRef?: string // Platform variable name to resolve (e.g., "STAC_ITEM_LINK", "STAC_COLLECTION_NAME", "AOI")
+  hubType?: HubType // How the Hub fills the input; resolved before variableRef
+  cwlType?: string // How the workflow receives the input (workflows only)
+  staging?: 'assets' | 'metadata' // How much stage-in fetches for a Directory input
 }
+
+/** How the Hub fills a catalogue input. */
+export type HubType =
+  | 'stac-item'
+  | 'stac-items'
+  | 'stac-search'
+  | 'pin-set'
+  | 'aoi'
+  | 'bbox'
+  | 'date'
+  | 'date-range'
 
 export interface ProcessDetail extends ProcessRecord {
   links?: { href: string; rel: string; type?: string; title?: string }[]
