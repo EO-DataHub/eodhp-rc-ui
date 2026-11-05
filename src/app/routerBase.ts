@@ -55,6 +55,36 @@ export function legacyUrlToPathUrl(url: UrlParts, basePath: string = APP_BASE_PA
 }
 
 /**
+ * The query parameters keycloak-js reads from a login redirect (responseMode 'query') and then
+ * removes from the address bar. Matches `supportedParams` in keycloak-js 26 for the standard
+ * flow, plus the error params.
+ */
+export const KEYCLOAK_CALLBACK_PARAMS = [
+  'code',
+  'state',
+  'session_state',
+  'iss',
+  'kc_action',
+  'kc_action_status',
+  'error',
+  'error_description',
+  'error_uri',
+] as const
+
+/**
+ * The search string without Keycloak's login-redirect params, for example
+ * '?tab=x&state=a&code=b' -> '?tab=x'. Returns null if there are none to remove.
+ */
+export function withoutKeycloakCallbackParams(search: string): string | null {
+  const params = new URLSearchParams(search)
+  const present = KEYCLOAK_CALLBACK_PARAMS.filter((name) => params.has(name))
+  if (present.length === 0) return null
+  present.forEach((name) => params.delete(name))
+  const rest = params.toString()
+  return rest ? `?${rest}` : ''
+}
+
+/**
  * Rewrite an old-style URL in place, without a reload. Call this before the router is
  * created, so the router reads the rewritten URL.
  */

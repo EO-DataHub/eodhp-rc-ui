@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hashRouteToPath, legacyUrlToPathUrl } from './routerBase'
+import { hashRouteToPath, legacyUrlToPathUrl, withoutKeycloakCallbackParams } from './routerBase'
 
 const BASE = '/static-apps/sg-rc-ui/prod'
 const url = (pathname: string, search = '', hash = '') => ({ pathname, search, hash })
@@ -65,5 +65,28 @@ describe('legacyUrlToPathUrl', () => {
     expect(legacyUrlToPathUrl(url(`${BASE}/`), BASE)).toBeNull()
     expect(legacyUrlToPathUrl(url(`${BASE}/`, '', '#'), BASE)).toBeNull()
     expect(legacyUrlToPathUrl(url(`${BASE}/`, '?state=a&code=b', '#state=a'), BASE)).toBeNull()
+  })
+})
+
+describe('withoutKeycloakCallbackParams', () => {
+  it('removes a login redirect query entirely', () => {
+    expect(withoutKeycloakCallbackParams('?state=a&session_state=b&iss=c&code=d')).toBe('')
+  })
+
+  it("keeps the app's own params", () => {
+    expect(withoutKeycloakCallbackParams('?q=sentinel&state=a&code=b&page=2')).toBe(
+      '?q=sentinel&page=2',
+    )
+  })
+
+  it('removes error redirects too', () => {
+    expect(withoutKeycloakCallbackParams('?error=login_required&error_description=x&state=a')).toBe(
+      '',
+    )
+  })
+
+  it('returns null when there is nothing to remove', () => {
+    expect(withoutKeycloakCallbackParams('')).toBeNull()
+    expect(withoutKeycloakCallbackParams('?q=sentinel&page=2')).toBeNull()
   })
 })
