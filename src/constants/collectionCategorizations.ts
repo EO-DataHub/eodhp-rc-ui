@@ -55,6 +55,7 @@ enum Provider {
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
+  USGS = 'pro:usgs',
   Uncategorised = 'uncategorised',
 }
 
@@ -71,6 +72,7 @@ enum ProviderLabel {
   Planet = 'Planet',
   UK_Met_Office = 'UK Met Office',
   UOL_LST = 'University of Leicester (LST)',
+  USGS = 'United States Geological Survey',
   Uncategorised = 'Uncategorised Provider',
 }
 
@@ -207,6 +209,15 @@ const collectionCategorization = {
     dataCategory: [DataCategory.Optical_Multispectral],
     resolution: [Resolution.From_10m_To_100m],
     provider: [Provider.ESA],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
+  },
+  'landsat-c2-l2': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.USGS],
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],

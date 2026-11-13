@@ -87,6 +87,9 @@
       }
     }
   },
+  "landsat-c2-l2": {
+    "renders": {}
+  },
   "sentinel1": {
     "renders": {
       "preview": {
