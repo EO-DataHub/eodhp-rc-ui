@@ -53,7 +53,7 @@ export const RankingTable: React.FC<RankingTableProps> = ({
 }) => {
   const columns: Column[] = [
     { key: 'workspace', label: 'Workspace' },
-    { key: 'total', label: 'Total credits', align: 'right' },
+    { key: 'total', label: 'Credits used', align: 'right' },
     { key: 'share', label: 'Share', align: 'right' },
     { key: 'topSku', label: 'Top SKU' },
     ...(showChange ? [{ key: 'change' as const, label: 'Change', align: 'right' as const }] : []),

@@ -245,6 +245,39 @@ export const buildSkuUsage = (events: BillingEvent[], periodStart: Date): SkuUsa
 
 const quantityFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 })
 
+const SECONDS_PER_HOUR = 3600
+/** A unit ending in seconds, written in full or short: "cpu-seconds", "GB-sec", "GB-s", "s". */
+const SECONDS_UNIT = /(^|[^a-z])(s|secs?|seconds?)$/i
+const HOURS_FOR: Record<string, string> = {
+  s: 'h',
+  sec: 'hr',
+  secs: 'hrs',
+  second: 'hour',
+  seconds: 'hours',
+}
+
+export interface QuantityScale {
+  /** Divide raw quantities by this before formatting. */
+  divisor: number
+  unit: string
+}
+
+/**
+ * Picks a readable unit for one SKU row. Units in seconds switch to hours once the
+ * quantity reaches an hour, so 606,960 cpu-seconds reads as 168.6 cpu-hours. The change
+ * uses the same scale as the quantity so the row reads in one unit.
+ */
+export const quantityScale = (quantity: number, unit: string): QuantityScale => {
+  if (SECONDS_UNIT.test(unit) && Math.abs(quantity) >= SECONDS_PER_HOUR) {
+    const unitInHours = unit.replace(
+      SECONDS_UNIT,
+      (_, before: string, seconds: string) => `${before}${HOURS_FOR[seconds.toLowerCase()]}`,
+    )
+    return { divisor: SECONDS_PER_HOUR, unit: unitInHours }
+  }
+  return { divisor: 1, unit }
+}
+
 export const formatQuantity = (value: number) => quantityFormat.format(value)
 export const formatQuantityChange = (value: number | undefined) => {
   if (value === undefined) return 'New'

@@ -136,7 +136,7 @@ describe('Stage 2: period controls and URL state', () => {
     expect(await screen.findByText('October 2026')).toBeInTheDocument()
     expect(screen.queryByText('September 2026')).not.toBeInTheDocument()
     await waitFor(() => expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma']))
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,800.00')
   })
 
   it('steps to the current period, labels it in progress, and goes no further', async () => {
@@ -191,18 +191,18 @@ describe('Stage 3: ranking table and filters', () => {
 
   it('shows total, share, top SKU, change and balance in credits for each workspace', async () => {
     await openRanking()
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,800.00')
     expect(cellText('ws-alpha', /^Share/i)).toMatch(/^60(\.0+)?\s?%$/)
     expect(cellText('ws-alpha', /^Top SKU/i)).toBe('Workflow CPU')
     expect(cellText('ws-alpha', /^Change/i)).toBe('+1,204.50')
     expect(cellText('ws-alpha', /^Balance/i)).toBe('1,250.50')
 
-    expect(cellText('ws-beta', /^Total/i)).toBe('900.00')
+    expect(cellText('ws-beta', /^Credits used/i)).toBe('900.00')
     expect(cellText('ws-beta', /^Share/i)).toMatch(/^30(\.0+)?\s?%$/)
     expect(cellText('ws-beta', /^Top SKU/i)).toBe('Storage')
     expect(cellText('ws-beta', /^Balance/i)).toBe('20.00')
 
-    expect(cellText('ws-gamma', /^Total/i)).toBe('300.00')
+    expect(cellText('ws-gamma', /^Credits used/i)).toBe('300.00')
     expect(cellText('ws-gamma', /^Share/i)).toMatch(/^10(\.0+)?\s?%$/)
     expect(cellText('ws-gamma', /^Change/i)).toMatch(/^[-−]50\.00$/)
     expect(cellText('ws-gamma', /^Balance/i)).toBe('5,000.00')
@@ -222,12 +222,12 @@ describe('Stage 3: ranking table and filters', () => {
   it('sorts by total, descending, by default', async () => {
     await openRanking()
     expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
-    expect(columnHeader(/^Total/i)).toHaveAttribute('aria-sort', 'descending')
+    expect(columnHeader(/^Credits used/i)).toHaveAttribute('aria-sort', 'descending')
   })
 
   const sortKeys: [RegExp, (text: string) => string | number][] = [
     [/^Workspace/i, (text) => text],
-    [/^Total/i, parseCredits],
+    [/^Credits used/i, parseCredits],
     [/^Share/i, parseCredits],
     [/^Top SKU/i, (text) => text],
     [/^Change/i, (text) => (text === 'New' ? Number.POSITIVE_INFINITY : parseCredits(text))],
@@ -376,7 +376,7 @@ describe('Stage 3: loading, empty ranking and exact credit sums', () => {
     api = installHubApi({ usage: preciseUsage })
     await openRanking()
     expect(rankedNames()).toEqual(['ws-alpha'])
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,001.07')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,001.07')
     expect(totalsRow()).toHaveTextContent('1,001.07')
   })
 
@@ -411,7 +411,7 @@ describe('Stage 5: ranking while the balances load', () => {
     await waitFor(() => expect(countOf(WORKSPACES)).toBeGreaterThan(0))
 
     expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,800.00')
     for (const name of ['ws-alpha', 'ws-beta', 'ws-gamma']) {
       expect(isBusy(cellOf(name, /^Balance/i)), `${name} balance is not busy`).toBe(true)
       expect(cellText(name, /^Balance/i)).not.toMatch(/\d/)
@@ -436,7 +436,7 @@ describe('Stage 5: ranking while the balances load', () => {
 
     expect(await screen.findByText(/balances could not be loaded/i)).toBeInTheDocument()
     expect(rankedNames()).toEqual(['ws-alpha', 'ws-beta', 'ws-gamma'])
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,800.00')
     expect(totalsRow()).toHaveTextContent('3,000.00')
     for (const name of ['ws-alpha', 'ws-beta', 'ws-gamma']) {
       expect(cellText(name, /^Balance/i)).toBe('—')
@@ -512,7 +512,7 @@ describe('Stage 5: ranking token refresh and caching', () => {
     await settle()
 
     expect(usageRequestsFor(OCTOBER)).toHaveLength(1)
-    expect(cellText('ws-alpha', /^Total/i)).toBe('1,800.00')
+    expect(cellText('ws-alpha', /^Credits used/i)).toBe('1,800.00')
   })
 
   it('reads a period again when returning to it after more than 5 minutes', async () => {
@@ -854,7 +854,7 @@ describe('Stage 8: workspaces with tiny credits', () => {
     api = installHubApi({ usage: usageWithTinyCredits })
     await openRanking()
     await waitFor(() => expect(rowFor('ws-epsilon')).toBeDefined())
-    expect(cellText('ws-epsilon', /^Total/i)).toBe('0.00')
+    expect(cellText('ws-epsilon', /^Credits used/i)).toBe('0.00')
     expect(rowFor('ws-delta')).toBeUndefined()
     expect(await screen.findByText(/^1 workspace had no usage in this period/)).toBeInTheDocument()
   })

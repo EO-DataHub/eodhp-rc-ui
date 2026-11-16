@@ -21,6 +21,7 @@ import {
   formatQuantity,
   formatQuantityChange,
   parseCredits,
+  quantityScale,
 } from './hubRanking'
 import { useHubUsageSearchParams } from './useHubUsageSearchParams'
 import styles from './HubUsagePage.module.scss'
@@ -168,12 +169,15 @@ export const HubWorkspaceUsagePage: React.FC = () => {
             )}
             {rows.map((row) => {
               const info = skuInfo(row.sku)
-              const withUnit = (value: string) => (info?.unit ? `${value} ${info.unit}` : value)
+              const scale = quantityScale(row.quantity, info?.unit ?? '')
+              const withUnit = (value: string) => (scale.unit ? `${value} ${scale.unit}` : value)
               return (
                 <Table.Row key={row.sku}>
                   <Table.Cell>{info?.name ?? row.sku}</Table.Cell>
                   <Table.Cell align="right" className={styles.number}>
-                    {raw ? withUnit(formatQuantity(row.quantity)) : formatCredits(row.credits)}
+                    {raw
+                      ? withUnit(formatQuantity(row.quantity / scale.divisor))
+                      : formatCredits(row.credits)}
                   </Table.Cell>
                   {!inProgress && (
                     <Table.Cell align="right" className={styles.number}>
@@ -182,7 +186,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
                           raw
                             ? row.quantityChange === undefined
                               ? formatQuantityChange(undefined)
-                              : withUnit(formatQuantityChange(row.quantityChange))
+                              : withUnit(formatQuantityChange(row.quantityChange / scale.divisor))
                             : formatChange(row.creditChange)
                         }
                       />
