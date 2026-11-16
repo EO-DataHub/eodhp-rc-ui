@@ -7,8 +7,6 @@ import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
-const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
-
 const initOptions = {
   url: import.meta.env.VITE_KEYCLOAK_URL as string,
   realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
@@ -95,7 +93,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
     authenticationInstance
       .init({
         onLoad: initOptions.onLoad as KeycloakOnLoad,
-        silentCheckSsoRedirectUri: `${location.origin}${BASE_PATH}/silent-check-sso.html`,
+        // BASE_URL is Vite's `base` and always ends in a single '/'
+        silentCheckSsoRedirectUri: `${location.origin}${import.meta.env.BASE_URL}silent-check-sso.html`,
         responseMode: 'query',
       })
       .then((auth) => {
