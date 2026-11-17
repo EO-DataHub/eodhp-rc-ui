@@ -1,17 +1,16 @@
-export const fetchQuicklookImage = async ({
+export const fetchQuicklookBlob = async ({
   url,
   token,
 }: {
   url: string
   token?: string
-}): Promise<string> => {
+}): Promise<Blob> => {
   const response = await fetch(url, {
     cache: 'no-cache',
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   })
   if (!response.ok) throw new Error('Failed to fetch image')
-  const blob = await response.blob()
-  return URL.createObjectURL(blob)
+  return response.blob()
 }
 
 export const fetchThumbnailImage = async ({
