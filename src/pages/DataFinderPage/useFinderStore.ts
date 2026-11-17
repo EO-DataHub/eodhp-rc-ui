@@ -6,8 +6,10 @@ import {
   collectionRenderingConfig,
   resolveTilesUrl,
   getCollectionConfigKey,
+  PLACEHOLDER_RENDER,
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
+import { getPinnedItemId, refreshPinnedItems } from '@/library/pinnedItemRenders'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -37,12 +39,6 @@ export type CollectionInfoTab =
   | 'qa_documentation'
   | 'qa_validation'
 
-const PlaceholderRender: StacRender = {
-  id: 'default',
-  title: 'Default visualization',
-  assets: [],
-}
-
 interface AppContext {
   isContextHydrated: boolean
   isLoading: boolean
@@ -66,9 +62,7 @@ interface AppContext {
   isUserCollection: boolean
 }
 
-// Build a unique id for pinned items
-export const getPinnedItemId = (item: Item, collectionRender: StacRender) =>
-  [item.id, collectionRender.id].join('-')
+export { getPinnedItemId }
 
 const dataFinderStore = createStore({
   // Initial context
@@ -107,6 +101,8 @@ const dataFinderStore = createStore({
               ...context,
               isContextHydrated: true,
               ...contextFromLocalStorage,
+              // Saved renders can be out of date with this version's configuration.
+              pinnedItems: refreshPinnedItems(contextFromLocalStorage.pinnedItems ?? []),
             }
           }
         } catch (error) {
@@ -487,7 +483,7 @@ const dataFinderStore = createStore({
 
       // If no renders are available, create a placeholder render option
       if (collectionRenderOptions.length === 0) {
-        collectionRenderOptions = [PlaceholderRender]
+        collectionRenderOptions = [PLACEHOLDER_RENDER]
       }
 
       // Merge in the collection configuration

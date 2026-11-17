@@ -1,5 +1,5 @@
 import qs from 'qs'
-import { Item, BaseStacRender, StacRender } from '@/types'
+import { Item, BaseStacRender, Collection, StacRender } from '@/types'
 import serverConfig from './configFromServer.json'
 
 const TITILER_URL = import.meta.env.VITE_TITILER_BASE_URL
@@ -112,6 +112,9 @@ export const resolveTilesUrl = (
   const collectionConfig = collectionRenderingConfig[configKey]
   if (!collectionConfig) return undefined
   if (!render) return undefined
+  // TiTiler draws nothing without assets, and answers every tile with 400. PLACEHOLDER_RENDER
+  // has none.
+  if (!render.assets?.length) return undefined
 
   let tilerUrl = undefined
   let urlParam = undefined
@@ -232,3 +235,35 @@ function translateServerConfigToCollectionConfig(
 const typedServerConfig = serverConfig as unknown as Record<string, ServerCollectionConfig>
 export const collectionRenderingConfig: Record<string, CollectionConfig> =
   translateServerConfigToCollectionConfig(typedServerConfig)
+
+/**
+ * The render to use when a collection has none: it has no assets, so it draws no tiles.
+ * It gives the item finder a render to select and pin by.
+ */
+export const PLACEHOLDER_RENDER: StacRender = {
+  id: 'default',
+  title: 'Default visualization',
+  assets: [],
+}
+
+/**
+ * The collection's render with id `renderId`, from the application's configuration and the
+ * collection's own `renders`. Without a match, the collection's first render, or
+ * PLACEHOLDER_RENDER if it has none.
+ */
+export function getDefaultCollectionRender(
+  collection: Pick<Collection, 'id' | 'renders'>,
+  isUserCollection: boolean,
+  renderId?: string,
+): StacRender {
+  const configKey = getCollectionConfigKey(collection.id, isUserCollection)
+  const collectionConfig = collectionRenderingConfig[configKey]
+  const baseRenders = collectionConfig?.renders ?? {}
+  const renders = { ...baseRenders, ...collection.renders }
+  const options = Object.entries(renders).map(([id, render]) => ({ ...render, id }))
+  if (renderId) {
+    const match = options.find((option) => option.id === renderId)
+    if (match) return match
+  }
+  return options.length > 0 ? options[0] : PLACEHOLDER_RENDER
+}
