@@ -7,8 +7,9 @@ import proj4 from 'proj4'
 import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useQuery } from '@tanstack/react-query'
-import { fetchQuicklookImage } from '../../../library/fetchQuicklookImage'
-import { projectedImageCorners } from '@/library/quicklookCorners'
+import { fetchQuicklookBlob } from '../../../library/fetchQuicklookImage'
+import { footprintInImagePixels, projectedImageCorners } from '@/library/quicklookCorners'
+import { maskOutside } from '@/library/maskQuicklook'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -156,10 +157,21 @@ export const QuicklookItemLayer = ({ item, layerId }: { item: Item; layerId?: st
 
   const { data: imageUrl } = useQuery<string | undefined>({
     queryKey: ['quicklook', quicklookUrl, token],
-    queryFn: () =>
-      quicklookUrl
-        ? fetchQuicklookImage({ url: quicklookUrl, token: render?.auth ? token : undefined })
-        : Promise.resolve(undefined),
+    queryFn: async () => {
+      if (!quicklookUrl) return undefined
+      let image = await fetchQuicklookBlob({
+        url: quicklookUrl,
+        token: render?.auth ? token : undefined,
+      })
+      if (render?.quicklook_georeference === 'proj') {
+        // A quicklook of the whole grid has a border around the footprint, black in Landsat's
+        // JPEGs. Clear it, or keep the image as it is if that fails.
+        image = await maskOutside(image, (width, height) =>
+          footprintInImagePixels(item.properties, item.geometry, width, height),
+        ).catch(() => image)
+      }
+      return URL.createObjectURL(image)
+    },
     enabled: !!(render && quicklookUrl && (!render.auth || token)),
   })
 

@@ -1,5 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import { projDefinition, projectedImageCorners, type Corners } from './quicklookCorners'
+import {
+  footprintInImagePixels,
+  projDefinition,
+  projectedImageCorners,
+  type Corners,
+  type PixelRing,
+} from './quicklookCorners'
 
 // Real Landsat items from the test catalogue. The expected corners were computed independently
 // with pyproj from the same properties.
@@ -86,6 +92,90 @@ describe('projectedImageCorners', () => {
 
   test('returns undefined for a grid it has no definition for', () => {
     expect(projectedImageCorners({ ...UTM_ITEM, 'proj:epsg': 27700 })).toBeUndefined()
+  })
+})
+
+// The footprints of the same two items, and the pixel positions in their 1024 × 1024 browse
+// images that pyproj gives for each vertex.
+const UTM_FOOTPRINT: GeoJSON.Polygon = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [144.28708898524295, -43.54770136239131],
+      [143.6487133265501, -45.24250169618192],
+      [146.00819664114644, -45.668410381350746],
+      [146.5799866005021, -43.96323335913999],
+      [144.28708898524295, -43.54770136239131],
+    ],
+  ],
+}
+const UTM_PIXELS: PixelRing = [
+  [202.671, 2.76],
+  [10.515, 835.787],
+  [824.352, 1021.24],
+  [1015.194, 189.659],
+  [202.671, 2.76],
+]
+const POLAR_FOOTPRINT: GeoJSON.Polygon = {
+  type: 'Polygon',
+  coordinates: [
+    [
+      [150.1578892885239, -70.00576165672194],
+      [154.72370013912362, -70.75952866990785],
+      [156.7264466837598, -69.16344293801045],
+      [152.37364949745407, -68.45085140906068],
+      [150.11869037765302, -69.99682211698224],
+      [150.1578892885239, -70.00576165672194],
+    ],
+  ],
+}
+const POLAR_PIXELS: PixelRing = [
+  [978.276, 1.848],
+  [11.545, 25.866],
+  [28.558, 1023.538],
+  [1011.088, 1004.139],
+  [987.391, 2.463],
+  [978.276, 1.848],
+]
+
+function expectRing(actual: PixelRing, expected: PixelRing) {
+  expect(actual).toHaveLength(expected.length)
+  actual.forEach(([x, y], i) => {
+    expect(x).toBeCloseTo(expected[i][0], 2)
+    expect(y).toBeCloseTo(expected[i][1], 2)
+  })
+}
+
+describe('footprintInImagePixels', () => {
+  test('places a UTM footprint in the browse image', () => {
+    const rings = footprintInImagePixels(UTM_ITEM, UTM_FOOTPRINT, 1024, 1024)
+    expect(rings).toHaveLength(1)
+    expectRing(rings![0], UTM_PIXELS)
+  })
+
+  test('scales each axis on its own when the image is stretched from a grid that is not square', () => {
+    // The polar grid is 6741 × 6651 pixels, but its browse image is 1024 × 1024.
+    const rings = footprintInImagePixels(POLAR_ITEM, POLAR_FOOTPRINT, 1024, 1024)
+    expectRing(rings![0], POLAR_PIXELS)
+  })
+
+  test('gives one ring per part of a MultiPolygon', () => {
+    const multi: GeoJSON.MultiPolygon = {
+      type: 'MultiPolygon',
+      coordinates: [UTM_FOOTPRINT.coordinates, UTM_FOOTPRINT.coordinates],
+    }
+    const rings = footprintInImagePixels(UTM_ITEM, multi, 1024, 1024)
+    expect(rings).toHaveLength(2)
+    expectRing(rings![1], UTM_PIXELS)
+  })
+
+  test('returns undefined without a polygon or a known grid', () => {
+    expect(footprintInImagePixels(UTM_ITEM, undefined, 1024, 1024)).toBeUndefined()
+    const point: GeoJSON.Point = { type: 'Point', coordinates: [144, -44] }
+    expect(footprintInImagePixels(UTM_ITEM, point, 1024, 1024)).toBeUndefined()
+    expect(
+      footprintInImagePixels({ ...UTM_ITEM, 'proj:epsg': 27700 }, UTM_FOOTPRINT, 1024, 1024),
+    ).toBeUndefined()
   })
 })
 

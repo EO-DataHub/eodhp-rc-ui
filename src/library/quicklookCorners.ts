@@ -1,7 +1,11 @@
+import type { Geometry, Position } from 'geojson'
 import proj4 from 'proj4'
 
 /** Image corners in [lon, lat], in the order MapLibre wants: top left, top right, bottom right, bottom left. */
 export type Corners = [[number, number], [number, number], [number, number], [number, number]]
+
+/** A closed ring of [x, y] image pixel positions, with 0, 0 at the top left of the image. */
+export type PixelRing = [number, number][]
 
 // Antarctic Polar Stereographic. Landsat files scenes south of about 63.5°S in this grid.
 const POLAR_SOUTH =
@@ -31,16 +35,18 @@ function epsgOf(properties: Record<string, unknown>): number | undefined {
   return undefined
 }
 
-/**
- * The corners of an item's image grid, from the STAC projection extension: `proj:transform`,
- * `proj:shape` and `proj:epsg` (or `proj:code`).
- *
- * Use this for a quicklook that covers the item's whole grid, north-up in that grid, such as
- * Landsat's reduced_resolution_browse. The item's bbox is the box around its footprint in
- * lon/lat, which can be kilometres away from the grid's corners. Returns undefined when the
- * item lacks these properties or uses a grid this does not know, so the caller can fall back.
- */
-export function projectedImageCorners(properties: Record<string, unknown>): Corners | undefined {
+/** An item's raster grid, from the STAC projection extension. */
+interface Grid {
+  /** proj:transform, the GDAL affine transform in rasterio order: x = a*col + b*row + c, y = d*col + e*row + f. */
+  transform: [number, number, number, number, number, number]
+  rows: number
+  cols: number
+  /** Converts between the grid's CRS (forward from) and lon/lat. */
+  toLonLat: proj4.Converter
+}
+
+/** The item's grid, or undefined when a property is missing or malformed or the CRS is unknown. */
+function gridOf(properties: Record<string, unknown>): Grid | undefined {
   const transform = properties['proj:transform']
   const shape = properties['proj:shape']
   const epsg = epsgOf(properties)
@@ -58,11 +64,29 @@ export function projectedImageCorners(properties: Record<string, unknown>): Corn
     return
   const definition = epsg === undefined ? undefined : projDefinition(epsg)
   if (!definition) return
-
-  // proj:transform is the GDAL affine transform in rasterio order: x = a*col + b*row + c, y = d*col + e*row + f.
-  const [a, b, c, d, e, f] = transform as number[]
   const [rows, cols] = shape as number[]
-  const toLonLat = proj4(definition, 'EPSG:4326')
+  return {
+    transform: transform.slice(0, 6) as Grid['transform'],
+    rows,
+    cols,
+    toLonLat: proj4(definition, 'EPSG:4326'),
+  }
+}
+
+/**
+ * The corners of an item's image grid, from the STAC projection extension: `proj:transform`,
+ * `proj:shape` and `proj:epsg` (or `proj:code`).
+ *
+ * Use this for a quicklook that covers the item's whole grid, north-up in that grid, such as
+ * Landsat's reduced_resolution_browse. The item's bbox is the box around its footprint in
+ * lon/lat, which can be kilometres away from the grid's corners. Returns undefined when the
+ * item lacks these properties or uses a grid this does not know, so the caller can fall back.
+ */
+export function projectedImageCorners(properties: Record<string, unknown>): Corners | undefined {
+  const grid = gridOf(properties)
+  if (!grid) return
+  const [a, b, c, d, e, f] = grid.transform
+  const { rows, cols, toLonLat } = grid
   const corner = (col: number, row: number): [number, number] => {
     const [lon, lat] = toLonLat.forward([a * col + b * row + c, d * col + e * row + f])
     return [lon, lat]
@@ -83,4 +107,40 @@ function unwrapLongitudes(corners: Corners): Corners {
     if (lon - reference < -180) return [lon + 360, lat]
     return [lon, lat]
   }) as Corners
+}
+
+/**
+ * The item's footprint as rings of pixel positions in a quicklook of `width` × `height` pixels
+ * that covers the item's whole grid. The quicklook need not have the grid's aspect ratio:
+ * Landsat stretches every browse image to 1024 × 1024.
+ *
+ * Use the rings to clear the quicklook's border outside the footprint. Holes and the parts of
+ * a MultiPolygon are separate rings, so fill them with the even-odd rule. Returns undefined
+ * when the grid is unknown, as for `projectedImageCorners`, or the geometry is not a polygon.
+ */
+export function footprintInImagePixels(
+  properties: Record<string, unknown>,
+  geometry: Geometry | undefined,
+  width: number,
+  height: number,
+): PixelRing[] | undefined {
+  const grid = gridOf(properties)
+  if (!grid) return
+  let rings: Position[][]
+  if (geometry?.type === 'Polygon') rings = geometry.coordinates
+  else if (geometry?.type === 'MultiPolygon') rings = geometry.coordinates.flat()
+  else return
+  const [a, b, c, d, e, f] = grid.transform
+  const determinant = a * e - b * d
+  if (determinant === 0) return
+  const scaleX = width / grid.cols
+  const scaleY = height / grid.rows
+  const toPixel = ([lon, lat]: Position): [number, number] => {
+    const [x, y] = grid.toLonLat.inverse([lon, lat])
+    // Invert the affine transform to get the grid column and row.
+    const col = (e * (x - c) - b * (y - f)) / determinant
+    const row = (a * (y - f) - d * (x - c)) / determinant
+    return [col * scaleX, row * scaleY]
+  }
+  return rings.map((ring) => ring.map(toPixel))
 }
