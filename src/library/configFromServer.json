@@ -88,7 +88,13 @@
     }
   },
   "landsat-c2-l2": {
-    "renders": {}
+    "renders": {
+      "preview": {
+        "title": "Preview",
+        "assets": ["reduced_resolution_browse"],
+        "quicklook_georeference": "proj"
+      }
+    }
   },
   "sentinel1": {
     "renders": {
