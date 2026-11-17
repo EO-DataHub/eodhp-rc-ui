@@ -68,6 +68,23 @@ describe('projectedImageCorners', () => {
     ])
   })
 
+  test('keeps the middle of a grid that crosses the antimeridian within ±180°', () => {
+    // The same zone, 100 km further east, so most of the grid is east of 180°. pyproj gives
+    // corners of 179.80038, -178.04786, -177.99343 and 179.83127. Kept together, their middle
+    // would be about 180.9°, which MapLibre's image source refuses, so all four move west.
+    const eastOf180 = {
+      'proj:epsg': 32760,
+      'proj:shape': [7700, 7700],
+      'proj:transform': [30, 0, 800000, 0, -30, 8250000],
+    }
+    expectCorners(projectedImageCorners(eastOf180), [
+      [-180.19962, -15.81075],
+      [-178.04786, -15.77232],
+      [-177.99343, -17.85257],
+      [-180.16873, -17.89637],
+    ])
+  })
+
   test('accepts proj:code from version 2 of the projection extension', () => {
     const v2 = { ...UTM_ITEM, 'proj:epsg': undefined, 'proj:code': 'EPSG:32655' }
     expectCorners(projectedImageCorners(v2), UTM_CORNERS)
