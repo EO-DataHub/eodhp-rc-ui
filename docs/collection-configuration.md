@@ -51,6 +51,7 @@ To still be able to render these images on the map for proper preview, we rely o
 | `bbox`                   | Uses the STAC item's bounding box (bbox property) to georeference the quicklook image.      |
 | `geometry`               | Uses the STAC item's geometry (GeoJSON polygon) to georeference the quicklook image. Since the polygon can be arbitrarily complex, we use some heuristics to find the four corner points to anchor the image to. |
 | `bbox-squared` | Special case where the PNG image is padded either on the horizontal or vertical side to be square in number of pixels, but the bbox still only corresponds to the (rectangular) image geometry. Here, we post-process the bbox to be squared in UTM coordinates, which works remarkably well considering how crazy it may sound. |
+| `proj` | For an image that covers the item's whole raster grid, north-up in that grid, such as Landsat's `reduced_resolution_browse`. Places the image by the grid's four corners, computed from the item's `proj:transform`, `proj:shape` and `proj:epsg` (or `proj:code`). Knows UTM (EPSG 32601–32660 and 32701–32760) and Antarctic Polar Stereographic (EPSG 3031). Falls back to `bbox` for an item without these properties or with another grid. |
 
 
 ### GeoTIFF or Multidimensional (Zarr, NetCDF, Kerchunk, etc.)?

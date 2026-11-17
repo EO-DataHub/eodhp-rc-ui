@@ -8,6 +8,7 @@ import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useQuery } from '@tanstack/react-query'
 import { fetchQuicklookImage } from '../../../library/fetchQuicklookImage'
+import { projectedImageCorners } from '@/library/quicklookCorners'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -175,13 +176,19 @@ export const QuicklookItemLayer = ({ item, layerId }: { item: Item; layerId?: st
 
   let coordinates: Coordinates
 
-  if (render.quicklook_georeference === 'bbox') {
-    coordinates = [
-      [item.bbox[0], item.bbox[3]],
-      [item.bbox[2], item.bbox[3]],
-      [item.bbox[2], item.bbox[1]],
-      [item.bbox[0], item.bbox[1]],
-    ] as Coordinates
+  const bboxCorners = (): Coordinates => [
+    [item.bbox[0], item.bbox[3]],
+    [item.bbox[2], item.bbox[3]],
+    [item.bbox[2], item.bbox[1]],
+    [item.bbox[0], item.bbox[1]],
+  ]
+
+  if (render.quicklook_georeference === 'proj') {
+    // The quicklook covers the item's whole grid, so place it by the grid's corners from the
+    // projection extension. Falls back to the bbox for an item without them.
+    coordinates = projectedImageCorners(item.properties) ?? bboxCorners()
+  } else if (render.quicklook_georeference === 'bbox') {
+    coordinates = bboxCorners()
   } else if (render.quicklook_georeference === 'bbox-squared') {
     const bbox = squareAndTransformBoundingBox(item.bbox)
     coordinates = [
