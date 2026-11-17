@@ -67,5 +67,20 @@ export function projectedImageCorners(properties: Record<string, unknown>): Corn
     const [lon, lat] = toLonLat.forward([a * col + b * row + c, d * col + e * row + f])
     return [lon, lat]
   }
-  return [corner(0, 0), corner(cols, 0), corner(cols, rows), corner(0, rows)]
+  return unwrapLongitudes([corner(0, 0), corner(cols, 0), corner(cols, rows), corner(0, rows)])
+}
+
+/**
+ * Moves each corner's longitude by 360° where needed, so that it is within 180° of the first
+ * corner. For a grid that crosses the antimeridian, proj4 gives longitudes on both sides of ±180,
+ * and MapLibre would stretch the image the other way round the world. MapLibre accepts
+ * longitudes outside ±180 for an image source.
+ */
+function unwrapLongitudes(corners: Corners): Corners {
+  const reference = corners[0][0]
+  return corners.map(([lon, lat]) => {
+    if (lon - reference > 180) return [lon - 360, lat]
+    if (lon - reference < -180) return [lon + 360, lat]
+    return [lon, lat]
+  }) as Corners
 }

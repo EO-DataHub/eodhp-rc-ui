@@ -46,6 +46,22 @@ describe('projectedImageCorners', () => {
     expectCorners(projectedImageCorners(POLAR_ITEM), POLAR_CORNERS)
   })
 
+  test('keeps a grid that crosses the antimeridian in one piece', () => {
+    // A grid in UTM zone 60S near Fiji that runs past 180°. pyproj gives the east corners
+    // as -178.97862 and -178.93434; they come back 360° further east.
+    const fiji = {
+      'proj:epsg': 32760,
+      'proj:shape': [7700, 7700],
+      'proj:transform': [30, 0, 700000, 0, -30, 8250000],
+    }
+    expectCorners(projectedImageCorners(fiji), [
+      [178.86737, -15.82078],
+      [181.02138, -15.79156],
+      [181.06566, -17.8745],
+      [178.88798, -17.90781],
+    ])
+  })
+
   test('accepts proj:code from version 2 of the projection extension', () => {
     const v2 = { ...UTM_ITEM, 'proj:epsg': undefined, 'proj:code': 'EPSG:32655' }
     expectCorners(projectedImageCorners(v2), UTM_CORNERS)
