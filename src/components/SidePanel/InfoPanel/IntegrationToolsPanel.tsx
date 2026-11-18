@@ -26,9 +26,8 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
-import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import { WorkflowLaunchModal } from '@/components/WorkflowLaunchModal/WorkflowLaunchModal'
+import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface IntegrationToolsPanelProps {
@@ -274,60 +273,9 @@ const DesktopGisTab: React.FC<{ item: Item }> = ({ item }) => {
 }
 
 // Workflows Tab Component
-const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
-  const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
-  const username = userInfo?.preferred_username
-
-  // Retrieve AOI from store
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-
-  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false)
-
-  const {
-    workflows,
-    selectedWorkflow,
-    setSelectedWorkflow,
-    launch,
-    isLoadingWorkflows,
-    isLaunching,
-    workflowsError,
-    launchError,
-    workflowId,
-    clearWorkflowId,
-    retry,
-  } = useWorkflowLaunch({
-    item,
-    collection,
-    token,
-    currentWorkspace,
-    username,
-  })
-
-  const canOpenLaunchModal = isAuthenticated && !!currentWorkspace && !!item && !!selectedWorkflow
-  const showContent = isAuthenticated && !!currentWorkspace && !!item
-  const hasWorkflows = workflows.length > 0
-  const isEmpty = !isLoadingWorkflows && !workflowsError && workflows.length === 0
-
-  const handleLaunchModalOpenChange = (open: boolean) => {
-    setIsLaunchModalOpen(open)
-    if (!open) clearWorkflowId()
-  }
-
-  if (!showContent) {
-    return (
-      <Card>
-        <Flex direction="column" gap="3" p="4">
-          <Text weight="medium" size="3">
-            Workflow Integration
-          </Text>
-          <Text size="2" color="gray">
-            Start data processing workflows directly with this item. Log in and select a workspace
-            to use this feature.
-          </Text>
-        </Flex>
-      </Card>
-    )
-  }
+const WorkflowsTab: React.FC<{ item: Item }> = ({ item }) => {
+  const { isAuthenticated } = useContext(AuthenticationContext)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   return (
     <Flex direction="column" gap="4">
@@ -337,94 +285,21 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
             Workflow Integration
           </Text>
           <Text size="2" color="gray">
-            Start data processing workflows directly with this item. Select a workflow below and
-            click Launch to configure and run it.
+            {isAuthenticated
+              ? 'Start a data processing workflow on this item. Choose the workflow and check its inputs before it runs.'
+              : 'Start data processing workflows directly with this item. Log in to use this feature.'}
           </Text>
-
-          {isLoadingWorkflows && (
-            <Flex pt="4" pb="4">
-              <LoadingIndicator size="2" />
-            </Flex>
-          )}
-
-          {workflowsError && (
-            <Flex direction="column" gap="2" pt="2">
-              <Text size="2" color="red">
-                Unable to load workflows
-              </Text>
-              <Text size="2" color="gray">
-                {workflowsError}
-              </Text>
-              <Button variant="soft" size="2" onClick={retry}>
-                Retry
-              </Button>
-            </Flex>
-          )}
-
-          {!isLoadingWorkflows && !workflowsError && (
-            <>
-              {isEmpty && (
-                <Text size="2" color="gray">
-                  No workflows available for this dataset
-                </Text>
-              )}
-
-              {hasWorkflows && (
-                <Flex direction="column" gap="3" pt="2">
-                  <RadioGroup.Root
-                    value={selectedWorkflow?.id ?? ''}
-                    onValueChange={(id) => {
-                      const wf = workflows.find((w) => w.id === id) ?? null
-                      setSelectedWorkflow(wf)
-                    }}
-                  >
-                    <Flex direction="column" gap="2">
-                      {workflows.map((wf) => (
-                        <label key={wf.id} style={{ cursor: 'pointer' }}>
-                          <Flex gap="2" align="center">
-                            <RadioGroup.Item value={wf.id} />
-                            <Flex direction="column" gap="0">
-                              <Text size="2" weight="medium">
-                                {wf.properties?.title ?? wf.id}
-                              </Text>
-                              {wf.properties?.description && (
-                                <Text size="1" color="gray">
-                                  {wf.properties.description}
-                                </Text>
-                              )}
-                            </Flex>
-                          </Flex>
-                        </label>
-                      ))}
-                    </Flex>
-                  </RadioGroup.Root>
-
-                  <Button
-                    variant="soft"
-                    size="2"
-                    disabled={!canOpenLaunchModal}
-                    onClick={() => setIsLaunchModalOpen(true)}
-                  >
-                    Launch
-                  </Button>
-                </Flex>
-              )}
-            </>
-          )}
+          <Button
+            variant="soft"
+            size="2"
+            disabled={!isAuthenticated}
+            onClick={() => setIsDialogOpen(true)}
+          >
+            Run workflow
+          </Button>
         </Flex>
       </Card>
-      <WorkflowLaunchModal
-        open={isLaunchModalOpen}
-        onOpenChange={handleLaunchModalOpenChange}
-        workflow={selectedWorkflow}
-        item={item}
-        aoi={aoi}
-        launch={launch}
-        isLaunching={isLaunching}
-        launchError={launchError}
-        workflowId={workflowId}
-        currentWorkspace={currentWorkspace}
-      />
+      <RunWorkflowDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} item={item} />
     </Flex>
   )
 }
@@ -668,7 +543,7 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
 
               <Tabs.Content value="workflows">
                 <Box pt="4">
-                  <WorkflowsTab item={item} collection={item.collectionRef ?? collection} />
+                  <WorkflowsTab item={item} />
                 </Box>
               </Tabs.Content>
 
