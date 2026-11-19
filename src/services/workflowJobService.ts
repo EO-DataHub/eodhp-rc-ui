@@ -1,18 +1,46 @@
-import { JobsApiResponse, WorkflowJob } from '@/types'
+import { JobLink, JobsApiResponse, WorkflowJob } from '@/types'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
 import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
+/** Number of jobs to fetch per page of a workspace's jobs list */
+export const JOBS_PAGE_SIZE = 20
+
+export interface JobsPageOptions {
+  /** Maximum number of jobs to return. Leave unset to fetch all jobs. */
+  limit?: number
+  /** Number of jobs to skip */
+  skip?: number
+}
+
 /**
- * Fetches workflow execution jobs for a specific workspace
+ * Returns the `skip` value of the jobs list's `next` link, or undefined when there are no
+ * more jobs. Only the number is used, so the workspace token is never sent to a URL taken
+ * from the response.
+ */
+export const getNextJobsSkip = (links: JobLink[]): number | undefined => {
+  const next = links.find((link) => link.rel === 'next')
+  if (!next?.href) return undefined
+  try {
+    const skip = Number(new URL(next.href, 'http://localhost').searchParams.get('skip'))
+    return Number.isInteger(skip) && skip > 0 ? skip : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Fetches workflow execution jobs for a specific workspace, newest first
  * @param workspaceName - The workspace name
  * @param token - User authentication token
+ * @param options - Optional `limit` and `skip` to fetch one page of jobs
  * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
  */
 export const fetchJobsForWorkspace = async (
   workspaceName: string,
   token: string,
+  options: JobsPageOptions = {},
 ): Promise<JobsApiResponse> => {
   if (!token || !workspaceName) {
     return {
@@ -33,9 +61,16 @@ export const fetchJobsForWorkspace = async (
       )
     }
 
+    const params = new URLSearchParams()
+    if (options.limit) params.set('limit', String(options.limit))
+    if (options.skip) params.set('skip', String(options.skip))
+    const query = params.toString()
+
     // Fetch jobs from API endpoint
     const response = await fetch(
-      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${workspaceName}/jobs`,
+      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${workspaceName}/jobs${
+        query ? `?${query}` : ''
+      }`,
       {
         method: 'GET',
         headers: {
