@@ -15,6 +15,19 @@ The file contains enums for the categories and a mapping of collection IDs to ca
 
 ![Collection Catalog with Categorisation](./collection-catalog-categorisation.png)
 
+### Unlisted collections
+
+To keep a collection off the gallery but let chosen users open it, set `eodhrc:unlisted` in its entry in `configFromServer.json`:
+
+```json
+  "landsat-c2-l2": {
+    "eodhrc:unlisted": true,
+    "renders": { ... }
+  }
+```
+
+The gallery does not show the collection, and does not count it. The map browser still opens it from its URL, `<base path>/finder/<collection id>`. Use this to let testers check a collection before it is announced. It does not restrict access: anyone with the URL can open the collection.
+
 
 ## Item visualisation
 

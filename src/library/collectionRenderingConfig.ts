@@ -15,6 +15,8 @@ interface CollectionConfig {
   renders?: Record<string, BaseStacRender>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  // Left off the collection gallery, but still opens from its map browser URL.
+  'eodhrc:unlisted'?: boolean
   thumbnail_auth?: boolean
   thumbnail_asset?: string
 }
@@ -39,6 +41,8 @@ interface ServerCollectionConfig {
   renders: Record<string, ServerRenderConfig>
   'eodhrc:time-variable-items'?: boolean
   'eodhrc:render-key-properties'?: string[]
+  // Left off the collection gallery, but still opens from its map browser URL.
+  'eodhrc:unlisted'?: boolean
   thumbnail_auth?: boolean
   thumbnail_asset?: string
 }
@@ -213,6 +217,10 @@ function translateServerConfigToCollectionConfig(
       baseConfig['eodhrc:render-key-properties'] = config['eodhrc:render-key-properties']
     }
 
+    if (config['eodhrc:unlisted']) {
+      baseConfig['eodhrc:unlisted'] = true
+    }
+
     // Explicitly set thumbnail_auth with backward-compatible default
     if (config.thumbnail_auth !== undefined) {
       baseConfig.thumbnail_auth = config.thumbnail_auth
@@ -235,6 +243,18 @@ function translateServerConfigToCollectionConfig(
 const typedServerConfig = serverConfig as unknown as Record<string, ServerCollectionConfig>
 export const collectionRenderingConfig: Record<string, CollectionConfig> =
   translateServerConfigToCollectionConfig(typedServerConfig)
+
+/**
+ * Whether a collection appears on the collection gallery. An unlisted collection is left off
+ * the gallery, but it still opens from its map browser URL (`/finder/<collection id>`), so it
+ * can be shared with chosen users before it is announced.
+ */
+export function isListedCollection(
+  collectionId: string,
+  config: Record<string, CollectionConfig> = collectionRenderingConfig,
+): boolean {
+  return !config[collectionId]?.['eodhrc:unlisted']
+}
 
 /**
  * The render to use when a collection has none: it has no assets, so it draws no tiles.

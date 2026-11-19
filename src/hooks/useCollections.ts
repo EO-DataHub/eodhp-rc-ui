@@ -12,8 +12,13 @@ import { isCollectionMatchingSearch } from '@/library/collectionUtils'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { collectionHasQAIndicators } from '@/library/collectionQuality'
+import { isListedCollection } from '@/library/collectionRenderingConfig'
 
 export const GROUP_BY_KEY = 'groupBy'
+
+// Unlisted collections stay off the gallery; they still open from their map browser URL.
+const listedCollections = (collections: Collection[] | undefined) =>
+  (collections ?? []).filter((collection) => isListedCollection(collection.id))
 
 export const useCollections = () => {
   const [filters, setFilters] = useState<QuickFilter>({})
@@ -60,12 +65,12 @@ export const useCollections = () => {
   const error = queries.some((query) => query.isError)
   const errorMessages = queries.map((query) => query.error?.message).filter(Boolean)
   const collectionCount =
-    queries.reduce((total, query) => total + (query.data?.length ?? 0), 0) +
+    queries.reduce((total, query) => total + listedCollections(query.data).length, 0) +
     (userCollections?.length ?? 0)
 
   const sortedCollections = useMemo(() => {
     const mergedCollections: Collection[] = queries
-      .flatMap((query) => query.data ?? [])
+      .flatMap((query) => listedCollections(query.data))
       .map((collection) => ({
         ...collection,
         displayedTitle: collection.title,
