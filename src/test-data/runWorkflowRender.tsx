@@ -22,8 +22,10 @@ export const signedInAuth = (overrides: Partial<AuthValue> = {}): AuthValue => (
   ...overrides,
 })
 
-interface ProviderOptions {
+export interface ProviderOptions {
   auth?: AuthValue
+  /** A query client the test holds, for example to invalidate or refetch queries. */
+  queryClient?: QueryClient
   /** The URL to start at. */
   url?: string
   /** The route pattern the element is rendered at, for pages that read URL parameters. */
@@ -33,9 +35,13 @@ interface ProviderOptions {
 /** Wraps a component in the router, query client, sign-in and theme that the app provides. */
 export const withProviders = (
   ui: React.ReactNode,
-  { auth = signedInAuth(), url = '/', path }: ProviderOptions = {},
+  {
+    auth = signedInAuth(),
+    url = '/',
+    path,
+    queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+  }: ProviderOptions = {},
 ) => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return (
     <MemoryRouter initialEntries={[url]}>
       <QueryClientProvider client={queryClient}>

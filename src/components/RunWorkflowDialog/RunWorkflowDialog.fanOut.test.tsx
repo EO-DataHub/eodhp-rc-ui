@@ -1,7 +1,6 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import type { Item } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems as fetchCatalogue } from '@/services/processCatalogueService'
 import { fetchItems as searchItems } from '@/services/itemService'
@@ -9,7 +8,6 @@ import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
-import PinnedItemsTab from '@/components/SidePanel/Tabs/PinnedItems'
 import {
   anyDatasetWorkflow,
   item,
@@ -58,17 +56,17 @@ vi.mock('@/services/savedSetsService', async (importOriginal) => ({
   fetchSavedSets: vi.fn(),
   fetchSavedSet: vi.fn(),
 }))
-// The pinned cards have their own buttons; these tests check the tab's Run workflow button
-vi.mock('@/components/ItemCard/ItemCard', () => ({
-  default: ({ item: card }: { item: Item }) => <p>{card.id}</p>,
-}))
-
 type User = ReturnType<typeof userEvent.setup>
 
-/** Opens the dialog from the Pinned Items tab's Run workflow button. */
-const openFromPinned = async (user: User) => {
-  render(withProviders(<PinnedItemsTab />))
-  await user.click(screen.getByRole('button', { name: 'Run workflow' }))
+/** Opens the dialog on the pinned items, with the workflow chosen in the Data Finder if there is one. */
+const openFromPinned = () => {
+  const { chosenTool } = dataFinderStore.getSnapshot().context
+  const workflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
+  render(
+    withProviders(
+      <RunWorkflowDialog open onOpenChange={vi.fn()} source="pinned" workflow={workflow} />,
+    ),
+  )
   return screen.findByRole('dialog')
 }
 
@@ -199,9 +197,8 @@ afterEach(() => {
 
 describe('Stage 1: Run workflow on pinned items', () => {
   it('opens the dialog with the pinned items as the source, at the workflow step', async () => {
-    const user = userEvent.setup()
     pinItems(fanOutItems(3))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     expect(
       within(dialog).queryByRole('heading', { name: /what do you want to run on/i }),
@@ -210,9 +207,8 @@ describe('Stage 1: Run workflow on pinned items', () => {
   })
 
   it('lists every workflow, including those for other datasets', async () => {
-    const user = userEvent.setup()
     pinItems(fanOutItems(3))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     expect(await within(dialog).findByText('Landsat surface temperature')).toBeInTheDocument()
     expect(within(dialog).getByText('NDVI')).toBeInTheDocument()
     expect(within(dialog).getByText('Footprint')).toBeInTheDocument()
@@ -221,7 +217,7 @@ describe('Stage 1: Run workflow on pinned items', () => {
   it('shows the number of jobs on the review step', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'NDVI')
     expect(dialog).toHaveTextContent(/\b3 jobs\b/i)
   })
@@ -230,7 +226,7 @@ describe('Stage 1: Run workflow on pinned items', () => {
     const user = userEvent.setup()
     const items = fanOutItems(3)
     pinItems(items)
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'NDVI')
     await user.click(runButton(dialog))
 
@@ -247,7 +243,7 @@ describe('Stage 1: Run workflow on pinned items', () => {
   it('shows how many jobs started and links to Workflow outputs filtered to the workflow', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'NDVI')
     await user.click(runButton(dialog))
 
@@ -261,10 +257,9 @@ describe('Stage 1: Run workflow on pinned items', () => {
   })
 
   it('opens with the workflow chosen in the Data Finder filled in', async () => {
-    const user = userEvent.setup()
     pinItems(fanOutItems(3))
     dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /check the inputs/i)
     expect(within(dialog).queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
     expect(dialog).toHaveTextContent('NDVI')
@@ -289,7 +284,7 @@ describe('Stage 1: Changing the source', () => {
   it('disables this item when the dialog was opened without one', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     await backToSource(user, dialog)
     expect(isDisabled(sourceOption(dialog, /this item/i))).toBe(true)
@@ -318,7 +313,7 @@ describe('Stage 1: Changing the source', () => {
   it('changes to all results, filters the workflows by dataset and runs on every result', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     await backToSource(user, dialog)
     await user.click(sourceOption(dialog, /all results/i))
@@ -339,7 +334,7 @@ describe('Stage 1: Changing the source', () => {
   it('changes to a saved set and runs on each item in the set', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     await backToSource(user, dialog)
     await pickSavedSet(user, dialog, 'Coastal set')
@@ -375,7 +370,7 @@ describe('Stage 1: Fan-out submission', () => {
           })
         }),
     )
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     await user.click(runButton(dialog))
 
@@ -403,7 +398,7 @@ describe('Stage 1: Fan-out submission', () => {
         ? Promise.reject(new Error('Quota exceeded'))
         : Promise.resolve({ workflowId: 'job', status: 'accepted', submittedAt: '' }),
     )
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     await user.click(runButton(dialog))
 
@@ -425,7 +420,7 @@ describe('Stage 1: Fan-out submission', () => {
       }
       return Promise.resolve({ workflowId: 'job', status: 'accepted', submittedAt: '' })
     })
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     await user.click(runButton(dialog))
     await user.click(await within(dialog).findByRole('button', { name: 'Retry these' }))
@@ -445,7 +440,7 @@ describe('Stage 2: Item limit', () => {
   it('asks for no confirmation at the limit', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(CONFIRM_JOBS_ABOVE))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     expect(confirmBox(dialog)).toBeNull()
     expect(runButton(dialog)).toBeEnabled()
@@ -455,7 +450,7 @@ describe('Stage 2: Item limit', () => {
     const user = userEvent.setup()
     const count = CONFIRM_JOBS_ABOVE + 1
     pinItems(fanOutItems(count))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
 
     expect(dialog).toHaveTextContent(new RegExp(`\\b${count} jobs\\b`, 'i'))
@@ -469,7 +464,7 @@ describe('Stage 2: Item limit', () => {
   it('allows a run of exactly the ceiling once confirmed', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(MAX_JOBS_PER_RUN))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     await user.click(confirmBox(dialog)!)
     expect(runButton(dialog)).toBeEnabled()
@@ -478,7 +473,7 @@ describe('Stage 2: Item limit', () => {
   it('blocks a run above the ceiling and says what the ceiling is', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(MAX_JOBS_PER_RUN + 1))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
 
     expect(dialog).toHaveTextContent(new RegExp(`\\b${MAX_JOBS_PER_RUN}\\b`))
@@ -502,7 +497,7 @@ describe('Stage 2: Private data', () => {
   it('runs on private items when the item input uses stage-in', async () => {
     const user = userEvent.setup()
     pinMixedItems()
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'NDVI')
     expect(privateCountMessage(2)).toHaveLength(0)
     expect(runButton(dialog)).toBeEnabled()
@@ -511,7 +506,7 @@ describe('Stage 2: Private data', () => {
   it('blocks the run and counts the private items when the input has no stage-in', async () => {
     const user = userEvent.setup()
     pinMixedItems()
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
 
     expect(privateCountMessage(2).length).toBeGreaterThan(0)
@@ -523,7 +518,7 @@ describe('Stage 2: Private data', () => {
   it('runs on public items when the input has no stage-in', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await toReview(user, dialog, 'Footprint')
     expect(dialog).not.toHaveTextContent(/private/i)
     expect(runButton(dialog)).toBeEnabled()
@@ -540,7 +535,7 @@ describe('Stage 5: Change source and the results cap', () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
     dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /check the inputs/i)
     await changeSource(user, dialog)
   })
@@ -549,7 +544,7 @@ describe('Stage 5: Change source and the results cap', () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
     dataFinderStore.send({ type: 'chooseTool', tool: listRecord(anyDatasetWorkflow) })
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /review/i)
     expect(within(dialog).queryByRole('heading', { name: /check the inputs/i })).toBeNull()
     await changeSource(user, dialog)
@@ -560,7 +555,7 @@ describe('Stage 5: Change source and the results cap', () => {
     vi.mocked(searchItems).mockResolvedValue(fanOutItems(MAX_TOTAL_ITEMS, 'S2A_CAP'))
     pinItems(fanOutItems(2))
     const capText = `The run uses the first ${MAX_TOTAL_ITEMS} results.`
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     await backToSource(user, dialog)
     await user.click(sourceOption(dialog, /all results/i))
@@ -574,7 +569,7 @@ describe('Stage 5: Change source and the results cap', () => {
   it('does not mention a cap when the results are below it', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    const dialog = await openFromPinned(user)
+    const dialog = await openFromPinned()
     await heading(dialog, /choose a workflow/i)
     await backToSource(user, dialog)
     await user.click(sourceOption(dialog, /all results/i))

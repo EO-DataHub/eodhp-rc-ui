@@ -1,6 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
-import { QueryClient, useQueryClient } from '@tanstack/react-query'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Item } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -9,15 +8,26 @@ import { fetchItems as searchItems } from '@/services/itemService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
-import { listRecord, ndviWorkflow, stubBrowserGlobals } from '@/test-data/runWorkflow'
+import {
+  anyDatasetWorkflow,
+  fetchToolsFromFixtures,
+  ndviWorkflow,
+  stubBrowserGlobals,
+} from '@/test-data/runWorkflow'
 import {
   fanOutItemHref,
   fanOutItems,
-  fanOutWorkflows,
   sentinelCollection,
   sentItemLinks,
 } from '@/test-data/runWorkflowFanOut'
-import { withProviders } from '@/test-data/runWorkflowRender'
+import {
+  chooseTool,
+  fetchAnyToolById,
+  hideRunPanel,
+  renderWithRunPanel,
+  runPanel,
+  runWorkflowButton,
+} from '@/test-data/runPanel'
 import QueryItemsTab from './QueryItems'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -49,13 +59,10 @@ type User = ReturnType<typeof userEvent.setup>
 const results = fanOutItems(PAGE_SIZE + 1, 'S2A_RESULT')
 
 const openRunOnResults = async (user: User) => {
-  render(withProviders(<QueryItemsTab />))
+  await renderWithRunPanel(<QueryItemsTab />)
   await user.click(await screen.findByRole('button', { name: 'Run on results' }))
-  return screen.findByRole('dialog')
+  return runPanel()
 }
-
-const heading = (dialog: HTMLElement, name: RegExp) =>
-  within(dialog).findByRole('heading', { name })
 
 beforeAll(() => {
   // setupTests.ts stubs URL; item links need the real one
@@ -66,23 +73,15 @@ beforeEach(() => {
   stubBrowserGlobals()
   vi.stubEnv('VITE_HUB_BASE_URL', 'https://hub.example')
   vi.stubEnv('VITE_WORKFLOW_RESULTS_WORKSPACE_NAME', 'wf-ws')
+  hideRunPanel()
   dataFinderStore.send({ type: 'clearTool' })
   dataFinderStore.send({ type: 'clearAllPinnedItems' })
   dataFinderStore.send({ type: 'storeAoi', aoi: undefined })
   dataFinderStore.send({ type: 'setCollection', collection: sentinelCollection })
   dataFinderStore.send({ type: 'queryFilterChange', queryFilter: { limit: 100 } })
 
-  vi.mocked(fetchCatalogue).mockResolvedValue({
-    data: { items: fanOutWorkflows.map(listRecord) } as never,
-    error: null,
-  })
-  vi.mocked(fetchItemById).mockImplementation((id) =>
-    Promise.resolve({
-      data: fanOutWorkflows.find((w) => w.id === id)!,
-      error: null,
-      notFound: false,
-    }),
-  )
+  vi.mocked(fetchCatalogue).mockImplementation(fetchToolsFromFixtures)
+  vi.mocked(fetchItemById).mockImplementation(fetchAnyToolById)
   vi.mocked(searchItems).mockResolvedValue(results)
   vi.mocked(fetchWorkspaceTokens).mockResolvedValue({ access: 'ws-token' } as never)
   vi.mocked(launchWorkflow).mockResolvedValue({
@@ -99,113 +98,48 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 1: Items tab Run on results', () => {
-  it('opens the dialog with all results as the source, at the workflow step', async () => {
+describe('Stage 3: Items tab Run on results opens the run panel', () => {
+  it('sets Run on to All results for the chosen workflow, with no dialog', async () => {
     const user = userEvent.setup()
-    const dialog = await openRunOnResults(user)
-    await heading(dialog, /choose a workflow/i)
-    expect(
-      within(dialog).queryByRole('heading', { name: /what do you want to run on/i }),
-    ).toBeNull()
-    expect(dialog).toHaveTextContent(/all results/i)
+    chooseTool(ndviWorkflow)
+    const panel = await openRunOnResults(user)
+
+    expect(await within(panel).findByRole('radio', { name: /all results/i })).toBeChecked()
+    expect(panel).toHaveTextContent('NDVI')
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it("lists only the workflows for the search's dataset and for any dataset", async () => {
+  it('opens on the tool list with no chosen tool, and keeps All results for the workflow chosen next', async () => {
     const user = userEvent.setup()
-    const dialog = await openRunOnResults(user)
-    expect(await within(dialog).findByText('NDVI')).toBeInTheDocument()
-    expect(within(dialog).getByText('Footprint')).toBeInTheDocument()
-    expect(within(dialog).queryByText('Landsat surface temperature')).toBeNull()
+    const panel = await openRunOnResults(user)
+    await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' })
+
+    await user.click(await within(panel).findByText('Footprint', { exact: true }))
+    expect(await within(panel).findByRole('radio', { name: /all results/i })).toBeChecked()
   })
 
   it('runs one job for every result of the search, not only the page shown', async () => {
     const user = userEvent.setup()
-    const dialog = await openRunOnResults(user)
-    await heading(dialog, /choose a workflow/i)
-    await user.click(await within(dialog).findByText('Footprint'))
-    await user.click(within(dialog).getByRole('button', { name: 'Next' }))
-    await heading(dialog, /review/i)
-    expect(dialog).toHaveTextContent(new RegExp(`\\b${results.length} jobs\\b`, 'i'))
+    chooseTool(anyDatasetWorkflow)
+    const panel = await openRunOnResults(user)
+    await waitFor(() =>
+      expect(panel).toHaveTextContent(new RegExp(`\\b${results.length} jobs\\b`, 'i')),
+    )
 
-    await user.click(within(dialog).getByRole('button', { name: /^run\b/i }))
+    await user.click(runWorkflowButton(panel))
     await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(results.length))
     expect(new Set(sentItemLinks(vi.mocked(launchWorkflow).mock.calls))).toEqual(
       new Set(results.map((result) => fanOutItemHref(result.id))),
     )
   })
 
-  it('opens with the workflow chosen in the Data Finder filled in', async () => {
+  it('does not fetch the results again when the panel opens', async () => {
     const user = userEvent.setup()
-    dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
-    const dialog = await openRunOnResults(user)
-    await heading(dialog, /check the inputs/i)
-    expect(within(dialog).queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
-    expect(dialog).toHaveTextContent('NDVI')
-    expect(dialog).toHaveTextContent(/all results/i)
-  })
-})
-
-describe('Stage 4: Run on results stays open', () => {
-  let queryClient: QueryClient | undefined
-  const CaptureClient = () => {
-    queryClient = useQueryClient()
-    return null
-  }
-
-  const openWithClient = async (user: User) => {
-    render(
-      withProviders(
-        <>
-          <CaptureClient />
-          <QueryItemsTab />
-        </>,
-      ),
-    )
-    await user.click(await screen.findByRole('button', { name: 'Run on results' }))
-    const dialog = await screen.findByRole('dialog')
-    await heading(dialog, /choose a workflow/i)
-    return dialog
-  }
-
-  it('keeps the dialog open while the search results reload', async () => {
-    const user = userEvent.setup()
-    await openWithClient(user)
-    const callsBefore = vi.mocked(searchItems).mock.calls.length
-
-    let finishReload: ((items: Item[]) => void) | undefined
-    vi.mocked(searchItems).mockImplementation(
-      () => new Promise<Item[]>((resolve) => (finishReload = resolve)),
-    )
-    act(() => {
-      void queryClient!.invalidateQueries({ queryKey: ['Items'] })
-    })
-    await waitFor(() =>
-      expect(vi.mocked(searchItems).mock.calls.length).toBeGreaterThan(callsBefore),
-    )
-
-    // While the reload is in flight
-    const during = screen.getByRole('dialog')
-    expect(within(during).getByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
-
-    act(() => finishReload!(results))
-    const after = await screen.findByRole('dialog')
-    expect(
-      await within(after).findByRole('heading', { name: /choose a workflow/i }),
-    ).toBeInTheDocument()
-  })
-
-  it('does not fetch the results again when the dialog opens', async () => {
-    const user = userEvent.setup()
-    render(withProviders(<QueryItemsTab />))
-    await screen.findByRole('button', { name: 'Run on results' })
-    expect(searchItems).toHaveBeenCalledTimes(1)
-
-    await user.click(screen.getByRole('button', { name: 'Run on results' }))
-    const dialog = await screen.findByRole('dialog')
-    await heading(dialog, /choose a workflow/i)
+    chooseTool(ndviWorkflow)
+    const panel = await openRunOnResults(user)
+    await within(panel).findByRole('button', { name: 'Run workflow' })
     // Give any refetch time to start
     await new Promise((resolve) => setTimeout(resolve, 50))
     expect(searchItems).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
   })
 })

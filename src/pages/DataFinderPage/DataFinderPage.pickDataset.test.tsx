@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Theme } from '@radix-ui/themes'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -12,6 +13,7 @@ import {
   fetchToolsFromFixtures,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
+import { hideRunPanel, runPanel } from '@/test-data/runPanel'
 import dataFinderStore from './useFinderStore'
 import { DataFinderPage } from './DataFinderPage'
 
@@ -102,6 +104,7 @@ const chosenTool = () => dataFinderStore.getSnapshot().context.chosenTool
 
 beforeEach(() => {
   stubBrowserGlobals()
+  hideRunPanel()
   dataFinderStore.send({ type: 'clearTool' })
   dataFinderStore.send({ type: 'closeSecondaryPanel' })
   vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
@@ -148,5 +151,70 @@ describe('DataFinderPage pickDataset parameter', () => {
     await waitFor(() => expect(chosenTool()?.id).toBe('change-detection'))
     expect(await screen.findByText('Item results')).toBeInTheDocument()
     expect(datasetList()).toBeNull()
+  })
+})
+
+describe('Stage 2: Run panel on the Data Finder page', () => {
+  type User = ReturnType<typeof userEvent.setup>
+  const queryFilter = () => dataFinderStore.getSnapshot().context.queryFilter
+  const cloudFilter = { op: '<=', args: [{ property: 'eo:cloud_cover' }, 20] }
+
+  const openPanel = async (user: User) => {
+    await user.click(await screen.findByRole('button', { name: 'Tools' }))
+    return runPanel()
+  }
+
+  /** Chooses the Landsat-only tool, listed under Tools for other collections on Sentinel-2. */
+  const chooseOtherCollectionTool = async (user: User) => {
+    const panel = await openPanel(user)
+    await user.click(await within(panel).findByText('Landsat surface temperature'))
+    await waitFor(() => expect(datasetList()).toBeInTheDocument())
+  }
+
+  it('opens next to the sidebar and the Filter panel, and closes neither', async () => {
+    const user = userEvent.setup()
+    renderFinder('/finder/sentinel2_ard')
+    await screen.findByText('Item results')
+    act(() => {
+      dataFinderStore.send({ type: 'setSecondaryPanel', panel: 'query-filters' })
+    })
+
+    await openPanel(user)
+    expect(dataFinderStore.getSnapshot().context.secondaryPanel).toBe('query-filters')
+    expect(screen.getByRole('tab', { name: /^items/i })).toBeInTheDocument()
+    expect(screen.getByText('Item results')).toBeInTheDocument()
+  })
+
+  it("opens the dataset list filtered to the tool's datasets for a tool for other collections", async () => {
+    const user = userEvent.setup()
+    renderFinder('/finder/sentinel2_ard')
+    await chooseOtherCollectionTool(user)
+
+    expect(chosenTool()?.id).toBe('landsat-only')
+    expect(await screen.findByText('Landsat C2 L2')).toBeInTheDocument()
+    expect(screen.queryByText('Sentinel-2 ARD')).toBeNull()
+    expect(screen.queryByText('MODIS land surface temperature')).toBeNull()
+  })
+
+  it('clears the query filter when a dataset is picked from the list the tool opened', async () => {
+    const user = userEvent.setup()
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
+    renderFinder('/finder/sentinel2_ard')
+    await chooseOtherCollectionTool(user)
+
+    await screen.findByText('Landsat C2 L2')
+    await user.click(screen.getByText(/open collection/i))
+    expect(queryFilter()).toBeUndefined()
+  })
+
+  it('keeps the query filter when the list the tool opened is closed with Back', async () => {
+    const user = userEvent.setup()
+    dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
+    renderFinder('/finder/sentinel2_ard')
+    await chooseOtherCollectionTool(user)
+
+    await user.click(screen.getByRole('button', { name: /back/i }))
+    await waitFor(() => expect(datasetList()).toBeNull())
+    expect(queryFilter()).toEqual(cloudFilter)
   })
 })

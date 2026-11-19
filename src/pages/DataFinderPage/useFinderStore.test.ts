@@ -90,3 +90,32 @@ describe('dataFinderStore chosen tool', () => {
     expect(chosenTool()?.id).toBe('ndvi')
   })
 })
+
+describe('Stage 2: dataFinderStore run panel', () => {
+  const panel = () => {
+    const { isRunPanelOpen, runSource } = dataFinderStore.getSnapshot().context
+    return { isRunPanelOpen, runSource }
+  }
+
+  beforeEach(() => {
+    dataFinderStore.send({ type: 'hideRunPanel' })
+  })
+
+  it('opens, hides and opens again, keeping the source to use', () => {
+    dataFinderStore.send({ type: 'openRunPanel', source: 'pinned' })
+    expect(panel()).toEqual({ isRunPanelOpen: true, runSource: 'pinned' })
+
+    dataFinderStore.send({ type: 'hideRunPanel' })
+    expect(panel().isRunPanelOpen).toBe(false)
+
+    dataFinderStore.send({ type: 'openRunPanel' })
+    expect(panel()).toEqual({ isRunPanelOpen: true, runSource: 'pinned' })
+  })
+
+  it('keeps the chosen tool when the panel is hidden', () => {
+    dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) })
+    dataFinderStore.send({ type: 'openRunPanel' })
+    dataFinderStore.send({ type: 'hideRunPanel' })
+    expect(chosenTool()?.id).toBe('ndvi')
+  })
+})

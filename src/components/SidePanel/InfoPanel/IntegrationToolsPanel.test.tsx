@@ -18,6 +18,7 @@ import {
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
+import { hideRunPanel, renderWithRunPanel, runPanel } from '@/test-data/runPanel'
 import { IntegrationToolsPanel } from './IntegrationToolsPanel'
 
 vi.mock('@/services/processCatalogueService', () => ({
@@ -65,6 +66,7 @@ const choose = (tool: Parameters<typeof listRecord>[0]) =>
 
 beforeEach(() => {
   stubBrowserGlobals()
+  hideRunPanel()
   dataFinderStore.send({ type: 'clearTool' })
   vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
   vi.mocked(fetchItemById).mockImplementation(fetchToolByIdFromFixtures)
@@ -76,34 +78,33 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('IntegrationToolsPanel Workflows tab', () => {
-  it('opens the Run workflow dialog with this item filled in', async () => {
-    const user = userEvent.setup()
-    renderPanel()
-
+describe('Stage 3: IntegrationToolsPanel Workflows tab opens the run panel', () => {
+  const runFromWorkflowsTab = async (user: ReturnType<typeof userEvent.setup>) => {
+    await renderWithRunPanel(<IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />)
     await user.click(screen.getByRole('tab', { name: /workflows/i }))
     await user.click(await screen.findByRole('button', { name: /run workflow/i }))
+    return runPanel()
+  }
 
-    const dialog = await screen.findByRole('dialog')
-    expect(await screen.findByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
-    expect(dialog).toHaveTextContent(item.id)
-  })
-})
-
-describe('IntegrationToolsPanel with a chosen workflow', () => {
-  it('opens the Run workflow dialog with the item and the chosen workflow filled in', async () => {
+  it('sets Run on to this item for the chosen workflow, with no dialog', async () => {
     const user = userEvent.setup()
     choose(ndviWorkflow)
-    renderPanel()
+    const panel = await runFromWorkflowsTab(user)
 
-    await user.click(screen.getByRole('tab', { name: /workflows/i }))
-    await user.click(await screen.findByRole('button', { name: /run workflow/i }))
+    expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
+    expect(panel).toHaveTextContent('NDVI')
+    expect(panel).toHaveTextContent(item.id)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
 
-    const dialog = await screen.findByRole('dialog')
-    expect(await screen.findByRole('heading', { name: /check the inputs/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
-    expect(dialog).toHaveTextContent('NDVI')
-    expect(dialog).toHaveTextContent(item.id)
+  it('opens on the tool list with no chosen tool, and keeps this item for the workflow chosen next', async () => {
+    const user = userEvent.setup()
+    const panel = await runFromWorkflowsTab(user)
+    await within(panel).findByRole('heading', { name: /^tools for /i })
+
+    await user.click(await within(panel).findByText('NDVI', { exact: true }))
+    expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
+    expect(panel).toHaveTextContent(item.id)
   })
 })
 
@@ -207,11 +208,5 @@ describe('IntegrationToolsPanel with a chosen notebook that does not apply to th
 
     await user.click(screen.getByRole('tab', { name: /workflows/i }))
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Run NDVI on this item')
-    await user.click(await screen.findByRole('button', { name: /run workflow/i }))
-
-    const dialog = await screen.findByRole('dialog')
-    expect(await screen.findByRole('heading', { name: /choose a workflow/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: /check the inputs/i })).toBeNull()
-    expect(dialog).toHaveTextContent(sentinel1Item.id)
   })
 })

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Theme } from '@radix-ui/themes'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
 import {
   fetchToolByIdFromFixtures,
@@ -10,6 +12,7 @@ import {
   pinSetNotebook,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
+import { hideRunPanel, queryRunPanel, runPanel } from '@/test-data/runPanel'
 import dataFinderStore from './useFinderStore'
 import { DataFinderPage } from './DataFinderPage'
 
@@ -50,23 +53,30 @@ const toolParam = () => {
 const renderFinder = (url: string) =>
   render(
     <MemoryRouter initialEntries={[url]}>
-      <Routes>
-        <Route
-          path="/finder/*"
-          element={
-            <>
-              <DataFinderPage />
-              <LocationProbe />
-            </>
-          }
-        />
-        <Route path="/" element={<LocationProbe />} />
-      </Routes>
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <Theme>
+          <Routes>
+            <Route
+              path="/finder/*"
+              element={
+                <>
+                  <DataFinderPage />
+                  <LocationProbe />
+                </>
+              }
+            />
+            <Route path="/" element={<LocationProbe />} />
+          </Routes>
+        </Theme>
+      </QueryClientProvider>
     </MemoryRouter>,
   )
 
 beforeEach(() => {
   stubBrowserGlobals()
+  hideRunPanel()
   dataFinderStore.send({ type: 'clearTool' })
   vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
   vi.mocked(fetchItemById).mockImplementation(fetchToolByIdFromFixtures)
@@ -139,5 +149,21 @@ describe('DataFinderPage tool parameter', () => {
     await waitFor(() => expect(chosenTool()?.id).toBe('ndvi'))
     unmount()
     expect(chosenTool()).toBeUndefined()
+  })
+})
+
+describe('Stage 2: DataFinderPage tool parameter and the run panel', () => {
+  it('opens the run panel on the tool named in the URL', async () => {
+    renderFinder('/finder/sentinel2_ard?tool=ndvi')
+    const panel = await runPanel()
+    await waitFor(() => expect(panel).toHaveTextContent('NDVI'))
+    expect(chosenTool()?.id).toBe('ndvi')
+  })
+
+  it('leaves the run panel hidden for an unknown tool id', async () => {
+    renderFinder('/finder/sentinel2_ard?tool=no-such-tool')
+    await waitFor(() => expect(toolParam()).toBeNull())
+    expect(queryRunPanel()).toBeNull()
+    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument()
   })
 })

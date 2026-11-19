@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { useSelector } from '@xstate/store/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Theme } from '@radix-ui/themes'
 import type { Collection, Item } from '@/types'
@@ -24,7 +23,7 @@ import {
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
-import { IntegrationToolsPanel } from '@/components/SidePanel/InfoPanel/IntegrationToolsPanel'
+import { hideRunPanel, renderWithRunPanel, runPanel, sourceRadio } from '@/test-data/runPanel'
 import { getAvailableRenders } from '@/library/integrationTools'
 import ItemCard from './ItemCard'
 
@@ -75,36 +74,19 @@ const renderCard = (cardItem: Item = item, authValue: AuthValue = auth) => {
   )
 }
 
-/** Shows Integration Tools when the store opens it, as the item panel does. */
-const IntegrationToolsHost = () => {
-  const {
-    secondaryPanel,
-    infoPanelItem,
-    collection: current,
-  } = useSelector(dataFinderStore, ({ context }) => context)
-  if (secondaryPanel !== 'integration-tools' || !infoPanelItem) return null
-  return (
-    <IntegrationToolsPanel
-      item={{ ...infoPanelItem, collectionRef: current } as Item}
-      onClose={() => dataFinderStore.send({ type: 'closeSecondaryPanel' })}
-    />
-  )
-}
-
-const renderCardWithIntegrationTools = () => {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return render(
-    <MemoryRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthenticationContext.Provider value={auth}>
-          <Theme>
-            <ItemCard item={item} type="query-item" />
-            <IntegrationToolsHost />
-          </Theme>
-        </AuthenticationContext.Provider>
-      </QueryClientProvider>
-    </MemoryRouter>,
-  )
+/** Pins an item from the open dataset and returns it as the Pinned tab holds it. */
+const pinCard = (source: Item) => {
+  const { collectionRender } = dataFinderStore.getSnapshot().context
+  dataFinderStore.send({
+    type: 'addPinnedItem',
+    item: source,
+    collectionRender: collectionRender!,
+    isLicenseProprietary: false,
+    isUserCollection: false,
+    collectionName: collection.title!,
+    collection,
+  })
+  return dataFinderStore.getSnapshot().context.pinnedItems.find((p) => p.id === source.id)!
 }
 
 const choose = (tool: Parameters<typeof listRecord>[0]) =>
@@ -114,6 +96,7 @@ beforeEach(() => {
   stubBrowserGlobals()
   vi.stubEnv('VITE_HUB_BASE_URL', 'https://hub.example')
   vi.stubEnv('VITE_WORKFLOW_RESULTS_WORKSPACE_NAME', 'wf-ws')
+  hideRunPanel()
   dataFinderStore.send({ type: 'clearTool' })
   dataFinderStore.send({ type: 'closeSecondaryPanel' })
   dataFinderStore.send({ type: 'setCollection', collection })
@@ -145,19 +128,6 @@ describe('ItemCard with a chosen workflow', () => {
     expect(screen.queryByRole('button', { name: /^open in /i })).toBeNull()
   })
 
-  it('opens the Run workflow dialog with the item and the workflow filled in', async () => {
-    const user = userEvent.setup()
-    choose(ndviWorkflow)
-    renderCard()
-    await user.click(screen.getByRole('button', { name: 'Run NDVI' }))
-
-    const dialog = await screen.findByRole('dialog')
-    expect(await screen.findByRole('heading', { name: /check the inputs/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
-    expect(dialog).toHaveTextContent('NDVI')
-    expect(dialog).toHaveTextContent(item.id)
-  })
-
   it('removes the Run button when the tool is cleared', () => {
     choose(ndviWorkflow)
     renderCard()
@@ -172,33 +142,6 @@ describe('ItemCard with a chosen notebook', () => {
     renderCard()
     expect(screen.getByRole('button', { name: 'Open in NDVI notebook' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^run /i })).toBeNull()
-  })
-
-  it('opens Integration Tools for this item', async () => {
-    const user = userEvent.setup()
-    choose(itemNotebook)
-    renderCard()
-    await user.click(screen.getByRole('button', { name: 'Open in NDVI notebook' }))
-
-    const { secondaryPanel, infoPanelItem } = dataFinderStore.getSnapshot().context
-    expect(secondaryPanel).toBe('integration-tools')
-    expect(infoPanelItem?.id).toBe(item.id)
-  })
-
-  it('returns to the Jupyter tab with the notebook when Open in is clicked again', async () => {
-    const user = userEvent.setup()
-    choose(itemNotebook)
-    renderCardWithIntegrationTools()
-    const openIn = screen.getByRole('button', { name: 'Open in NDVI notebook' })
-
-    await user.click(openIn)
-    await user.click(await screen.findByRole('tab', { name: /desktop gis/i }))
-    await user.click(openIn)
-
-    expect(screen.getByRole('tab', { name: /jupyter/i })).toHaveAttribute('aria-selected', 'true')
-    const jupyter = screen.getByRole('tabpanel')
-    expect(jupyter).toHaveTextContent('NDVI notebook')
-    expect(within(jupyter).getByRole('button', { name: 'Launch' })).toBeEnabled()
   })
 
   it('disables the Open in button when signed out', () => {
@@ -267,35 +210,11 @@ describe('Pinned ItemCard with a chosen tool', () => {
     expect(screen.queryByRole('button', { name: /^open in /i })).toBeNull()
   })
 
-  it('opens the Run workflow dialog with the pinned item and the workflow filled in', async () => {
-    const user = userEvent.setup()
-    choose(ndviWorkflow)
-    renderPinnedCard()
-    await user.click(screen.getByRole('button', { name: 'Run NDVI' }))
-
-    const dialog = await screen.findByRole('dialog')
-    expect(await screen.findByRole('heading', { name: /check the inputs/i })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: /choose a workflow/i })).toBeNull()
-    expect(dialog).toHaveTextContent('NDVI')
-    expect(dialog).toHaveTextContent(pinnedSource.id)
-  })
-
   it('has an Open in button named after the chosen notebook', () => {
     choose(itemNotebook)
     renderPinnedCard()
     expect(screen.getByRole('button', { name: 'Open in NDVI notebook' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^run /i })).toBeNull()
-  })
-
-  it('opens Integration Tools for the pinned item', async () => {
-    const user = userEvent.setup()
-    choose(itemNotebook)
-    renderPinnedCard()
-    await user.click(screen.getByRole('button', { name: 'Open in NDVI notebook' }))
-
-    const { secondaryPanel, infoPanelItem } = dataFinderStore.getSnapshot().context
-    expect(secondaryPanel).toBe('integration-tools')
-    expect(infoPanelItem?.id).toBe(pinnedSource.id)
   })
 
   it('disables the Open in button when signed out', () => {
@@ -309,6 +228,52 @@ describe('Pinned ItemCard with a chosen tool', () => {
     renderPinnedCard()
     act(() => dataFinderStore.send({ type: 'clearTool' }))
     expect(screen.queryByRole('button', { name: 'Run NDVI' })).toBeNull()
+  })
+})
+
+describe('Stage 3: ItemCard Run button opens the run panel', () => {
+  beforeEach(() => {
+    dataFinderStore.send({ type: 'clearAllPinnedItems' })
+  })
+
+  it('sets Run on to this result and opens the run panel, with no dialog', async () => {
+    const user = userEvent.setup()
+    choose(ndviWorkflow)
+    await renderWithRunPanel(<ItemCard item={item} type="query-item" />)
+    await user.click(screen.getByRole('button', { name: 'Run NDVI' }))
+
+    const panel = await runPanel()
+    expect(sourceRadio(panel, /this item/i)).toBeChecked()
+    expect(panel).toHaveTextContent(item.id)
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('sets Run on to this pinned item and opens the run panel, with no dialog', async () => {
+    const user = userEvent.setup()
+    const pinned = pinCard({ ...item, id: 'S2B_PINNED' } as Item)
+    choose(ndviWorkflow)
+    await renderWithRunPanel(<ItemCard item={pinned} type="pinned-item" />)
+    await user.click(screen.getByRole('button', { name: 'Run NDVI' }))
+
+    const panel = await runPanel()
+    expect(sourceRadio(panel, /this item/i)).toBeChecked()
+    expect(panel).toHaveTextContent('S2B_PINNED')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('Stage 5: ItemCard Open in button sets the item in the run panel', () => {
+  it('opens the run panel on the notebook with this item, not Integration Tools', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    await renderWithRunPanel(<ItemCard item={item} type="query-item" />)
+    await user.click(screen.getByRole('button', { name: 'Open in NDVI notebook' }))
+
+    const panel = await runPanel()
+    expect(panel).toHaveTextContent('NDVI notebook')
+    expect(panel).toHaveTextContent(item.id)
+    expect(within(panel).getByRole('button', { name: 'Launch' })).toBeEnabled()
+    expect(dataFinderStore.getSnapshot().context.secondaryPanel).toBeUndefined()
   })
 })
 
