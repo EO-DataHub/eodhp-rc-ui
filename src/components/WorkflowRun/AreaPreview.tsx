@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { Flex, Text } from '@radix-ui/themes'
 import { calculateAoiArea } from '@/library/geoUtils'
-import styles from './RunWorkflowDialog.module.scss'
+import styles from './WorkflowRun.module.scss'
 
 const THUMBNAIL_SIZE = 64
 const PADDING = 4
