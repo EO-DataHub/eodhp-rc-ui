@@ -1,4 +1,4 @@
-import React, { PropsWithChildren } from 'react'
+import React, { PropsWithChildren, useContext } from 'react'
 
 import { Accordion } from 'radix-ui'
 import { ChevronDownIcon } from '@radix-ui/react-icons'
@@ -9,6 +9,8 @@ import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
+import { useRequesterPaysSignInRequired } from '@/hooks/useRequesterPaysSignInRequired'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 type AssetTableProps =
   | {
@@ -43,6 +45,12 @@ const AccordionContent: React.FC<PropsWithChildren> = ({ children, ...props }) =
 // from either an Item or a Collection depending on mode property
 export const AssetTable: React.FC<AssetTableProps> = (props) => {
   const { trackDownloadCollectionImagery, trackDownloadItemImagery } = useAnalyticsActions()
+  const { login } = useContext(AuthenticationContext)
+  // Collection-level assets (thumbnails and the like) stay free to download
+  const signInRequired = useRequesterPaysSignInRequired(
+    props.mode === 'item' ? props.item.collection : undefined,
+    props.collection.isUserCollection,
+  )
 
   if (!props.assets) return null
 
@@ -86,13 +94,23 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
           <AccordionTrigger>{key}</AccordionTrigger>
           <AccordionContent>
             <Flex direction="column" justify="start" gap="4">
-              <Button
-                style={{ alignSelf: 'flex-start' }}
-                variant="outline"
-                onClick={() => handleDownload(key, asset)}
-              >
-                <DownloadIcon /> Download
-              </Button>
+              {signInRequired ? (
+                <Button
+                  style={{ alignSelf: 'flex-start' }}
+                  variant="outline"
+                  onClick={() => void login()}
+                >
+                  Sign in to download
+                </Button>
+              ) : (
+                <Button
+                  style={{ alignSelf: 'flex-start' }}
+                  variant="outline"
+                  onClick={() => handleDownload(key, asset)}
+                >
+                  <DownloadIcon /> Download
+                </Button>
+              )}
               {metadata.map((metadataItem) => (
                 <MetadataTable
                   metadataItem={metadataItem}

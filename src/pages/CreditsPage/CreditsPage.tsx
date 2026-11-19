@@ -13,6 +13,7 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSkusBySku } from '@/hooks/useSkusBySku'
 import { convertDateToLocalString, formatDateToDDMMYEAR } from '@/library/dateUtils'
+import { REQUESTER_PAYS_DELAY_HOURS } from '@/components/RequesterPays/RequesterPays'
 import styles from './CreditsPage.module.scss'
 
 const RECENT_GRANTS_COUNT = 5
@@ -291,6 +292,12 @@ export const CreditsPage: React.FC = () => {
             </>
           )}
         </Flex>
+
+        <Text size="2" color="gray">
+          Requester-pays downloads, such as Landsat, are charged per GB at the rate for this
+          workspace&apos;s pricing category. They can take up to {REQUESTER_PAYS_DELAY_HOURS} hours
+          to reach the balance.
+        </Text>
 
         <Callout
           type="info"

@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Collection } from '@/types'
-import { Dialog, Button, Flex, Text, Badge } from '@radix-ui/themes'
+import { Dialog, Box, Button, Flex, Text, Badge } from '@radix-ui/themes'
 import { Cross1Icon } from '@radix-ui/react-icons'
 import styles from './CollectionDetailsCard.module.scss'
 import { getFormattedDateRange } from '@/library/dateUtils'
@@ -9,6 +9,8 @@ import { getCollectionFinderUrl } from '@/library/catalogUtils'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-square.jpg'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysNotice } from '../RequesterPays/RequesterPays'
 
 interface CollectionDetailsCardProps {
   collection: Collection
@@ -99,6 +101,11 @@ export const CollectionDetailsCard: React.FC<CollectionDetailsCardProps> = ({
                   </Badge>
                 ))}
               </Flex>
+              {isRequesterPaysCollection(collection.id) && (
+                <Box mt="4">
+                  <RequesterPaysNotice brief />
+                </Box>
+              )}
             </Flex>
             <Flex justify="between" align="center" mt="4">
               {citeAsLink?.title ? (
