@@ -10,6 +10,7 @@ import {
   browserDownloadHref,
   downloadWithToken,
   triggerStaggeredDownloads,
+  withBillingWorkspace,
 } from '@/library/assetDownload'
 import {
   assetFilenames,
@@ -107,12 +108,21 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
 }) => {
   const { trackDownloadItemImagery, trackDownloadAllItemImagery, trackCopyDownloadScript } =
     useAnalyticsActions()
-  const { token, userInfo, isAuthenticated, login } = useContext(AuthenticationContext)
+  const { token, userInfo, isAuthenticated, login, currentWorkspace } =
+    useContext(AuthenticationContext)
   const isRequesterPays = !isPrivate && isRequesterPaysCollection(item.collection)
   const signInRequired = useRequesterPaysSignInRequired(isPrivate ? undefined : item.collection)
   // Requester-pays downloads are charged to a workspace, so scripts need a DataHub token for
   // them just as for workspace files. The browser sends its session cookie instead.
   const scriptsNeedToken = isPrivate || isRequesterPays
+  // The browser's session can belong to several workspaces, so name the one to charge: always
+  // the workspace selected in the header, which is the one the user expects to pay
+  const downloadHref = (href: string) =>
+    browserDownloadHref(
+      isRequesterPays && isEodhHost(href, HUB_BASE_URL)
+        ? withBillingWorkspace(href, currentWorkspace)
+        : href,
+    )
   const { data: workspaceTokens } = useWorkspaceToken(
     workspace,
     token,
@@ -177,7 +187,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     if (otherFiles.length > 0) {
       setIsStarting(true)
       cancelDownloadsRef.current = triggerStaggeredDownloads(
-        otherFiles.map((a) => browserDownloadHref(a.href)),
+        otherFiles.map((a) => downloadHref(a.href)),
         { onStarted: () => setIsStarting(false) },
       )
     }
@@ -277,7 +287,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
                         </Text>
                       ) : (
                         <Link
-                          href={browserDownloadHref(asset.href)}
+                          href={downloadHref(asset.href)}
                           download
                           target="_blank"
                           rel="noopener noreferrer"

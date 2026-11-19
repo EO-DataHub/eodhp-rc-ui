@@ -142,6 +142,7 @@ describe('ItemDownloads', () => {
             login: () => Promise.resolve(),
             logout: () => Promise.resolve(),
             token: undefined,
+            currentWorkspace: 'selected-ws',
             updateCurrentWorkspace: () => undefined,
             clearCurrentWorkspace: () => undefined,
           }}
@@ -165,7 +166,11 @@ describe('ItemDownloads', () => {
       renderAs(true)
       expect(screen.getByText('See your credit rates')).toBeInTheDocument()
       expect(screen.getByText('Download all (1)').closest('button')).toBeEnabled()
-      expect(screen.getByRole('link', { name: 'red' })).toBeInTheDocument()
+      // The session may belong to several workspaces, so the link names the one to charge
+      expect(screen.getByRole('link', { name: 'red' })).toHaveAttribute(
+        'href',
+        'https://eodatahub.org.uk/api/data/objects/usgs-landsat/red.tif?workspace=selected-ws',
+      )
       expect(document.body.textContent).toContain('<YOUR_API_TOKEN>')
     })
   })

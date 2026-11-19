@@ -11,6 +11,11 @@ import { MetadataTable } from './MetadataTable'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { useRequesterPaysSignInRequired } from '@/hooks/useRequesterPaysSignInRequired'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { withBillingWorkspace } from '@/library/assetDownload'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { isEodhHost } from '@/library/downloadScripts'
+
+const HUB_BASE_URL = (import.meta.env.VITE_HUB_BASE_URL as string | undefined)?.replace(/\/$/, '')
 
 type AssetTableProps =
   | {
@@ -45,12 +50,23 @@ const AccordionContent: React.FC<PropsWithChildren> = ({ children, ...props }) =
 // from either an Item or a Collection depending on mode property
 export const AssetTable: React.FC<AssetTableProps> = (props) => {
   const { trackDownloadCollectionImagery, trackDownloadItemImagery } = useAnalyticsActions()
-  const { login } = useContext(AuthenticationContext)
+  const { login, currentWorkspace } = useContext(AuthenticationContext)
   // Collection-level assets (thumbnails and the like) stay free to download
   const signInRequired = useRequesterPaysSignInRequired(
     props.mode === 'item' ? props.item.collection : undefined,
     props.collection.isUserCollection,
   )
+
+  // Requester-pays downloads must name the workspace to charge (see withBillingWorkspace).
+  // This covers the Download button and the href link in the metadata table.
+  const isRequesterPays =
+    props.mode === 'item' &&
+    !props.collection.isUserCollection &&
+    isRequesterPaysCollection(props.item.collection)
+  const billedHref = (href: string) =>
+    isRequesterPays && isEodhHost(href, HUB_BASE_URL)
+      ? withBillingWorkspace(href, currentWorkspace)
+      : href
 
   if (!props.assets) return null
 
@@ -70,7 +86,7 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
     }
 
     const a = document.createElement('a')
-    a.href = asset.href
+    a.href = billedHref(asset.href)
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -79,7 +95,10 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
   const assets = props.assets
   const assetsWithMetadata = Object.keys(assets).map((key) => {
     const asset = assets[key]
-    const metadata = StacFields.formatAsset(asset) as MetadataItem[]
+    const metadata = StacFields.formatAsset({
+      ...asset,
+      href: billedHref(asset.href),
+    }) as MetadataItem[]
     return { asset, metadata, key }
   })
 
