@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Flex } from '@radix-ui/themes'
+import { useSelector } from '@xstate/store/react'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { Collection } from '@/types'
 import { CollectionPanel } from './CollectionPanel'
 import { ItemPanel } from './ItemPanel'
@@ -15,6 +17,18 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
   const [showCollectionPanel, setShowCollectionPanel] = useState(() =>
     searchParams.has('pickDataset'),
   )
+
+  // Open the dataset list when asked, for example after choosing a tool for another dataset
+  const datasetListRequestCount = useSelector(
+    dataFinderStore,
+    (state) => state.context.datasetListRequestCount,
+  )
+  const seenRequestCountRef = useRef(datasetListRequestCount)
+  useEffect(() => {
+    if (datasetListRequestCount === seenRequestCountRef.current) return
+    seenRequestCountRef.current = datasetListRequestCount
+    setShowCollectionPanel(true)
+  }, [datasetListRequestCount])
 
   // The parameter is a one-off request, so a refresh does not open the dataset list again
   useEffect(() => {

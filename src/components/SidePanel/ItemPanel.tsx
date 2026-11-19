@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Flex, Tooltip } from '@radix-ui/themes'
 import { SmallCollectionCard } from './SmallCollectionCard/SmallCollectionCard'
 import styles from './SidePanel.module.scss'
-import { Collection, ProcessRecord } from '@/types'
+import { Collection } from '@/types'
 
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
@@ -12,7 +12,6 @@ import { CollectionInfoPanel } from './InfoPanel/CollectionInfoPanel'
 import { IntegrationToolsPanel } from './InfoPanel/IntegrationToolsPanel'
 import { FilterPanel } from './FilterPanel/FilterPanel'
 import Tabs from './Tabs/Tabs'
-import { ChosenToolBar } from './ChosenToolBar/ChosenToolBar'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
 import { collectionHasQAIndicators, getDefaultQATab } from '@/library/collectionQuality'
 
@@ -48,19 +47,6 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
 
   const isLicenseProprietary = isCollectionPurchasable(collection)
   const hasQA = collection ? collectionHasQAIndicators(collection) : false
-
-  const handleChooseTool = (tool: ProcessRecord) => {
-    dataFinderStore.send({ type: 'chooseTool', tool })
-    setActiveTab('query-items-tab')
-    const applicableCollections = tool.properties.applicableCollections ?? []
-    if (
-      collection &&
-      applicableCollections.length > 0 &&
-      !applicableCollections.includes(collection.id)
-    ) {
-      setShowCollectionPanel(true)
-    }
-  }
 
   const closeSecondaryPanel = () => dataFinderStore.send({ type: 'closeSecondaryPanel' })
 
@@ -119,8 +105,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         ) : (
           smallCollectionCard
         )}
-        <ChosenToolBar />
-        <Tabs activeTab={activeTab} onTabChange={setActiveTab} onChooseTool={handleChooseTool} />
+        <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       </Flex>
 
       <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />

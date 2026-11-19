@@ -1,6 +1,7 @@
 import { Tooltip } from '@radix-ui/themes'
 import { ZoomInIcon, ZoomOutIcon, ArrowUpIcon } from '@radix-ui/react-icons'
 import { MapRef } from 'react-map-gl/maplibre'
+import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { GeoJSONDownload } from './GeoJSONDownload'
 import styles from './DrawingToolbar.module.scss'
@@ -28,6 +29,8 @@ export const DrawingToolbar = ({
   aoi,
   mapRef,
 }: DrawingToolbarProps) => {
+  const isRunPanelOpen = useSelector(dataFinderStore, (state) => state.context.isRunPanelOpen)
+
   const handleRectangleClick = () => {
     onModeChange(currentMode === 'rectangle' ? null : 'rectangle')
   }
@@ -61,7 +64,7 @@ export const DrawingToolbar = ({
   }
 
   return (
-    <div className={styles.toolbar}>
+    <div className={`${styles.toolbar} ${isRunPanelOpen ? styles.besideRunPanel : ''}`}>
       {/* Navigation Controls Section */}
       <div className={styles.controlGroup}>
         <Tooltip content="Zoom in" delayDuration={700}>

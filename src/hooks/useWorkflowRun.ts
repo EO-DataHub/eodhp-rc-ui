@@ -206,6 +206,8 @@ export const useWorkflowRun = ({
   // A confirmation holds only for the items it was given for
   const confirmKey = `${source}|${setId ?? ''}|${jobCount}`
   const [confirmedKey, setConfirmedKey] = useState<string | null>(null)
+  // Forget a confirmation once the items change, so returning to the same count asks again
+  if (confirmedKey !== null && confirmedKey !== confirmKey) setConfirmedKey(null)
   const confirmed = confirmedKey === confirmKey
   const setConfirmed = (value: boolean) => setConfirmedKey(value ? confirmKey : null)
 

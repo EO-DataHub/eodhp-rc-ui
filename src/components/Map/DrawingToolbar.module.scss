@@ -1,3 +1,5 @@
+@use '../RunPanel/runPanelLayout' as layout;
+
 .toolbar {
   position: absolute;
   top: 10px;
@@ -6,6 +8,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+// Keep clear of the run panel while it is open
+.besideRunPanel {
+  right: calc(#{layout.$run-panel-width} + 10px);
 }
 
 .controlGroup {

@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
+import { RunPanel } from '@/components/RunPanel/RunPanel'
 import { useCollectionFromPath } from '@/hooks/useCollectionFromPath'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useSelector } from '@xstate/store/react'
@@ -85,7 +86,7 @@ export const DataFinderPage: React.FC = () => {
     // Otherwise still loading, or waiting for sign-in
   }, [collectionPath, collectionStatus, resolvedCollection, isResolvedUserCollection, navigate])
 
-  // Choose the tool named in the URL, and clear the chosen tool when the Data Finder closes
+  // Choose the tool named in the URL and open the run panel on it, and clear the tool when the Data Finder closes
   useEffect(() => {
     const toolId = initialToolIdRef.current
     let isCancelled = false
@@ -96,7 +97,7 @@ export const DataFinderPage: React.FC = () => {
         if (isCancelled) return
         isToolLookupPendingRef.current = false
 
-        // The user chose a tool from the Tools tab while the lookup ran, so keep their choice
+        // The user chose a tool in the run panel while the lookup ran, so keep their choice
         const toolChosenMeanwhile = dataFinderStore.getSnapshot().context.chosenTool
         if (toolChosenMeanwhile) {
           setSearchParamsRef.current((prev) => withToolParam(prev, toolChosenMeanwhile.id), {
@@ -104,8 +105,9 @@ export const DataFinderPage: React.FC = () => {
           })
         } else if (data && isDataFinderTool(data)) {
           dataFinderStore.send({ type: 'chooseTool', tool: data })
+          dataFinderStore.send({ type: 'openRunPanel' })
         } else if (notFound || data) {
-          // A record the Tools tab would not list is treated as unknown
+          // A record the run panel would not list is treated as unknown
           setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
         }
         // On other failures the parameter stays only until the URL next changes
@@ -115,6 +117,7 @@ export const DataFinderPage: React.FC = () => {
     return () => {
       isCancelled = true
       dataFinderStore.send({ type: 'clearTool' })
+      dataFinderStore.send({ type: 'hideRunPanel' })
     }
   }, [])
 
@@ -286,6 +289,7 @@ export const DataFinderPage: React.FC = () => {
       <Box height="100%">
         <Map />
       </Box>
+      <RunPanel />
     </Box>
   )
 }

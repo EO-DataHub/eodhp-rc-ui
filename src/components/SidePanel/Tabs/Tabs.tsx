@@ -3,8 +3,6 @@ import { Tabs as T } from 'radix-ui'
 import styles from './Tabs.module.scss'
 import QueryItemsTab from './QueryItems'
 import PinnedItemsTab from './PinnedItems'
-import ToolsTab from './ToolsTab'
-import type { ProcessRecord } from '@/types'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 
@@ -17,11 +15,9 @@ const TabsContent = ({ children, value }: { children: React.ReactNode; value: st
 const Tabs = ({
   activeTab,
   onTabChange,
-  onChooseTool,
 }: {
   activeTab: string
   onTabChange: (tab: string) => void
-  onChooseTool: (tool: ProcessRecord) => void
 }) => {
   const pinnedItems = useSelector(dataFinderStore, ({ context }) => context.pinnedItems)
 
@@ -50,20 +46,12 @@ const Tabs = ({
             <Text>{pinnedItemsLabel}</Text>
           </T.Trigger>
         </Tooltip>
-        <Tooltip content="Workflows and notebooks to run on items">
-          <T.Trigger className={styles.TabsTrigger} value="tools-tab">
-            <Text>Tools</Text>
-          </T.Trigger>
-        </Tooltip>
       </T.List>
       <TabsContent value="query-items-tab">
         <QueryItemsTab />
       </TabsContent>
       <TabsContent value="pinned-items-tab">
         <PinnedItemsTab />
-      </TabsContent>
-      <TabsContent value="tools-tab">
-        <ToolsTab onChooseTool={onChooseTool} />
       </TabsContent>
     </T.Root>
   )

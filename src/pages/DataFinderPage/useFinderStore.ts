@@ -8,6 +8,7 @@ import {
   getCollectionConfigKey,
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
+import type { RunSource } from '@/hooks/useWorkflowRun'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -67,6 +68,13 @@ interface AppContext {
   chosenTool?: ProcessRecord
   /** Counts "Open in" requests so the panel can return to the chosen notebook each time */
   integrationToolsOpenCount: number
+  isRunPanelOpen: boolean
+  /** What a workflow runs on, kept while the run panel is hidden or no workflow is chosen */
+  runSource?: RunSource
+  /** The item for the "This item" source */
+  runItem?: Item
+  /** Counts requests to open the sidebar's dataset list, for example after choosing a tool */
+  datasetListRequestCount: number
 }
 
 // Build a unique id for pinned items
@@ -98,6 +106,10 @@ const dataFinderStore = createStore({
     isUserCollection: false,
     chosenTool: undefined,
     integrationToolsOpenCount: 0,
+    isRunPanelOpen: false,
+    runSource: undefined,
+    runItem: undefined,
+    datasetListRequestCount: 0,
   } as AppContext,
   // Transitions
   on: {
@@ -545,6 +557,17 @@ const dataFinderStore = createStore({
       chosenTool: event.tool,
     }),
     clearTool: (context) => ({ ...context, chosenTool: undefined }),
+    openRunPanel: (context, event: { source?: RunSource; item?: Item }) => ({
+      ...context,
+      isRunPanelOpen: true,
+      runSource: event.source ?? context.runSource,
+      runItem: event.item ?? context.runItem,
+    }),
+    hideRunPanel: (context) => ({ ...context, isRunPanelOpen: false }),
+    requestDatasetList: (context) => ({
+      ...context,
+      datasetListRequestCount: context.datasetListRequestCount + 1,
+    }),
   },
 })
 
