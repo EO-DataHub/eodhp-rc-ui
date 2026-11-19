@@ -20,6 +20,7 @@ export interface DownloadScriptParams {
   /** Catalog path relative to /catalogs/, as pyeodh's get_catalog expects. */
   catalogPath?: string
   itemSelfHref?: string
+  /** True when downloads need a DataHub token: workspace files, and requester-pays data. */
   isPrivate: boolean
   workspace?: string
   hubBaseUrl?: string

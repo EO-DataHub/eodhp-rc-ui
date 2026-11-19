@@ -17,6 +17,8 @@ interface CollectionConfig {
   'eodhrc:render-key-properties'?: string[]
   // Left off the collection gallery, but still opens from its map browser URL.
   'eodhrc:unlisted'?: boolean
+  // Downloading the data costs credits, charged to the workspace per GB (requester pays).
+  'eodhrc:requester-pays'?: boolean
   thumbnail_auth?: boolean
   thumbnail_asset?: string
 }
@@ -43,6 +45,8 @@ interface ServerCollectionConfig {
   'eodhrc:render-key-properties'?: string[]
   // Left off the collection gallery, but still opens from its map browser URL.
   'eodhrc:unlisted'?: boolean
+  // Downloading the data costs credits, charged to the workspace per GB (requester pays).
+  'eodhrc:requester-pays'?: boolean
   thumbnail_auth?: boolean
   thumbnail_asset?: string
 }
@@ -221,6 +225,10 @@ function translateServerConfigToCollectionConfig(
       baseConfig['eodhrc:unlisted'] = true
     }
 
+    if (config['eodhrc:requester-pays']) {
+      baseConfig['eodhrc:requester-pays'] = true
+    }
+
     // Explicitly set thumbnail_auth with backward-compatible default
     if (config.thumbnail_auth !== undefined) {
       baseConfig.thumbnail_auth = config.thumbnail_auth
@@ -254,6 +262,18 @@ export function isListedCollection(
   config: Record<string, CollectionConfig> = collectionRenderingConfig,
 ): boolean {
   return !config[collectionId]?.['eodhrc:unlisted']
+}
+
+/**
+ * Whether downloading a collection's data costs credits (requester pays). The workspace is
+ * charged per GB downloaded; thumbnails and previews are free. The rate depends on the
+ * workspace's pricing category, so the UI names no figure.
+ */
+export function isRequesterPaysCollection(
+  collectionId: string,
+  config: Record<string, CollectionConfig> = collectionRenderingConfig,
+): boolean {
+  return !!config[collectionId]?.['eodhrc:requester-pays']
 }
 
 /**

@@ -6,6 +6,8 @@ import Maplibre, { MapRef } from 'react-map-gl/maplibre'
 import { AssetTable } from './AssetTable'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import DefaultItemLayer from '@/components/Map/layers/DefaultItemLayer'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysNotice } from '@/components/RequesterPays/RequesterPays'
 
 interface AssetSectionProps {
   item: Item | null | undefined
@@ -73,6 +75,9 @@ export const AssetSection: React.FC<AssetSectionProps> = ({ item, isLoading, has
           {item && <DefaultItemLayer key={item.id} item={item} />}
         </Maplibre>
       </Box>
+      {!item.collectionRef?.isUserCollection && isRequesterPaysCollection(item.collection) && (
+        <RequesterPaysNotice />
+      )}
       <AssetTable
         mode="item"
         assets={item.assets}
