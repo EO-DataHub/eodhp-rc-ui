@@ -141,7 +141,7 @@ export const HubWorkspaceUsagePage: React.FC = () => {
       {skusQuery.error && !error && (
         <Callout type="warning" message={`SKU names are unavailable: ${skusQuery.error.message}`} />
       )}
-      {summariesQuery.error && (
+      {summariesQuery.error && !error && (
         <Callout
           type="warning"
           message={`Balance and account could not be loaded: ${summariesQuery.error.message}`}

@@ -144,6 +144,8 @@ export interface FetchUsageDataParams {
   timeAggregation?: 'day' | 'week' | 'month' | 'quarter'
   groupBy?: UsageGroupBy[]
   sku?: string
+  /** Skip the browser's HTTP cache. Not sent to the API. */
+  bypassCache?: boolean
 }
 
 // Carries the HTTP status so callers can tell a stale paging cursor (404) from other errors.
@@ -184,6 +186,7 @@ const fetchUsageData = async (
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    ...(params.bypassCache && { cache: 'no-store' as const }),
   })
 
   if (!response.ok) {
@@ -377,7 +380,9 @@ const fetchAllUsagePages = async (
 }
 
 // Rows are aggregates, so a total can change under the cursor while paging and the API
-// answers 404 for it; the whole fetch is then retried once from the start.
+// answers 404 for it; the whole fetch is then retried once from the start. Usage responses
+// are cached for a few seconds, so the retry skips the cache: a cached first page would hand
+// back the same stale cursor.
 const fetchAllUsageWithRetry = async (
   fetchPage: UsagePageFetcher,
   params: PagedUsageParams,
@@ -386,7 +391,7 @@ const fetchAllUsageWithRetry = async (
     return await fetchAllUsagePages(fetchPage, params)
   } catch (error) {
     if (!(error instanceof StaleCursorError)) throw error
-    return fetchAllUsagePages(fetchPage, params)
+    return fetchAllUsagePages(fetchPage, { ...params, bypassCache: true })
   }
 }
 

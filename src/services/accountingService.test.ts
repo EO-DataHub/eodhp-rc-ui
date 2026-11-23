@@ -203,6 +203,9 @@ describe('Stage 1: accounting service query strings', () => {
         result.filter((event: { uuid: string }) => event.uuid.startsWith('attempt2')),
       ).toHaveLength(limitOf(callUrl(0)))
       expect(result.map((event: { uuid: string }) => event.uuid)).toContain('tail-0')
+      const caches = fetchMock.mock.calls.map(([, init]) => init?.cache)
+      expect(caches).toEqual([undefined, undefined, 'no-store', 'no-store'])
+      expect(callParams(2).has('bypassCache')).toBe(false)
     })
 
     it('gives up when the retry hits a 404 too', async () => {
@@ -352,6 +355,12 @@ describe('Stage 6: drill-down paging', () => {
     expect(uuids.some((uuid) => uuid.startsWith('attempt1'))).toBe(false)
     expect(uuids.filter((uuid) => uuid.startsWith('attempt2'))).toHaveLength(limitOf(callUrl(0)))
     expect(uuids).toContain('tail-0')
+    expect(fetchMock.mock.calls.map(([, init]) => init?.cache)).toEqual([
+      undefined,
+      undefined,
+      'no-store',
+      'no-store',
+    ])
   })
 
   it('gives up when the retry hits a 404 too', async () => {

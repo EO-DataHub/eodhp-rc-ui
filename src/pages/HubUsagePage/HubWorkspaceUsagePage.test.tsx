@@ -224,6 +224,15 @@ describe('Stage 5: drill-down while the workspace details load', () => {
     expect(skuRow('Workflow CPU')).toHaveTextContent('1,500.00')
     expect(skuRow('Storage')).toHaveTextContent('300.00')
   })
+
+  it('shows only the usage error when usage and /accounting/workspaces both fail', async () => {
+    api.fail(ALPHA_USAGE, 500, { detail: 'Usage is unavailable' })
+    api.fail(WORKSPACES, 500, { detail: 'Upstream timed out' })
+    renderHub('/accounting/hub/ws-alpha')
+    expect(await screen.findByText(/Usage is unavailable/)).toBeInTheDocument()
+    await settle()
+    expect(screen.queryByText(/could not be loaded/i)).not.toBeInTheDocument()
+  })
 })
 
 describe('Stage 5: drill-down token refresh and caching', () => {
