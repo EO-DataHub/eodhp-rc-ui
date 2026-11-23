@@ -7,6 +7,8 @@ import { QAButton } from '../QAButton/QAButton'
 import styles from './SmallCollectionCard.module.scss'
 import PoundSterlingSymbolIcon from '@/assets/icons/pound-sterling-symbol.svg?react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysBadge } from '@/components/RequesterPays/RequesterPays'
 
 interface SmallCollectionCardProps {
   onSelectCollectionInfo: () => void
@@ -38,7 +40,10 @@ export const SmallCollectionCard: React.FC<SmallCollectionCardProps> = ({
               ? `${isUserCollection ? 'My ' : ''}${collection.title}`
               : 'No Collection Selected'}
           </Text>
-          <Flex justify="end" gap="2">
+          <Flex justify="end" gap="2" align="center">
+            {collection && !isUserCollection && isRequesterPaysCollection(collection.id) && (
+              <RequesterPaysBadge variant="button" className={styles.costButton} />
+            )}
             {isLicenseProprietary && (
               <IconButton radius="full" variant="solid" className={styles.costButton}>
                 <PoundSterlingSymbolIcon width="6" height="9" />

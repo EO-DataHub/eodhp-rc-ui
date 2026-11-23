@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { Item } from '@/types'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { ItemDownloads } from './ItemDownloads'
 
 vi.mock('@/assets/icons/download-filled.svg?react', () => ({ default: () => null }))
@@ -122,5 +123,68 @@ describe('ItemDownloads', () => {
     expect(startedDownloads()).toEqual(['https://third-party.example.com/quicklook.png'])
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
+  })
+
+  describe('requester-pays collection', () => {
+    const landsatItem = {
+      ...item,
+      collection: 'landsat-c2-l2',
+      assets: { red: { href: 'https://eodatahub.org.uk/api/data/objects/usgs-landsat/red.tif' } },
+    } as unknown as Item
+
+    const renderAs = (
+      isAuthenticated: boolean,
+      currentWorkspace: string | undefined = 'selected-ws',
+    ) =>
+      render(
+        <AuthenticationContext.Provider
+          value={{
+            isAuthenticated,
+            isAuthenticating: false,
+            isAuthenticationServiceError: false,
+            login: () => Promise.resolve(),
+            logout: () => Promise.resolve(),
+            token: undefined,
+            currentWorkspace,
+            updateCurrentWorkspace: () => undefined,
+            clearCurrentWorkspace: () => undefined,
+          }}
+        >
+          <MemoryRouter>
+            <ItemDownloads item={landsatItem} isPrivate={false} workspace="my-ws" />
+          </MemoryRouter>
+        </AuthenticationContext.Provider>,
+      )
+
+    it('asks a signed-out user to sign in instead of downloading', () => {
+      renderAs(false)
+      expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Sign in to download' })).toBeEnabled()
+      expect(screen.queryByText('See your credit rates')).not.toBeInTheDocument()
+      expect(screen.queryByText('Download all (1)')).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'red' })).not.toBeInTheDocument()
+    })
+
+    it('asks a signed-in user with no workspace selected to select one', () => {
+      renderAs(true, '')
+      expect(screen.getByText(/Select a workspace in the header/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Select a workspace to download' })).toBeDisabled()
+      expect(screen.queryByRole('link', { name: 'red' })).not.toBeInTheDocument()
+    })
+
+    it('lets a signed-in user download, and puts the token in the scripts', () => {
+      renderAs(true)
+      expect(screen.getByRole('link', { name: 'See your credit rates' })).toHaveAttribute(
+        'target',
+        '_blank',
+      )
+      expect(screen.getByText('Download all (1)').closest('button')).toBeEnabled()
+      // The session may belong to several workspaces, so the link names the one to charge
+      expect(screen.getByRole('link', { name: 'red' })).toHaveAttribute(
+        'href',
+        'https://eodatahub.org.uk/api/data/objects/usgs-landsat/red.tif?workspace=selected-ws',
+      )
+      expect(document.body.textContent).toContain('<YOUR_API_TOKEN>')
+    })
   })
 })

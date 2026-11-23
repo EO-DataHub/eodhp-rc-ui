@@ -8,6 +8,8 @@ import { CollectionDetailsCard } from '../CollectionDetailsCard/CollectionDetail
 import DefaultThumbnail from '@/assets/icons/default-thumbnail-wide.jpg'
 import { getFormattedDateRange } from '@/library/dateUtils'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysBadge } from '../RequesterPays/RequesterPays'
 import { collectionHasQAIndicators } from '@/library/collectionQuality'
 import { getCollectionLocation, Location } from '@/constants/collectionCategorizations'
 
@@ -34,6 +36,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
   const isGlobal = location === Location.Global
   const isUK = location === Location.United_Kingdom
   const hasQA = collectionHasQAIndicators(collection)
+  const isRequesterPays = isRequesterPaysCollection(collection.id)
 
   const handleOpenDetailsCard = () => {
     setIsDetailsCardOpen(true)
@@ -63,6 +66,7 @@ export const CollectionCard: React.FC<CollectionCardProps> = ({ collection }) =>
                 />
               </div>
             )}
+            {isRequesterPays && <RequesterPaysBadge className={styles.badge} />}
             {isLicenseProprietary && (
               <div className={styles.poundSign}>
                 <PoundSterlingSymbolIcon width="12" height="12" />

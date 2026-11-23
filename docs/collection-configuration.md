@@ -28,6 +28,19 @@ To keep a collection off the gallery but let chosen users open it, set `eodhrc:u
 
 The gallery does not show the collection, and does not count it. The map browser still opens it from its URL, `<base path>/finder/<collection id>`. Use this to let testers check a collection before it is announced. It does not restrict access: anyone with the URL can open the collection.
 
+### Requester-pays collections
+
+Some collections are free to browse but cost credits to download, because the data's host charges the requester. To mark one, set `eodhrc:requester-pays` in its entry in `configFromServer.json`:
+
+```json
+  "landsat-c2-l2": {
+    "eodhrc:requester-pays": true,
+    "renders": { ... }
+  }
+```
+
+The UI then shows a piggy-bank icon on the collection's cards, with "Downloading this data uses credits, charged per GB." in its tooltip, and a notice wherever its data can be downloaded. The notice says that thumbnails and previews are free, that downloads cost credits per GB, and that charges can take up to 7 hours to appear. It names no rate, because the rate depends on the workspace's pricing category. Signed-out users see a sign-in prompt instead and cannot download, since the data proxy refuses anonymous downloads of this data. Signed-in users must have a workspace selected in the header: download links add `?workspace=` with it, so the proxy knows which workspace to charge. The generated download scripts include a DataHub token, as they do for workspace files. Also add `License.Requester_Pays` to the collection's `license` in `collectionCategorizations.ts`, so the Licence filter can find it.
+
 
 ## Item visualisation
 

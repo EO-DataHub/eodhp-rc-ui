@@ -12,6 +12,8 @@ import { ProvidersSection } from './ProvidersSection'
 import { DataQualitySection } from './DataQualitySection'
 import { ProductValidationSection } from './ProductValidationSection'
 import type { CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysNotice } from '@/components/RequesterPays/RequesterPays'
 
 interface CollectionInfoPanelProps {
   onClose: () => void
@@ -55,6 +57,9 @@ export const CollectionInfoPanel: React.FC<CollectionInfoPanelProps> = ({
               </Badge>
             ))}
           </Flex>
+
+          {!selectedCollection.isUserCollection &&
+            isRequesterPaysCollection(selectedCollection.id) && <RequesterPaysNotice />}
 
           <Tabs.Root
             defaultValue="metadata"

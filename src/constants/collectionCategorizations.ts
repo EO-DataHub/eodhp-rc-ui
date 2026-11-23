@@ -107,6 +107,7 @@ enum TimePeriodLabel {
 enum License {
   Commercial_Data = 'lic:commercial',
   Open_Data = 'lic:open',
+  Requester_Pays = 'lic:requester-pays',
   My_Data = 'lic:my-data',
   Uncategorised = 'uncategorised',
 }
@@ -114,6 +115,7 @@ enum License {
 enum LicenseLabel {
   Commercial_Data = 'Commercial Data',
   Open_Data = 'Open Data',
+  Requester_Pays = 'Requester Pays',
   My_Data = 'My Data',
   Uncategorised = 'Uncategorised License',
 }
@@ -220,7 +222,9 @@ const collectionCategorization = {
     provider: [Provider.USGS],
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
-    license: [License.Open_Data],
+    // Openly licensed, but downloads cost credits. Requester_Pays comes first so that
+    // grouping by licence puts Landsat under Requester Pays, not Open Data.
+    license: [License.Requester_Pays, License.Open_Data],
     additionalFieldsToDisplay: [],
   },
   sentinel1: {

@@ -10,6 +10,8 @@ import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysBadge } from '@/components/RequesterPays/RequesterPays'
 import { collectionHasQAIndicators } from '@/library/collectionQuality'
 
 interface CollectionCardProps {
@@ -55,6 +57,9 @@ export const SidePanelCollectionCard: React.FC<CollectionCardProps> = ({
           </Text>
         </Flex>
         <Flex justify="end" gap="2" align="center">
+          {isRequesterPaysCollection(collection.id) && (
+            <RequesterPaysBadge variant="button" className={styles.costButton} />
+          )}
           {isLicenseProprietary && (
             <IconButton radius="full" variant="solid" className={styles.costButton}>
               <PoundSterlingSymbolIcon width="6" height="9" />

@@ -27,7 +27,7 @@ const publicParams = (overrides: Partial<DownloadScriptParams> = {}): DownloadSc
   collectionId: 'sentinel2_ard',
   catalogPath: 'supported-datasets/catalogs/ceda-stac-catalogue',
   itemSelfHref: 'https://eodatahub.org.uk/api/catalogue/stac/items/S2A_20250601',
-  isPrivate: false,
+  needsToken: false,
   hubBaseUrl: 'https://eodatahub.org.uk',
   ...overrides,
 })
@@ -43,7 +43,7 @@ const privateParams = (overrides: Partial<DownloadScriptParams> = {}) =>
     ],
     catalogPath: 'user/catalogs/my-ws/catalogs/commercial-data',
     collectionId: 'airbus_sar_data',
-    isPrivate: true,
+    needsToken: true,
     workspace: 'my-ws',
     ...overrides,
   })
