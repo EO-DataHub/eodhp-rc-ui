@@ -5,7 +5,9 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import type { ProcessRecord } from '@/types'
 import { ToolList } from './ToolList'
+import { useRunPanelJobs } from '@/hooks/useRunPanelJobs'
 import { WorkflowRunForm } from './WorkflowRunForm'
+import { WorkflowOutputsTab } from './WorkflowOutputsTab'
 import { runPanelBadgeText, toolAppliesTo, toolTypeLabel } from './runPanelText'
 import styles from './RunPanel.module.scss'
 
@@ -45,6 +47,8 @@ const ChosenTool = ({
   </Flex>
 )
 
+type PanelTab = 'tools' | 'outputs'
+
 /** The Data Finder's panel for choosing and running a tool, docked on the right of the map. */
 export const RunPanel: React.FC = () => {
   const isOpen = useSelector(dataFinderStore, (state) => state.context.isRunPanelOpen)
@@ -53,6 +57,12 @@ export const RunPanel: React.FC = () => {
   const runSource = useSelector(dataFinderStore, (state) => state.context.runSource)
   const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
   const pinnedCount = useSelector(dataFinderStore, (state) => state.context.pinnedItems.length)
+  const [tab, setTab] = useState<PanelTab>('tools')
+
+  const { query: jobsQuery, visitJobs, startedIds } = useRunPanelJobs(isOpen && tab === 'outputs')
+
+  // The jobs started in this visit are forgotten on leaving the Data Finder
+  useEffect(() => () => dataFinderStore.send({ type: 'clearVisitJobs' }), [])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const openButtonRef = useRef<HTMLButtonElement>(null)
@@ -92,18 +102,23 @@ export const RunPanel: React.FC = () => {
   const isWorkflow = chosenTool?.properties.type === 'workflow'
   const open = () => dataFinderStore.send({ type: 'openRunPanel' })
 
+  const badgeText = runPanelBadgeText({
+    tool: chosenTool,
+    source: runSource,
+    item: runItem,
+    pinnedCount,
+    visitJobs,
+    jobs: jobsQuery.data?.jobs ?? [],
+    startedIds,
+  })
+
   return (
     <>
       {!isOpen && (
         <Box className={styles.openButton}>
-          {chosenTool ? (
+          {badgeText ? (
             <Button ref={openButtonRef} variant="solid" onClick={open}>
-              {runPanelBadgeText({
-                tool: chosenTool,
-                source: runSource,
-                item: runItem,
-                pinnedCount,
-              })}
+              {badgeText}
             </Button>
           ) : (
             <Button ref={openButtonRef} variant="solid" onClick={open}>
@@ -115,10 +130,20 @@ export const RunPanel: React.FC = () => {
       )}
       {(isOpen || (hasOpened && isWorkflow)) && (
         <aside aria-label="Tools" className={styles.panel} hidden={!isOpen}>
-          <Tabs.Root defaultValue="tools" className={styles.tabs}>
+          <Tabs.Root
+            value={tab}
+            onValueChange={(value) => setTab(value as PanelTab)}
+            className={styles.tabs}
+          >
             <Flex align="center" justify="between" pr="3" className={styles.header}>
               <Tabs.List>
-                <Tabs.Trigger value="tools">Tools</Tabs.Trigger>
+                {/* Radix Themes repeats a trigger's text inside it, so name each tab once */}
+                <Tabs.Trigger value="tools" aria-label="Tools">
+                  Tools
+                </Tabs.Trigger>
+                <Tabs.Trigger value="outputs" aria-label="Workflow outputs">
+                  Workflow outputs
+                </Tabs.Trigger>
               </Tabs.List>
               <IconButton
                 size="1"
@@ -134,7 +159,13 @@ export const RunPanel: React.FC = () => {
               {chosenTool ? (
                 <Flex direction="column" gap="5">
                   <ChosenTool tool={chosenTool} headingRef={headingRef} />
-                  {isWorkflow && <WorkflowRunForm key={chosenTool.id} tool={chosenTool} />}
+                  {isWorkflow && (
+                    <WorkflowRunForm
+                      key={chosenTool.id}
+                      tool={chosenTool}
+                      onViewOutputs={() => setTab('outputs')}
+                    />
+                  )}
                 </Flex>
               ) : (
                 <ToolList
@@ -143,6 +174,13 @@ export const RunPanel: React.FC = () => {
                   headingRef={headingRef}
                 />
               )}
+            </Tabs.Content>
+            <Tabs.Content value="outputs" className={styles.content}>
+              <WorkflowOutputsTab
+                jobs={jobsQuery}
+                visitJobs={visitJobs}
+                workflowId={isWorkflow ? chosenTool.id : undefined}
+              />
             </Tabs.Content>
           </Tabs.Root>
         </aside>

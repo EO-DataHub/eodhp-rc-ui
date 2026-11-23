@@ -9,6 +9,7 @@ import {
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
 import type { RunSource } from '@/hooks/useWorkflowRun'
+import type { VisitJob } from '@/library/runPanelJobs'
 import * as turf from '@turf/turf'
 
 const LOCAL_STORAGE_CONTEXT_KEY = 'dataFinderStoreContext'
@@ -73,6 +74,8 @@ interface AppContext {
   runSource?: RunSource
   /** The item for the "This item" source */
   runItem?: Item
+  /** Jobs started from the run panel in this visit, for the badge and the Workflow outputs tab */
+  visitJobs: VisitJob[]
   /** Counts requests to open the sidebar's dataset list, for example after choosing a tool */
   datasetListRequestCount: number
 }
@@ -109,6 +112,7 @@ const dataFinderStore = createStore({
     isRunPanelOpen: false,
     runSource: undefined,
     runItem: undefined,
+    visitJobs: [],
     datasetListRequestCount: 0,
   } as AppContext,
   // Transitions
@@ -574,7 +578,18 @@ const dataFinderStore = createStore({
       isRunPanelOpen: false,
       runSource: undefined,
       runItem: undefined,
+      visitJobs: [],
     }),
+    addVisitJobs: (context, event: { jobs: VisitJob[] }) => {
+      const known = new Set(context.visitJobs.map((job) => job.jobId))
+      const added = event.jobs.filter((job) => {
+        if (known.has(job.jobId)) return false
+        known.add(job.jobId)
+        return true
+      })
+      return added.length ? { ...context, visitJobs: [...context.visitJobs, ...added] } : context
+    },
+    clearVisitJobs: (context) => ({ ...context, visitJobs: [] }),
     requestDatasetList: (context) => ({
       ...context,
       datasetListRequestCount: context.datasetListRequestCount + 1,

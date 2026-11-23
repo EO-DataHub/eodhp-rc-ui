@@ -50,3 +50,19 @@
   cursor: pointer;
   width: 100%;
 }
+
+.jobList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jobRow {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-a4);
+}
+
+.jobItem {
+  font-family: monospace;
+  word-break: break-all;
+}

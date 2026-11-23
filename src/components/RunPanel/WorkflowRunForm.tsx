@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useSelector } from '@xstate/store/react'
 import { Button, Flex, Heading, Text } from '@radix-ui/themes'
 import type { ProcessRecord } from '@/types'
@@ -27,7 +26,10 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
  * Sets up and starts a workflow in the run panel, as one form. What it runs on follows the
  * Data Finder's Run buttons through the store, so the form and those buttons stay in step.
  */
-export const WorkflowRunForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) => {
+export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () => void }> = ({
+  tool,
+  onViewOutputs,
+}) => {
   const runSource = useSelector(dataFinderStore, (state) => state.context.runSource)
   const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
 
@@ -38,6 +40,18 @@ export const WorkflowRunForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) => 
     choosingSource: true,
   })
   const [showStarted, setShowStarted] = useState(false)
+
+  // Jobs started here, including retries, are followed on the badge and the Workflow outputs tab
+  const { startedJobs, detail, workflowTitle } = run
+  useEffect(() => {
+    if (!detail) return
+    const startedAt = new Date().toISOString()
+    const jobs = startedJobs.flatMap(({ item, jobId }) =>
+      jobId ? [{ jobId, itemId: item.id, workflowId: detail.id, workflowTitle, startedAt }] : [],
+    )
+    if (jobs.length) dataFinderStore.send({ type: 'addVisitJobs', jobs })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startedJobs])
 
   // A Run button in the Data Finder chose a source or item, so show the form for it
   useEffect(() => {
@@ -69,16 +83,14 @@ export const WorkflowRunForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) => 
     )
   }
 
-  const outputsLink = `/my-data/workflow-outputs?workflow=${encodeURIComponent(run.detail.id)}`
-
   if (showStarted) {
     return (
       <RunStarted
         run={run}
         actions={
           <>
-            <Button variant="soft" color="gray" asChild>
-              <Link to={outputsLink}>View in Workflow outputs</Link>
+            <Button variant="soft" color="gray" onClick={onViewOutputs}>
+              View in Workflow outputs
             </Button>
             <Button
               onClick={() => {
