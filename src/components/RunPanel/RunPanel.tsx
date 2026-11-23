@@ -9,7 +9,7 @@ import { useRunPanelJobs } from '@/hooks/useRunPanelJobs'
 import { WorkflowRunForm } from './WorkflowRunForm'
 import { WorkflowOutputsTab } from './WorkflowOutputsTab'
 import { NotebookLaunchForm } from './NotebookLaunchForm'
-import { runPanelBadgeText, toolAppliesTo, toolTypeLabel } from './runPanelText'
+import { runPanelBadgeText, toolRunsOnOpenDataset, toolTypeLabel } from './runPanelText'
 import styles from './RunPanel.module.scss'
 
 const ChosenTool = ({
@@ -101,7 +101,7 @@ export const RunPanel: React.FC = () => {
   const chooseTool = (tool: ProcessRecord) => {
     dataFinderStore.send({ type: 'chooseTool', tool })
     // A tool for other datasets opens the dataset list, filtered to the datasets it runs on
-    if (!toolAppliesTo(tool, collection)) {
+    if (!toolRunsOnOpenDataset(tool, collection)) {
       dataFinderStore.send({ type: 'requestDatasetList' })
     }
   }

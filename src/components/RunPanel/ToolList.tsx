@@ -5,7 +5,7 @@ import { fetchItems } from '@/services/processCatalogueService'
 import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 import { Callout } from '@/components/Callout/Callout'
 import type { Collection, ProcessRecord } from '@/types'
-import { toolAppliesTo, toolTypeLabel } from './runPanelText'
+import { toolRunsOnOpenDataset, toolTypeLabel } from './runPanelText'
 import styles from './RunPanel.module.scss'
 
 // Fetches only the first page: up to 100 workflows and 100 notebooks
@@ -76,8 +76,8 @@ export const ToolList: React.FC<ToolListProps> = ({ collection, onChooseTool, he
   }
 
   const tools = [...(workflows.data ?? []), ...(notebooks.data ?? [])].filter(isDataFinderTool)
-  const forThisDataset = tools.filter((tool) => toolAppliesTo(tool, collection))
-  const forOtherDatasets = tools.filter((tool) => !toolAppliesTo(tool, collection))
+  const forThisDataset = tools.filter((tool) => toolRunsOnOpenDataset(tool, collection))
+  const forOtherDatasets = tools.filter((tool) => !toolRunsOnOpenDataset(tool, collection))
   const error = workflows.error ?? notebooks.error
 
   const renderTools = (list: ProcessRecord[]) =>

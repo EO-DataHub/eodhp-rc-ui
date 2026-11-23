@@ -5,7 +5,7 @@ import type { ProcessRecord } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
-import { getHubApiOrigin } from '@/library/integrationTools'
+import { getHubApiOrigin, toolAppliesTo } from '@/library/integrationTools'
 
 // The notebook is passed in, so the hook fetches no list to filter
 const anyNotebook = () => true
@@ -16,7 +16,9 @@ const anyNotebook = () => true
  */
 export const NotebookLaunchForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
-  const item = useSelector(dataFinderStore, (state) => state.context.runItem)
+  const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
+  // An item chosen for another tool may be from a dataset this notebook does not open
+  const item = runItem && toolAppliesTo(tool, runItem.collection) ? runItem : undefined
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const title = tool.properties.title
 

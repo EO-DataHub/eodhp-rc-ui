@@ -2,13 +2,11 @@ import type { Collection, Item, ProcessRecord, WorkflowJob } from '@/types'
 import type { RunSource } from '@/hooks/useWorkflowRun'
 import { plural } from '@/library/workflowRunInputs'
 import { countStartedJobs, startedJobCountsText, type VisitJob } from '@/library/runPanelJobs'
+import { toolAppliesTo } from '@/library/integrationTools'
 
-/** Whether a tool runs on a dataset. A tool that names no datasets runs on any. */
-export const toolAppliesTo = (tool: ProcessRecord, collection: Collection | undefined) => {
-  const applicableCollections = tool.properties.applicableCollections ?? []
-  if (!collection || applicableCollections.length === 0) return true
-  return applicableCollections.includes(collection.id)
-}
+/** Whether a tool runs on the open dataset. With no dataset open, every tool counts. */
+export const toolRunsOnOpenDataset = (tool: ProcessRecord, collection: Collection | undefined) =>
+  !collection || toolAppliesTo(tool, collection.id)
 
 export const toolTypeLabel = (tool: ProcessRecord) =>
   tool.properties.type === 'workflow' ? 'Workflow' : 'Notebook'
@@ -62,7 +60,8 @@ export const runPanelBadgeText = ({
   if (!tool) return undefined
   const title = tool.properties.title
   if (tool.properties.type === 'notebook') {
-    return item ? `${title} · ${item.id}` : title
+    // An item from another dataset is not one the notebook opens
+    return item && toolAppliesTo(tool, item.collection) ? `${title} · ${item.id}` : title
   }
   // The same default as the run form: the item when there is one, otherwise the pinned items
   const runSource = source ?? (item ? 'item' : 'pinned')
