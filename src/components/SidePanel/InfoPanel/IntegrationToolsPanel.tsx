@@ -294,7 +294,11 @@ const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item
             variant="soft"
             size="2"
             disabled={!isAuthenticated}
-            onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
+            onClick={() => {
+              // A chosen tool that doesn't apply here would open the panel on it, so drop it
+              if (!workflow) dataFinderStore.send({ type: 'clearTool' })
+              dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })
+            }}
           >
             Run workflow
           </Button>
