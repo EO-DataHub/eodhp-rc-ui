@@ -59,7 +59,13 @@ export const RunPanel: React.FC = () => {
   const pinnedCount = useSelector(dataFinderStore, (state) => state.context.pinnedItems.length)
   const [tab, setTab] = useState<PanelTab>('tools')
 
-  const { query: jobsQuery, visitJobs, startedIds } = useRunPanelJobs(isOpen && tab === 'outputs')
+  const { sharedQuery, userQuery, allJobs, sharedJobs, visitJobs, startedIds } = useRunPanelJobs(
+    isOpen && tab === 'outputs',
+  )
+  const retryJobs = () => {
+    void userQuery.refetch()
+    if (sharedQuery.isError) void sharedQuery.refetch()
+  }
 
   // The jobs started in this visit are forgotten on leaving the Data Finder
   useEffect(() => () => dataFinderStore.send({ type: 'clearVisitJobs' }), [])
@@ -108,7 +114,7 @@ export const RunPanel: React.FC = () => {
     item: runItem,
     pinnedCount,
     visitJobs,
-    jobs: jobsQuery.data?.jobs ?? [],
+    jobs: sharedJobs,
     startedIds,
   })
 
@@ -177,7 +183,10 @@ export const RunPanel: React.FC = () => {
             </Tabs.Content>
             <Tabs.Content value="outputs" className={styles.content}>
               <WorkflowOutputsTab
-                jobs={jobsQuery}
+                jobs={allJobs}
+                isLoading={userQuery.isLoading || sharedQuery.isLoading}
+                error={userQuery.error ?? sharedQuery.error ?? undefined}
+                onRetry={retryJobs}
                 visitJobs={visitJobs}
                 workflowId={isWorkflow ? chosenTool.id : undefined}
               />

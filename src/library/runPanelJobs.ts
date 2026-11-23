@@ -44,9 +44,13 @@ export const countStartedJobs = (
 export const shouldRefreshJobs = (jobs: WorkflowJob[], startedIds: readonly string[]) =>
   countStartedJobs(jobs, startedIds).running > 0
 
-/** The badge text for the jobs of this visit, for example "1 running, 1 finished, 1 failed". */
+/**
+ * The badge text for the jobs of this visit, for example "1 running, 1 finished, 1 failed", or
+ * "3 finished" once none is running.
+ */
 export const startedJobCountsText = ({ running, finished, failed }: StartedJobCounts) => {
-  const parts = [`${running} running`, `${finished} finished`]
+  const parts = running > 0 ? [`${running} running`] : []
+  parts.push(`${finished} finished`)
   if (failed > 0) parts.push(`${failed} failed`)
   return parts.join(', ')
 }

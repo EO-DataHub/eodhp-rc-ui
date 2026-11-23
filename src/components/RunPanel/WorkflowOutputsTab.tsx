@@ -1,8 +1,7 @@
 import React, { useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { Badge, Button, Flex, Text } from '@radix-ui/themes'
-import type { UseQueryResult } from '@tanstack/react-query'
-import type { JobsApiResponse, WorkflowJob } from '@/types'
+import type { WorkflowJob } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { formatOrderDate } from '@/library/orderUtils'
@@ -46,15 +45,23 @@ const JobRowEntry = ({ row, workspace }: { row: JobRow; workspace: string }) => 
 )
 
 interface WorkflowOutputsTabProps {
-  jobs: UseQueryResult<JobsApiResponse>
+  /** The jobs of the shared results list and the user's own list. */
+  jobs: WorkflowJob[]
+  isLoading: boolean
+  /** Why the jobs did not load, if they did not. */
+  error?: unknown
+  onRetry: () => void
   visitJobs: readonly VisitJob[]
   /** The chosen workflow, to filter the Workflow outputs page to. */
   workflowId?: string
 }
 
-/** The run panel's list of the workspace's jobs, with the jobs started in this visit first. */
+/** The run panel's list of the user's and the shared results jobs, with the jobs started in this visit first. */
 export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
   jobs,
+  isLoading,
+  error,
+  onRetry,
   visitJobs,
   workflowId,
 }) => {
@@ -63,23 +70,22 @@ export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
     ? `/my-data/workflow-outputs?workflow=${encodeURIComponent(workflowId)}`
     : '/my-data/workflow-outputs'
 
-  const rows = jobRows(jobs.data?.jobs ?? [], visitJobs)
+  const rows = jobRows(jobs, visitJobs)
 
   const list = () => {
-    if (jobs.isError) {
+    if (error) {
       return (
         <Flex direction="column" gap="2" align="start">
           <Text size="2" color="red">
-            Could not load your workflow outputs.{' '}
-            {jobs.error instanceof Error ? jobs.error.message : ''}
+            Could not load your workflow outputs. {error instanceof Error ? error.message : ''}
           </Text>
-          <Button variant="soft" size="2" onClick={() => void jobs.refetch()}>
+          <Button variant="soft" size="2" onClick={onRetry}>
             Try again
           </Button>
         </Flex>
       )
     }
-    if (jobs.isLoading) return <LoadingIndicator size="2" />
+    if (isLoading) return <LoadingIndicator size="2" />
     if (rows.length === 0) {
       return (
         <Text size="2" color="gray">
