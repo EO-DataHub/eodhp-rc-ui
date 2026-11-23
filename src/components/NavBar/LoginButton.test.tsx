@@ -55,3 +55,16 @@ describe('Stage 1: header user menu All workspaces link', () => {
     expect(items.has('All workspaces')).toBe(false)
   })
 })
+
+describe('header user menu items', () => {
+  it('links S3 credentials under Workspace settings', () => {
+    renderMenu(false)
+    expect(allMenuItems().get('S3 credentials')).toBe('/settings/s3-credentials')
+  })
+
+  it('has no Publishing placeholder', () => {
+    renderMenu(false)
+    const labels = [...allMenuItems().keys()]
+    expect(labels.some((label) => label.includes('Publishing'))).toBe(false)
+  })
+})
