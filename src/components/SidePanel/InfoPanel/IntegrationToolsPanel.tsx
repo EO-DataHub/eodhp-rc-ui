@@ -28,7 +28,6 @@ import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface IntegrationToolsPanelProps {
@@ -276,7 +275,6 @@ const DesktopGisTab: React.FC<{ item: Item }> = ({ item }) => {
 // Workflows Tab Component
 const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item, workflow }) => {
   const { isAuthenticated } = useContext(AuthenticationContext)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
 
   return (
     <Flex direction="column" gap="4">
@@ -296,18 +294,12 @@ const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item
             variant="soft"
             size="2"
             disabled={!isAuthenticated}
-            onClick={() => setIsDialogOpen(true)}
+            onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
           >
             Run workflow
           </Button>
         </Flex>
       </Card>
-      <RunWorkflowDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        item={item}
-        workflow={workflow}
-      />
     </Flex>
   )
 }

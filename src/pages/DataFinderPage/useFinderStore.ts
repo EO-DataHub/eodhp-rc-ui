@@ -564,6 +564,17 @@ const dataFinderStore = createStore({
       runItem: event.item ?? context.runItem,
     }),
     hideRunPanel: (context) => ({ ...context, isRunPanelOpen: false }),
+    setRunSource: (context, event: { source: RunSource }) => ({
+      ...context,
+      runSource: event.source,
+    }),
+    /** Hides the run panel and forgets what it was set to run on, for example on leaving the page */
+    resetRunPanel: (context) => ({
+      ...context,
+      isRunPanelOpen: false,
+      runSource: undefined,
+      runItem: undefined,
+    }),
     requestDatasetList: (context) => ({
       ...context,
       datasetListRequestCount: context.datasetListRequestCount + 1,

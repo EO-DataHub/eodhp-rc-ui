@@ -8,7 +8,6 @@ import { SaveToSetDialog, SaveToSetMode } from '@/components/SavedSets/SaveToSet
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { usePermalink } from '@/hooks/useCopyPermalink'
 import { SharePermalinkModal } from '@/components/SharePermalinkModal/SharePermalinkModal'
-import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 import { Cross2Icon, DragHandleDots2Icon } from '@radix-ui/react-icons'
@@ -203,37 +202,26 @@ const SavedSetButtons = () => {
   )
 }
 
-/** Runs a workflow once on each pinned item. Every workflow is offered, since pins can mix datasets. */
+/** Opens the run panel to run on the pinned items, with the chosen workflow or the tool list. */
 const RunWorkflowButton = () => {
   const { isAuthenticated } = useContext(AuthenticationContext)
-  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
-  const [isOpen, setIsOpen] = useState(false)
-  const chosenWorkflow = chosenTool?.properties.type === 'workflow' ? chosenTool : undefined
 
   return (
-    <>
-      <Tooltip
-        content={isAuthenticated ? 'Run a workflow on each pinned item' : 'Log in to run workflows'}
-      >
-        <Flex width="fit-content" px="2">
-          <Button
-            variant="ghost"
-            size="2"
-            disabled={!isAuthenticated}
-            onClick={() => setIsOpen(true)}
-          >
-            <PlayIcon width="16px" height="16px" />
-            <Text>Run workflow</Text>
-          </Button>
-        </Flex>
-      </Tooltip>
-      <RunWorkflowDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        source="pinned"
-        workflow={chosenWorkflow}
-      />
-    </>
+    <Tooltip
+      content={isAuthenticated ? 'Run a workflow on each pinned item' : 'Log in to run workflows'}
+    >
+      <Flex width="fit-content" px="2">
+        <Button
+          variant="ghost"
+          size="2"
+          disabled={!isAuthenticated}
+          onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'pinned' })}
+        >
+          <PlayIcon width="16px" height="16px" />
+          <Text>Run workflow</Text>
+        </Button>
+      </Flex>
+    </Tooltip>
   )
 }
 

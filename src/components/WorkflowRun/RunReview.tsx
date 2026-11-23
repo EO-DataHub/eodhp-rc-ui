@@ -10,12 +10,15 @@ interface RunReviewProps {
   run: WorkflowRun
   /** What to tell the user when the single item to run on has no link. */
   itemWithoutLinkHint?: string
+  /** Shown in place of the job count sentence, for a single item too. */
+  summary?: React.ReactNode
 }
 
 /** What the run will do, the job count and anything that stops the run. */
 export const RunReview: React.FC<RunReviewProps> = ({
   run,
   itemWithoutLinkHint = 'Choose a different item.',
+  summary,
 }) => {
   const {
     workflowTitle,
@@ -72,12 +75,14 @@ export const RunReview: React.FC<RunReviewProps> = ({
         </DataList.Item>
       </DataList.Root>
 
-      {!isSingleItem &&
+      {(!isSingleItem || summary !== undefined) &&
         (items ? (
           <Flex direction="column" gap="2">
-            <Text size="2">
-              This starts <strong>{plural(items.length, 'job')}</strong>, one for each item.
-            </Text>
+            {summary ?? (
+              <Text size="2">
+                This starts <strong>{plural(items.length, 'job')}</strong>, one for each item.
+              </Text>
+            )}
             {source === 'results' && resultsCapped && (
               <Text size="2" color="gray">
                 {resultsCapText}

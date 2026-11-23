@@ -44,7 +44,6 @@ import { extractWorkspaceFromCollection } from '@/library/catalogUtils'
 import Legend from './Legend'
 import { supportsIntegrationTools, toolAppliesTo } from '@/library/integrationTools'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
-import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
 
 interface ItemCardProps {
   item: Item
@@ -199,7 +198,6 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
   const chosenToolApplies = !!chosenTool && toolAppliesTo(chosenTool, item.collection)
-  const [isRunDialogOpen, setIsRunDialogOpen] = useState(false)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
@@ -464,16 +462,10 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
               size="1"
               variant="soft"
               disabled={!isAuthenticated}
-              onClick={() => setIsRunDialogOpen(true)}
+              onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
             >
               Run {chosenTool.properties.title}
             </Button>
-            <RunWorkflowDialog
-              open={isRunDialogOpen}
-              onOpenChange={setIsRunDialogOpen}
-              item={item}
-              workflow={chosenTool}
-            />
           </Flex>
         )}
         {/* Notebooks open from Integration Tools, which only shows for items it supports */}

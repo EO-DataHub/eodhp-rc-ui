@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react'
+import { useContext } from 'react'
 import { Button, Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
 import { PlayIcon } from '@radix-ui/react-icons'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
@@ -8,8 +8,6 @@ import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useItemsQuery, MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
-import { toolAppliesTo } from '@/library/integrationTools'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 
@@ -80,7 +78,7 @@ const RenderSelectionButton = () => {
   )
 }
 
-/** Opens the dialog that runs a workflow once on every result of the search. */
+/** Opens the run panel to run a workflow once on every result of the search. */
 const RunOnResultsButton = ({ onClick }: { onClick: () => void }) => {
   const { isAuthenticated } = useContext(AuthenticationContext)
 
@@ -102,15 +100,6 @@ const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
   const isUserCollection = useSelector(dataFinderStore, ({ context }) => context.isUserCollection)
-  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
-  const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
-  // Kept outside the loading state, so a reload of the results does not close the dialog
-  const [isRunOpen, setIsRunOpen] = useState(false)
-  // A chosen workflow that does not apply to the search's dataset is not filled in
-  const chosenWorkflow =
-    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, collection?.id)
-      ? chosenTool
-      : undefined
 
   const { allItems, pageItems, isFetching, hasPages, page, pageCount, error } = useItemsQuery()
 
@@ -149,7 +138,9 @@ const QueryItemsTab = () => {
             {!error && allItems.length > 0 && (
               <>
                 <PageIndicator page={page} totalItemsCount={allItems.length} />
-                <RunOnResultsButton onClick={() => setIsRunOpen(true)} />
+                <RunOnResultsButton
+                  onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'results' })}
+                />
               </>
             )}
           </Flex>
@@ -197,12 +188,6 @@ const QueryItemsTab = () => {
           />
         </PaginationContainer>
       )}
-      <RunWorkflowDialog
-        open={isRunOpen}
-        onOpenChange={setIsRunOpen}
-        source="results"
-        workflow={chosenWorkflow}
-      />
     </Grid>
   )
 }

@@ -117,7 +117,7 @@ export const DataFinderPage: React.FC = () => {
     return () => {
       isCancelled = true
       dataFinderStore.send({ type: 'clearTool' })
-      dataFinderStore.send({ type: 'hideRunPanel' })
+      dataFinderStore.send({ type: 'resetRunPanel' })
     }
   }, [])
 

@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Badge, Box, Button, Flex, Heading, IconButton, Tabs, Text } from '@radix-ui/themes'
 import { Cross1Icon, MixerHorizontalIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import type { ProcessRecord } from '@/types'
 import { ToolList } from './ToolList'
+import { WorkflowRunForm } from './WorkflowRunForm'
 import { runPanelBadgeText, toolAppliesTo, toolTypeLabel } from './runPanelText'
 import styles from './RunPanel.module.scss'
 
@@ -56,6 +57,7 @@ export const RunPanel: React.FC = () => {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const openButtonRef = useRef<HTMLButtonElement>(null)
   const wasOpenRef = useRef(isOpen)
+  const shownToolRef = useRef(chosenTool?.id)
 
   // Move focus into the panel when it opens, and back to its button when it is hidden
   useEffect(() => {
@@ -68,6 +70,17 @@ export const RunPanel: React.FC = () => {
     }
   }, [isOpen])
 
+  // Choosing or clearing a tool replaces the focused button, so focus the new heading
+  useEffect(() => {
+    if (shownToolRef.current === chosenTool?.id) return
+    shownToolRef.current = chosenTool?.id
+    if (isOpen) headingRef.current?.focus()
+  }, [chosenTool, isOpen])
+
+  // A hidden panel keeps a workflow's form, so the run is as the user left it when it opens again
+  const [hasOpened, setHasOpened] = useState(isOpen)
+  if (isOpen && !hasOpened) setHasOpened(true)
+
   const chooseTool = (tool: ProcessRecord) => {
     dataFinderStore.send({ type: 'chooseTool', tool })
     // A tool for other datasets opens the dataset list, filtered to the datasets it runs on
@@ -76,49 +89,64 @@ export const RunPanel: React.FC = () => {
     }
   }
 
-  if (!isOpen) {
-    const open = () => dataFinderStore.send({ type: 'openRunPanel' })
-    return (
-      <Box className={styles.openButton}>
-        {chosenTool ? (
-          <Button ref={openButtonRef} variant="solid" onClick={open}>
-            {runPanelBadgeText({ tool: chosenTool, source: runSource, item: runItem, pinnedCount })}
-          </Button>
-        ) : (
-          <Button ref={openButtonRef} variant="solid" onClick={open}>
-            <MixerHorizontalIcon aria-hidden />
-            Tools
-          </Button>
-        )}
-      </Box>
-    )
-  }
+  const isWorkflow = chosenTool?.properties.type === 'workflow'
+  const open = () => dataFinderStore.send({ type: 'openRunPanel' })
 
   return (
-    <aside aria-label="Tools" className={styles.panel}>
-      <Tabs.Root defaultValue="tools" className={styles.tabs}>
-        <Flex align="center" justify="between" pr="3" className={styles.header}>
-          <Tabs.List>
-            <Tabs.Trigger value="tools">Tools</Tabs.Trigger>
-          </Tabs.List>
-          <IconButton
-            size="1"
-            variant="ghost"
-            color="gray"
-            aria-label="Hide tools panel"
-            onClick={() => dataFinderStore.send({ type: 'hideRunPanel' })}
-          >
-            <Cross1Icon />
-          </IconButton>
-        </Flex>
-        <Tabs.Content value="tools" className={styles.content}>
+    <>
+      {!isOpen && (
+        <Box className={styles.openButton}>
           {chosenTool ? (
-            <ChosenTool tool={chosenTool} headingRef={headingRef} />
+            <Button ref={openButtonRef} variant="solid" onClick={open}>
+              {runPanelBadgeText({
+                tool: chosenTool,
+                source: runSource,
+                item: runItem,
+                pinnedCount,
+              })}
+            </Button>
           ) : (
-            <ToolList collection={collection} onChooseTool={chooseTool} headingRef={headingRef} />
+            <Button ref={openButtonRef} variant="solid" onClick={open}>
+              <MixerHorizontalIcon aria-hidden />
+              Tools
+            </Button>
           )}
-        </Tabs.Content>
-      </Tabs.Root>
-    </aside>
+        </Box>
+      )}
+      {(isOpen || (hasOpened && isWorkflow)) && (
+        <aside aria-label="Tools" className={styles.panel} hidden={!isOpen}>
+          <Tabs.Root defaultValue="tools" className={styles.tabs}>
+            <Flex align="center" justify="between" pr="3" className={styles.header}>
+              <Tabs.List>
+                <Tabs.Trigger value="tools">Tools</Tabs.Trigger>
+              </Tabs.List>
+              <IconButton
+                size="1"
+                variant="ghost"
+                color="gray"
+                aria-label="Hide tools panel"
+                onClick={() => dataFinderStore.send({ type: 'hideRunPanel' })}
+              >
+                <Cross1Icon />
+              </IconButton>
+            </Flex>
+            <Tabs.Content value="tools" className={styles.content}>
+              {chosenTool ? (
+                <Flex direction="column" gap="5">
+                  <ChosenTool tool={chosenTool} headingRef={headingRef} />
+                  {isWorkflow && <WorkflowRunForm key={chosenTool.id} tool={chosenTool} />}
+                </Flex>
+              ) : (
+                <ToolList
+                  collection={collection}
+                  onChooseTool={chooseTool}
+                  headingRef={headingRef}
+                />
+              )}
+            </Tabs.Content>
+          </Tabs.Root>
+        </aside>
+      )}
+    </>
   )
 }

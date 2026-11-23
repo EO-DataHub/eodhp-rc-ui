@@ -54,7 +54,10 @@ export const ToolList: React.FC<ToolListProps> = ({ collection, onChooseTool, he
     queryFn: () => fetchTools('notebook'),
   })
 
-  const title = collection ? `Tools for ${collection.title ?? collection.id}` : 'Tools'
+  // With no dataset open, every tool is listed together
+  const title = collection
+    ? `Tools for ${collection.title ?? collection.id}`
+    : 'Tools for all collections'
   const heading = (
     <Heading as="h2" size="4" tabIndex={-1} ref={headingRef}>
       {title}

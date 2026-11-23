@@ -12,6 +12,11 @@
   flex-direction: column;
   background: #fff;
   box-shadow: -2px 0 8px rgb(0 0 0 / 10%);
+
+  // Hidden, the panel keeps its form but takes no space
+  &[hidden] {
+    display: none;
+  }
 }
 
 .tabs {
