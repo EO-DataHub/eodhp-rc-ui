@@ -468,7 +468,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
             </Button>
           </Flex>
         )}
-        {/* Notebooks open from Integration Tools, which only shows for items it supports */}
+        {/* Notebooks run on the items Integration Tools supports */}
         {chosenTool?.properties.type === 'notebook' &&
           chosenToolApplies &&
           supportsIntegrationTools(item, itemRender) && (
@@ -477,12 +477,7 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
                 size="1"
                 variant="soft"
                 disabled={!isAuthenticated}
-                onClick={() =>
-                  dataFinderStore.send({
-                    type: 'openIntegrationToolsPanel',
-                    item: { ...item, render: itemRender },
-                  })
-                }
+                onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
               >
                 Open in {chosenTool.properties.title}
               </Button>

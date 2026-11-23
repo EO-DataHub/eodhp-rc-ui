@@ -8,6 +8,7 @@ import { ToolList } from './ToolList'
 import { useRunPanelJobs } from '@/hooks/useRunPanelJobs'
 import { WorkflowRunForm } from './WorkflowRunForm'
 import { WorkflowOutputsTab } from './WorkflowOutputsTab'
+import { NotebookLaunchForm } from './NotebookLaunchForm'
 import { runPanelBadgeText, toolAppliesTo, toolTypeLabel } from './runPanelText'
 import styles from './RunPanel.module.scss'
 
@@ -171,6 +172,9 @@ export const RunPanel: React.FC = () => {
                       tool={chosenTool}
                       onViewOutputs={() => setTab('outputs')}
                     />
+                  )}
+                  {chosenTool.properties.type === 'notebook' && (
+                    <NotebookLaunchForm tool={chosenTool} />
                   )}
                 </Flex>
               ) : (

@@ -560,7 +560,13 @@ const dataFinderStore = createStore({
       ...context,
       chosenTool: event.tool,
     }),
-    clearTool: (context) => ({ ...context, chosenTool: undefined }),
+    /** Clears the tool and the item chosen for it, so the next tool does not open on a stale item */
+    clearTool: (context) => ({
+      ...context,
+      chosenTool: undefined,
+      runItem: undefined,
+      runSource: context.runSource === 'item' ? undefined : context.runSource,
+    }),
     openRunPanel: (context, event: { source?: RunSource; item?: Item }) => ({
       ...context,
       isRunPanelOpen: true,
