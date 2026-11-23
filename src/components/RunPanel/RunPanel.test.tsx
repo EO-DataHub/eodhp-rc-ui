@@ -9,7 +9,7 @@ import { fetchItems as searchItems } from '@/services/itemService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
-import { fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import {
@@ -151,6 +151,12 @@ const outputsTab = (panel: HTMLElement) =>
 
 const toolsTab = (panel: HTMLElement) => within(panel).getByRole('tab', { name: 'Tools' })
 
+/** The job IDs the panel links to, in the order they appear. */
+const jobIds = (panel: HTMLElement) => jobLinks(panel).map((href) => href.split('/').pop())
+
+const sharedListCalls = () => vi.mocked(fetchJobsForSharedWorkspace).mock.calls.length
+const userListCalls = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
+
 beforeAll(() => {
   // setupTests.ts stubs URL; item links need the real one
   vi.unstubAllGlobals()
@@ -175,6 +181,7 @@ beforeEach(() => {
   vi.mocked(fetchSavedSet).mockResolvedValue(set)
   vi.mocked(fetchWorkspaceTokens).mockResolvedValue({ access: 'ws-token' } as never)
   vi.mocked(fetchJobsForWorkspace).mockResolvedValue(jobsResponse([]))
+  vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(jobsResponse([]))
   let jobNumber = 0
   vi.mocked(launchWorkflow).mockImplementation(() => {
     jobNumber += 1
@@ -509,28 +516,25 @@ describe('Stage 3: Review date span', () => {
 })
 
 describe('Stage 4: Workflow outputs tab', () => {
-  it('lists the workspace jobs with the jobs from this visit at the top, newest first', async () => {
+  it('lists the jobs from both lists with the jobs from this visit at the top, newest first', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2, 'S2A_VISIT'))
-    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
       jobsResponse([
-        listedJob('old-1', 'clip', 'successful', '2026-11-01T08:00:00Z'),
         listedJob('job-1', 'ndvi', 'running', '2026-11-02T10:00:01Z'),
         listedJob('colleague-1', 'clip', 'failed', '2026-11-02T12:00:00Z'),
         listedJob('job-2', 'ndvi', 'running', '2026-11-02T10:00:02Z'),
       ]),
+    )
+    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+      jobsResponse([listedJob('old-1', 'clip', 'successful', '2026-11-01T08:00:00Z')]),
     )
     const panel = await openForm('pinned')
     await runAndWait(user, panel)
 
     await user.click(outputsTab(panel))
     await waitFor(() => expect(jobLinks(panel)).toHaveLength(4))
-    expect(jobLinks(panel)).toEqual([
-      '/my-data/workflow-outputs/my-ws/job-2',
-      '/my-data/workflow-outputs/my-ws/job-1',
-      '/my-data/workflow-outputs/my-ws/colleague-1',
-      '/my-data/workflow-outputs/my-ws/old-1',
-    ])
+    expect(jobIds(panel)).toEqual(['job-2', 'job-1', 'colleague-1', 'old-1'])
     const row = within(panel)
       .getAllByRole('link')
       .find((link) => link.getAttribute('href')?.endsWith('/job-1'))!
@@ -538,6 +542,20 @@ describe('Stage 4: Workflow outputs tab', () => {
     expect(row).toHaveTextContent('NDVI')
     expect(row).toHaveTextContent('S2A_VISIT_1')
     expect(row).toHaveTextContent(/running/i)
+  })
+
+  it("lists a job that is only in the user's own list", async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+      jobsResponse([listedJob('mine-1', 'clip', 'successful')]),
+    )
+    openRunPanel()
+    await renderWithRunPanel()
+    const panel = await runPanel()
+
+    await user.click(outputsTab(panel))
+    await waitFor(() => expect(jobIds(panel)).toEqual(['mine-1']))
+    expect(fetchJobsForWorkspace).toHaveBeenCalledWith('my-ws', 'token')
   })
 
   it('opens the Workflow outputs tab from View in Workflow outputs after a run', async () => {
@@ -553,7 +571,7 @@ describe('Stage 4: Workflow outputs tab', () => {
   it('shows the running and finished jobs of the run on the badge', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
       jobsResponse([
         listedJob('job-1', 'ndvi', 'running'),
         listedJob('job-2', 'ndvi', 'successful'),
@@ -608,14 +626,13 @@ describe('Stage 4: Workflow outputs tab', () => {
 
 describe('Stage 4: Job status refresh', () => {
   const REFRESH_MS = 30_000
-  const fetches = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
   const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
 
   const startRun = async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     pinItems(fanOutItems(2))
-    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
       jobsResponse([listedJob('job-1', 'ndvi', 'running'), listedJob('job-2', 'ndvi', 'running')]),
     )
     const panel = await openForm('pinned')
@@ -629,35 +646,72 @@ describe('Stage 4: Job status refresh', () => {
 
   it('refreshes every 30 seconds while a job from this visit runs, and stops when they finish', async () => {
     const panel = await startRun()
-    const before = fetches()
+    const before = sharedListCalls()
 
     await wait(REFRESH_MS - 1_000)
-    expect(fetches()).toBe(before)
+    expect(sharedListCalls()).toBe(before)
     await wait(1_000)
-    expect(fetches()).toBe(before + 1)
+    expect(sharedListCalls()).toBe(before + 1)
     expect(await runPanel()).toBe(panel)
     expect(outputsTab(panel)).toHaveAttribute('aria-selected', 'true')
 
-    vi.mocked(fetchJobsForWorkspace).mockResolvedValue(
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
       jobsResponse([
         listedJob('job-1', 'ndvi', 'successful'),
         listedJob('job-2', 'ndvi', 'failed'),
       ]),
     )
     await wait(REFRESH_MS)
-    expect(fetches()).toBe(before + 2)
+    expect(sharedListCalls()).toBe(before + 2)
 
     await wait(REFRESH_MS * 3)
-    expect(fetches()).toBe(before + 2)
+    expect(sharedListCalls()).toBe(before + 2)
+  })
+
+  it("reads the shared jobs list on each refresh, not the user's own list", async () => {
+    await startRun()
+    const sharedBefore = sharedListCalls()
+    const userBefore = userListCalls()
+
+    await wait(REFRESH_MS)
+    expect(sharedListCalls()).toBe(sharedBefore + 1)
+    expect(fetchJobsForSharedWorkspace).toHaveBeenLastCalledWith('wf-ws', 'my-ws', 'token')
+    await wait(REFRESH_MS)
+    expect(sharedListCalls()).toBe(sharedBefore + 2)
+    expect(userListCalls()).toBe(userBefore)
+  })
+
+  it('moves the badge from running to finished for a job listed only in the shared list, then stops', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+      jobsResponse([listedJob('job-1', 'ndvi', 'running')]),
+    )
+    const panel = await openForm('item', { item: fanOutItem('S2A_SHARED') })
+    await user.click(runWorkflowButton(panel))
+    await within(panel).findByRole('button', { name: 'View in Workflow outputs' })
+    await user.click(hideButton(panel))
+    expect(await screen.findByRole('button', { name: /NDVI · 1 running/i })).toBeInTheDocument()
+
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+      jobsResponse([listedJob('job-1', 'ndvi', 'successful')]),
+    )
+    await wait(REFRESH_MS)
+    const badge = await screen.findByRole('button', { name: /NDVI · 1 finished/i })
+    expect(badge).not.toHaveAccessibleName(/[1-9] running/i)
+
+    const after = sharedListCalls()
+    await wait(REFRESH_MS * 3)
+    expect(sharedListCalls()).toBe(after)
   })
 
   it('stops refreshing when the user leaves the Data Finder', async () => {
     await startRun()
-    const before = fetches()
+    const before = sharedListCalls()
 
     cleanup()
     await wait(REFRESH_MS * 3)
-    expect(fetches()).toBe(before)
+    expect(sharedListCalls()).toBe(before)
   })
 })
 
