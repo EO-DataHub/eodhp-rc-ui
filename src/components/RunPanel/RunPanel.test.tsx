@@ -607,7 +607,7 @@ describe('Stage 4: Workflow outputs tab', () => {
 })
 
 describe('Stage 4: Job status refresh', () => {
-  const REFRESH_MS = 15_000
+  const REFRESH_MS = 30_000
   const fetches = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
   const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
 
@@ -627,11 +627,13 @@ describe('Stage 4: Job status refresh', () => {
     return panel
   }
 
-  it('refreshes every 15 seconds while a job from this visit runs, and stops when they finish', async () => {
+  it('refreshes every 30 seconds while a job from this visit runs, and stops when they finish', async () => {
     const panel = await startRun()
     const before = fetches()
 
-    await wait(REFRESH_MS)
+    await wait(REFRESH_MS - 1_000)
+    expect(fetches()).toBe(before)
+    await wait(1_000)
     expect(fetches()).toBe(before + 1)
     expect(await runPanel()).toBe(panel)
     expect(outputsTab(panel)).toHaveAttribute('aria-selected', 'true')

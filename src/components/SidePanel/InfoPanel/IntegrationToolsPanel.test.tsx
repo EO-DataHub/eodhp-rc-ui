@@ -14,6 +14,7 @@ import {
   fetchToolsFromFixtures,
   item,
   itemNotebook,
+  landsatWorkflow,
   listRecord,
   ndviWorkflow,
   stubBrowserGlobals,
@@ -86,6 +87,19 @@ describe('Stage 3: IntegrationToolsPanel Workflows tab opens the run panel', () 
     return runPanel()
   }
 
+  // The panel opens on the tool list, and This item is kept for the workflow chosen from it
+  const expectToolListForThisItem = async (
+    user: ReturnType<typeof userEvent.setup>,
+    panel: HTMLElement,
+  ) => {
+    await within(panel).findByRole('heading', { name: /^tools for /i })
+    expect(dataFinderStore.getSnapshot().context.chosenTool).toBeUndefined()
+
+    await user.click(await within(panel).findByText('NDVI', { exact: true }))
+    expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
+    expect(panel).toHaveTextContent(item.id)
+  }
+
   it('sets Run on to this item for the chosen workflow, with no dialog', async () => {
     const user = userEvent.setup()
     choose(ndviWorkflow)
@@ -95,6 +109,8 @@ describe('Stage 3: IntegrationToolsPanel Workflows tab opens the run panel', () 
     expect(panel).toHaveTextContent('NDVI')
     expect(panel).toHaveTextContent(item.id)
     expect(screen.queryByRole('dialog')).toBeNull()
+    expect(within(panel).queryByRole('heading', { name: /^tools for /i })).toBeNull()
+    expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe(ndviWorkflow.id)
   })
 
   it('opens on the tool list with no chosen tool, and keeps this item for the workflow chosen next', async () => {
@@ -105,6 +121,20 @@ describe('Stage 3: IntegrationToolsPanel Workflows tab opens the run panel', () 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
     expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
     expect(panel).toHaveTextContent(item.id)
+  })
+
+  it('drops a chosen workflow that does not apply to the item and opens on the tool list', async () => {
+    const user = userEvent.setup()
+    choose(landsatWorkflow)
+    const panel = await runFromWorkflowsTab(user)
+    await expectToolListForThisItem(user, panel)
+  })
+
+  it('drops a chosen notebook and opens on the tool list', async () => {
+    const user = userEvent.setup()
+    choose(itemNotebook)
+    const panel = await runFromWorkflowsTab(user)
+    await expectToolListForThisItem(user, panel)
   })
 })
 
