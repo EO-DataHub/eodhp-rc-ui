@@ -749,4 +749,47 @@ describe('Stage 5: Notebooks in the run panel', () => {
     await user.click(within(panel).getByRole('button', { name: 'Launch' }))
     expect(launchNotebook).toHaveBeenCalledTimes(1)
   })
+
+  /** Run workflow on an item from Integration Tools with no tool chosen, then the notebook from the list. */
+  const chooseNotebookForItem = async (user: User, item: Item) => {
+    dataFinderStore.send({ type: 'clearTool' })
+    openRunPanel({ source: 'item', item })
+    await renderWithRunPanel()
+    await user.click(await toolEntry(await runPanel(), 'NDVI notebook'))
+    return runPanel()
+  }
+
+  it('ignores an item the chosen notebook does not apply to, on the form and the badge', async () => {
+    const user = userEvent.setup()
+    act(() => {
+      dataFinderStore.send({ type: 'setCollection', collection: landsat })
+    })
+    const panel = await chooseNotebookForItem(
+      user,
+      fanOutItem('LC09_OTHER', { collection: 'landsat_c2l2' }),
+    )
+
+    expect(
+      await within(panel).findByText(
+        /choose an item, then select open in NDVI notebook on its card/i,
+      ),
+    ).toBeInTheDocument()
+    expect(panel).not.toHaveTextContent('LC09_OTHER')
+    const launch = within(panel).queryByRole('button', { name: 'Launch' })
+    expect(launch === null || launch.hasAttribute('disabled')).toBe(true)
+
+    await user.click(hideButton(panel))
+    expect(screen.getByRole('button', { name: /^NDVI notebook$/i })).toBeInTheDocument()
+  })
+
+  it('keeps an item the chosen notebook applies to, on the form and the badge', async () => {
+    const user = userEvent.setup()
+    const panel = await chooseNotebookForItem(user, fanOutItem('S2A_FITS'))
+
+    expect(await within(panel).findByText('S2A_FITS')).toBeInTheDocument()
+    expect(within(panel).getByRole('button', { name: 'Launch' })).toBeEnabled()
+
+    await user.click(hideButton(panel))
+    expect(screen.getByRole('button', { name: /^NDVI notebook · S2A_FITS$/i })).toBeInTheDocument()
+  })
 })
