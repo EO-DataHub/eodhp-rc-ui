@@ -15,7 +15,7 @@ import { MyDataPage } from '@/pages/MyDataPage/MyDataPage'
 import { SettingsPage } from '@/pages/SettingsPage/SettingsPage'
 import { settingsRoutes } from '@/pages/SettingsPage/settingsRoutes'
 import { AccountingPage } from '@/pages/AccountingPage/AccountingPage'
-import { accountingRoutes } from '@/pages/AccountingPage/accountingRoutes'
+import { accountingRoutes, hubUsageRoutes } from '@/pages/AccountingPage/accountingRoutes'
 import { ProfilePage } from '@/pages/ProfilePage/ProfilePage'
 import { profileRoutes, defaultProfileRoute } from '@/pages/ProfilePage/profileRoutes'
 import { AccountDetailPage } from '@/pages/AccountsPage/AccountDetailPage'
@@ -156,6 +156,7 @@ const routes = [
             element: <Navigate to={accountingRoutes[0].to} replace />,
           },
           ...accountingRoutes.map(({ to, element }) => ({ path: to, element })),
+          ...hubUsageRoutes.map(({ to, element }) => ({ path: to, element })),
         ],
       },
     ],
