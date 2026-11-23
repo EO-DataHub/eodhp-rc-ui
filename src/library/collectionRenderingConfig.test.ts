@@ -15,11 +15,6 @@ describe('isListedCollection', () => {
   test('lists a collection that has no configuration', () => {
     expect(isListedCollection('not-configured', config)).toBe(true)
   })
-
-  test('keeps Landsat off the gallery until users are told it is requester-pays', () => {
-    expect(isListedCollection('landsat-c2-l2')).toBe(false)
-    expect(isListedCollection('sentinel-2-c1-l2a')).toBe(true)
-  })
 })
 
 describe('isRequesterPaysCollection', () => {

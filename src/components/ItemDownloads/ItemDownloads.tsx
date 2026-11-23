@@ -29,7 +29,7 @@ import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
 import { RequesterPaysNotice } from '@/components/RequesterPays/RequesterPays'
-import { useRequesterPaysSignInRequired } from '@/hooks/useRequesterPaysSignInRequired'
+import { useRequesterPaysBlock } from '@/hooks/useRequesterPaysBlock'
 import styles from './ItemDownloads.module.scss'
 
 const HUB_BASE_URL = (import.meta.env.VITE_HUB_BASE_URL as string | undefined)?.replace(/\/$/, '')
@@ -111,7 +111,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
   const { token, userInfo, isAuthenticated, login, currentWorkspace } =
     useContext(AuthenticationContext)
   const isRequesterPays = !isPrivate && isRequesterPaysCollection(item.collection)
-  const signInRequired = useRequesterPaysSignInRequired(isPrivate ? undefined : item.collection)
+  const downloadBlock = useRequesterPaysBlock(isPrivate ? undefined : item.collection)
   // Requester-pays downloads are charged to a workspace, so scripts need a DataHub token for
   // them just as for workspace files. The browser sends its session cookie instead.
   const scriptsNeedToken = isPrivate || isRequesterPays
@@ -220,7 +220,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     collectionId: collection?.id ?? item.collection,
     catalogPath: getCatalogPath(collection),
     itemSelfHref: getItemSelfHref(item),
-    isPrivate: scriptsNeedToken,
+    needsToken: scriptsNeedToken,
     workspace,
     hubBaseUrl: getScriptHubBaseUrl(collection, HUB_BASE_URL),
     filenames,
@@ -281,7 +281,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
                   </Table.Cell>
                   <Table.Cell>
                     <Flex direction="column">
-                      {signInRequired ? (
+                      {downloadBlock ? (
                         <Text size="2" weight="medium">
                           {asset.title ?? asset.key}
                         </Text>
@@ -319,9 +319,11 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
         </Table.Root>
 
         <Box>
-          {signInRequired ? (
+          {downloadBlock === 'sign-in' ? (
             // Say why the user can't download, and let them fix it from the button itself
             <Button onClick={() => void login()}>Sign in to download</Button>
+          ) : downloadBlock === 'select-workspace' ? (
+            <Button disabled>Select a workspace to download</Button>
           ) : (
             <Button
               disabled={selectedAssets.length === 0 || progress !== null || isStarting}

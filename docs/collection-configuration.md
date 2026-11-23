@@ -39,7 +39,7 @@ Some collections are free to browse but cost credits to download, because the da
   }
 ```
 
-The UI then shows a "Pay per GB" badge on the collection's cards, and a notice wherever its data can be downloaded. The notice says that thumbnails and previews are free, that downloads cost credits per GB, and that charges can take up to 7 hours to appear. It names no rate, because the rate depends on the workspace's pricing category. Signed-out users see a sign-in prompt instead and cannot download, since the data proxy refuses anonymous downloads of this data. The generated download scripts include a DataHub token, as they do for workspace files. Also add `License.Requester_Pays` to the collection's `license` in `collectionCategorizations.ts`, so the Licence filter can find it.
+The UI then shows a piggy-bank icon on the collection's cards, with "Downloading this data uses credits, charged per GB." in its tooltip, and a notice wherever its data can be downloaded. The notice says that thumbnails and previews are free, that downloads cost credits per GB, and that charges can take up to 7 hours to appear. It names no rate, because the rate depends on the workspace's pricing category. Signed-out users see a sign-in prompt instead and cannot download, since the data proxy refuses anonymous downloads of this data. Signed-in users must have a workspace selected in the header: download links add `?workspace=` with it, so the proxy knows which workspace to charge. The generated download scripts include a DataHub token, as they do for workspace files. Also add `License.Requester_Pays` to the collection's `license` in `collectionCategorizations.ts`, so the Licence filter can find it.
 
 
 ## Item visualisation

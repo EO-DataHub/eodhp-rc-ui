@@ -53,11 +53,13 @@ export const RequesterPaysBadge: React.FC<RequesterPaysBadgeProps> = ({
  * pricing category, which the UI cannot look up yet. `brief` keeps only the first sentence, for
  * places where the user is choosing a collection rather than downloading from it.
  *
- * Signed out, it asks the user to sign in instead: the data proxy refuses anonymous downloads of
- * requester-pays data, since there is no workspace to charge.
+ * Signed out, it asks the user to sign in instead, and signed in with no workspace selected, to
+ * select one: the data proxy refuses a requester-pays download unless it knows which workspace
+ * to charge.
  */
 export const RequesterPaysNotice: React.FC<{ brief?: boolean }> = ({ brief = false }) => {
-  const { isAuthenticated, login } = useContext(AuthenticationContext)
+  const { isAuthenticated, login, currentWorkspace } = useContext(AuthenticationContext)
+  const needsWorkspace = isAuthenticated && !currentWorkspace
 
   return (
     <Callout.Root color="amber" size="1">
@@ -65,8 +67,8 @@ export const RequesterPaysNotice: React.FC<{ brief?: boolean }> = ({ brief = fal
         <InfoCircledIcon />
       </Callout.Icon>
       <Callout.Text>
-        {(brief || isAuthenticated) && REQUESTER_PAYS_SUMMARY}
-        {!brief && isAuthenticated && (
+        {(brief || (isAuthenticated && !needsWorkspace)) && REQUESTER_PAYS_SUMMARY}
+        {!brief && isAuthenticated && !needsWorkspace && (
           <>
             {' '}
             Thumbnails and previews are free. Charges can take up to {
@@ -87,6 +89,12 @@ export const RequesterPaysNotice: React.FC<{ brief?: boolean }> = ({ brief = fal
             </Link>{' '}
             to download this data. Downloads are charged to your workspace in credits, per GB, so we
             need to know which workspace to charge. Thumbnails and previews are free.
+          </>
+        )}
+        {!brief && needsWorkspace && (
+          <>
+            Select a workspace in the header to download this data. Downloads are charged to that
+            workspace in credits, per GB. Thumbnails and previews are free.
           </>
         )}
       </Callout.Text>

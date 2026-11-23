@@ -9,7 +9,7 @@ import DownloadIcon from '@/assets/icons/download-filled.svg?react'
 import StacFields from '@radiantearth/stac-fields'
 import { MetadataTable } from './MetadataTable'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
-import { useRequesterPaysSignInRequired } from '@/hooks/useRequesterPaysSignInRequired'
+import { useRequesterPaysBlock } from '@/hooks/useRequesterPaysBlock'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { withBillingWorkspace } from '@/library/assetDownload'
 import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
@@ -52,7 +52,7 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
   const { trackDownloadCollectionImagery, trackDownloadItemImagery } = useAnalyticsActions()
   const { login, currentWorkspace } = useContext(AuthenticationContext)
   // Collection-level assets (thumbnails and the like) stay free to download
-  const signInRequired = useRequesterPaysSignInRequired(
+  const downloadBlock = useRequesterPaysBlock(
     props.mode === 'item' ? props.item.collection : undefined,
     props.collection.isUserCollection,
   )
@@ -113,13 +113,17 @@ export const AssetTable: React.FC<AssetTableProps> = (props) => {
           <AccordionTrigger>{key}</AccordionTrigger>
           <AccordionContent>
             <Flex direction="column" justify="start" gap="4">
-              {signInRequired ? (
+              {downloadBlock === 'sign-in' ? (
                 <Button
                   style={{ alignSelf: 'flex-start' }}
                   variant="outline"
                   onClick={() => void login()}
                 >
                   Sign in to download
+                </Button>
+              ) : downloadBlock === 'select-workspace' ? (
+                <Button style={{ alignSelf: 'flex-start' }} variant="outline" disabled>
+                  Select a workspace to download
                 </Button>
               ) : (
                 <Button

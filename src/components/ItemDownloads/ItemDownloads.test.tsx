@@ -132,7 +132,10 @@ describe('ItemDownloads', () => {
       assets: { red: { href: 'https://eodatahub.org.uk/api/data/objects/usgs-landsat/red.tif' } },
     } as unknown as Item
 
-    const renderAs = (isAuthenticated: boolean) =>
+    const renderAs = (
+      isAuthenticated: boolean,
+      currentWorkspace: string | undefined = 'selected-ws',
+    ) =>
       render(
         <AuthenticationContext.Provider
           value={{
@@ -142,7 +145,7 @@ describe('ItemDownloads', () => {
             login: () => Promise.resolve(),
             logout: () => Promise.resolve(),
             token: undefined,
-            currentWorkspace: 'selected-ws',
+            currentWorkspace,
             updateCurrentWorkspace: () => undefined,
             clearCurrentWorkspace: () => undefined,
           }}
@@ -159,6 +162,13 @@ describe('ItemDownloads', () => {
       expect(screen.getByRole('button', { name: 'Sign in to download' })).toBeEnabled()
       expect(screen.queryByText('See your credit rates')).not.toBeInTheDocument()
       expect(screen.queryByText('Download all (1)')).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'red' })).not.toBeInTheDocument()
+    })
+
+    it('asks a signed-in user with no workspace selected to select one', () => {
+      renderAs(true, '')
+      expect(screen.getByText(/Select a workspace in the header/)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Select a workspace to download' })).toBeDisabled()
       expect(screen.queryByRole('link', { name: 'red' })).not.toBeInTheDocument()
     })
 
