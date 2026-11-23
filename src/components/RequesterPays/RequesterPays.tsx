@@ -1,5 +1,5 @@
 import React, { useContext } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
+import { useHref } from 'react-router-dom'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { Callout, IconButton, Link, Tooltip } from '@radix-ui/themes'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -60,6 +60,8 @@ export const RequesterPaysBadge: React.FC<RequesterPaysBadgeProps> = ({
 export const RequesterPaysNotice: React.FC<{ brief?: boolean }> = ({ brief = false }) => {
   const { isAuthenticated, login, currentWorkspace } = useContext(AuthenticationContext)
   const needsWorkspace = isAuthenticated && !currentWorkspace
+  // Opens in a new tab, so the user keeps their place in the finder (open item, filters, map)
+  const creditsHref = useHref('/accounting/credits')
 
   return (
     <Callout.Root color="amber" size="1">
@@ -75,8 +77,8 @@ export const RequesterPaysNotice: React.FC<{ brief?: boolean }> = ({ brief = fal
               REQUESTER_PAYS_DELAY_HOURS
             }{' '}
             hours to appear in your workspace usage.{' '}
-            <Link asChild>
-              <RouterLink to="/accounting/credits">See your credit rates</RouterLink>
+            <Link href={creditsHref} target="_blank" rel="noopener noreferrer">
+              See your credit rates
             </Link>
           </>
         )}

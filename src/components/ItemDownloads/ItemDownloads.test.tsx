@@ -174,7 +174,10 @@ describe('ItemDownloads', () => {
 
     it('lets a signed-in user download, and puts the token in the scripts', () => {
       renderAs(true)
-      expect(screen.getByText('See your credit rates')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'See your credit rates' })).toHaveAttribute(
+        'target',
+        '_blank',
+      )
       expect(screen.getByText('Download all (1)').closest('button')).toBeEnabled()
       // The session may belong to several workspaces, so the link names the one to charge
       expect(screen.getByRole('link', { name: 'red' })).toHaveAttribute(
