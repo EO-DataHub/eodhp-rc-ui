@@ -1,3 +1,4 @@
+import React from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -18,6 +19,11 @@ import {
   summaryOf,
 } from '@/test-data/runWorkflowFanOut'
 import { withProviders } from '@/test-data/runWorkflowRender'
+import { fetchToolsFromFixtures } from '@/test-data/runWorkflow'
+import { fetchAnyToolById, jobsResponse, queryRunPanel } from '@/test-data/runPanel'
+import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
+import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { DataFinderPage } from '@/pages/DataFinderPage/DataFinderPage'
 import { SavedSetDetailPage } from './SavedSetDetailPage'
 
 vi.mock('@/services/itemService', async (importOriginal) => ({
@@ -28,6 +34,38 @@ vi.mock('@/services/itemService', async (importOriginal) => ({
 vi.mock('@/services/workspaceTokenService', () => ({
   fetchWorkspaceTokens: vi.fn(),
   fetchWorkspaces: vi.fn(),
+}))
+vi.mock('@/services/processCatalogueService', () => ({
+  fetchItems: vi.fn(),
+  fetchItemById: vi.fn(),
+}))
+vi.mock('@/services/workflowJobService', () => ({
+  fetchJobsForWorkspace: vi.fn(),
+  fetchJobsForSharedWorkspace: vi.fn(),
+  fetchJobById: vi.fn(),
+}))
+vi.mock('@/hooks/useGoogleAnalyticsActions', () => ({
+  useAnalyticsActions: () => ({
+    trackCollectionVisualization: vi.fn(),
+    trackItemVisualization: vi.fn(),
+  }),
+}))
+// The Data Finder renders for real, without its map, item lists and collection lookup
+vi.mock('@/components/Map/Map', () => ({ Map: () => null }))
+vi.mock('@/components/SidePanel/Tabs/QueryItems', () => ({ default: () => <p>Item results</p> }))
+vi.mock('@/components/SidePanel/Tabs/PinnedItems', () => ({ default: () => <p>Pinned list</p> }))
+vi.mock('@/components/SidePanel/InfoPanel/ItemInfoPanel', () => ({
+  ItemInfoPanel: () => <p>Item details</p>,
+}))
+vi.mock('@/hooks/useCollectionFromPath', () => ({
+  useCollectionFromPath: (collectionPath: string) => ({
+    status: 'loading',
+    parsedPath: { type: 'public', collectionId: collectionPath },
+    isUserCollection: false,
+    collectionQueries: { isFetched: false, data: [] },
+    userCollectionQuery: { isFetched: false, data: [] },
+    workspaceTokensData: undefined,
+  }),
 }))
 vi.mock('@/services/workspaceMembersService', () => ({ fetchWorkspaceAdmins: vi.fn() }))
 vi.mock('@/services/savedSetsService', async (importOriginal) => ({
@@ -41,18 +79,29 @@ const COLLECTION_HREF =
 
 const set = savedSet([setItem('S2A_SET_1'), setItem('S2A_SET_2'), setItem('S2A_SET_3')])
 
-/** Shows where the router went, standing in for the Data Finder page. */
-const DataFinderStandIn = () => <p data-testid="finder-location">{useLocation().pathname}</p>
+/** Shows where the router went. */
+const FinderLocation = () => <p data-testid="finder-location">{useLocation().pathname}</p>
 
+/** Renders as main.tsx does, in strict mode, which mounts, unmounts and remounts each page. */
 const renderSetPage = () =>
   render(
-    withProviders(
-      <Routes>
-        <Route path="/my-data/saved-sets/:setId" element={<SavedSetDetailPage />} />
-        <Route path="/finder/*" element={<DataFinderStandIn />} />
-      </Routes>,
-      { url: `/my-data/saved-sets/${set.id}` },
-    ),
+    <React.StrictMode>
+      {withProviders(
+        <Routes>
+          <Route path="/my-data/saved-sets/:setId" element={<SavedSetDetailPage />} />
+          <Route
+            path="/finder/*"
+            element={
+              <>
+                <DataFinderPage />
+                <FinderLocation />
+              </>
+            }
+          />
+        </Routes>,
+        { url: `/my-data/saved-sets/${set.id}` },
+      )}
+    </React.StrictMode>,
   )
 
 beforeAll(() => {
@@ -81,6 +130,10 @@ beforeEach(() => {
     ),
   )
   vi.mocked(fetchCollectionByUrl).mockResolvedValue(sentinelCollection)
+  vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
+  vi.mocked(fetchItemById).mockImplementation(fetchAnyToolById)
+  vi.mocked(fetchJobsForWorkspace).mockResolvedValue(jobsResponse([]))
+  vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(jobsResponse([]))
 })
 
 afterEach(() => {
@@ -99,6 +152,7 @@ describe('Stage 7: Saved set page Run workflow', () => {
 
     expect(await screen.findByTestId('finder-location')).toHaveTextContent(/^\/finder\//)
     expect(screen.queryByRole('dialog')).toBeNull()
+    await waitFor(() => expect(queryRunPanel()).toBeVisible())
     await waitFor(() =>
       expect(dataFinderStore.getSnapshot().context).toMatchObject({
         isRunPanelOpen: true,
