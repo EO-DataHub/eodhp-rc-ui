@@ -1155,6 +1155,25 @@ describe('Job view in the panel', () => {
     }
   })
 
+  it('shows No outputs for a successful job with no results link', async () => {
+    const user = userEvent.setup()
+    const panel = await viewJob(user, { ...viewedJob('job-ok', 'successful'), links: [] })
+
+    expect(await within(panel).findByText(/no outputs/i)).toBeInTheDocument()
+    expect(downloadButtons(panel)).toHaveLength(0)
+    expect(panel).not.toHaveTextContent('Outputs appear here when the job finishes.')
+  })
+
+  it('shows No outputs for a successful job whose results have no items', async () => {
+    vi.mocked(fetchJobResults).mockResolvedValue(resultCollection([]))
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-ok', 'successful'))
+
+    expect(await within(panel).findByText(/no outputs/i)).toBeInTheDocument()
+    expect(fetchJobResults).toHaveBeenCalledWith(jobResultsHref('job-ok'), 'ws-token')
+    expect(downloadButtons(panel)).toHaveLength(0)
+  })
+
   it('opens the job details modal from Technical details', async () => {
     const user = userEvent.setup()
     const panel = await viewJob(user, viewedJob('job-fail', 'failed', { message: 'Broken' }))
