@@ -10,7 +10,7 @@ const jobs = [
   listedJob('colleague-1', 'ndvi', 'running'),
 ]
 
-describe('Stage 4: Badge job counts', () => {
+describe('Badge job counts', () => {
   it('counts only the jobs started in this visit, by status', () => {
     expect(countStartedJobs(jobs, ['job-1', 'job-2', 'job-3', 'job-4'])).toEqual({
       running: 1,
@@ -28,7 +28,7 @@ describe('Stage 4: Badge job counts', () => {
   })
 })
 
-describe('Stage 4: When the job list refreshes', () => {
+describe('When the job list refreshes', () => {
   it('refreshes while a job started in this visit is running or not listed yet', () => {
     expect(shouldRefreshJobs(jobs, ['job-1', 'job-2'])).toBe(true)
     expect(shouldRefreshJobs(jobs, ['job-2', 'job-new'])).toBe(true)

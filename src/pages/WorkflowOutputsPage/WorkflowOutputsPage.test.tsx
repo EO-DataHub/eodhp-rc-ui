@@ -38,7 +38,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 1: Workflow outputs filtered to one workflow', () => {
+describe('Workflow outputs filtered to one workflow', () => {
   it('shows only the jobs of the workflow in the workflow URL parameter', async () => {
     renderPage('/my-data/workflow-outputs?workflow=ndvi')
     expect(await screen.findByText('job-ndvi-1')).toBeInTheDocument()

@@ -231,7 +231,7 @@ describe('Pinned ItemCard with a chosen tool', () => {
   })
 })
 
-describe('Stage 3: ItemCard Run button opens the run panel', () => {
+describe('ItemCard Run button opens the run panel', () => {
   beforeEach(() => {
     dataFinderStore.send({ type: 'clearAllPinnedItems' })
   })
@@ -262,7 +262,7 @@ describe('Stage 3: ItemCard Run button opens the run panel', () => {
   })
 })
 
-describe('Stage 5: ItemCard Open in button sets the item in the run panel', () => {
+describe('ItemCard Open in button sets the item in the run panel', () => {
   it('opens the run panel on the notebook with this item, not Integration Tools', async () => {
     const user = userEvent.setup()
     choose(itemNotebook)

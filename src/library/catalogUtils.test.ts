@@ -196,7 +196,7 @@ describe('workflow outputs on the workspace host', () => {
   })
 })
 
-describe('Stage 5: isPrivateItem', () => {
+describe('isPrivateItem', () => {
   const publicHref =
     'https://hub.example/api/catalogue/stac/catalogs/public/collections/sentinel2_ard/items/S2A_1'
   const workspaceItemHref =

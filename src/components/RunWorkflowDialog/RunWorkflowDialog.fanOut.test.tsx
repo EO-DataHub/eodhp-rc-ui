@@ -195,7 +195,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 1: Run workflow on pinned items', () => {
+describe('Run workflow on pinned items', () => {
   it('opens the dialog with the pinned items as the source, at the workflow step', async () => {
     pinItems(fanOutItems(3))
     const dialog = await openFromPinned()
@@ -267,7 +267,7 @@ describe('Stage 1: Run workflow on pinned items', () => {
   })
 })
 
-describe('Stage 1: Changing the source', () => {
+describe('Changing the source', () => {
   it('offers this item, and disables pinned items with a reason when nothing is pinned', async () => {
     const user = userEvent.setup()
     const dialog = await openFromItem()
@@ -352,7 +352,7 @@ describe('Stage 1: Changing the source', () => {
   })
 })
 
-describe('Stage 1: Fan-out submission', () => {
+describe('Fan-out submission', () => {
   it('submits 4 jobs at once, and the next as each one returns', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(6))
@@ -434,7 +434,7 @@ describe('Stage 1: Fan-out submission', () => {
   })
 })
 
-describe('Stage 2: Item limit', () => {
+describe('Item limit', () => {
   const confirmBox = (dialog: HTMLElement) => within(dialog).queryByRole('checkbox')
 
   it('asks for no confirmation at the limit', async () => {
@@ -485,7 +485,7 @@ describe('Stage 2: Item limit', () => {
   })
 })
 
-describe('Stage 2: Private data', () => {
+describe('Private data', () => {
   const pinMixedItems = () => {
     pinItems(fanOutItems(3))
     pinItems([fanOutItem('MY_UPLOAD_1')], { isUserCollection: true })
@@ -525,7 +525,7 @@ describe('Stage 2: Private data', () => {
   })
 })
 
-describe('Stage 5: Change source and the results cap', () => {
+describe('Change source and the results cap', () => {
   const changeSource = async (user: User, dialog: HTMLElement) => {
     await user.click(within(dialog).getByRole('button', { name: 'Change source' }))
     await heading(dialog, /what do you want to run on/i)

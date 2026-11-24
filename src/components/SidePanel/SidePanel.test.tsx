@@ -83,7 +83,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 2: SidePanel tabs', () => {
+describe('SidePanel tabs', () => {
   it('has only the Items and Pinned Items tabs, and no chosen-tool bar', () => {
     renderSidePanel()
     act(() => dataFinderStore.send({ type: 'chooseTool', tool: listRecord(ndviWorkflow) }))
@@ -135,7 +135,7 @@ describe('SidePanel dataset list with a chosen tool', () => {
   })
 })
 
-describe('Stage 3: No run dialog in the Data Finder', () => {
+describe('No run dialog in the Data Finder', () => {
   // Source text of every Data Finder component that had a Run button
   const sources = import.meta.glob(
     [

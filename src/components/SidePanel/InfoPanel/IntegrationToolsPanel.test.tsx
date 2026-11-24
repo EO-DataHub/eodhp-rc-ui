@@ -79,7 +79,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 3: IntegrationToolsPanel Workflows tab opens the run panel', () => {
+describe('IntegrationToolsPanel Workflows tab opens the run panel', () => {
   const runFromWorkflowsTab = async (user: ReturnType<typeof userEvent.setup>) => {
     await renderWithRunPanel(<IntegrationToolsPanel item={renderedItem} onClose={vi.fn()} />)
     await user.click(screen.getByRole('tab', { name: /workflows/i }))

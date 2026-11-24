@@ -98,7 +98,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 1: useWorkflowRun', () => {
+describe('useWorkflowRun', () => {
   it('resolves the items and the job count for each source', async () => {
     const pinned = fanOutItems(3, 'S2A_PIN')
     pinItems(pinned)

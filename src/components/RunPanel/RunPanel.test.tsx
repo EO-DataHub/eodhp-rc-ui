@@ -214,7 +214,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 2: Run panel and tool list', () => {
+describe('Run panel and tool list', () => {
   it('opens from the Tools button as a landmark, and × hides it again', async () => {
     const user = userEvent.setup()
     await renderWithRunPanel()
@@ -307,7 +307,7 @@ describe('Stage 2: Run panel and tool list', () => {
   })
 })
 
-describe('Stage 3: Run form in the panel', () => {
+describe('Run form in the panel', () => {
   it('runs on this item, as one form with no steps', async () => {
     const one = fanOutItem('S2A_ONE')
     const panel = await openForm('item', { item: one })
@@ -482,7 +482,7 @@ describe('Stage 3: Run form in the panel', () => {
   })
 })
 
-describe('Stage 3: Review date span', () => {
+describe('Review date span', () => {
   const dated = (id: string, datetime: string) => fanOutItem(id, { properties: { datetime } })
 
   it('shows the date span of several items', async () => {
@@ -515,7 +515,7 @@ describe('Stage 3: Review date span', () => {
   })
 })
 
-describe('Stage 4: Workflow outputs tab', () => {
+describe('Workflow outputs tab', () => {
   it('lists the jobs from both lists with the jobs from this visit at the top, newest first', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2, 'S2A_VISIT'))
@@ -624,7 +624,7 @@ describe('Stage 4: Workflow outputs tab', () => {
   })
 })
 
-describe('Stage 4: Job status refresh', () => {
+describe('Job status refresh', () => {
   const REFRESH_MS = 30_000
   const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
 
@@ -715,7 +715,7 @@ describe('Stage 4: Job status refresh', () => {
   })
 })
 
-describe('Stage 5: Notebooks in the run panel', () => {
+describe('Notebooks in the run panel', () => {
   it('asks for an item when the notebook has none', async () => {
     chooseTool(itemNotebook)
     openRunPanel()

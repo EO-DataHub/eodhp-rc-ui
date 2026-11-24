@@ -140,7 +140,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 1: Saved set page Run workflow', () => {
+describe('Saved set page Run workflow', () => {
   it('opens the dialog with the set as the source, at the workflow step', async () => {
     const user = userEvent.setup()
     const dialog = await openRunWorkflow(user)
@@ -174,7 +174,7 @@ describe('Stage 1: Saved set page Run workflow', () => {
   })
 })
 
-describe('Stage 2: Private items in a saved set', () => {
+describe('Private items in a saved set', () => {
   const mixedSet = savedSet([
     setItem('S2A_SET_1'),
     setItem('S2A_SET_2'),
@@ -204,7 +204,7 @@ describe('Stage 2: Private items in a saved set', () => {
   })
 })
 
-describe('Stage 3: Area and dates from a saved set', () => {
+describe('Area and dates from a saved set', () => {
   const useAreaCheckbox = (dialog: HTMLElement) =>
     within(dialog).queryByRole('checkbox', { name: /use the area drawn on the map/i })
 
@@ -315,7 +315,7 @@ describe('Stage 3: Area and dates from a saved set', () => {
   })
 })
 
-describe('Stage 5: Half-filled date range', () => {
+describe('Half-filled date range', () => {
   /** The Period start and end fields, which are the date fields other than Start date. */
   const periodFields = (dialog: HTMLElement) => {
     const start = within(dialog).getByLabelText('Start date')
@@ -390,7 +390,7 @@ describe('Stage 5: Half-filled date range', () => {
   })
 })
 
-describe('Stage 5: Required area locked', () => {
+describe('Required area locked', () => {
   const useAreaCheckbox = (dialog: HTMLElement) =>
     within(dialog).getByRole('checkbox', { name: /use the area drawn on the map/i })
 

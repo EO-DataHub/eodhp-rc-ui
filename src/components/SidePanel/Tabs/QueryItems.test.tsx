@@ -99,7 +99,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 6: Items tab has no Run button', () => {
+describe('Items tab has no Run button', () => {
   it('shows the results with no Run on results button', async () => {
     await renderWithRunPanel(<QueryItemsTab />)
     await screen.findByText(results[0].id)
@@ -109,7 +109,7 @@ describe('Stage 6: Items tab has no Run button', () => {
   })
 })
 
-describe('Stage 3: Run panel on all results next to the Items tab', () => {
+describe('Run panel on all results next to the Items tab', () => {
   it('opens on the tool list with no chosen tool, and keeps All results for the workflow chosen next', async () => {
     const user = userEvent.setup()
     const panel = await openOnResults()

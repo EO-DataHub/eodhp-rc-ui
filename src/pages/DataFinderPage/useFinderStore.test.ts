@@ -91,7 +91,7 @@ describe('dataFinderStore chosen tool', () => {
   })
 })
 
-describe('Stage 2: dataFinderStore run panel', () => {
+describe('dataFinderStore run panel', () => {
   const panel = () => {
     const { isRunPanelOpen, runSource } = dataFinderStore.getSnapshot().context
     return { isRunPanelOpen, runSource }

@@ -152,7 +152,7 @@ describe('DataFinderPage tool parameter', () => {
   })
 })
 
-describe('Stage 2: DataFinderPage tool parameter and the run panel', () => {
+describe('DataFinderPage tool parameter and the run panel', () => {
   it('opens the run panel on the tool named in the URL', async () => {
     renderFinder('/finder/sentinel2_ard?tool=ndvi')
     const panel = await runPanel()

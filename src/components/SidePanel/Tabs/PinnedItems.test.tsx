@@ -65,7 +65,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 6: Pinned Items tab has no Run button', () => {
+describe('Pinned Items tab has no Run button', () => {
   it('shows the pinned items with no Run workflow button', async () => {
     await renderWithRunPanel(<PinnedItemsTab />)
     await screen.findByText('S2A_FAN_1')
@@ -74,7 +74,7 @@ describe('Stage 6: Pinned Items tab has no Run button', () => {
   })
 })
 
-describe('Stage 3: Run panel on pinned items next to the Pinned Items tab', () => {
+describe('Run panel on pinned items next to the Pinned Items tab', () => {
   it('opens on the tool list with no chosen tool, and keeps Pinned items for the workflow chosen next', async () => {
     const user = userEvent.setup()
     const panel = await openOnPinned()

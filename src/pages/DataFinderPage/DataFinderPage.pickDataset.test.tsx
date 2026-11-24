@@ -154,7 +154,7 @@ describe('DataFinderPage pickDataset parameter', () => {
   })
 })
 
-describe('Stage 2: Run panel on the Data Finder page', () => {
+describe('Run panel on the Data Finder page', () => {
   type User = ReturnType<typeof userEvent.setup>
   const queryFilter = () => dataFinderStore.getSnapshot().context.queryFilter
   const cloudFilter = { op: '<=', args: [{ property: 'eo:cloud_cover' }, 20] }

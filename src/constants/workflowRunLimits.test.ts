@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CONFIRM_JOBS_ABOVE, MAX_JOBS_PER_RUN } from './workflowRunLimits'
 
-describe('Stage 2: Workflow run limits config', () => {
+describe('Workflow run limits config', () => {
   it('asks for confirmation above 25 jobs', () => {
     expect(CONFIRM_JOBS_ABOVE).toBe(25)
   })

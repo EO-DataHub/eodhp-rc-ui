@@ -106,7 +106,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 6: Run panel and secondary panel stacking', () => {
+describe('Run panel and secondary panel stacking', () => {
   it('puts the run panel on top when it opens after the secondary panel', async () => {
     renderFinder()
     openFilter()
