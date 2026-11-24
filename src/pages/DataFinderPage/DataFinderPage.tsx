@@ -41,6 +41,8 @@ export const DataFinderPage: React.FC = () => {
   const permalinkRestoreDoneRef = useRef(false)
   // The tool id the page opened with; the URL is left alone until its lookup finishes
   const initialToolIdRef = useRef(searchParams.get('tool'))
+  // The saved set to open the run panel on, from the saved set page's Run workflow
+  const initialRunSetIdRef = useRef(searchParams.get('runSet'))
   // A ref, not state: it only gates the URL sync effect and must not cause a render of its own
   const isToolLookupPendingRef = useRef(false)
   // setSearchParams changes with every URL change, so the mount-only effect reads it from a ref
@@ -117,6 +119,24 @@ export const DataFinderPage: React.FC = () => {
     return () => {
       isCancelled = true
     }
+  }, [])
+
+  // Open the run panel on the saved set named in the URL, then drop the parameter
+  useEffect(() => {
+    const runSetId = initialRunSetIdRef.current
+    if (!runSetId) return
+
+    dataFinderStore.send({ type: 'setRunSource', source: 'set' })
+    dataFinderStore.send({ type: 'setRunSetId', setId: runSetId })
+    dataFinderStore.send({ type: 'openRunPanel' })
+    setSearchParamsRef.current(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('runSet')
+        return next
+      },
+      { replace: true },
+    )
   }, [])
 
   // Keep the tool parameter in step with the chosen tool, including after a dataset change

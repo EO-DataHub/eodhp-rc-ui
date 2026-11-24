@@ -9,7 +9,6 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterDialog'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
-import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { convertDateToLocalString } from '@/library/dateUtils'
 import {
   getItemDownloadUrl,
@@ -119,11 +118,7 @@ export const SavedSetDetailPage: React.FC = () => {
           disabled={set.items.length === 0}
           label="Run workflow"
           icon={<PlayIcon />}
-          afterOpen={() => {
-            dataFinderStore.send({ type: 'setRunSource', source: 'set' })
-            dataFinderStore.send({ type: 'setRunSetId', setId: set.id })
-            dataFinderStore.send({ type: 'openRunPanel' })
-          }}
+          openRunPanel
         />
         {editable && (
           <>

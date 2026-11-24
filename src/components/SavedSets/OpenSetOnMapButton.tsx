@@ -17,8 +17,8 @@ interface OpenSetOnMapButtonProps {
   entryIds?: string[]
   label?: string
   icon?: React.ReactNode
-  /** Called once the set is open on the map. */
-  afterOpen?: () => void
+  /** Also open the Data Finder's run panel on this set. */
+  openRunPanel?: boolean
   size?: ButtonProps['size']
   variant?: ButtonProps['variant']
   disabled?: boolean
@@ -31,7 +31,7 @@ export const OpenSetOnMapButton: React.FC<OpenSetOnMapButtonProps> = ({
   entryIds,
   label = 'Open on map',
   icon = <SewingPinIcon />,
-  afterOpen,
+  openRunPanel,
   size = '2',
   variant = 'soft',
   disabled,
@@ -53,7 +53,7 @@ export const OpenSetOnMapButton: React.FC<OpenSetOnMapButtonProps> = ({
         queryKey: savedSetKey(currentWorkspace, setId),
         queryFn: () => fetchSavedSet(currentWorkspace, setId, token),
       })
-      if (await openSavedSet(set, mode, entryIds)) afterOpen?.()
+      await openSavedSet(set, mode, { onlyEntryIds: entryIds, openRunPanel })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : `Couldn't open '${setName}'.`)
     } finally {

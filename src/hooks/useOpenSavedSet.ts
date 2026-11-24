@@ -21,6 +21,13 @@ const PROGRESS_THRESHOLD = 20
 
 export type OpenSetMode = 'replace' | 'add'
 
+interface OpenSetOptions {
+  /** Only open these entries of the set. Opens the whole set when omitted. */
+  onlyEntryIds?: string[]
+  /** Open the Data Finder's run panel on this set. */
+  openRunPanel?: boolean
+}
+
 interface LoadedItem {
   entry: SavedSetItem
   item: Item
@@ -44,7 +51,11 @@ export const useOpenSavedSet = () => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  return async (set: SavedSet, mode: OpenSetMode, onlyEntryIds?: string[]): Promise<boolean> => {
+  return async (
+    set: SavedSet,
+    mode: OpenSetMode,
+    { onlyEntryIds, openRunPanel }: OpenSetOptions = {},
+  ): Promise<boolean> => {
     const entries = onlyEntryIds
       ? set.items.filter((entry) => onlyEntryIds.includes(entry.id))
       : set.items
@@ -227,8 +238,16 @@ export const useOpenSavedSet = () => {
     }
     if (!target) return false
     localStorage.setItem('openPinnedItemsTab', '1')
+    const finderUrl = getCollectionFinderUrl({
+      ...target.collection,
+      isUserCollection: target.isUserCollection,
+    })
+    // The run panel is opened from the URL: store events sent before the page mounts would be
+    // cleared when the panel mounts and unmounts.
     void navigate(
-      getCollectionFinderUrl({ ...target.collection, isUserCollection: target.isUserCollection }),
+      openRunPanel
+        ? `${finderUrl}?${new URLSearchParams({ runSet: set.id }).toString()}`
+        : finderUrl,
     )
     return true
   }
