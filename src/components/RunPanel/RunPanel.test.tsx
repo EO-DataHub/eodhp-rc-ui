@@ -966,7 +966,7 @@ describe('Job status refresh', () => {
   })
 })
 
-describe('Stage 8: Job view in the panel', () => {
+describe('Job view in the panel', () => {
   const backButton = (panel: HTMLElement) => within(panel).queryByRole('button', { name: /^back/i })
 
   const downloadButtons = (container: HTMLElement) =>
