@@ -134,24 +134,3 @@ describe('SidePanel dataset list with a chosen tool', () => {
     expect(screen.getByText('MODIS land surface temperature')).toBeInTheDocument()
   })
 })
-
-describe('No run dialog in the Data Finder', () => {
-  // Source text of every Data Finder component that had a Run button
-  const sources = import.meta.glob(
-    [
-      '/src/components/SidePanel/**/*.tsx',
-      '/src/components/ItemCard/*.tsx',
-      '/src/pages/DataFinderPage/*.tsx',
-      '!**/*.test.tsx',
-    ],
-    { query: '?raw', import: 'default', eager: true },
-  )
-
-  it('renders RunWorkflowDialog from no Data Finder component', () => {
-    expect(Object.keys(sources).length).toBeGreaterThan(10)
-    const users = Object.entries(sources)
-      .filter(([, text]) => String(text).includes('RunWorkflowDialog'))
-      .map(([file]) => file)
-    expect(users).toEqual([])
-  })
-})

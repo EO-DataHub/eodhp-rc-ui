@@ -43,10 +43,19 @@ export const runPanel = () => screen.findByRole('complementary', { name: 'Tools'
 
 export const queryRunPanel = () => screen.queryByRole('complementary', { name: 'Tools' })
 
-/** Opens the run panel through the store, as the Data Finder's Run buttons do. */
-export const openRunPanel = (options: { source?: RunSource; item?: Item } = {}) =>
+/**
+ * Opens the run panel through the store, as the Data Finder's Run buttons do. A source or saved
+ * set is set first, as choosing it in the panel's Run on section does.
+ */
+export const openRunPanel = ({
+  source,
+  setId,
+  item,
+}: { source?: RunSource; setId?: string; item?: Item } = {}) =>
   act(() => {
-    dataFinderStore.send({ type: 'openRunPanel', ...options })
+    if (source) dataFinderStore.send({ type: 'setRunSource', source })
+    if (setId) dataFinderStore.send({ type: 'setRunSetId', setId })
+    dataFinderStore.send({ type: 'openRunPanel', item })
   })
 
 export const hideRunPanel = () => dataFinderStore.send({ type: 'hideRunPanel' })

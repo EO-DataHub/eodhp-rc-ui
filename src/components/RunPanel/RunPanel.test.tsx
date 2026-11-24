@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient } from '@tanstack/react-query'
 import type { Collection, Item, ProcessDetail } from '@/types'
@@ -11,21 +11,26 @@ import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
 import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
-import { PAGE_SIZE } from '@/hooks/useItemsQuery'
+import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import {
   aoi,
   anyDatasetWorkflow,
   fetchToolsFromFixtures,
+  item,
+  ITEM_SELF_HREF,
   itemNotebook,
+  itemWithoutLink,
   ndviWorkflow,
   stubBrowserGlobals,
 } from '@/test-data/runWorkflow'
 import {
   clearPins,
+  datesWorkflow,
   fanOutItem,
   fanOutItemHref,
   fanOutItems,
   pinItems,
+  privateSetItem,
   savedSet,
   sentinelCollection,
   sentItemLinks,
@@ -34,6 +39,7 @@ import {
   summaryOf,
   workspaceCollection,
 } from '@/test-data/runWorkflowFanOut'
+import { signedInAuth, type ProviderOptions } from '@/test-data/runWorkflowRender'
 import {
   chooseTool,
   fetchAnyToolById,
@@ -130,12 +136,12 @@ const hideButton = (panel: HTMLElement) =>
 /** Chooses a workflow, opens the panel on a source and waits for the form. */
 const openForm = async (
   source: 'item' | 'pinned' | 'set' | 'results',
-  { tool = ndviWorkflow, item }: { tool?: ProcessDetail; item?: Item } = {},
-  queryClient?: QueryClient,
+  { tool = ndviWorkflow, item, setId }: { tool?: ProcessDetail; item?: Item; setId?: string } = {},
+  providerOptions: ProviderOptions = {},
 ) => {
   chooseTool(tool)
-  openRunPanel({ source, item })
-  await renderWithRunPanel(null, { queryClient })
+  openRunPanel({ source, item, setId })
+  await renderWithRunPanel(null, providerOptions)
   const panel = await runPanel()
   await within(panel).findByRole('button', { name: 'Run workflow' })
   return panel
@@ -364,7 +370,7 @@ describe('Run form in the panel', () => {
 
   it('stays open on the same form while the search results reload', async () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    const panel = await openForm('results', {}, queryClient)
+    const panel = await openForm('results', {}, { queryClient })
     await waitFor(() =>
       expect(reviewLine(panel)).toHaveTextContent(new RegExp(`\\b${results.length} jobs\\b`, 'i')),
     )
@@ -434,7 +440,7 @@ describe('Run form in the panel', () => {
     )
   })
 
-  it('shows the started and failed jobs, and Retry these sends only the failed items', async () => {
+  it('shows the started and failed jobs with their errors, and Retry these sends only the failed items', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3, 'S2A_RETRY'))
     vi.mocked(launchWorkflow).mockImplementation((_url, variables) =>
@@ -445,7 +451,9 @@ describe('Run form in the panel', () => {
     const panel = await openForm('pinned')
 
     expect(await runAndWait(user, panel)).toHaveTextContent(/\b2 jobs started\b/i)
+    expect(panel).toHaveTextContent(/\b1 failed to start\b/i)
     expect(panel).toHaveTextContent('S2A_RETRY_2')
+    expect(panel).toHaveTextContent('Service unavailable')
     expect(within(panel).queryByRole('button', { name: 'Run workflow' })).toBeNull()
 
     vi.mocked(launchWorkflow).mockClear()
@@ -479,6 +487,235 @@ describe('Run form in the panel', () => {
     expect(panel).toHaveTextContent('NDVI')
     expect(sourceRadio(panel, /pinned items/i)).toBeChecked()
     expect(within(panel).getByLabelText('Threshold')).toHaveValue(0.5)
+  })
+})
+
+describe('Stage 7: Run form details', () => {
+  const launches = () => vi.mocked(launchWorkflow).mock.calls
+  const sentVariables = (index: number) => launches()[index][1] as Record<string, unknown>
+  const areaCheckbox = (panel: HTMLElement) =>
+    within(panel).getByRole('checkbox', { name: /include area of interest/i })
+
+  it('sends the Hub values, the drawn area and the user values, and leaves the area out once unticked', async () => {
+    const user = userEvent.setup()
+    act(() => {
+      dataFinderStore.send({ type: 'storeAoi', aoi })
+    })
+    const panel = await openForm('item', { item })
+
+    expect(panel).toHaveTextContent('STAC item')
+    expect(panel).toHaveTextContent(item.id)
+    expect(panel).toHaveTextContent(/the area drawn on the map/i)
+    expect(within(panel).queryByRole('textbox', { name: 'STAC item' })).toBeNull()
+    expect(within(panel).getByLabelText('Threshold')).toHaveValue(0.3)
+    expect(panel).toHaveTextContent('my-ws')
+
+    await user.click(runWorkflowButton(panel))
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(1))
+    expect(fetchWorkspaceTokens).toHaveBeenCalledWith('my-ws', 'token')
+    expect(launches()[0][2]).toBe('ws-token')
+    expect(sentVariables(0)).toMatchObject({ stac_item: ITEM_SELF_HREF, aoi: JSON.stringify(aoi) })
+    expect(String(sentVariables(0).threshold)).toBe('0.3')
+
+    await user.click(await within(panel).findByRole('button', { name: 'Run again' }))
+    await user.click(areaCheckbox(panel))
+    expect(areaCheckbox(panel)).not.toBeChecked()
+    await user.click(runWorkflowButton(panel))
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(2))
+    expect(sentVariables(1)).not.toHaveProperty('aoi')
+    expect(sentVariables(1)).toMatchObject({ stac_item: ITEM_SELF_HREF })
+  })
+
+  it('disables Run workflow and asks for a workspace when none is selected', async () => {
+    const user = userEvent.setup()
+    const panel = await openForm(
+      'item',
+      { item },
+      { auth: signedInAuth({ currentWorkspace: undefined }) },
+    )
+
+    expect(panel).toHaveTextContent(/select a workspace to run/i)
+    expect(runWorkflowButton(panel)).toBeDisabled()
+    await user.click(runWorkflowButton(panel))
+    expect(launchWorkflow).not.toHaveBeenCalled()
+  })
+
+  it('disables Run workflow and sends no job when the item has no self link', async () => {
+    const user = userEvent.setup()
+    const panel = await openForm('item', { item: itemWithoutLink })
+
+    expect(within(panel).getByText(/this item has no link/i)).toBeInTheDocument()
+    expect(runWorkflowButton(panel)).toBeDisabled()
+    await user.click(runWorkflowButton(panel))
+    expect(fetchWorkspaceTokens).not.toHaveBeenCalled()
+    expect(launchWorkflow).not.toHaveBeenCalled()
+  })
+
+  it('shows the error when the only job fails to start, and keeps the form and its inputs', async () => {
+    const user = userEvent.setup()
+    vi.mocked(launchWorkflow).mockRejectedValueOnce(
+      new Error('Insufficient permissions to launch this workflow.'),
+    )
+    const panel = await openForm('item', { item })
+    const threshold = within(panel).getByLabelText('Threshold')
+    await user.clear(threshold)
+    await user.type(threshold, '0.5')
+    await user.click(runWorkflowButton(panel))
+
+    expect(
+      await within(panel).findByText('Insufficient permissions to launch this workflow.'),
+    ).toBeInTheDocument()
+    expect(runWorkflowButton(panel)).toBeInTheDocument()
+    expect(within(panel).getByLabelText('Threshold')).toHaveValue(0.5)
+  })
+
+  it('disables the Run on choices that cannot be used, with the reason', async () => {
+    const panel = await openForm('results')
+
+    expect(sourceRadio(panel, /this item/i)).toBeDisabled()
+    expect(sourceRadio(panel, /pinned items/i)).toBeDisabled()
+    expect(panel).toHaveTextContent(/pin some items on the map first/i)
+    expect(sourceRadio(panel, /all results/i)).toBeEnabled()
+  })
+
+  it('says All results uses only the first results once the results reach the cap', async () => {
+    const capText = new RegExp(`uses the first ${MAX_TOTAL_ITEMS} results`, 'i')
+    const panel = await openForm('results')
+    await waitFor(() =>
+      expect(reviewLine(panel)).toHaveTextContent(new RegExp(`\\b${results.length} jobs\\b`, 'i')),
+    )
+    expect(panel).not.toHaveTextContent(capText)
+
+    vi.mocked(searchItems).mockResolvedValue(fanOutItems(MAX_TOTAL_ITEMS, 'S2A_CAP'))
+    act(() => {
+      dataFinderStore.send({ type: 'queryFilterChange', queryFilter: { limit: 100, cloud: 5 } })
+    })
+    await waitFor(() => expect(panel).toHaveTextContent(capText))
+  })
+
+  it('submits 4 jobs at once, and the next as each one returns', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(6))
+    let inFlight = 0
+    let maxInFlight = 0
+    const pending: (() => void)[] = []
+    vi.mocked(launchWorkflow).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          inFlight += 1
+          maxInFlight = Math.max(maxInFlight, inFlight)
+          pending.push(() => {
+            inFlight -= 1
+            resolve({ workflowId: `job-${launches().length}`, status: 'accepted', submittedAt: '' })
+          })
+        }),
+    )
+    const panel = await openForm('pinned', { tool: anyDatasetWorkflow })
+    await user.click(runWorkflowButton(panel))
+
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(4))
+    await act(() => new Promise((resolve) => setTimeout(resolve, 50)))
+    expect(launchWorkflow).toHaveBeenCalledTimes(4)
+
+    await act(() => Promise.resolve(pending.shift()!()))
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(5))
+
+    for (let round = 0; round < 20 && (pending.length > 0 || launches().length < 6); round++) {
+      await act(() => Promise.resolve(pending.shift()?.()))
+    }
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(6))
+    expect(maxInFlight).toBe(4)
+    expect(await within(panel).findByText(/\b6 jobs started\b/i)).toBeInTheDocument()
+  })
+
+  it('shows date fields for date inputs, blocks a half-filled date range and sends the dates', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(2))
+    const panel = await openForm('pinned', { tool: datesWorkflow })
+
+    const start = within(panel).getByLabelText('Start date')
+    expect(start).toHaveAttribute('type', 'date')
+    const [periodStart, periodEnd] = Array.from(
+      panel.querySelectorAll<HTMLInputElement>('input[type="date"]'),
+    ).filter((field) => field !== start)
+    expect(periodEnd).toBeDefined()
+
+    fireEvent.change(start, { target: { value: '2025-06-01' } })
+    fireEvent.change(periodStart, { target: { value: '2025-06-01' } })
+    expect(runWorkflowButton(panel)).toBeDisabled()
+
+    fireEvent.change(periodEnd, { target: { value: '2025-06-30' } })
+    expect(runWorkflowButton(panel)).toBeEnabled()
+    await user.click(runWorkflowButton(panel))
+
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(2))
+    expect(sentVariables(0).start).toBe('2025-06-01')
+    expect(String(sentVariables(0).period)).toContain('2025-06-01')
+    expect(String(sentVariables(0).period)).toContain('2025-06-30')
+  })
+})
+
+describe('Stage 7: Saved set in the run panel', () => {
+  /** Text in one element that says how many items are private. */
+  const privateCountMessage = (panel: HTMLElement, count: number) =>
+    within(panel).queryAllByText(
+      (_, element) =>
+        !!element &&
+        /private/i.test(element.textContent ?? '') &&
+        new RegExp(`\\b${count}\\b`).test(element.textContent ?? '') &&
+        Array.from(element.children).every((child) => !/private/i.test(child.textContent ?? '')),
+    )
+
+  it('opens on the saved set chosen in the store and runs one job per item with its saved link', async () => {
+    const user = userEvent.setup()
+    const panel = await openForm('set', { tool: anyDatasetWorkflow, setId: set.id })
+
+    expect(sourceRadio(panel, /saved set/i)).toBeChecked()
+    expect(await within(panel).findByRole('radio', { name: /coastal set/i })).toBeChecked()
+    await waitFor(() => expect(reviewLine(panel)).toHaveTextContent(/\b3 jobs\b/i))
+
+    expect(await runAndWait(user, panel)).toHaveTextContent(/\b3 jobs started\b/i)
+    expect(new Set(sentItemLinks(vi.mocked(launchWorkflow).mock.calls))).toEqual(
+      new Set(set.items.map((entry) => entry.selfHref)),
+    )
+  })
+
+  it('blocks private set items for a workflow that reads items by link, not one that stages them in', async () => {
+    const mixedSet = savedSet([
+      setItem('S2A_SET_1'),
+      privateSetItem('PURCHASED_1'),
+      privateSetItem('PURCHASED_2'),
+    ])
+    vi.mocked(fetchSavedSets).mockResolvedValue([summaryOf(mixedSet)])
+    vi.mocked(fetchSavedSet).mockResolvedValue(mixedSet)
+    const panel = await openForm('set', { tool: anyDatasetWorkflow, setId: mixedSet.id })
+
+    await waitFor(() => expect(privateCountMessage(panel, 2).length).toBeGreaterThan(0))
+    expect(runWorkflowButton(panel)).toBeDisabled()
+
+    chooseTool(ndviWorkflow)
+    await waitFor(() => expect(runWorkflowButton(panel)).toBeEnabled())
+    expect(privateCountMessage(panel, 2)).toHaveLength(0)
+  })
+})
+
+describe('Stage 7: Dataset list from the tool list', () => {
+  it('opens the dataset list for a tool for other collections, not for a tool for this dataset', async () => {
+    const user = userEvent.setup()
+    const isDatasetListOpen = () => dataFinderStore.getSnapshot().context.isDatasetListOpen
+    act(() => {
+      dataFinderStore.send({ type: 'closeDatasetList' })
+    })
+    openRunPanel()
+    await renderWithRunPanel()
+    const panel = await runPanel()
+
+    await user.click(await toolEntry(panel, 'NDVI'))
+    expect(isDatasetListOpen()).toBe(false)
+
+    await user.click(within(panel).getByRole('button', { name: /clear tool/i }))
+    await user.click(await toolEntry(panel, 'Landsat surface temperature'))
+    expect(isDatasetListOpen()).toBe(true)
   })
 })
 

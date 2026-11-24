@@ -1,11 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { InputParameterEntry } from '@/types'
 import { aoi, item, ITEM_SELF_HREF } from '@/test-data/runWorkflow'
-import {
-  buildWorkflowVariables,
-  hasResolver,
-  type WorkflowLaunchContext,
-} from './workflowVariableResolvers'
+import { buildWorkflowVariables, type WorkflowLaunchContext } from './workflowVariableResolvers'
 
 const context: WorkflowLaunchContext = { item, aoi, includeAoi: true }
 
@@ -54,7 +50,6 @@ describe('buildWorkflowVariables', () => {
       expect(build({ AOI: { hubType: 'bbox', cwlType: 'string' } })).toEqual({
         AOI: JSON.stringify(aoi),
       })
-      expect(hasResolver('AOI', { hubType: 'bbox' })).toBe(true)
     })
   })
 
@@ -101,22 +96,5 @@ describe('buildWorkflowVariables', () => {
 
   it('leaves out inputs the user fills in', () => {
     expect(build({ threshold: { type: 'number', cwlType: 'string', default: 0.3 } })).toEqual({})
-  })
-})
-
-describe('hasResolver', () => {
-  it('is true for inputs with a supported Hub type', () => {
-    expect(hasResolver('stac_item', { hubType: 'stac-item' })).toBe(true)
-    expect(hasResolver('area', { hubType: 'aoi' })).toBe(true)
-  })
-
-  it('is true for inputs with a known variableRef or key', () => {
-    expect(hasResolver('bbox', { variableRef: 'AOI' })).toBe(true)
-    expect(hasResolver('STAC_COLLECTION_NAME', {})).toBe(true)
-    expect(hasResolver('WORKSPACE_NAME', {})).toBe(true)
-  })
-
-  it('is false for inputs the user fills in', () => {
-    expect(hasResolver('threshold', { cwlType: 'string', default: 0.3 })).toBe(false)
   })
 })

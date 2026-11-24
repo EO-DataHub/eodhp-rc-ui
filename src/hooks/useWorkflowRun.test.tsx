@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -6,7 +6,7 @@ import { fetchItemById } from '@/services/processCatalogueService'
 import { fetchItems as searchItems } from '@/services/itemService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { fetchSavedSets } from '@/services/savedSetsService'
+import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import { anyDatasetWorkflow, item, ndviWorkflow, stubBrowserGlobals } from '@/test-data/runWorkflow'
 import {
@@ -24,7 +24,7 @@ import {
 } from '@/test-data/runWorkflowFanOut'
 import { withProviders } from '@/test-data/runWorkflowRender'
 import { fetchAnyToolById } from '@/test-data/runPanel'
-import { useWorkflowRun } from './useWorkflowRun'
+import { useWorkflowRun, type RunSource } from './useWorkflowRun'
 
 // Small limits, so the tests need few items and show the hook reads them from the config module
 const limits = vi.hoisted(() => ({ CONFIRM_JOBS_ABOVE: 12, MAX_JOBS_PER_RUN: 20 }))
@@ -50,12 +50,33 @@ vi.mock('@/services/savedSetsService', async (importOriginal) => ({
   fetchSavedSet: vi.fn(),
 }))
 
-type Options = Parameters<typeof useWorkflowRun>[0]
+type Options = Omit<
+  Parameters<typeof useWorkflowRun>[0],
+  'source' | 'onSourceChange' | 'setId' | 'onSetIdChange'
+> & { source: RunSource; setId?: string | null }
 
-const renderRun = (options: Options) =>
-  renderHook(() => useWorkflowRun(options), {
-    wrapper: ({ children }: { children: React.ReactNode }) => withProviders(children),
-  })
+/**
+ * Renders the hook with the source and saved set held outside it, as the run panel holds them in
+ * the store. `setSource` and `setSetId` change them as the Run on choices do.
+ */
+const renderRun = ({ source: initialSource, setId: initialSetId = null, ...options }: Options) =>
+  renderHook(
+    () => {
+      const [source, setSource] = useState<RunSource>(initialSource)
+      const [setId, setSetId] = useState<string | null>(initialSetId)
+      const run = useWorkflowRun({
+        ...options,
+        source,
+        onSourceChange: setSource,
+        setId,
+        onSetIdChange: setSetId,
+      })
+      return Object.assign(run, { setSource, setSetId })
+    },
+    {
+      wrapper: ({ children }: { children: React.ReactNode }) => withProviders(children),
+    },
+  )
 
 const ids = (items: { id: string }[] | undefined) => items?.map((entry) => entry.id)
 
@@ -79,6 +100,7 @@ beforeEach(() => {
   vi.mocked(fetchItemById).mockImplementation(fetchAnyToolById)
   vi.mocked(searchItems).mockResolvedValue(results)
   vi.mocked(fetchSavedSets).mockResolvedValue([summaryOf(set)])
+  vi.mocked(fetchSavedSet).mockResolvedValue(set)
   vi.mocked(fetchWorkspaceTokens).mockResolvedValue({ access: 'ws-token' } as never)
   let jobNumber = 0
   vi.mocked(launchWorkflow).mockImplementation(() => {
@@ -102,7 +124,7 @@ describe('useWorkflowRun', () => {
   it('resolves the items and the job count for each source', async () => {
     const pinned = fanOutItems(3, 'S2A_PIN')
     pinItems(pinned)
-    const { result } = renderRun({ workflow: ndviWorkflow, item, savedSet: set, source: 'item' })
+    const { result } = renderRun({ workflow: ndviWorkflow, item, setId: set.id, source: 'item' })
 
     expect(ids(result.current.items)).toEqual([item.id])
     expect(result.current.jobCount).toBe(1)
@@ -122,7 +144,7 @@ describe('useWorkflowRun', () => {
     expect(result.current.jobCount).toBe(results.length)
   })
 
-  it('asks for confirmation above the confirmation threshold and blocks above the ceiling', async () => {
+  it('asks for confirmation above the confirmation threshold, allows the ceiling and blocks above it', async () => {
     pinItems(fanOutItems(CONFIRM_JOBS_ABOVE, 'S2A_A'))
     const { result } = renderRun({ workflow: ndviWorkflow, source: 'pinned' })
     await waitFor(() => expect(result.current.canRun).toBe(true))
@@ -134,13 +156,19 @@ describe('useWorkflowRun', () => {
     act(() => result.current.setConfirmed(true))
     expect(result.current.canRun).toBe(true)
 
-    act(() => pinItems(fanOutItems(MAX_JOBS_PER_RUN - CONFIRM_JOBS_ABOVE, 'S2A_B')))
+    act(() => pinItems(fanOutItems(MAX_JOBS_PER_RUN - CONFIRM_JOBS_ABOVE - 1, 'S2A_B')))
+    expect(result.current.jobCount).toBe(MAX_JOBS_PER_RUN)
+    expect(result.current.aboveCeiling).toBe(false)
+    act(() => result.current.setConfirmed(true))
+    expect(result.current.canRun).toBe(true)
+
+    act(() => pinItems([fanOutItem('S2A_OVER')]))
     expect(result.current.jobCount).toBe(MAX_JOBS_PER_RUN + 1)
     expect(result.current.aboveCeiling).toBe(true)
     expect(result.current.canRun).toBe(false)
   })
 
-  it('blocks a run on private items for a workflow that reads items by link', async () => {
+  it('blocks a run on private items for a workflow that reads items by link, not one that stages them in', async () => {
     pinItems([fanOutItem('S2A_PUBLIC')])
     pinItems(
       [
@@ -153,6 +181,11 @@ describe('useWorkflowRun', () => {
 
     await waitFor(() => expect(result.current.privateItemCount).toBe(2))
     expect(result.current.canRun).toBe(false)
+
+    // A workflow that stages the items in can read them
+    const { result: stagedIn } = renderRun({ workflow: ndviWorkflow, source: 'pinned' })
+    await waitFor(() => expect(stagedIn.current.canRun).toBe(true))
+    expect(stagedIn.current.privateItemCount).toBe(0)
   })
 
   it('retries only the items whose jobs failed to start', async () => {
@@ -183,5 +216,38 @@ describe('useWorkflowRun', () => {
     ])
     expect(result.current.failedJobs).toEqual([])
     expect(result.current.startedJobs).toHaveLength(3)
+  })
+})
+
+describe('Stage 7: useWorkflowRun jobs started', () => {
+  it('passes only the newly started jobs to onJobsStarted, from the run and from a retry', async () => {
+    pinItems(fanOutItems(3, 'S2A_NEW'))
+    let failOnce = true
+    vi.mocked(launchWorkflow).mockImplementation((_url, variables) => {
+      if (String(variables.stac_item).endsWith('S2A_NEW_2') && failOnce) {
+        failOnce = false
+        return Promise.reject(new Error('Service unavailable'))
+      }
+      return Promise.resolve({
+        workflowId: `job-${String(variables.stac_item).split('/').pop()}`,
+        status: 'accepted',
+        submittedAt: '',
+      })
+    })
+    const onJobsStarted = vi.fn()
+    const { result } = renderRun({ workflow: ndviWorkflow, source: 'pinned', onJobsStarted })
+    await waitFor(() => expect(result.current.canRun).toBe(true))
+
+    await act(() => result.current.run())
+    expect(onJobsStarted).toHaveBeenCalledTimes(1)
+    const [firstJobs] = onJobsStarted.mock.calls[0] as [{ item: { id: string } }[]]
+    expect(new Set(ids(firstJobs.map((job) => job.item)))).toEqual(
+      new Set(['S2A_NEW_1', 'S2A_NEW_3']),
+    )
+
+    await act(() => result.current.retryFailed())
+    expect(onJobsStarted).toHaveBeenCalledTimes(2)
+    const [retriedJobs] = onJobsStarted.mock.calls[1] as [{ item: { id: string } }[]]
+    expect(ids(retriedJobs.map((job) => job.item))).toEqual(['S2A_NEW_2'])
   })
 })
