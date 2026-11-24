@@ -490,7 +490,7 @@ describe('Run form in the panel', () => {
   })
 })
 
-describe('Stage 7: Run form details', () => {
+describe('Run form details', () => {
   const launches = () => vi.mocked(launchWorkflow).mock.calls
   const sentVariables = (index: number) => launches()[index][1] as Record<string, unknown>
   const areaCheckbox = (panel: HTMLElement) =>
@@ -655,7 +655,7 @@ describe('Stage 7: Run form details', () => {
   })
 })
 
-describe('Stage 7: Saved set in the run panel', () => {
+describe('Saved set in the run panel', () => {
   /** Text in one element that says how many items are private. */
   const privateCountMessage = (panel: HTMLElement, count: number) =>
     within(panel).queryAllByText(
@@ -699,7 +699,7 @@ describe('Stage 7: Saved set in the run panel', () => {
   })
 })
 
-describe('Stage 7: Dataset list from the tool list', () => {
+describe('Dataset list from the tool list', () => {
   it('opens the dataset list for a tool for other collections, not for a tool for this dataset', async () => {
     const user = userEvent.setup()
     const isDatasetListOpen = () => dataFinderStore.getSnapshot().context.isDatasetListOpen

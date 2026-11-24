@@ -219,7 +219,7 @@ describe('useWorkflowRun', () => {
   })
 })
 
-describe('Stage 7: useWorkflowRun jobs started', () => {
+describe('useWorkflowRun jobs started', () => {
   it('passes only the newly started jobs to onJobsStarted, from the run and from a retry', async () => {
     pinItems(fanOutItems(3, 'S2A_NEW'))
     let failOnce = true

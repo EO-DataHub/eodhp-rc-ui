@@ -118,7 +118,7 @@ describe('dataFinderStore run panel', () => {
   })
 })
 
-describe('Stage 7: dataFinderStore run panel events', () => {
+describe('dataFinderStore run panel events', () => {
   const context = () => dataFinderStore.getSnapshot().context
 
   const visitJob = {

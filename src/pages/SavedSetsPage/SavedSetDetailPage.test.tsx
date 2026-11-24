@@ -143,7 +143,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Stage 7: Saved set page Run workflow', () => {
+describe('Saved set page Run workflow', () => {
   it('opens the set on the map in the Data Finder, with the run panel open on that saved set', async () => {
     const user = userEvent.setup()
     renderSetPage()
