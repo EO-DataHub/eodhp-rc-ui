@@ -19,6 +19,23 @@ export const browserDownloadHref = (href: string): string => {
 }
 
 /**
+ * Names the workspace to charge for a requester-pays download. The data proxy bills a
+ * workspace for each download and refuses a browser session that belongs to more than one
+ * workspace unless the request names it (`?workspace=` or the X-EODH-Workspace header).
+ * Only use this for DataHub hrefs: the workspace name must not go to other hosts.
+ */
+export const withBillingWorkspace = (href: string, workspace: string | undefined): string => {
+  if (!workspace) return href
+  try {
+    const url = new URL(href)
+    url.searchParams.set('workspace', workspace)
+    return url.href
+  } catch {
+    return href
+  }
+}
+
+/**
  * Starts a browser download for each href by loading it in a hidden iframe, spaced out
  * so the browser doesn't drop them. Unlike clicking a link, this never navigates away
  * from the page. Calls onStarted once the last download has started. Returns a function

@@ -15,6 +15,32 @@ The file contains enums for the categories and a mapping of collection IDs to ca
 
 ![Collection Catalog with Categorisation](./collection-catalog-categorisation.png)
 
+### Unlisted collections
+
+To keep a collection off the gallery but let chosen users open it, set `eodhrc:unlisted` in its entry in `configFromServer.json`:
+
+```json
+  "landsat-c2-l2": {
+    "eodhrc:unlisted": true,
+    "renders": { ... }
+  }
+```
+
+The gallery does not show the collection, and does not count it. The map browser still opens it from its URL, `<base path>/finder/<collection id>`. Use this to let testers check a collection before it is announced. It does not restrict access: anyone with the URL can open the collection.
+
+### Requester-pays collections
+
+Some collections are free to browse but cost credits to download, because the data's host charges the requester. To mark one, set `eodhrc:requester-pays` in its entry in `configFromServer.json`:
+
+```json
+  "landsat-c2-l2": {
+    "eodhrc:requester-pays": true,
+    "renders": { ... }
+  }
+```
+
+The UI then shows a piggy-bank icon on the collection's cards, with "Downloading this data uses credits, charged per GB." in its tooltip, and a notice wherever its data can be downloaded. The notice says that thumbnails and previews are free, that downloads cost credits per GB, and that charges can take up to 7 hours to appear. It names no rate, because the rate depends on the workspace's pricing category. Signed-out users see a sign-in prompt instead and cannot download, since the data proxy refuses anonymous downloads of this data. Signed-in users must have a workspace selected in the header: download links add `?workspace=` with it, so the proxy knows which workspace to charge. The generated download scripts include a DataHub token, as they do for workspace files. Also add `License.Requester_Pays` to the collection's `license` in `collectionCategorizations.ts`, so the Licence filter can find it.
+
 
 ## Item visualisation
 
@@ -51,6 +77,7 @@ To still be able to render these images on the map for proper preview, we rely o
 | `bbox`                   | Uses the STAC item's bounding box (bbox property) to georeference the quicklook image.      |
 | `geometry`               | Uses the STAC item's geometry (GeoJSON polygon) to georeference the quicklook image. Since the polygon can be arbitrarily complex, we use some heuristics to find the four corner points to anchor the image to. |
 | `bbox-squared` | Special case where the PNG image is padded either on the horizontal or vertical side to be square in number of pixels, but the bbox still only corresponds to the (rectangular) image geometry. Here, we post-process the bbox to be squared in UTM coordinates, which works remarkably well considering how crazy it may sound. |
+| `proj` | For an image that covers the item's whole raster grid, north-up in that grid, such as Landsat's `reduced_resolution_browse`. Places the image by the grid's four corners, computed from the item's `proj:transform`, `proj:shape` and `proj:epsg` (or `proj:code`). Knows UTM (EPSG 32601–32660 and 32701–32760) and Antarctic Polar Stereographic (EPSG 3031). Falls back to `bbox` for an item without these properties or with another grid. Handles grids that cross the antimeridian. Before it shows the image, the application makes the parts outside the item's geometry transparent, which removes the black border around the scene in Landsat's browse JPEGs. If it cannot, it shows the image with the border. |
 
 
 ### GeoTIFF or Multidimensional (Zarr, NetCDF, Kerchunk, etc.)?

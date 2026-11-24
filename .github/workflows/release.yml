@@ -1,0 +1,52 @@
+name: Release to production
+
+# Pushing a version tag deploys that tag to production and creates a GitHub
+# release with generated notes:
+#
+#   git tag -a v1.1.0 -m "v1.1.0" && git push origin v1.1.0
+#
+# Tag main for a normal release. For a hotfix when main has unreleased work,
+# branch from the last tag, cherry-pick the fix (already merged to main) and
+# tag that branch.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/_deploy.yml
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      environment: production
+      ref: ${{ github.ref_name }}
+      url: https://eodatahub.org.uk/static-apps/sg-rc-ui/prod/
+      analytics: true
+
+  github-release:
+    name: Create GitHub release
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create release with generated notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+          else
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes
+          fi

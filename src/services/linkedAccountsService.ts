@@ -60,7 +60,13 @@ export const validateLinkedAccountKey = async (
     throw new Error('Error validating account, please check your API key')
   }
 
-  return (await response.json()) as LinkedAccountValidation
+  // Some providers (e.g. Planet) return 200 with an empty body on success.
+  const text = await response.text()
+  if (!text.trim()) {
+    return { name: provider, key }
+  }
+
+  return JSON.parse(text) as LinkedAccountValidation
 }
 
 export const linkAccount = async (

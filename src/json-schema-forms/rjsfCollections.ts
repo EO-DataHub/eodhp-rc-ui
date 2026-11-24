@@ -3,6 +3,7 @@ import default_schema from '@/json-schema-forms/assets/default.json'
 import sentinel1_schema from '@/json-schema-forms/assets/sentinel1.json'
 import sentinel1_ard_schema from '@/json-schema-forms/assets/sentinel1_ard.json'
 import sentinel2_ard_schema from '@/json-schema-forms/assets/sentinel2_ard.json'
+import landsat_c2_l2_schema from '@/json-schema-forms/assets/landsat_c2_l2.json'
 import airbus_sar_schema from '@/json-schema-forms/assets/airbus_sar_data.json'
 import airbus_spot_schema from '@/json-schema-forms/assets/airbus_spot_data.json'
 import airbus_pneo_schema from '@/json-schema-forms/assets/airbus_pneo_data.json'
@@ -24,6 +25,7 @@ const rjsfCollections: Record<string, JSONSchema> = {
   sentinel1_ard: sentinel1_ard_schema,
   sentinel2_ard: sentinel2_ard_schema,
   'sentinel-2-c1-l2a': sentinel2_ard_schema,
+  'landsat-c2-l2': landsat_c2_l2_schema,
   airbus_sar_data: airbus_sar_schema,
   airbus_spot_data: airbus_spot_schema,
   airbus_pneo_data: airbus_pneo_schema,

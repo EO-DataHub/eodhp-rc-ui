@@ -10,6 +10,7 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSkusBySku } from '@/hooks/useSkusBySku'
 import { convertDateToLocalString } from '@/library/dateUtils'
+import { REQUESTER_PAYS_DELAY_HOURS } from '@/components/RequesterPays/RequesterPays'
 import styles from './UsagePage.module.scss'
 
 // The API has no way to ask for "most recent" events — only a start/end range or forward
@@ -201,6 +202,10 @@ export const UsagePage: React.FC = () => {
       <PageHeading title="Usage" subtitle="Compute usage history for this workspace" />
 
       <Flex direction="column" gap="5">
+        <Text size="2" color="gray">
+          Requester-pays downloads, such as Landsat, can take up to {REQUESTER_PAYS_DELAY_HOURS}{' '}
+          hours to appear here.
+        </Text>
         {!token && <Callout type="info" message="Sign in to view usage history." />}
 
         {token && !currentWorkspace && (

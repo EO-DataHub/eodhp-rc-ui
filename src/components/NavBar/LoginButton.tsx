@@ -1,5 +1,5 @@
 import { useContext } from 'react'
-import { Text, DropdownMenu, Badge } from '@radix-ui/themes'
+import { Text, DropdownMenu } from '@radix-ui/themes'
 import { Link } from 'react-router-dom'
 import { AuthenticationContext } from '../../context/AuthenticationContext'
 import { LoadingIndicator } from '../LoadingIndicator/LoadingIndicator'
@@ -17,6 +17,7 @@ export const LoginButton = ({
     isAuthenticated,
     isAuthenticating,
     isAuthenticationServiceError,
+    isHubAdmin,
     login,
     logout,
     workspaceUserName,
@@ -74,6 +75,9 @@ export const LoginButton = ({
                 <Link to="/settings/credentials">Credentials</Link>
               </DropdownMenu.Item>
               <DropdownMenu.Item asChild>
+                <Link to="/settings/s3-credentials">S3 credentials</Link>
+              </DropdownMenu.Item>
+              <DropdownMenu.Item asChild>
                 <Link to="/settings/provider-accounts">Provider accounts</Link>
               </DropdownMenu.Item>
             </DropdownMenu.SubContent>
@@ -88,15 +92,13 @@ export const LoginButton = ({
               <DropdownMenu.Item asChild>
                 <Link to="/accounting/usage">Usage</Link>
               </DropdownMenu.Item>
+              {isHubAdmin && (
+                <DropdownMenu.Item asChild>
+                  <Link to="/accounting/hub">All workspaces</Link>
+                </DropdownMenu.Item>
+              )}
             </DropdownMenu.SubContent>
           </DropdownMenu.Sub>
-
-          <DropdownMenu.Item disabled>
-            Publishing{' '}
-            <Badge ml="2" color="gray" variant="soft">
-              Soon
-            </Badge>
-          </DropdownMenu.Item>
 
           <DropdownMenu.Sub>
             <DropdownMenu.SubTrigger>My data</DropdownMenu.SubTrigger>

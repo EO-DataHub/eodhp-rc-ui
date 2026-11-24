@@ -55,6 +55,7 @@ enum Provider {
   Planet = 'pro:planet',
   UK_Met_Office = 'pro:met_office',
   UOL_LST = 'pro:uol_lst',
+  USGS = 'pro:usgs',
   Uncategorised = 'uncategorised',
 }
 
@@ -71,6 +72,7 @@ enum ProviderLabel {
   Planet = 'Planet',
   UK_Met_Office = 'UK Met Office',
   UOL_LST = 'University of Leicester (LST)',
+  USGS = 'United States Geological Survey',
   Uncategorised = 'Uncategorised Provider',
 }
 
@@ -105,6 +107,7 @@ enum TimePeriodLabel {
 enum License {
   Commercial_Data = 'lic:commercial',
   Open_Data = 'lic:open',
+  Requester_Pays = 'lic:requester-pays',
   My_Data = 'lic:my-data',
   Uncategorised = 'uncategorised',
 }
@@ -112,6 +115,7 @@ enum License {
 enum LicenseLabel {
   Commercial_Data = 'Commercial Data',
   Open_Data = 'Open Data',
+  Requester_Pays = 'Requester Pays',
   My_Data = 'My Data',
   Uncategorised = 'Uncategorised License',
 }
@@ -210,6 +214,17 @@ const collectionCategorization = {
     location: [Location.Global],
     timePeriod: [TimePeriod.Historic, TimePeriod.Current],
     license: [License.Open_Data],
+    additionalFieldsToDisplay: [],
+  },
+  'landsat-c2-l2': {
+    dataCategory: [DataCategory.Optical_Multispectral],
+    resolution: [Resolution.From_10m_To_100m],
+    provider: [Provider.USGS],
+    location: [Location.Global],
+    timePeriod: [TimePeriod.Historic, TimePeriod.Current],
+    // Openly licensed, but downloads cost credits. Requester_Pays comes first so that
+    // grouping by licence puts Landsat under Requester Pays, not Open Data.
+    license: [License.Requester_Pays, License.Open_Data],
     additionalFieldsToDisplay: [],
   },
   sentinel1: {

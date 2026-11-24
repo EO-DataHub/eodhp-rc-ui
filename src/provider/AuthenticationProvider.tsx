@@ -7,8 +7,6 @@ import { AxiosInstance } from 'axios'
 import { toast } from 'react-toastify'
 import { fetchWorkspaces } from '@/services/workspaceTokenService'
 
-const BASE_PATH = import.meta.env.VITE_BASE_PATH || ''
-
 const initOptions = {
   url: import.meta.env.VITE_KEYCLOAK_URL as string,
   realm: import.meta.env.VITE_KEYCLOAK_REALM as string,
@@ -30,6 +28,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   const [authenticatedAxios, setAuthenticatedAxios] = useState<AxiosInstance | undefined>()
   const [userInfo, setUserInfo] = useState<KeycloakUserInfo>({})
   const [token, setToken] = useState<string>() // we track this to trigger axios reinitialization
+  const [isHubAdmin, setIsHubAdmin] = useState<boolean>(false)
   const workspaceUserName = userInfo?.preferred_username
   const [currentWorkspace, setCurrentWorkspace] = useState<string | undefined>(
     () => localStorage.getItem('selectedWorkspace') ?? undefined,
@@ -51,10 +50,17 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
   }
   const logout = () => {
     setCurrentWorkspace(undefined)
+    setIsHubAdmin(false)
     return authenticationInstance.logout()
   }
 
   useEffect(function initiializeAuthentication() {
+    // Roles come from the token, so read them again whenever the token changes.
+    const syncToken = () => {
+      setToken(authenticationInstance.token)
+      setIsHubAdmin(authenticationInstance.hasRealmRole('hub_admin'))
+    }
+
     const ensureLogoutDoesNotRedirect = () => {
       authenticationInstance.createLogoutUrl = function () {
         return (
@@ -72,10 +78,11 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       authenticationInstance
         .updateToken()
         .then(() => {
-          setToken(authenticationInstance.token)
+          syncToken()
         })
         .catch(() => {
           setIsAuthenticated(false)
+          setIsHubAdmin(false)
           setUserInfo({})
           toast.error('Your session has expired. Please log in again.')
           void authenticationInstance.logout()
@@ -84,6 +91,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
 
     authenticationInstance.onAuthLogout = () => {
       setIsAuthenticated(false)
+      setIsHubAdmin(false)
       setUserInfo({})
       toast.error('You have been logged out by the system.')
     }
@@ -95,7 +103,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
     authenticationInstance
       .init({
         onLoad: initOptions.onLoad as KeycloakOnLoad,
-        silentCheckSsoRedirectUri: `${location.origin}${BASE_PATH}/silent-check-sso.html`,
+        // BASE_URL is Vite's `base` and always ends in a single '/'
+        silentCheckSsoRedirectUri: `${location.origin}${import.meta.env.BASE_URL}silent-check-sso.html`,
         responseMode: 'query',
       })
       .then((auth) => {
@@ -103,7 +112,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
 
         if (auth) {
           ensureLogoutDoesNotRedirect()
-          setToken(authenticationInstance.token)
+          syncToken()
           return authenticationInstance.loadUserInfo()
         }
       })
@@ -146,6 +155,8 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
       if (isAuthenticated && !!token) {
         const getUpdatedToken = async () => {
           await authenticationInstance.updateToken()
+          setToken(authenticationInstance.token)
+          setIsHubAdmin(authenticationInstance.hasRealmRole('hub_admin'))
 
           return authenticationInstance.token
         }
@@ -172,6 +183,7 @@ export const AuthenticationContextProvider = ({ children }: { children: ReactNod
         isAuthenticated,
         isAuthenticating,
         isAuthenticationServiceError,
+        isHubAdmin,
         login,
         logout,
         token,

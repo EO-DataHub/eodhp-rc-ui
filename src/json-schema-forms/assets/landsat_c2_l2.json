@@ -1,0 +1,19 @@
+{
+  "$id": "https://test.eodatahub.org/schemas/landsat_c2_l2.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Landsat Collection 2 Level-2",
+  "type": "object",
+  "properties": {
+    "start_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/start_datetime"
+    },
+    "end_datetime": {
+      "$ref": "schemas/eodh/v1.0.0/form_schema.json#/properties/end_datetime"
+    },
+    "eo:cloud_cover": {
+      "default": 100.0,
+      "$ref": "schemas/eo/v1.1.0/form_schema.json#/properties/eo:cloud_cover",
+      "title": "Cloud cover"
+    }
+  }
+}

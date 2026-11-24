@@ -87,6 +87,16 @@
       }
     }
   },
+  "landsat-c2-l2": {
+    "eodhrc:requester-pays": true,
+    "renders": {
+      "preview": {
+        "title": "Preview",
+        "assets": ["reduced_resolution_browse"],
+        "quicklook_georeference": "proj"
+      }
+    }
+  },
   "sentinel1": {
     "renders": {
       "preview": {

@@ -7,7 +7,9 @@ import proj4 from 'proj4'
 import { useEffect, useContext } from 'react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useQuery } from '@tanstack/react-query'
-import { fetchQuicklookImage } from '../../../library/fetchQuicklookImage'
+import { fetchQuicklookBlob } from '../../../library/fetchQuicklookImage'
+import { footprintInImagePixels, projectedImageCorners } from '@/library/quicklookCorners'
+import { maskOutside } from '@/library/maskQuicklook'
 
 type Coordinates = [[number, number], [number, number], [number, number], [number, number]]
 
@@ -155,10 +157,21 @@ export const QuicklookItemLayer = ({ item, layerId }: { item: Item; layerId?: st
 
   const { data: imageUrl } = useQuery<string | undefined>({
     queryKey: ['quicklook', quicklookUrl, token],
-    queryFn: () =>
-      quicklookUrl
-        ? fetchQuicklookImage({ url: quicklookUrl, token: render?.auth ? token : undefined })
-        : Promise.resolve(undefined),
+    queryFn: async () => {
+      if (!quicklookUrl) return undefined
+      let image = await fetchQuicklookBlob({
+        url: quicklookUrl,
+        token: render?.auth ? token : undefined,
+      })
+      if (render?.quicklook_georeference === 'proj') {
+        // A quicklook of the whole grid has a border around the footprint, black in Landsat's
+        // JPEGs. Clear it, or keep the image as it is if that fails.
+        image = await maskOutside(image, (width, height) =>
+          footprintInImagePixels(item.properties, item.geometry, width, height),
+        ).catch(() => image)
+      }
+      return URL.createObjectURL(image)
+    },
     enabled: !!(render && quicklookUrl && (!render.auth || token)),
   })
 
@@ -175,13 +188,19 @@ export const QuicklookItemLayer = ({ item, layerId }: { item: Item; layerId?: st
 
   let coordinates: Coordinates
 
-  if (render.quicklook_georeference === 'bbox') {
-    coordinates = [
-      [item.bbox[0], item.bbox[3]],
-      [item.bbox[2], item.bbox[3]],
-      [item.bbox[2], item.bbox[1]],
-      [item.bbox[0], item.bbox[1]],
-    ] as Coordinates
+  const bboxCorners = (): Coordinates => [
+    [item.bbox[0], item.bbox[3]],
+    [item.bbox[2], item.bbox[3]],
+    [item.bbox[2], item.bbox[1]],
+    [item.bbox[0], item.bbox[1]],
+  ]
+
+  if (render.quicklook_georeference === 'proj') {
+    // The quicklook covers the item's whole grid, so place it by the grid's corners from the
+    // projection extension. Falls back to the bbox for an item without them.
+    coordinates = projectedImageCorners(item.properties) ?? bboxCorners()
+  } else if (render.quicklook_georeference === 'bbox') {
+    coordinates = bboxCorners()
   } else if (render.quicklook_georeference === 'bbox-squared') {
     const bbox = squareAndTransformBoundingBox(item.bbox)
     coordinates = [

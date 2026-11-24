@@ -20,7 +20,8 @@ export interface DownloadScriptParams {
   /** Catalog path relative to /catalogs/, as pyeodh's get_catalog expects. */
   catalogPath?: string
   itemSelfHref?: string
-  isPrivate: boolean
+  /** Whether the scripts send a DataHub token: for workspace files and for requester-pays data. */
+  needsToken: boolean
   workspace?: string
   hubBaseUrl?: string
   /** Names for all of the item's assets (from assetFilenames), so a partial selection keeps the names shown in the UI. */
@@ -125,7 +126,7 @@ const CURL_TIMEOUTS = '--connect-timeout 30 --speed-limit 1 --speed-time 60'
 export const buildBashScript = ({
   assets,
   itemId,
-  isPrivate,
+  needsToken,
   hubBaseUrl,
   filenames = assetFilenames(assets),
 }: DownloadScriptParams): string => {
@@ -136,7 +137,7 @@ export const buildBashScript = ({
     '',
   ]
 
-  if (isPrivate) {
+  if (needsToken) {
     lines.push(`EODH_TOKEN=${shellQuote(TOKEN_PLACEHOLDER)}`, '')
   }
 
@@ -163,7 +164,7 @@ export const buildBashScript = ({
 
   for (const { key, href } of assets) {
     const auth =
-      isPrivate && isEodhHost(href, hubBaseUrl) ? ' -H "Authorization: Bearer $EODH_TOKEN"' : ''
+      needsToken && isEodhHost(href, hubBaseUrl) ? ' -H "Authorization: Bearer $EODH_TOKEN"' : ''
     lines.push(`download ${shellQuote(filenames.get(key)!)} ${shellQuote(href)}${auth}`)
   }
 
@@ -184,7 +185,7 @@ const psQuote = (value: string): string => `'${value.replace(/['‘’‚‛]/g,
 export const buildPowerShellScript = ({
   assets,
   itemId,
-  isPrivate,
+  needsToken,
   hubBaseUrl,
   filenames = assetFilenames(assets),
 }: DownloadScriptParams): string => {
@@ -201,7 +202,7 @@ export const buildPowerShellScript = ({
     '  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12',
   ]
 
-  if (isPrivate) {
+  if (needsToken) {
     lines.push(
       `  $EODH_TOKEN = ${psQuote(TOKEN_PLACEHOLDER)}`,
       '  $headers = @{ Authorization = "Bearer $EODH_TOKEN" }',
@@ -227,7 +228,7 @@ export const buildPowerShellScript = ({
   )
 
   for (const { key, href } of assets) {
-    const auth = isPrivate && isEodhHost(href, hubBaseUrl) ? ' $headers' : ''
+    const auth = needsToken && isEodhHost(href, hubBaseUrl) ? ' $headers' : ''
     lines.push(`  Save-Asset ${psQuote(href)} ${psQuote(filenames.get(key)!)}${auth}`)
   }
 
@@ -248,14 +249,14 @@ export const buildPythonScript = ({
   collectionId,
   catalogPath,
   itemSelfHref,
-  isPrivate,
+  needsToken,
   workspace,
   hubBaseUrl,
 }: DownloadScriptParams): string => {
   const baseUrl = hubBaseUrl?.replace(/\/$/, '')
   const clientArgs: string[] = []
   if (baseUrl && baseUrl !== PROD_HUB_BASE_URL) clientArgs.push(`base_url=${pyString(baseUrl)}`)
-  if (isPrivate) {
+  if (needsToken) {
     if (workspace) clientArgs.push(`username=${pyString(workspace)}`)
     clientArgs.push('token=TOKEN')
   }
@@ -277,7 +278,7 @@ export const buildPythonScript = ({
   }
   lines.push('')
 
-  if (isPrivate) {
+  if (needsToken) {
     lines.push(`TOKEN = ${pyString(TOKEN_PLACEHOLDER)}`, '')
   }
 
@@ -297,7 +298,7 @@ export const buildPythonScript = ({
   }
   lines.push('')
 
-  if (isPrivate) {
+  if (needsToken) {
     const hosts = eodhHosts(baseUrl).map(pyString).join(', ')
     lines.push(
       `EODH_HOSTS = (${hosts})`,
@@ -320,7 +321,7 @@ export const buildPythonScript = ({
     lines.push(`keys = [${assets.map(({ key }) => pyString(key)).join(', ')}]`)
   }
 
-  const headersArg = isPrivate ? ', headers=headers_for(asset.href)' : ''
+  const headersArg = needsToken ? ', headers=headers_for(asset.href)' : ''
   // Same filename rules as assetFilenames, so files match the names shown in the UI
   lines.push(
     'def safe_name(name):',

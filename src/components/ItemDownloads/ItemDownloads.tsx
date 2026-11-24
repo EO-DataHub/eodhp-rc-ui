@@ -10,6 +10,7 @@ import {
   browserDownloadHref,
   downloadWithToken,
   triggerStaggeredDownloads,
+  withBillingWorkspace,
 } from '@/library/assetDownload'
 import {
   assetFilenames,
@@ -26,6 +27,9 @@ import { getItemSelfHref } from '@/library/savedSetItems'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { isRequesterPaysCollection } from '@/library/collectionRenderingConfig'
+import { RequesterPaysNotice } from '@/components/RequesterPays/RequesterPays'
+import { useRequesterPaysBlock } from '@/hooks/useRequesterPaysBlock'
 import styles from './ItemDownloads.module.scss'
 
 const HUB_BASE_URL = (import.meta.env.VITE_HUB_BASE_URL as string | undefined)?.replace(/\/$/, '')
@@ -104,7 +108,21 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
 }) => {
   const { trackDownloadItemImagery, trackDownloadAllItemImagery, trackCopyDownloadScript } =
     useAnalyticsActions()
-  const { token, userInfo, isAuthenticated } = useContext(AuthenticationContext)
+  const { token, userInfo, isAuthenticated, login, currentWorkspace } =
+    useContext(AuthenticationContext)
+  const isRequesterPays = !isPrivate && isRequesterPaysCollection(item.collection)
+  const downloadBlock = useRequesterPaysBlock(isPrivate ? undefined : item.collection)
+  // Requester-pays downloads are charged to a workspace, so scripts need a DataHub token for
+  // them just as for workspace files. The browser sends its session cookie instead.
+  const scriptsNeedToken = isPrivate || isRequesterPays
+  // The browser's session can belong to several workspaces, so name the one to charge: always
+  // the workspace selected in the header, which is the one the user expects to pay
+  const downloadHref = (href: string) =>
+    browserDownloadHref(
+      isRequesterPays && isEodhHost(href, HUB_BASE_URL)
+        ? withBillingWorkspace(href, currentWorkspace)
+        : href,
+    )
   const { data: workspaceTokens } = useWorkspaceToken(
     workspace,
     token,
@@ -169,7 +187,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     if (otherFiles.length > 0) {
       setIsStarting(true)
       cancelDownloadsRef.current = triggerStaggeredDownloads(
-        otherFiles.map((a) => browserDownloadHref(a.href)),
+        otherFiles.map((a) => downloadHref(a.href)),
         { onStarted: () => setIsStarting(false) },
       )
     }
@@ -202,7 +220,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
     collectionId: collection?.id ?? item.collection,
     catalogPath: getCatalogPath(collection),
     itemSelfHref: getItemSelfHref(item),
-    isPrivate,
+    needsToken: scriptsNeedToken,
     workspace,
     hubBaseUrl: getScriptHubBaseUrl(collection, HUB_BASE_URL),
     filenames,
@@ -214,6 +232,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
 
   return (
     <Flex direction="column" gap="6">
+      {isRequesterPays && <RequesterPaysNotice />}
       <Flex direction="column" gap="3">
         <Flex gap="4" align="center" wrap="wrap">
           <Text size="2" color="gray">
@@ -262,18 +281,24 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
                   </Table.Cell>
                   <Table.Cell>
                     <Flex direction="column">
-                      <Link
-                        href={browserDownloadHref(asset.href)}
-                        download
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        weight="medium"
-                        onClick={() =>
-                          trackDownloadItemImagery({ assetKey: asset.key, asset, item })
-                        }
-                      >
-                        {asset.title ?? asset.key}
-                      </Link>
+                      {downloadBlock ? (
+                        <Text size="2" weight="medium">
+                          {asset.title ?? asset.key}
+                        </Text>
+                      ) : (
+                        <Link
+                          href={downloadHref(asset.href)}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          weight="medium"
+                          onClick={() =>
+                            trackDownloadItemImagery({ assetKey: asset.key, asset, item })
+                          }
+                        >
+                          {asset.title ?? asset.key}
+                        </Link>
+                      )}
                       <Text size="1" color="gray" className={styles.filename}>
                         {filenames.get(asset.key)}
                       </Text>
@@ -294,19 +319,26 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
         </Table.Root>
 
         <Box>
-          <Button
-            disabled={selectedAssets.length === 0 || progress !== null || isStarting}
-            onClick={handleDownloadSelected}
-          >
-            <DownloadIcon />
-            {progress
-              ? `Downloading ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…`
-              : isStarting
-                ? 'Starting downloads…'
-                : allSelected
-                  ? `Download all (${assets.length})`
-                  : `Download selected (${selectedAssets.length})`}
-          </Button>
+          {downloadBlock === 'sign-in' ? (
+            // Say why the user can't download, and let them fix it from the button itself
+            <Button onClick={() => void login()}>Sign in to download</Button>
+          ) : downloadBlock === 'select-workspace' ? (
+            <Button disabled>Select a workspace to download</Button>
+          ) : (
+            <Button
+              disabled={selectedAssets.length === 0 || progress !== null || isStarting}
+              onClick={handleDownloadSelected}
+            >
+              <DownloadIcon />
+              {progress
+                ? `Downloading ${Math.min(progress.done + 1, progress.total)} of ${progress.total}…`
+                : isStarting
+                  ? 'Starting downloads…'
+                  : allSelected
+                    ? `Download all (${assets.length})`
+                    : `Download selected (${selectedAssets.length})`}
+            </Button>
+          )}
         </Box>
         <Text size="2" color="gray">
           Downloads each file separately. Your browser may ask permission to download multiple
@@ -346,7 +378,7 @@ export const ItemDownloads: React.FC<ItemDownloadsProps> = ({
           </Link>
           ), the command line (using curl) or PowerShell on Windows.
         </Text>
-        {isPrivate && (
+        {scriptsNeedToken && (
           <Text size="2">
             Replace <code>{TOKEN_PLACEHOLDER}</code> with a DataHub API token for workspace{' '}
             <code>{workspace ?? 'your workspace'}</code>.{' '}
