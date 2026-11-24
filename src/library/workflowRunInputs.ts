@@ -22,13 +22,11 @@ export const getUserInputs = (inputs: WorkflowInputs) =>
 export const getHubInputs = (inputs: WorkflowInputs) =>
   Object.entries(inputs).filter(([key, def]) => getHubInputKind(key, def))
 
-export const getAreaInputs = (inputs: WorkflowInputs) =>
-  Object.entries(inputs).filter(([key, def]) => getHubInputKind(key, def) === 'area')
-
 export const getItemInputs = (inputs: WorkflowInputs) =>
   Object.entries(inputs).filter(([key, def]) => getHubInputKind(key, def) === 'item')
 
-export const hasAreaInput = (inputs: WorkflowInputs) => getAreaInputs(inputs).length > 0
+export const hasAreaInput = (inputs: WorkflowInputs) =>
+  Object.entries(inputs).some(([key, def]) => getHubInputKind(key, def) === 'area')
 
 /** True when the user has fields to fill in or an area to include. */
 export const hasInputsToSet = (inputs: WorkflowInputs) =>
@@ -61,9 +59,6 @@ export const userValueText = (def: InputParameterEntry, value: string | undefine
   }
   return value
 }
-
-/** An input is required only when the workflow marks it `required: true`. */
-export const isRequired = (def: InputParameterEntry) => def.required === true
 
 export const initialUserValues = (inputs: WorkflowInputs): UserValues =>
   Object.fromEntries(getUserInputs(inputs).map(([key, def]) => [key, getDefaultValue(def.default)]))

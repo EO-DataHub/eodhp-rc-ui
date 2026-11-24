@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Flex } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
@@ -13,26 +13,13 @@ interface SidePanelProps {
 
 export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
   const [searchParams, setSearchParams] = useSearchParams()
-  // pickDataset opens the dataset list, e.g. for a tool that runs on several datasets
-  const [showCollectionPanel, setShowCollectionPanel] = useState(() =>
-    searchParams.has('pickDataset'),
-  )
+  const isDatasetListOpen = useSelector(dataFinderStore, (state) => state.context.isDatasetListOpen)
 
-  // Open the dataset list when asked, for example after choosing a tool for another dataset
-  const datasetListRequestCount = useSelector(
-    dataFinderStore,
-    (state) => state.context.datasetListRequestCount,
-  )
-  const seenRequestCountRef = useRef(datasetListRequestCount)
-  useEffect(() => {
-    if (datasetListRequestCount === seenRequestCountRef.current) return
-    seenRequestCountRef.current = datasetListRequestCount
-    setShowCollectionPanel(true)
-  }, [datasetListRequestCount])
-
-  // The parameter is a one-off request, so a refresh does not open the dataset list again
+  // pickDataset opens the dataset list once, e.g. for a tool that runs on several datasets.
+  // The parameter is removed so a refresh does not open the list again.
   useEffect(() => {
     if (!searchParams.has('pickDataset')) return
+    dataFinderStore.send({ type: 'openDatasetList' })
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev)
@@ -43,15 +30,18 @@ export const SidePanel: React.FC<SidePanelProps> = ({ collection }) => {
     )
   }, [searchParams, setSearchParams])
 
+  // The dataset list starts closed on the next visit to the Data Finder
+  useEffect(() => () => dataFinderStore.send({ type: 'closeDatasetList' }), [])
+
   return (
     <Flex height={'var(--content-height)'} position="relative" width="100%">
-      {showCollectionPanel ? (
+      {isDatasetListOpen ? (
         <CollectionPanel
           currentCollection={collection}
-          onCloseCollectionPanel={() => setShowCollectionPanel(false)}
+          onCloseCollectionPanel={() => dataFinderStore.send({ type: 'closeDatasetList' })}
         />
       ) : (
-        <ItemPanel collection={collection} setShowCollectionPanel={setShowCollectionPanel} />
+        <ItemPanel collection={collection} />
       )}
     </Flex>
   )

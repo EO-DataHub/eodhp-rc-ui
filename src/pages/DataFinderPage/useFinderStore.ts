@@ -32,7 +32,7 @@ export type SecondaryPanel =
   | undefined
 
 /** Which of the run panel and the secondary panel is drawn above the other where they overlap */
-export type TopPanel = 'run' | 'secondary'
+type TopPanel = 'run' | 'secondary'
 
 export type InfoPanelTab = 'metadata' | 'assets' | 'resources' | 'download'
 
@@ -66,18 +66,18 @@ interface AppContext {
   collectionRender?: StacRender
   isUserCollection: boolean
   chosenTool?: ProcessRecord
-  /** Counts "Open in" requests so the panel can return to the chosen notebook each time */
-  integrationToolsOpenCount: number
   isRunPanelOpen: boolean
   topPanel: TopPanel
   /** What a workflow runs on, kept while the run panel is hidden or no workflow is chosen */
   runSource?: RunSource
   /** The item for the "This item" source */
   runItem?: Item
+  /** The saved set for the "Saved set" source */
+  runSetId?: string
   /** Jobs started from the run panel in this visit, for the badge and the Workflow outputs tab */
   visitJobs: VisitJob[]
-  /** Counts requests to open the sidebar's dataset list, for example after choosing a tool */
-  datasetListRequestCount: number
+  /** The sidebar shows the dataset list in place of the items */
+  isDatasetListOpen: boolean
 }
 
 export { getPinnedItemId }
@@ -106,13 +106,13 @@ const dataFinderStore = createStore({
     collectionRender: undefined,
     isUserCollection: false,
     chosenTool: undefined,
-    integrationToolsOpenCount: 0,
     isRunPanelOpen: false,
     topPanel: 'run',
     runSource: undefined,
     runItem: undefined,
+    runSetId: undefined,
     visitJobs: [],
-    datasetListRequestCount: 0,
+    isDatasetListOpen: false,
   } as AppContext,
   // Transitions
   on: {
@@ -228,13 +228,6 @@ const dataFinderStore = createStore({
         infoPanelItem: event.item,
       }
     },
-    openIntegrationToolsPanel: (context, event: { item: Item }): typeof context => ({
-      ...context,
-      secondaryPanel: 'integration-tools',
-      topPanel: 'secondary',
-      infoPanelItem: event.item,
-      integrationToolsOpenCount: context.integrationToolsOpenCount + 1,
-    }),
     closeSecondaryPanel: (context) => {
       return {
         ...context,
@@ -573,12 +566,12 @@ const dataFinderStore = createStore({
       runItem: undefined,
       runSource: context.runSource === 'item' ? undefined : context.runSource,
     }),
-    openRunPanel: (context, event: { source?: RunSource; item?: Item }): typeof context => ({
+    /** Opens the run panel. An item makes it run on that item. */
+    openRunPanel: (context, event: { item?: Item }): typeof context => ({
       ...context,
       isRunPanelOpen: true,
       topPanel: 'run',
-      runSource: event.source ?? context.runSource,
-      runItem: event.item ?? context.runItem,
+      ...(event.item && { runSource: 'item', runItem: event.item }),
     }),
     hideRunPanel: (context) => ({ ...context, isRunPanelOpen: false }),
     /** A press inside a panel brings it above the other */
@@ -588,28 +581,24 @@ const dataFinderStore = createStore({
       ...context,
       runSource: event.source,
     }),
-    /** Hides the run panel and forgets what it was set to run on, for example on leaving the page */
-    resetRunPanel: (context) => ({
+    setRunSetId: (context, event: { setId: string }) => ({ ...context, runSetId: event.setId }),
+    /** Forgets the tool, what it runs on and the jobs of this visit, for example on leaving the page */
+    resetRunPanel: (context): typeof context => ({
       ...context,
+      chosenTool: undefined,
       isRunPanelOpen: false,
+      topPanel: 'run',
       runSource: undefined,
       runItem: undefined,
+      runSetId: undefined,
       visitJobs: [],
     }),
-    addVisitJobs: (context, event: { jobs: VisitJob[] }) => {
-      const known = new Set(context.visitJobs.map((job) => job.jobId))
-      const added = event.jobs.filter((job) => {
-        if (known.has(job.jobId)) return false
-        known.add(job.jobId)
-        return true
-      })
-      return added.length ? { ...context, visitJobs: [...context.visitJobs, ...added] } : context
-    },
-    clearVisitJobs: (context) => ({ ...context, visitJobs: [] }),
-    requestDatasetList: (context) => ({
+    addVisitJobs: (context, event: { jobs: VisitJob[] }) => ({
       ...context,
-      datasetListRequestCount: context.datasetListRequestCount + 1,
+      visitJobs: [...context.visitJobs, ...event.jobs],
     }),
+    openDatasetList: (context) => ({ ...context, isDatasetListOpen: true }),
+    closeDatasetList: (context) => ({ ...context, isDatasetListOpen: false }),
   },
 })
 

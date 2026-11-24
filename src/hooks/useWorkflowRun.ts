@@ -1,4 +1,5 @@
-import { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useSelector } from '@xstate/store/react'
 import type { InputParameterEntry, Item, ProcessDetail, ProcessRecord } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
@@ -6,7 +7,6 @@ import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById } from '@/services/processCatalogueService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import type { SavedSet } from '@/services/savedSetsService'
 import {
   buildWorkflowVariables,
   getHubInputKind,
@@ -27,7 +27,6 @@ import {
 } from '@/library/workflowFanOut'
 import { isPrivateItem } from '@/library/catalogUtils'
 import {
-  getAreaInputs,
   getItemInputs,
   getUserInputs,
   hasInputsToSet,
@@ -35,8 +34,6 @@ import {
   isDateRangeInput,
   isFullRecord,
   isHalfFilledRange,
-  isRequired,
-  plural,
   toLaunchValues,
   userValueText,
   type UserValues,
@@ -45,7 +42,6 @@ import {
 import { CONFIRM_JOBS_ABOVE, MAX_JOBS_PER_RUN } from '@/constants/workflowRunLimits'
 import { MAX_TOTAL_ITEMS, MAX_USER_COLLECTION_ITEMS, useSearchResultsQuery } from './useItemsQuery'
 import { useSavedSet, useSavedSets } from './useSavedSets'
-import { restoreAoiFromStorage } from '@/lib/terradraw/helpers/persistence'
 
 /** What the workflow runs on. Each item in the source gets its own job. */
 export type RunSource = 'item' | 'pinned' | 'set' | 'results'
@@ -61,19 +57,18 @@ export const SOURCES: RunSource[] = ['item', 'pinned', 'set', 'results']
 
 const NO_INPUTS: WorkflowInputs = {}
 
-export interface WorkflowRunOptions {
+interface WorkflowRunOptions {
   /** The workflow to run. A list record is loaded in full. */
   workflow?: ProcessRecord | null
   /** The item to run on, for the item source. */
   item?: Item
-  /** What to run on at first. Defaults to the item, or the pinned items with no item. */
-  source?: RunSource
+  source: RunSource
+  onSourceChange: (source: RunSource) => void
   /** The saved set to run on, for the saved set source. */
-  savedSet?: SavedSet
-  /** Used outside the Data Finder, so the drawn area is read from where the map saved it. */
-  outsideDataFinder?: boolean
-  /** When false, nothing is loaded. Defaults to true. */
-  enabled?: boolean
+  setId?: string | null
+  onSetIdChange: (setId: string) => void
+  /** Called with the jobs each run or retry started. */
+  onJobsStarted?: (jobs: StartedJob[]) => void
   /** The user is choosing the source, so the data for every source is loaded. */
   choosingSource?: boolean
 }
@@ -81,61 +76,39 @@ export interface WorkflowRunOptions {
 export const useWorkflowRun = ({
   workflow = null,
   item,
-  source: initialSource,
-  savedSet: initialSet,
-  outsideDataFinder = false,
-  enabled = true,
+  source,
+  onSourceChange,
+  setId = null,
+  onSetIdChange,
+  onJobsStarted,
   choosingSource = false,
 }: WorkflowRunOptions) => {
   const { token, currentWorkspace } = useContext(AuthenticationContext)
-  const finderAoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-  const [storedAoi, setStoredAoi] = useState<GeoJSON.Feature | null>(() =>
-    outsideDataFinder ? restoreAoiFromStorage() : null,
-  )
-  const aoi = (outsideDataFinder ? storedAoi : finderAoi) ?? null
+  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi) ?? null
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
   const searchCollection = useSelector(dataFinderStore, (state) => state.context.collection)
   const isUserSearch = useSelector(dataFinderStore, (state) => state.context.isUserCollection)
 
-  const startSource: RunSource = initialSource ?? (item ? 'item' : 'pinned')
-  const [source, setSourceState] = useState<RunSource>(startSource)
-  const [setId, setSetIdState] = useState<string | null>(initialSet?.id ?? null)
-
-  // The workflow in full. A list record is loaded, and a response for an earlier request is ignored.
-  const [loadedDetail, setLoadedDetail] = useState<ProcessDetail | null>(null)
-  const [isLoadingDetail, setIsLoadingDetail] = useState(false)
-  const [detailError, setDetailError] = useState<string | null>(null)
-  const [loadCount, setLoadCount] = useState(0)
-  const requestRef = useRef(0)
-  const workflowToLoad = enabled && workflow && !isFullRecord(workflow) ? workflow.id : null
-
-  useEffect(() => {
-    requestRef.current += 1
-    const request = requestRef.current
-    setDetailError(null)
-    if (!workflowToLoad) {
-      setIsLoadingDetail(false)
-      return
-    }
-    setIsLoadingDetail(true)
-    void fetchItemById(workflowToLoad).then(({ data, error }) => {
-      if (request !== requestRef.current) return
-      setIsLoadingDetail(false)
+  // A list record has no inputs, so the workflow is loaded in full
+  const detailQuery = useQuery({
+    queryKey: ['WorkflowDetail', workflow?.id],
+    queryFn: async () => {
+      const { data, error } = await fetchItemById(workflow!.id)
       if (error != null || !data) {
-        setDetailError(error ?? 'Could not load workflow details. Please try again.')
-        return
+        throw new Error(error ?? 'Could not load workflow details. Please try again.')
       }
-      setLoadedDetail(data)
-    })
-  }, [workflowToLoad, loadCount])
+      return data
+    },
+    enabled: !!workflow && !isFullRecord(workflow),
+    retry: false,
+    refetchOnWindowFocus: false,
+  })
 
   const detail: ProcessDetail | null = !workflow
     ? null
     : isFullRecord(workflow)
       ? workflow
-      : loadedDetail?.id === workflow.id
-        ? loadedDetail
-        : null
+      : detailQuery.data ?? null
 
   const inputs = detail?.properties.inputParameters ?? NO_INPUTS
   const workflowTitle = detail?.properties.title ?? detail?.id ?? ''
@@ -159,21 +132,11 @@ export const useWorkflowRun = ({
   const [failedJobs, setFailedJobs] = useState<FailedJob[]>([])
 
   // Source data is only fetched while it can be chosen or is in use
-  const resultsQuery = useSearchResultsQuery(
-    enabled && (source === 'results' || choosingSource),
-    true,
-  )
-  const setsQuery = useSavedSets(enabled && (source === 'set' || choosingSource))
-  const setQuery = useSavedSet(
-    enabled && source === 'set' && !!setId && setId !== initialSet?.id ? setId : undefined,
-  )
+  const resultsQuery = useSearchResultsQuery(source === 'results' || choosingSource, true)
+  const setsQuery = useSavedSets(source === 'set' || choosingSource)
+  const setQuery = useSavedSet(source === 'set' && setId ? setId : undefined)
 
-  const chosenSet =
-    source === 'set' ? (setId === initialSet?.id ? initialSet : setQuery.data) ?? null : null
-  const chosenSetName =
-    setId === initialSet?.id
-      ? initialSet?.name
-      : setsQuery.data?.find((summary) => summary.id === setId)?.name
+  const chosenSet = source === 'set' ? setQuery.data ?? null : null
   const results =
     resultsQuery.isSuccess && !resultsQuery.isPlaceholderData ? resultsQuery.data : undefined
 
@@ -197,7 +160,6 @@ export const useWorkflowRun = ({
   const resultsCap =
     isUserSearch || searchCollection?.isJobCollection ? MAX_USER_COLLECTION_ITEMS : MAX_TOTAL_ITEMS
   const resultsCapped = !!results && results.length >= resultsCap
-  const resultsCapText = `The run uses the first ${resultsCap} results.`
 
   const jobCount = items?.length ?? 0
   const needsConfirmation = !isSingleItem && jobCount > CONFIRM_JOBS_ABOVE
@@ -211,34 +173,14 @@ export const useWorkflowRun = ({
   const confirmed = confirmedKey === confirmKey
   const setConfirmed = (value: boolean) => setConfirmedKey(value ? confirmKey : null)
 
-  // Start again from the options each time the run is enabled, for example when a dialog opens
-  useEffect(() => {
-    if (!enabled) return
-    setLoadedDetail(null)
-    setSourceState(startSource)
-    setSetIdState(initialSet?.id ?? null)
-    const initialDetail = workflow && isFullRecord(workflow) ? workflow : null
-    setValuesFor(initialDetail?.id ?? null)
-    setValues(initialUserValues(initialDetail?.properties.inputParameters ?? NO_INPUTS))
-    // The area can be drawn or cleared on the map in the meantime
-    const currentAoi = outsideDataFinder ? restoreAoiFromStorage() : finderAoi
-    setStoredAoi(outsideDataFinder ? currentAoi ?? null : null)
-    setIncludeAoi(!!currentAoi)
-    setLaunchError(null)
-    setStartedJobs([])
-    setFailedJobs([])
-    setConfirmedKey(null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled])
-
   const setSource = (next: RunSource) => {
     setConfirmedKey(null)
-    setSourceState(next)
+    onSourceChange(next)
   }
 
-  const setSetId = (next: string | null) => {
+  const setSetId = (next: string) => {
     setConfirmedKey(null)
-    setSetIdState(next)
+    onSetIdChange(next)
   }
 
   const isItemPrivate = (target: LaunchItem) => {
@@ -249,20 +191,6 @@ export const useWorkflowRun = ({
       collection: target.collectionRef ?? (fromSearch ? searchCollection : null),
       href: getSelfLinkHref(target),
     })
-  }
-
-  const sourceText = (): string => {
-    const count = items ? ` (${plural(items.length, 'item')})` : ''
-    switch (source) {
-      case 'item':
-        return `item ${item?.id ?? ''}`
-      case 'pinned':
-        return `${plural(pinnedItems.length, 'pinned item')}`
-      case 'set':
-        return chosenSetName ? `the saved set ${chosenSetName}${count}` : 'a saved set'
-      case 'results':
-        return `all results of the search${count}`
-    }
   }
 
   const sourceUnavailableReason = (option: RunSource): string | undefined => {
@@ -282,40 +210,23 @@ export const useWorkflowRun = ({
   }
 
   const sourceNote = (option: RunSource): string | undefined =>
-    option === 'results' && resultsCapped ? resultsCapText : undefined
-
-  /** The chosen source can be run on: it is available and, for a saved set, a set is chosen. */
-  const sourceReady = !sourceUnavailableReason(source) && (source !== 'set' || !!setId)
-
-  const areaInputs = getAreaInputs(inputs)
-  /**
-   * Outside the Data Finder the user cannot draw an area, so a required area input with no drawn
-   * area blocks the run. In the Data Finder the area checkbox says to draw one.
-   */
-  const missingRequiredArea =
-    outsideDataFinder && !aoi && areaInputs.some(([, def]) => isRequired(def))
-
-  /** Outside the Data Finder a drawn area is always sent to a required area input. */
-  const areaLocked = outsideDataFinder && !!aoi && areaInputs.some(([, def]) => isRequired(def))
-  const sendAoi = includeAoi || areaLocked
+    option === 'results' && resultsCapped
+      ? `The run uses the first ${resultsCap} results.`
+      : undefined
 
   const halfFilledRange = getUserInputs(inputs).some(
     ([key, def]) => isDateRangeInput(def) && isHalfFilledRange(values[key]),
   )
 
   const areaText = () => {
-    if (!aoi) {
-      return outsideDataFinder && !missingRequiredArea
-        ? 'Full scene (no area drawn on the map)'
-        : 'No area drawn on the map'
-    }
-    return sendAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
+    if (!aoi) return 'No area drawn on the map'
+    return includeAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
   }
 
   const contextFor = (target: LaunchItem): WorkflowLaunchContext => ({
     item: target,
     aoi,
-    includeAoi: sendAoi,
+    includeAoi,
     workspace: currentWorkspace,
     apiBaseUrl: getHubApiOrigin(),
   })
@@ -396,7 +307,6 @@ export const useWorkflowRun = ({
     items.length === 0 ||
     itemsWithoutLink.length > 0 ||
     privateItemCount > 0 ||
-    missingRequiredArea ||
     halfFilledRange ||
     aboveCeiling ||
     (needsConfirmation && !confirmed)
@@ -415,6 +325,7 @@ export const useWorkflowRun = ({
     }
     setStartedJobs(result.started)
     setFailedJobs(result.failed)
+    onJobsStarted?.(result.started)
     return true
   }
 
@@ -423,6 +334,7 @@ export const useWorkflowRun = ({
     if (!result) return
     setStartedJobs((prev) => [...prev, ...result.started])
     setFailedJobs(result.failed)
+    onJobsStarted?.(result.started)
   }
 
   /** One job on one item started, so the user can go straight to it. */
@@ -430,14 +342,12 @@ export const useWorkflowRun = ({
 
   return {
     workspace: currentWorkspace,
-    outsideDataFinder,
     item,
 
     detail,
     workflowTitle,
-    isLoadingDetail,
-    detailError,
-    reloadWorkflow: () => setLoadCount((count) => count + 1),
+    detailError: detailQuery.error?.message ?? null,
+    reloadWorkflow: () => void detailQuery.refetch(),
     inputs,
     hasInputsToSet: hasInputsToSet(inputs),
 
@@ -446,17 +356,12 @@ export const useWorkflowRun = ({
     setId,
     setSetId,
     savedSets: setsQuery,
-    chosenSet,
-    sourceText,
     sourceUnavailableReason,
     sourceNote,
-    sourceReady,
     isSingleItem,
 
     items,
     jobCount,
-    resultsCapped,
-    resultsCapText,
     needsConfirmation,
     aboveCeiling,
     confirmed,
@@ -468,15 +373,11 @@ export const useWorkflowRun = ({
     values,
     setValue,
     aoi,
-    includeAoi: sendAoi,
+    includeAoi,
     setIncludeAoi,
-    areaLocked,
-    missingRequiredArea,
-    halfFilledRange,
     hubValueText,
     inputValueText,
 
-    runBlocked,
     canRun,
     isLaunching,
     launchError,

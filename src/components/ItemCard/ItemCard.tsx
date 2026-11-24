@@ -197,10 +197,19 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
 
   const queryFilter = useSelector(dataFinderStore, (state) => state.context.queryFilter)
   const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
-  const chosenToolApplies = !!chosenTool && toolAppliesTo(chosenTool, item.collection)
   const pinnedItems = useSelector(dataFinderStore, (state) => state.context.pinnedItems)
 
   const [itemRender, setItemRender] = useState(collectionRender)
+
+  // A chosen tool for this item's dataset can run on it. Notebooks open the items Integration Tools supports.
+  const chosenToolApplies = !!chosenTool && toolAppliesTo(chosenTool, item.collection)
+  const runButtonVerb = !chosenToolApplies
+    ? undefined
+    : chosenTool.properties.type === 'workflow'
+      ? 'Run'
+      : chosenTool.properties.type === 'notebook' && supportsIntegrationTools(item, itemRender)
+        ? 'Open in'
+        : undefined
 
   // Attach the currently displayed render so shared links for not-yet-pinned items keep their visualisation too.
   const shareItem = useMemo(
@@ -456,33 +465,18 @@ const ItemCard = ({ item, type, dragHandle }: ItemCardProps) => {
           </Flex>
         )}
         <Legend item={item} />
-        {chosenTool?.properties.type === 'workflow' && chosenToolApplies && (
+        {runButtonVerb && chosenTool && (
           <Flex justify="end" pt="2">
             <Button
               size="1"
               variant="soft"
               disabled={!isAuthenticated}
-              onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
+              onClick={() => dataFinderStore.send({ type: 'openRunPanel', item })}
             >
-              Run {chosenTool.properties.title}
+              {runButtonVerb} {chosenTool.properties.title}
             </Button>
           </Flex>
         )}
-        {/* Notebooks run on the items Integration Tools supports */}
-        {chosenTool?.properties.type === 'notebook' &&
-          chosenToolApplies &&
-          supportsIntegrationTools(item, itemRender) && (
-            <Flex justify="end" pt="2">
-              <Button
-                size="1"
-                variant="soft"
-                disabled={!isAuthenticated}
-                onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })}
-              >
-                Open in {chosenTool.properties.title}
-              </Button>
-            </Flex>
-          )}
         {/* Pinned cards put the style name on its own line so the icons get the full width */}
         <Flex
           direction={isPinnedCard ? 'column' : 'row'}

@@ -22,7 +22,7 @@ export const WorkflowOutputsPage: React.FC = () => {
   }>()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  // Set by the Run workflow dialog, to show the jobs of the workflow it started
+  // Set by the run panel's Open Workflow outputs link, to show one workflow's jobs
   const workflowFilter = searchParams.get('workflow') ?? ''
   // Keeps the workflow filter when a job opens and closes
   const filterQuery = workflowFilter ? `?workflow=${encodeURIComponent(workflowFilter)}` : ''

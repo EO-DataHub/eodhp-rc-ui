@@ -3,23 +3,12 @@ import { Callout, Checkbox, DataList, Flex, Text } from '@radix-ui/themes'
 import { InfoCircledIcon } from '@radix-ui/react-icons'
 import { SOURCE_LABELS, type WorkflowRun } from '@/hooks/useWorkflowRun'
 import { inputLabel, plural } from '@/library/workflowRunInputs'
+import { runSummaryText } from '@/library/itemDateSpan'
 import { MAX_JOBS_PER_RUN } from '@/constants/workflowRunLimits'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 
-interface RunReviewProps {
-  run: WorkflowRun
-  /** What to tell the user when the single item to run on has no link. */
-  itemWithoutLinkHint?: string
-  /** Shown in place of the job count sentence, for a single item too. */
-  summary?: React.ReactNode
-}
-
-/** What the run will do, the job count and anything that stops the run. */
-export const RunReview: React.FC<RunReviewProps> = ({
-  run,
-  itemWithoutLinkHint = 'Choose a different item.',
-  summary,
-}) => {
+/** What the run will do, the job count and the items' dates, and anything that stops the run. */
+export const RunReview: React.FC<{ run: WorkflowRun }> = ({ run }) => {
   const {
     workflowTitle,
     isSingleItem,
@@ -29,8 +18,6 @@ export const RunReview: React.FC<RunReviewProps> = ({
     inputValueText,
     workspace,
     items,
-    resultsCapped,
-    resultsCapText,
     needsConfirmation,
     aboveCeiling,
     confirmed,
@@ -75,37 +62,29 @@ export const RunReview: React.FC<RunReviewProps> = ({
         </DataList.Item>
       </DataList.Root>
 
-      {(!isSingleItem || summary !== undefined) &&
-        (items ? (
-          <Flex direction="column" gap="2">
-            {summary ?? (
-              <Text size="2">
-                This starts <strong>{plural(items.length, 'job')}</strong>, one for each item.
-              </Text>
-            )}
-            {source === 'results' && resultsCapped && (
-              <Text size="2" color="gray">
-                {resultsCapText}
-              </Text>
-            )}
-            {needsConfirmation && !aboveCeiling && (
-              <Text as="label" size="2">
-                <Flex gap="2" align="center">
-                  <Checkbox
-                    checked={confirmed}
-                    onCheckedChange={(checked) => setConfirmed(checked === true)}
-                  />
-                  {`Yes, start ${plural(items.length, 'job')}`}
-                </Flex>
-              </Text>
-            )}
-          </Flex>
-        ) : (
-          <Flex gap="2" align="center">
-            <LoadingIndicator size="1" />
-            <Text size="2">Loading the items…</Text>
-          </Flex>
-        ))}
+      {items ? (
+        <Flex direction="column" gap="2">
+          <Text size="2" weight="medium">
+            {runSummaryText(items)}
+          </Text>
+          {needsConfirmation && !aboveCeiling && (
+            <Text as="label" size="2">
+              <Flex gap="2" align="center">
+                <Checkbox
+                  checked={confirmed}
+                  onCheckedChange={(checked) => setConfirmed(checked === true)}
+                />
+                {`Yes, start ${plural(items.length, 'job')}`}
+              </Flex>
+            </Text>
+          )}
+        </Flex>
+      ) : (
+        <Flex gap="2" align="center">
+          <LoadingIndicator size="1" />
+          <Text size="2">Loading the items…</Text>
+        </Flex>
+      )}
 
       {!workspace && (
         <Callout.Root color="amber" size="1">
@@ -124,7 +103,7 @@ export const RunReview: React.FC<RunReviewProps> = ({
             The Hub cannot fill in {itemInputs.map(([key, def]) => inputLabel(key, def)).join(', ')}{' '}
             because{' '}
             {isSingleItem
-              ? `this item has no link. ${itemWithoutLinkHint}`
+              ? `this item has no link. Choose a different item on the map.`
               : `${plural(itemsWithoutLink.length, 'item')} ${itemsWithoutLink.length === 1 ? 'has' : 'have'} no link: ${itemsWithoutLink.map((target) => target.id).join(', ')}.`}
           </Callout.Text>
         </Callout.Root>

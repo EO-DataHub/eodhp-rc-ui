@@ -1,15 +1,8 @@
-import type { Collection, Item, ProcessRecord, WorkflowJob } from '@/types'
+import type { Item, ProcessRecord, WorkflowJob } from '@/types'
 import type { RunSource } from '@/hooks/useWorkflowRun'
 import { plural } from '@/library/workflowRunInputs'
 import { countStartedJobs, startedJobCountsText, type VisitJob } from '@/library/runPanelJobs'
 import { toolAppliesTo } from '@/library/integrationTools'
-
-/** Whether a tool runs on the open dataset. With no dataset open, every tool counts. */
-export const toolRunsOnOpenDataset = (tool: ProcessRecord, collection: Collection | undefined) =>
-  !collection || toolAppliesTo(tool, collection.id)
-
-export const toolTypeLabel = (tool: ProcessRecord) =>
-  tool.properties.type === 'workflow' ? 'Workflow' : 'Notebook'
 
 interface BadgeState {
   tool?: ProcessRecord
@@ -19,7 +12,6 @@ interface BadgeState {
   /** The jobs started in this visit, with the jobs list to read their status from. */
   visitJobs?: readonly VisitJob[]
   jobs?: WorkflowJob[]
-  startedIds?: readonly string[]
 }
 
 const sourceText = (source: RunSource, pinnedCount: number) => {
@@ -47,12 +39,14 @@ export const runPanelBadgeText = ({
   pinnedCount,
   visitJobs = [],
   jobs = [],
-  startedIds = [],
 }: BadgeState) => {
   const lastRun = visitJobs.at(-1)
   // After a run of the chosen workflow, or with jobs still running once the tool is cleared
   if (lastRun && (!tool || tool.id === lastRun.workflowId)) {
-    const counts = countStartedJobs(jobs, startedIds)
+    const counts = countStartedJobs(
+      jobs,
+      visitJobs.map((job) => job.jobId),
+    )
     if (tool !== undefined || counts.running > 0) {
       return `${tool?.properties.title ?? lastRun.workflowTitle} · ${startedJobCountsText(counts)}`
     }

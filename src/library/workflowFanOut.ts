@@ -2,7 +2,7 @@ import type { SavedSet } from '@/services/savedSetsService'
 import type { LaunchItem } from '@/services/workflowVariableResolvers'
 
 /** The most job requests rc-ui has open at once when it runs a workflow on many items. */
-export const MAX_JOBS_IN_FLIGHT = 4
+const MAX_JOBS_IN_FLIGHT = 4
 
 /** Turns the entries of a saved set into items a workflow can run on. */
 export const savedSetLaunchItems = (set: SavedSet): LaunchItem[] =>

@@ -50,7 +50,7 @@ export function isPinSetNotebook(record: ProcessRecord): boolean {
   )
 }
 
-/** Whether the Data Finder Tools tab lists this record. Set notebooks need a saved set, not a single item. */
+/** Whether the run panel's tool list shows this record. Set notebooks need a saved set, not a single item. */
 export function isDataFinderTool(record: ProcessRecord): boolean {
   return (
     record.properties.type === 'workflow' ||

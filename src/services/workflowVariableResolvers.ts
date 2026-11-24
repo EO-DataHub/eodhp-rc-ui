@@ -27,7 +27,7 @@ const resolveItemLink: Resolver = (ctx) => getSelfLinkHref(ctx.item)
 const resolveAoi: Resolver = (ctx) =>
   ctx.includeAoi && ctx.aoi ? JSON.stringify(ctx.aoi) : undefined
 
-/** Resolvers for the Hub types this dialog supports. Other Hub types fall back to variableRef. */
+/** Resolvers for the Hub types the Hub fills in. Other Hub types fall back to variableRef. */
 const HUB_TYPE_RESOLVERS: Partial<Record<HubType, Resolver>> = {
   'stac-item': resolveItemLink,
   aoi: resolveAoi,
@@ -52,20 +52,8 @@ function getResolver(paramKey: string, paramDef?: InputParameterEntry): Resolver
   return RESOLVERS[paramKey]
 }
 
-/**
- * Returns whether a parameter has a resolver (auto-filled from context).
- * Used so the UI can compute which parameters need user input.
- *
- * @param paramKey - The parameter key
- * @param paramDef - Optional parameter definition (checked for hubType, then variableRef)
- * @returns True if the parameter is filled by the Hub
- */
-export function hasResolver(paramKey: string, paramDef?: InputParameterEntry): boolean {
-  return getResolver(paramKey, paramDef) !== undefined
-}
-
 /** What the Hub fills a parameter with, so the UI can describe it. */
-export type HubInputKind = 'item' | 'area' | 'context'
+type HubInputKind = 'item' | 'area' | 'context'
 
 /**
  * Returns what the Hub fills a parameter with, or undefined when the user fills it in.

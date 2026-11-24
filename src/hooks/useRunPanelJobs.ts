@@ -1,10 +1,13 @@
-import { useContext, useEffect } from 'react'
+import { useContext } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSelector } from '@xstate/store/react'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
 import { JOB_REFRESH_MS, shouldRefreshJobs } from '@/library/runPanelJobs'
+
+/** The shared jobs list's query key, so a new run can read the list again at once. */
+export const RUN_PANEL_SHARED_JOBS_KEY = 'RunPanelSharedJobs'
 
 /**
  * The jobs for the run panel, from two jobs lists.
@@ -26,7 +29,7 @@ export const useRunPanelJobs = (wanted: boolean) => {
   const signedIn = !!token && !!currentWorkspace
 
   const sharedQuery = useQuery({
-    queryKey: ['RunPanelSharedJobs', sharedWorkspace, currentWorkspace],
+    queryKey: [RUN_PANEL_SHARED_JOBS_KEY, sharedWorkspace, currentWorkspace],
     queryFn: () =>
       fetchJobsForSharedWorkspace(sharedWorkspace ?? '', currentWorkspace ?? '', token ?? ''),
     enabled: signedIn && !!sharedWorkspace && (wanted || startedIds.length > 0),
@@ -45,14 +48,6 @@ export const useRunPanelJobs = (wanted: boolean) => {
     refetchOnWindowFocus: false,
   })
 
-  // New jobs started, so read the shared list for them, joining a request already on its way
-  const { refetch, isFetched } = sharedQuery
-  const startedCount = startedIds.length
-  useEffect(() => {
-    if (startedCount > 0 && isFetched) void refetch({ cancelRefetch: false })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedCount])
-
   const sharedJobs = sharedQuery.data?.jobs ?? []
   const sharedIds = new Set(sharedJobs.map((job) => job.id))
   const userJobs = (userQuery.data?.jobs ?? []).filter((job) => !sharedIds.has(job.id))
@@ -65,6 +60,5 @@ export const useRunPanelJobs = (wanted: boolean) => {
     /** The shared list, for the badge counts. */
     sharedJobs,
     visitJobs,
-    startedIds,
   }
 }

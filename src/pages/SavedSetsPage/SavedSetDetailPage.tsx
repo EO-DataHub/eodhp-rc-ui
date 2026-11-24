@@ -9,7 +9,7 @@ import { PageHeading } from '@/components/PageHeading/PageHeading'
 import { OpenSetInJupyterDialog } from '@/components/SavedSets/OpenSetInJupyterDialog'
 import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { DeleteSavedSetDialog, EditSavedSetDialog } from '@/components/SavedSets/SavedSetDialogs'
-import { RunWorkflowDialog } from '@/components/RunWorkflowDialog/RunWorkflowDialog'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { convertDateToLocalString } from '@/library/dateUtils'
 import {
   getItemDownloadUrl,
@@ -32,7 +32,6 @@ export const SavedSetDetailPage: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isJupyterOpen, setIsJupyterOpen] = useState(false)
-  const [isRunOpen, setIsRunOpen] = useState(false)
 
   const backLink = (
     <Link asChild size="2">
@@ -114,9 +113,18 @@ export const SavedSetDetailPage: React.FC = () => {
         >
           <CodeIcon /> Open in Jupyter
         </Button>
-        <Button variant="soft" disabled={set.items.length === 0} onClick={() => setIsRunOpen(true)}>
-          <PlayIcon /> Run workflow
-        </Button>
+        <OpenSetOnMapButton
+          setId={set.id}
+          setName={set.name}
+          disabled={set.items.length === 0}
+          label="Run workflow"
+          icon={<PlayIcon />}
+          afterOpen={() => {
+            dataFinderStore.send({ type: 'setRunSource', source: 'set' })
+            dataFinderStore.send({ type: 'setRunSetId', setId: set.id })
+            dataFinderStore.send({ type: 'openRunPanel' })
+          }}
+        />
         {editable && (
           <>
             <Button variant="soft" color="gray" onClick={() => setIsEditOpen(true)}>
@@ -245,13 +253,6 @@ export const SavedSetDetailPage: React.FC = () => {
       <OpenSetInJupyterDialog
         set={isJupyterOpen ? set : undefined}
         onClose={() => setIsJupyterOpen(false)}
-      />
-      <RunWorkflowDialog
-        open={isRunOpen}
-        onOpenChange={setIsRunOpen}
-        source="set"
-        savedSet={set}
-        outsideDataFinder
       />
       <DeleteSavedSetDialog
         set={isDeleteOpen ? set : undefined}

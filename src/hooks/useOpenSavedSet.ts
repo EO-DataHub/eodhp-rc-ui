@@ -37,13 +37,14 @@ const getCollectionUrl = (item: Item) =>
 /**
  * Loads a saved set's items from their selfHref and pins them in the Data Finder. Items are
  * fetched with the reader's own permissions, so items they can't access are skipped and counted.
+ * Resolves to true when it opened the Data Finder.
  */
 export const useOpenSavedSet = () => {
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  return async (set: SavedSet, mode: OpenSetMode, onlyEntryIds?: string[]) => {
+  return async (set: SavedSet, mode: OpenSetMode, onlyEntryIds?: string[]): Promise<boolean> => {
     const entries = onlyEntryIds
       ? set.items.filter((entry) => onlyEntryIds.includes(entry.id))
       : set.items
@@ -54,7 +55,7 @@ export const useOpenSavedSet = () => {
           ? `This item is no longer in '${set.name}'.`
           : `These items are no longer in '${set.name}'.`,
       )
-      return
+      return false
     }
 
     // In add mode, don't fetch items that are already pinned with the same render.
@@ -142,7 +143,7 @@ export const useOpenSavedSet = () => {
         failed,
       })
       toast[message.level](message.text, { autoClose: 8000 })
-      return
+      return false
     }
 
     if (mode === 'replace') {
@@ -224,11 +225,11 @@ export const useOpenSavedSet = () => {
         break
       }
     }
-    if (target) {
-      localStorage.setItem('openPinnedItemsTab', '1')
-      void navigate(
-        getCollectionFinderUrl({ ...target.collection, isUserCollection: target.isUserCollection }),
-      )
-    }
+    if (!target) return false
+    localStorage.setItem('openPinnedItemsTab', '1')
+    void navigate(
+      getCollectionFinderUrl({ ...target.collection, isUserCollection: target.isUserCollection }),
+    )
+    return true
   }
 }

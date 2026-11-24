@@ -13,7 +13,7 @@ export interface VisitJob {
   startedAt: string
 }
 
-export interface StartedJobCounts {
+interface StartedJobCounts {
   running: number
   finished: number
   failed: number

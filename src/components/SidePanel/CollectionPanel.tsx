@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Flex, Text, Heading, IconButton, TextField, Badge } from '@radix-ui/themes'
 import styles from './SidePanel.module.scss'
 import listStyles from './ItemList.module.scss'
@@ -15,6 +15,7 @@ import { CollectionFilterPanel } from './FilterPanel/CollectionFilterPanel'
 import { Callout } from '../Callout/Callout'
 import { useAnalyticsActions } from '@/hooks/useGoogleAnalyticsActions'
 import { getCollectionFinderUrl } from '@/library/catalogUtils'
+import { toolAppliesTo } from '@/library/integrationTools'
 import { getDefaultQATab } from '@/library/collectionQuality'
 import dataFinderStore, { type CollectionInfoTab } from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
@@ -118,15 +119,12 @@ export const CollectionPanel: React.FC<CollectionPanelProps> = ({
     (state) => state.context.isUserCollection,
   )
 
-  // While a tool is chosen, offer only the datasets it can run on. A tool that names none runs on any
-  const applicableCollections = useSelector(
-    dataFinderStore,
-    (state) => state.context.chosenTool?.properties.applicableCollections,
+  // While a tool is chosen, offer only the datasets it can run on
+  const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
+  const appliesToChosenTool = useCallback(
+    (collection: Collection) => !chosenTool || toolAppliesTo(chosenTool, collection.id),
+    [chosenTool],
   )
-  const appliesToChosenTool = useMemo(() => {
-    if (!applicableCollections?.length) return () => true
-    return (collection: Collection) => applicableCollections.includes(collection.id)
-  }, [applicableCollections])
   const filteredCollections = useMemo(
     () => allFilteredCollections.filter(appliesToChosenTool),
     [allFilteredCollections, appliesToChosenTool],

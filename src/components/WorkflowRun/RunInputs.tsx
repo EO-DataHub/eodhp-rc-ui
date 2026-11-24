@@ -1,6 +1,5 @@
 import React, { useId } from 'react'
-import { Callout, Checkbox, DataList, Flex, Text, TextField } from '@radix-ui/themes'
-import { InfoCircledIcon } from '@radix-ui/react-icons'
+import { Checkbox, DataList, Flex, Text, TextField } from '@radix-ui/themes'
 import type { WorkflowRun } from '@/hooks/useWorkflowRun'
 import {
   getHubInputs,
@@ -12,31 +11,15 @@ import {
   joinDateRange,
   splitDateRange,
 } from '@/library/workflowRunInputs'
-import { OpenSetOnMapButton } from '@/components/SavedSets/OpenSetOnMapButton'
 import { AreaPreview } from './AreaPreview'
 import styles from './WorkflowRun.module.scss'
 
 /** The inputs of a run: what the Hub fills in, the area of interest and the fields the user sets. */
 export const RunInputs: React.FC<{ run: WorkflowRun }> = ({ run }) => {
   const idPrefix = useId()
-  const {
-    inputs,
-    values,
-    setValue,
-    hubValueText,
-    aoi: area,
-    includeAoi,
-    areaLocked,
-    setIncludeAoi,
-    outsideDataFinder,
-    missingRequiredArea,
-    chosenSet,
-    workflowTitle,
-  } = run
+  const { inputs, values, setValue, hubValueText, aoi: area, includeAoi, setIncludeAoi } = run
   const hubInputs = getHubInputs(inputs)
   const userInputs = getUserInputs(inputs)
-  // Outside the Data Finder there is no area to draw, so only a drawn area is offered
-  const showAreaCheckbox = hasAreaInput(inputs) && (!outsideDataFinder || !!area)
 
   return (
     <Flex direction="column" gap="4">
@@ -56,16 +39,16 @@ export const RunInputs: React.FC<{ run: WorkflowRun }> = ({ run }) => {
         </Flex>
       )}
 
-      {showAreaCheckbox && (
+      {hasAreaInput(inputs) && (
         <Flex direction="column" gap="2">
           <Text as="label" size="2">
             <Flex gap="2" align="center">
               <Checkbox
                 checked={!!area && includeAoi}
-                disabled={!area || areaLocked}
+                disabled={!area}
                 onCheckedChange={(checked) => setIncludeAoi(checked === true)}
               />
-              {outsideDataFinder ? 'Use the area drawn on the map' : 'Include area of interest'}
+              Include area of interest
             </Flex>
           </Text>
           {area ? (
@@ -148,30 +131,6 @@ export const RunInputs: React.FC<{ run: WorkflowRun }> = ({ run }) => {
           </div>
         )
       })}
-
-      {missingRequiredArea && (
-        <Callout.Root color="red" size="1">
-          <Callout.Icon>
-            <InfoCircledIcon />
-          </Callout.Icon>
-          <Flex direction="column" gap="2" align="start">
-            <Callout.Text>
-              {`${workflowTitle} needs an area, and no area is drawn on the map. `}
-              {chosenSet
-                ? 'Open the set on the map, draw an area, then run the workflow from there.'
-                : 'Draw an area on the map, then run the workflow again.'}
-            </Callout.Text>
-            {chosenSet && (
-              <OpenSetOnMapButton
-                setId={chosenSet.id}
-                setName={chosenSet.name}
-                label="Open the set on the map"
-                size="1"
-              />
-            )}
-          </Flex>
-        </Callout.Root>
-      )}
     </Flex>
   )
 }

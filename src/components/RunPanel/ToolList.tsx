@@ -1,11 +1,12 @@
 import React from 'react'
-import { Badge, Card, Flex, Heading, Spinner, Text } from '@radix-ui/themes'
+import { Card, Flex, Heading, Spinner, Text } from '@radix-ui/themes'
 import { useQuery } from '@tanstack/react-query'
 import { fetchItems } from '@/services/processCatalogueService'
 import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 import { Callout } from '@/components/Callout/Callout'
 import type { Collection, ProcessRecord } from '@/types'
-import { toolRunsOnOpenDataset, toolTypeLabel } from './runPanelText'
+import { toolRunsOnOpenDataset } from '@/library/integrationTools'
+import { ToolTypeBadge } from './ToolTypeBadge'
 import styles from './RunPanel.module.scss'
 
 // Fetches only the first page: up to 100 workflows and 100 notebooks
@@ -23,9 +24,7 @@ const ToolEntry = ({ tool, onChoose }: { tool: ProcessRecord; onChoose: () => vo
           <Text size="2" weight="bold">
             {tool.properties.title}
           </Text>
-          <Badge color={tool.properties.type === 'workflow' ? 'blue' : 'orange'}>
-            {toolTypeLabel(tool)}
-          </Badge>
+          <ToolTypeBadge tool={tool} />
         </Flex>
         {tool.properties.description && (
           <Text size="1" color="gray">

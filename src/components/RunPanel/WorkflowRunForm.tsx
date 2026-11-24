@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSelector } from '@xstate/store/react'
 import { Button, Flex, Heading, Text } from '@radix-ui/themes'
 import type { ProcessRecord } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
-import { useWorkflowRun, type WorkflowRun } from '@/hooks/useWorkflowRun'
-import { runSummaryText } from '@/library/itemDateSpan'
+import { useWorkflowRun } from '@/hooks/useWorkflowRun'
+import { RUN_PANEL_SHARED_JOBS_KEY } from '@/hooks/useRunPanelJobs'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { RunSourceChoices } from '@/components/WorkflowRun/RunSourceChoices'
 import { RunInputs } from '@/components/WorkflowRun/RunInputs'
@@ -23,54 +24,61 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 )
 
 /**
- * Sets up and starts a workflow in the run panel, as one form. What it runs on follows the
- * Data Finder's Run buttons through the store, so the form and those buttons stay in step.
+ * Sets up and starts a workflow in the run panel, as one form. What it runs on is kept in the
+ * store, so it stays while the panel is hidden and item cards can set it.
  */
 export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () => void }> = ({
   tool,
   onViewOutputs,
 }) => {
+  const queryClient = useQueryClient()
   const runSource = useSelector(dataFinderStore, (state) => state.context.runSource)
   const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
+  const runSetId = useSelector(dataFinderStore, (state) => state.context.runSetId)
 
   const run = useWorkflowRun({
     workflow: tool,
     item: runItem,
-    source: runSource,
+    source: runSource ?? (runItem ? 'item' : 'pinned'),
+    onSourceChange: (source) => dataFinderStore.send({ type: 'setRunSource', source }),
+    setId: runSetId,
+    onSetIdChange: (setId) => dataFinderStore.send({ type: 'setRunSetId', setId }),
+    // Jobs started here, including retries, are followed on the badge and the Workflow outputs tab
+    onJobsStarted: (started) => {
+      const startedAt = new Date().toISOString()
+      const jobs = started.flatMap(({ item, jobId }) =>
+        jobId
+          ? [
+              {
+                jobId,
+                itemId: item.id,
+                workflowId: tool.id,
+                workflowTitle: run.workflowTitle,
+                startedAt,
+              },
+            ]
+          : [],
+      )
+      if (!jobs.length) return
+      dataFinderStore.send({ type: 'addVisitJobs', jobs })
+      void queryClient.refetchQueries(
+        { queryKey: [RUN_PANEL_SHARED_JOBS_KEY] },
+        { cancelRefetch: false },
+      )
+    },
     choosingSource: true,
   })
+
+  // A new item or source from outside the form, such as an item card, shows the form for it
   const [showStarted, setShowStarted] = useState(false)
-
-  // Jobs started here, including retries, are followed on the badge and the Workflow outputs tab
-  const { startedJobs, detail, workflowTitle } = run
-  useEffect(() => {
-    if (!detail) return
-    const startedAt = new Date().toISOString()
-    const jobs = startedJobs.flatMap(({ item, jobId }) =>
-      jobId ? [{ jobId, itemId: item.id, workflowId: detail.id, workflowTitle, startedAt }] : [],
-    )
-    if (jobs.length) dataFinderStore.send({ type: 'addVisitJobs', jobs })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [startedJobs])
-
-  // A Run button in the Data Finder chose a source or item, so show the form for it
-  useEffect(() => {
-    if (runSource && runSource !== run.source) run.setSource(runSource)
+  const [startedFor, setStartedFor] = useState({ runSource, runItem })
+  if (startedFor.runSource !== runSource || startedFor.runItem !== runItem) {
+    setStartedFor({ runSource, runItem })
     setShowStarted(false)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runSource, runItem])
-
-  // Choosing a source in the form is kept in the store, for the badge and the next opening
-  const formRun: WorkflowRun = {
-    ...run,
-    setSource: (next) => dataFinderStore.send({ type: 'setRunSource', source: next }),
-  }
-
-  if (run.isLoadingDetail || (!run.detail && !run.detailError)) {
-    return <LoadingIndicator size="2" />
   }
 
   if (!run.detail) {
+    if (!run.detailError) return <LoadingIndicator size="2" />
     return (
       <Flex direction="column" gap="2" align="start">
         <Text size="2" color="red">
@@ -113,7 +121,7 @@ export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () 
   return (
     <Flex direction="column" gap="5">
       <Section title="Run on">
-        <RunSourceChoices run={formRun} />
+        <RunSourceChoices run={run} />
       </Section>
       {run.hasInputsToSet && (
         <Section title="Inputs">
@@ -121,17 +129,7 @@ export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () 
         </Section>
       )}
       <Section title="Review">
-        <RunReview
-          run={run}
-          itemWithoutLinkHint="Choose a different item on the map."
-          summary={
-            run.items && (
-              <Text size="2" weight="medium">
-                {runSummaryText(run.items)}
-              </Text>
-            )
-          }
-        />
+        <RunReview run={run} />
       </Section>
       <Flex justify="end">
         <Button disabled={!run.canRun} onClick={() => void startRun()}>

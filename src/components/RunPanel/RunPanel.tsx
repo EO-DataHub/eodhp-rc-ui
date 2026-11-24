@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Badge, Box, Button, Flex, Heading, IconButton, Tabs, Text } from '@radix-ui/themes'
+import { Box, Button, Flex, Heading, IconButton, Tabs, Text } from '@radix-ui/themes'
 import { Cross1Icon, MixerHorizontalIcon } from '@radix-ui/react-icons'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -9,7 +9,9 @@ import { useRunPanelJobs } from '@/hooks/useRunPanelJobs'
 import { WorkflowRunForm } from './WorkflowRunForm'
 import { WorkflowOutputsTab } from './WorkflowOutputsTab'
 import { NotebookLaunchForm } from './NotebookLaunchForm'
-import { runPanelBadgeText, toolRunsOnOpenDataset, toolTypeLabel } from './runPanelText'
+import { ToolTypeBadge } from './ToolTypeBadge'
+import { runPanelBadgeText } from './runPanelText'
+import { toolRunsOnOpenDataset } from '@/library/integrationTools'
 import styles from './RunPanel.module.scss'
 
 const ChosenTool = ({
@@ -26,9 +28,7 @@ const ChosenTool = ({
           {tool.properties.title}
         </Heading>
         <Box>
-          <Badge color={tool.properties.type === 'workflow' ? 'blue' : 'orange'}>
-            {toolTypeLabel(tool)}
-          </Badge>
+          <ToolTypeBadge tool={tool} />
         </Box>
       </Flex>
       <Button
@@ -61,7 +61,7 @@ export const RunPanel: React.FC = () => {
   const pinnedCount = useSelector(dataFinderStore, (state) => state.context.pinnedItems.length)
   const [tab, setTab] = useState<PanelTab>('tools')
 
-  const { sharedQuery, userQuery, allJobs, sharedJobs, visitJobs, startedIds } = useRunPanelJobs(
+  const { sharedQuery, userQuery, allJobs, sharedJobs, visitJobs } = useRunPanelJobs(
     isOpen && tab === 'outputs',
   )
   const retryJobs = () => {
@@ -69,8 +69,8 @@ export const RunPanel: React.FC = () => {
     if (sharedQuery.isError) void sharedQuery.refetch()
   }
 
-  // The jobs started in this visit are forgotten on leaving the Data Finder
-  useEffect(() => () => dataFinderStore.send({ type: 'clearVisitJobs' }), [])
+  // The tool, what it runs on and the jobs of this visit are forgotten on leaving the Data Finder
+  useEffect(() => () => dataFinderStore.send({ type: 'resetRunPanel' }), [])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const openButtonRef = useRef<HTMLButtonElement>(null)
@@ -103,7 +103,7 @@ export const RunPanel: React.FC = () => {
     dataFinderStore.send({ type: 'chooseTool', tool })
     // A tool for other datasets opens the dataset list, filtered to the datasets it runs on
     if (!toolRunsOnOpenDataset(tool, collection)) {
-      dataFinderStore.send({ type: 'requestDatasetList' })
+      dataFinderStore.send({ type: 'openDatasetList' })
     }
   }
 
@@ -117,23 +117,20 @@ export const RunPanel: React.FC = () => {
     pinnedCount,
     visitJobs,
     jobs: sharedJobs,
-    startedIds,
   })
 
   return (
     <>
       {!isOpen && (
         <Box className={styles.openButton}>
-          {badgeText ? (
-            <Button ref={openButtonRef} variant="solid" onClick={open}>
-              {badgeText}
-            </Button>
-          ) : (
-            <Button ref={openButtonRef} variant="solid" onClick={open}>
-              <MixerHorizontalIcon aria-hidden />
-              Tools
-            </Button>
-          )}
+          <Button ref={openButtonRef} variant="solid" onClick={open}>
+            {badgeText ?? (
+              <>
+                <MixerHorizontalIcon aria-hidden />
+                Tools
+              </>
+            )}
+          </Button>
         </Box>
       )}
       {(isOpen || (hasOpened && isWorkflow)) && (

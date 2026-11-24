@@ -86,7 +86,7 @@ export const DataFinderPage: React.FC = () => {
     // Otherwise still loading, or waiting for sign-in
   }, [collectionPath, collectionStatus, resolvedCollection, isResolvedUserCollection, navigate])
 
-  // Choose the tool named in the URL and open the run panel on it, and clear the tool when the Data Finder closes
+  // Choose the tool named in the URL and open the run panel on it
   useEffect(() => {
     const toolId = initialToolIdRef.current
     let isCancelled = false
@@ -116,8 +116,6 @@ export const DataFinderPage: React.FC = () => {
 
     return () => {
       isCancelled = true
-      dataFinderStore.send({ type: 'clearTool' })
-      dataFinderStore.send({ type: 'resetRunPanel' })
     }
   }, [])
 
@@ -283,7 +281,13 @@ export const DataFinderPage: React.FC = () => {
 
   return (
     <Box height="var(--content-height)" position="relative">
-      <Box className={styles.floatingContainer}>
+      {/* A press in the sidebar, Filter or an info panel brings them above the run panel */}
+      <Box
+        className={styles.floatingContainer}
+        onPointerDownCapture={() =>
+          dataFinderStore.send({ type: 'bringPanelToTop', panel: 'secondary' })
+        }
+      >
         <SidePanel collection={collection ?? undefined} />
       </Box>
       <Box height="100%">

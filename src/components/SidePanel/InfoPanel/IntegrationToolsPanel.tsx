@@ -297,7 +297,7 @@ const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item
             onClick={() => {
               // A chosen tool that doesn't apply here would open the panel on it, so drop it
               if (!workflow) dataFinderStore.send({ type: 'clearTool' })
-              dataFinderStore.send({ type: 'openRunPanel', source: 'item', item })
+              dataFinderStore.send({ type: 'openRunPanel', item })
             }}
           >
             Run workflow
@@ -531,7 +531,6 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
     chosenTool?.properties.type === 'notebook' && toolAppliesTo(chosenTool, itemDatasetId)
       ? chosenTool
       : undefined
-  const openCount = useSelector(dataFinderStore, ({ context }) => context.integrationToolsOpenCount)
 
   // Don't render if item doesn't support integration tools
   // For time-variable items, this will check if itemRender is valid
@@ -563,9 +562,9 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
           </Flex>
 
           <Box pt="6">
-            {/* Keyed so a new item, a new chosen notebook or another "Open in" click opens on its tab again */}
+            {/* Keyed so a new item or a new chosen notebook opens on its tab again */}
             <Tabs.Root
-              key={`${item.id}-${chosenTool?.id ?? ''}-${openCount}`}
+              key={`${item.id}-${chosenTool?.id ?? ''}`}
               defaultValue={chosenNotebook ? 'jupyter' : 'desktop-gis'}
             >
               <Tabs.List>

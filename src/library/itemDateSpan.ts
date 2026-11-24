@@ -21,7 +21,7 @@ const fullDate = (date: Date) => `${dayMonth(date)} ${date.getUTCFullYear()}`
  * The days the items were captured, for example "items from 25 May to 13 Aug 2026", or
  * "items from 1 Jun 2025" when they share a day. Undefined when no item has a date.
  */
-export const itemDateSpan = (items: LaunchItem[]): string | undefined => {
+const itemDateSpan = (items: LaunchItem[]): string | undefined => {
   const days = items.map(itemDay).filter((day): day is Date => !!day)
   if (days.length === 0) return undefined
   const times = days.map((day) => day.getTime())

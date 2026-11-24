@@ -1,4 +1,4 @@
-import type { ProcessRecord } from '@/types'
+import type { Collection, ProcessRecord } from '@/types'
 import { Item, StacRender } from '@/types'
 import { collectionRenderingConfig, resolveTilesUrl } from './collectionRenderingConfig'
 
@@ -319,3 +319,7 @@ export function toolAppliesTo(tool: ProcessRecord, collectionId?: string): boole
   if (!collections?.length) return true
   return !!collectionId && collections.includes(collectionId)
 }
+
+/** Whether a tool runs on the open dataset. With no dataset open, every tool counts. */
+export const toolRunsOnOpenDataset = (tool: ProcessRecord, collection: Collection | undefined) =>
+  !collection || toolAppliesTo(tool, collection.id)

@@ -17,9 +17,8 @@ import { collectionHasQAIndicators, getDefaultQATab } from '@/library/collection
 
 interface ItemPanelProps {
   collection?: Collection
-  setShowCollectionPanel: (show: boolean) => void
 }
-export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollectionPanel }) => {
+export const ItemPanel: React.FC<ItemPanelProps> = ({ collection }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const collectionInfoTab = useSelector(dataFinderStore, (state) => state.context.collectionInfoTab)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
@@ -74,13 +73,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         }}
         isLicenseProprietary={isLicenseProprietary}
         hasQA={hasQA}
-        onChangeCollection={() => {
-          // For now, just clear the query filter every time we change collections.
-          // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
-          dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-
-          setShowCollectionPanel(true)
-        }}
+        onChangeCollection={() => dataFinderStore.send({ type: 'openDatasetList' })}
         disabled={isSmallCollectionCardDisabled}
       />
     </div>
@@ -108,37 +101,29 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         <Tabs activeTab={activeTab} onTabChange={setActiveTab} />
       </Flex>
 
-      {/* A press in Filter or an info panel brings it above the run panel where they overlap */}
-      <div
-        className={styles.secondaryPanels}
-        onPointerDownCapture={() =>
-          dataFinderStore.send({ type: 'bringPanelToTop', panel: 'secondary' })
-        }
-      >
-        <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />
+      <FilterPanel isOpen={secondaryPanel === 'query-filters'} onClose={closeSecondaryPanel} />
 
-        {/* Show either item or collection info panel, and close the other one if needed */}
-        <InfoPanelWrapper isOpen={isInfoPanelOpen}>
-          {secondaryPanel === 'item-info' && itemWithCollectionContext && (
-            <ItemInfoPanel
-              item={itemWithCollectionContext}
-              isUserItem={isUserCollection}
-              onClose={closeSecondaryPanel}
-            />
-          )}
-          {secondaryPanel === 'collection-info' && (
-            <CollectionInfoPanel
-              selectedCollection={collection}
-              onClose={closeSecondaryPanel}
-              tab={collectionInfoTab}
-              onTabChange={(tab) => dataFinderStore.send({ type: 'setCollectionInfoTab', tab })}
-            />
-          )}
-          {secondaryPanel === 'integration-tools' && itemWithCollectionContext && (
-            <IntegrationToolsPanel item={itemWithCollectionContext} onClose={closeSecondaryPanel} />
-          )}
-        </InfoPanelWrapper>
-      </div>
+      {/* Show either item or collection info panel, and close the other one if needed */}
+      <InfoPanelWrapper isOpen={isInfoPanelOpen}>
+        {secondaryPanel === 'item-info' && itemWithCollectionContext && (
+          <ItemInfoPanel
+            item={itemWithCollectionContext}
+            isUserItem={isUserCollection}
+            onClose={closeSecondaryPanel}
+          />
+        )}
+        {secondaryPanel === 'collection-info' && (
+          <CollectionInfoPanel
+            selectedCollection={collection}
+            onClose={closeSecondaryPanel}
+            tab={collectionInfoTab}
+            onTabChange={(tab) => dataFinderStore.send({ type: 'setCollectionInfoTab', tab })}
+          />
+        )}
+        {secondaryPanel === 'integration-tools' && itemWithCollectionContext && (
+          <IntegrationToolsPanel item={itemWithCollectionContext} onClose={closeSecondaryPanel} />
+        )}
+      </InfoPanelWrapper>
     </>
   )
 }
