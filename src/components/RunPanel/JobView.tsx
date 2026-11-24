@@ -99,12 +99,21 @@ export const JobView: React.FC<{ row: JobRow; job?: WorkflowJob; onBack: () => v
       details.itemsError ??
       details.assetError
     const { resultItems } = details
+    const isLoading =
+      details.isLoadingWorkspaceToken || details.isLoadingResults || details.isLoadingItems
+    const noOutputs =
+      !details.resultsLink ||
+      details.resultsBlockedByWorkspaceContext ||
+      (details.resultsData !== undefined && !details.firstItemLink)
     return (
       <Flex direction="column" gap="3">
         {error instanceof Error && <Callout type="error" message={error.message} />}
-        {(details.isLoadingWorkspaceToken ||
-          details.isLoadingResults ||
-          details.isLoadingItems) && <LoadingIndicator size="2" />}
+        {isLoading && <LoadingIndicator size="2" />}
+        {!isLoading && !error && noOutputs && (
+          <Text size="2" color="gray">
+            No outputs
+          </Text>
+        )}
         {resultItems.length === 1 && (
           <AssetList item={resultItems[0]} onDownload={details.handleDownloadAsset} />
         )}
