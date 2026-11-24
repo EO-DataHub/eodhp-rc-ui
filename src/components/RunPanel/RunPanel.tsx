@@ -176,7 +176,12 @@ export const RunPanel: React.FC = () => {
                     <WorkflowRunForm
                       key={chosenTool.id}
                       tool={chosenTool}
-                      onViewOutputs={() => setTab('outputs')}
+                      onViewOutputs={(jobId) => {
+                        dataFinderStore.send(
+                          jobId ? { type: 'openJob', jobId } : { type: 'closeJob' },
+                        )
+                        setTab('outputs')
+                      }}
                     />
                   )}
                   {chosenTool.properties.type === 'notebook' && (

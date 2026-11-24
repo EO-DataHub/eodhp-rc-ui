@@ -76,6 +76,8 @@ interface AppContext {
   runSetId?: string
   /** Jobs started from the run panel in this visit, for the badge and the Workflow outputs tab */
   visitJobs: VisitJob[]
+  /** The job shown in place of the list in the Workflow outputs tab */
+  openJobId?: string
   /** The sidebar shows the dataset list in place of the items */
   isDatasetListOpen: boolean
 }
@@ -112,6 +114,7 @@ const dataFinderStore = createStore({
     runItem: undefined,
     runSetId: undefined,
     visitJobs: [],
+    openJobId: undefined,
     isDatasetListOpen: false,
   } as AppContext,
   // Transitions
@@ -592,11 +595,14 @@ const dataFinderStore = createStore({
       runItem: undefined,
       runSetId: undefined,
       visitJobs: [],
+      openJobId: undefined,
     }),
     addVisitJobs: (context, event: { jobs: VisitJob[] }) => ({
       ...context,
       visitJobs: [...context.visitJobs, ...event.jobs],
     }),
+    openJob: (context, event: { jobId: string }) => ({ ...context, openJobId: event.jobId }),
+    closeJob: (context) => ({ ...context, openJobId: undefined }),
     openDatasetList: (context) => ({ ...context, isDatasetListOpen: true }),
     closeDatasetList: (context) => ({ ...context, isDatasetListOpen: false }),
   },

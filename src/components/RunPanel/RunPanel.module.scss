@@ -71,6 +71,12 @@
   border-bottom: 1px solid var(--gray-a4);
 }
 
+.jobOpen {
+  margin: 0;
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+}
+
 .jobItem {
   font-family: monospace;
   word-break: break-all;

@@ -1,5 +1,5 @@
 import { useContext, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useWorkspaceToken } from '@/hooks/useWorkspaceToken'
 import { fetchJobResults, fetchJobLog } from '@/services/workflowJobService'
@@ -10,6 +10,8 @@ import type { WorkflowJob, JobLink, Item } from '@/types'
 interface UseWorkflowJobDetailsParams {
   job: WorkflowJob | null
   workspaceName?: string
+  /** Fetch every result item, not only the first. */
+  allItems?: boolean
 }
 
 interface JobResultsCollection {
@@ -32,7 +34,11 @@ const isJobResultsCollection = (value: unknown): value is JobResultsCollection =
   return Array.isArray(v.links)
 }
 
-export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDetailsParams) => {
+export const useWorkflowJobDetails = ({
+  job,
+  workspaceName,
+  allItems = false,
+}: UseWorkflowJobDetailsParams) => {
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
 
   const effectiveWorkspace = workspaceName ?? currentWorkspace ?? ''
@@ -88,23 +94,23 @@ export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDeta
 
   const firstItemLink = itemLinks[0] ?? null
 
-  const {
-    data: resultItem,
-    isLoading: isLoadingItem,
-    error: itemError,
-  } = useQuery<Item>({
-    queryKey: ['WorkflowJobResultItem', job?.id, firstItemLink?.href, workspaceTokens?.access],
-    queryFn: () => {
-      if (!firstItemLink?.href || !workspaceTokens?.access) {
-        throw new Error('Missing result item link or workspace token.')
-      }
-      return fetchItemByUrl({
-        itemUrl: firstItemLink.href,
-        workspaceToken: workspaceTokens.access,
-      })
-    },
-    enabled: !!job && !!firstItemLink?.href && !!workspaceTokens?.access,
+  const itemQueries = useQueries({
+    queries: (allItems ? itemLinks : itemLinks.slice(0, 1)).map((link) => ({
+      queryKey: ['WorkflowJobResultItem', job?.id, link.href, workspaceTokens?.access],
+      queryFn: (): Promise<Item> => {
+        if (!workspaceTokens?.access) throw new Error('Missing workspace token.')
+        return fetchItemByUrl({ itemUrl: link.href, workspaceToken: workspaceTokens.access })
+      },
+      enabled: !!job && !!workspaceTokens?.access,
+    })),
   })
+
+  const resultItem = itemQueries[0]?.data
+  const isLoadingItem = itemQueries[0]?.isLoading ?? false
+  const itemError = itemQueries[0]?.error ?? null
+  const resultItems = itemQueries.flatMap((query) => (query.data ? [query.data] : []))
+  const isLoadingItems = itemQueries.some((query) => query.isLoading)
+  const itemsError = itemQueries.find((query) => query.error)?.error ?? null
 
   const handleViewLog = async (link: JobLink) => {
     if (!workspaceTokens?.access) return
@@ -183,6 +189,10 @@ export const useWorkflowJobDetails = ({ job, workspaceName }: UseWorkflowJobDeta
     resultItem,
     isLoadingItem,
     itemError,
+    // every result item, when allItems is set
+    resultItems,
+    isLoadingItems,
+    itemsError,
     // logs
     logLinks,
     selectedLog,

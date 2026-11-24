@@ -27,10 +27,11 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
  * Sets up and starts a workflow in the run panel, as one form. What it runs on is kept in the
  * store, so it stays while the panel is hidden and item cards can set it.
  */
-export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () => void }> = ({
-  tool,
-  onViewOutputs,
-}) => {
+export const WorkflowRunForm: React.FC<{
+  tool: ProcessRecord
+  /** Shows the Workflow outputs tab, on the job's view when the run started one job. */
+  onViewOutputs: (jobId?: string) => void
+}> = ({ tool, onViewOutputs }) => {
   const queryClient = useQueryClient()
   const runSource = useSelector(dataFinderStore, (state) => state.context.runSource)
   const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
@@ -97,7 +98,15 @@ export const WorkflowRunForm: React.FC<{ tool: ProcessRecord; onViewOutputs: () 
         run={run}
         actions={
           <>
-            <Button variant="soft" color="gray" onClick={onViewOutputs}>
+            <Button
+              variant="soft"
+              color="gray"
+              onClick={() =>
+                onViewOutputs(
+                  run.startedJobs.length === 1 ? run.startedJobs[0].jobId ?? undefined : undefined,
+                )
+              }
+            >
               View in Workflow outputs
             </Button>
             <Button

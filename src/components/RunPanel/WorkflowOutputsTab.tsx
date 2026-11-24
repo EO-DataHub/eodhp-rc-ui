@@ -1,35 +1,27 @@
-import React, { useContext } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import { Badge, Button, Flex, Text } from '@radix-ui/themes'
+import { useSelector } from '@xstate/store/react'
+import { Button, Flex, Text } from '@radix-ui/themes'
 import type { WorkflowJob } from '@/types'
-import { AuthenticationContext } from '@/context/AuthenticationContext'
+import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { formatOrderDate } from '@/library/orderUtils'
 import { jobRows, type JobRow, type VisitJob } from '@/library/runPanelJobs'
+import { JobStatus, JobView } from './JobView'
 import styles from './RunPanel.module.scss'
 
-const STATUS_COLORS: Record<WorkflowJob['status'], 'blue' | 'green' | 'red'> = {
-  running: 'blue',
-  successful: 'green',
-  failed: 'red',
-}
-
-const JobStatus = ({ status }: { status?: WorkflowJob['status'] }) =>
-  status ? (
-    <Badge color={STATUS_COLORS[status]}>{status}</Badge>
-  ) : (
-    <Badge color="gray">starting</Badge>
-  )
-
-const JobRowEntry = ({ row, workspace }: { row: JobRow; workspace: string }) => (
+const JobRowEntry = ({ row }: { row: JobRow }) => (
   <li className={styles.jobRow}>
     <Flex direction="column" gap="1">
       <Flex justify="between" align="center" gap="2">
-        <Link to={`/my-data/workflow-outputs/${workspace}/${row.id}`}>
-          <Text size="2" weight="medium">
-            {row.workflowTitle}
-          </Text>
-        </Link>
+        <Button
+          variant="ghost"
+          size="2"
+          className={styles.jobOpen}
+          onClick={() => dataFinderStore.send({ type: 'openJob', jobId: row.id })}
+        >
+          {row.workflowTitle}
+        </Button>
         <JobStatus status={row.status} />
       </Flex>
       {row.itemId && (
@@ -56,7 +48,10 @@ interface WorkflowOutputsTabProps {
   workflowId?: string
 }
 
-/** The run panel's list of the user's and the shared results jobs, with the jobs started in this visit first. */
+/**
+ * The run panel's list of the user's and the shared results jobs, with the jobs started in this
+ * visit first. An opened job is shown in place of the list.
+ */
 export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
   jobs,
   isLoading,
@@ -65,12 +60,23 @@ export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
   visitJobs,
   workflowId,
 }) => {
-  const { currentWorkspace } = useContext(AuthenticationContext)
+  const openJobId = useSelector(dataFinderStore, (state) => state.context.openJobId)
   const pageLink = workflowId
     ? `/my-data/workflow-outputs?workflow=${encodeURIComponent(workflowId)}`
     : '/my-data/workflow-outputs'
 
   const rows = jobRows(jobs, visitJobs)
+  const openRow = openJobId ? rows.find((row) => row.id === openJobId) : undefined
+
+  if (openRow) {
+    return (
+      <JobView
+        row={openRow}
+        job={jobs.find((job) => job.id === openRow.id)}
+        onBack={() => dataFinderStore.send({ type: 'closeJob' })}
+      />
+    )
+  }
 
   const list = () => {
     if (error) {
@@ -96,7 +102,7 @@ export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
     return (
       <ul className={styles.jobList}>
         {rows.map((row) => (
-          <JobRowEntry key={row.id} row={row} workspace={currentWorkspace ?? ''} />
+          <JobRowEntry key={row.id} row={row} />
         ))}
       </ul>
     )
