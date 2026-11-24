@@ -2,14 +2,18 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { QueryClient } from '@tanstack/react-query'
-import type { Collection, Item, ProcessDetail } from '@/types'
+import type { Collection, Item, ProcessDetail, WorkflowJob } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { fetchItemById, fetchItems as fetchCatalogue } from '@/services/processCatalogueService'
-import { fetchItems as searchItems } from '@/services/itemService'
+import { fetchItemByUrl, fetchItems as searchItems } from '@/services/itemService'
 import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
-import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
+import {
+  fetchJobResults,
+  fetchJobsForSharedWorkspace,
+  fetchJobsForWorkspace,
+} from '@/services/workflowJobService'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
 import {
@@ -43,16 +47,26 @@ import { signedInAuth, type ProviderOptions } from '@/test-data/runWorkflowRende
 import {
   chooseTool,
   fetchAnyToolById,
+  assetHref,
+  DATA_ASSET_TITLES,
+  fetchResultItem,
   hideRunPanel,
   jobLinks,
+  jobResultsHref,
+  jobRow,
+  jobRowsIn,
   jobsResponse,
   listedJob,
+  OTHER_ASSET_TITLES,
+  resultCollection,
+  resultItemHref,
   openRunPanel,
   queryRunPanel,
   renderWithRunPanel,
   runPanel,
   runWorkflowButton,
   sourceRadio,
+  viewedJob,
 } from '@/test-data/runPanel'
 
 // Small limits, so the tests need few items and show the panel reads them from the config module
@@ -72,6 +86,7 @@ vi.mock('@/services/workspaceTokenService', () => ({
 vi.mock('@/services/itemService', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/itemService')>()),
   fetchItems: vi.fn(),
+  fetchItemByUrl: vi.fn(),
 }))
 vi.mock('@/services/savedSetsService', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/savedSetsService')>()),
@@ -156,9 +171,6 @@ const outputsTab = (panel: HTMLElement) =>
   within(panel).getByRole('tab', { name: 'Workflow outputs' })
 
 const toolsTab = (panel: HTMLElement) => within(panel).getByRole('tab', { name: 'Tools' })
-
-/** The job IDs the panel links to, in the order they appear. */
-const jobIds = (panel: HTMLElement) => jobLinks(panel).map((href) => href.split('/').pop())
 
 const sharedListCalls = () => vi.mocked(fetchJobsForSharedWorkspace).mock.calls.length
 const userListCalls = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
@@ -770,15 +782,14 @@ describe('Workflow outputs tab', () => {
     await runAndWait(user, panel)
 
     await user.click(outputsTab(panel))
-    await waitFor(() => expect(jobLinks(panel)).toHaveLength(4))
-    expect(jobIds(panel)).toEqual(['job-2', 'job-1', 'colleague-1', 'old-1'])
-    const row = within(panel)
-      .getAllByRole('link')
-      .find((link) => link.getAttribute('href')?.endsWith('/job-1'))!
-      .closest<HTMLElement>('li, tr, [role="row"], [role="listitem"]')!
-    expect(row).toHaveTextContent('NDVI')
-    expect(row).toHaveTextContent('S2A_VISIT_1')
-    expect(row).toHaveTextContent(/running/i)
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(4))
+    const [first, second, third, fourth] = jobRowsIn(panel)
+    expect(first).toHaveTextContent('S2A_VISIT_2')
+    expect(second).toHaveTextContent('NDVI')
+    expect(second).toHaveTextContent('S2A_VISIT_1')
+    expect(second).toHaveTextContent(/running/i)
+    expect(third).toHaveTextContent(/clip.*failed/i)
+    expect(fourth).toHaveTextContent(/clip.*successful/i)
   })
 
   it("lists a job that is only in the user's own list", async () => {
@@ -791,11 +802,12 @@ describe('Workflow outputs tab', () => {
     const panel = await runPanel()
 
     await user.click(outputsTab(panel))
-    await waitFor(() => expect(jobIds(panel)).toEqual(['mine-1']))
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(1))
+    expect(jobRowsIn(panel)[0]).toHaveTextContent(/clip/)
     expect(fetchJobsForWorkspace).toHaveBeenCalledWith('my-ws', 'token')
   })
 
-  it('opens the Workflow outputs tab from View in Workflow outputs after a run', async () => {
+  it('opens the list in the Workflow outputs tab from View in Workflow outputs after a run of several jobs', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
     const panel = await openForm('pinned')
@@ -803,6 +815,8 @@ describe('Workflow outputs tab', () => {
 
     await user.click(within(panel).getByRole('button', { name: 'View in Workflow outputs' }))
     expect(outputsTab(panel)).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(2))
+    expect(within(panel).queryByRole('button', { name: /^back/i })).not.toBeInTheDocument()
   })
 
   it('shows the running and finished jobs of the run on the badge', async () => {
@@ -875,7 +889,7 @@ describe('Job status refresh', () => {
     const panel = await openForm('pinned')
     await runAndWait(user, panel)
     await user.click(outputsTab(panel))
-    await waitFor(() => expect(jobLinks(panel)).toHaveLength(2))
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(2))
     // Let any fetch the run itself started finish before counting
     await wait(100)
     return panel
@@ -949,6 +963,240 @@ describe('Job status refresh', () => {
     cleanup()
     await wait(REFRESH_MS * 3)
     expect(sharedListCalls()).toBe(before)
+  })
+})
+
+describe('Stage 8: Job view in the panel', () => {
+  const backButton = (panel: HTMLElement) => within(panel).queryByRole('button', { name: /^back/i })
+
+  const downloadButtons = (container: HTMLElement) =>
+    within(container).queryAllByRole('button', { name: /download/i })
+
+  /** The status badge with the given text, and its colour. */
+  const statusColour = (panel: HTMLElement, status: string) =>
+    textElement(panel, new RegExp(`^${status}$`, 'i'))
+      .closest('[data-accent-color]')
+      ?.getAttribute('data-accent-color')
+
+  /** Adds jobs to this visit, as a run does, and lists them in the shared jobs list. */
+  const startedJobs = (entries: [WorkflowJob, string][]) => {
+    act(() => {
+      dataFinderStore.send({
+        type: 'addVisitJobs',
+        jobs: entries.map(([job, itemId]) => ({
+          jobId: job.id,
+          itemId,
+          workflowId: 'ndvi',
+          workflowTitle: 'NDVI',
+          startedAt: job.created,
+        })),
+      })
+    })
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+      jobsResponse(entries.map(([job]) => job)),
+    )
+  }
+
+  const openOutputs = async (user: User) => {
+    openRunPanel()
+    await renderWithRunPanel()
+    const panel = await runPanel()
+    await user.click(outputsTab(panel))
+    return panel
+  }
+
+  const openJob = async (user: User, panel: HTMLElement, itemId: string) => {
+    const row = await waitFor(() => jobRow(panel, itemId))
+    await user.click(within(row).getAllByRole('button')[0])
+    await within(panel).findByRole('button', { name: /^back/i })
+  }
+
+  /** Opens the panel on the view of one job started in this visit. */
+  const viewJob = async (user: User, job: WorkflowJob, itemId = 'S2A_IN_1') => {
+    startedJobs([[job, itemId]])
+    const panel = await openOutputs(user)
+    await openJob(user, panel, itemId)
+    return panel
+  }
+
+  beforeEach(() => {
+    dataFinderStore.send({ type: 'resetRunPanel' })
+    vi.mocked(fetchJobResults).mockResolvedValue(resultCollection(['S2A_OUT_1']))
+    vi.mocked(fetchItemByUrl).mockImplementation(fetchResultItem)
+  })
+
+  it('opens a job in place of the list, with no link to the job page, and Back returns to the list', async () => {
+    const user = userEvent.setup()
+    startedJobs([
+      [viewedJob('job-a', 'running'), 'S2A_IN_1'],
+      [viewedJob('job-b', 'failed'), 'S2A_IN_2'],
+    ])
+    const panel = await openOutputs(user)
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(2))
+    expect(jobLinks(panel)).toEqual([])
+
+    await openJob(user, panel, 'S2A_IN_1')
+    expect(panel).toHaveTextContent('S2A_IN_1')
+    expect(panel).not.toHaveTextContent('S2A_IN_2')
+
+    await user.click(backButton(panel)!)
+    await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(2))
+    expect(backButton(panel)).not.toBeInTheDocument()
+  })
+
+  it('keeps the open job after switching tabs and hiding the panel, and forgets it on leaving the Data Finder', async () => {
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-run', 'running'))
+    expect(dataFinderStore.getSnapshot().context.openJobId).toBe('job-run')
+
+    await user.click(toolsTab(panel))
+    await user.click(outputsTab(panel))
+    expect(await within(panel).findByRole('button', { name: /^back/i })).toBeInTheDocument()
+    expect(panel).toHaveTextContent('S2A_IN_1')
+
+    await user.click(hideButton(panel))
+    openRunPanel()
+    const reopened = await runPanel()
+    await user.click(outputsTab(reopened))
+    expect(await within(reopened).findByRole('button', { name: /^back/i })).toBeInTheDocument()
+    expect(reopened).toHaveTextContent('S2A_IN_1')
+
+    cleanup()
+    expect(dataFinderStore.getSnapshot().context.openJobId).toBeFalsy()
+    const afterLeaving = await openOutputs(user)
+    await waitFor(() => expect(jobRowsIn(afterLeaving)).toHaveLength(1))
+    expect(backButton(afterLeaving)).not.toBeInTheDocument()
+  })
+
+  it('shows a running job with its title, item, status and run time, and a note in place of outputs', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-02T14:05:00Z'))
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-run', 'running'))
+
+    expect(panel).toHaveTextContent('NDVI')
+    expect(panel).toHaveTextContent('S2A_IN_1')
+    expect(statusColour(panel, 'running')).toBe('blue')
+    expect(panel).toHaveTextContent(/Started \d{1,2}:\d{2}\s*·\s*running for 3 min/i)
+    expect(panel).toHaveTextContent('Outputs appear here when the job finishes.')
+    expect(panel).not.toHaveTextContent('job-run')
+    expect(downloadButtons(panel)).toHaveLength(0)
+  })
+
+  it("shows a failed job's status message and how long it took, with no outputs", async () => {
+    const user = userEvent.setup()
+    const panel = await viewJob(
+      user,
+      viewedJob('job-fail', 'failed', { message: 'The input item could not be read' }),
+    )
+
+    expect(panel).toHaveTextContent('NDVI')
+    expect(panel).toHaveTextContent('S2A_IN_1')
+    expect(statusColour(panel, 'failed')).toBe('red')
+    expect(panel).toHaveTextContent(/Started \d{1,2}:\d{2}\s*·\s*took 3 min/i)
+    expect(panel).toHaveTextContent('The input item could not be read')
+    expect(panel).not.toHaveTextContent('job-fail')
+    expect(panel).not.toHaveTextContent('Outputs appear here when the job finishes.')
+    expect(downloadButtons(panel)).toHaveLength(0)
+  })
+
+  it("lists one result item's assets flat, data assets first, each with Download", async () => {
+    const download = vi.fn(() => Promise.resolve(new Response('data')))
+    vi.stubGlobal('fetch', download)
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-ok', 'successful'))
+
+    await within(panel).findByText('NDVI GeoTIFF')
+    expect(fetchJobResults).toHaveBeenCalledWith(jobResultsHref('job-ok'), 'ws-token')
+    expect(panel).toHaveTextContent('S2A_IN_1')
+    expect(statusColour(panel, 'successful')).toBe('green')
+    expect(panel).toHaveTextContent(/Started \d{1,2}:\d{2}\s*·\s*took 3 min/i)
+    expect(panel).not.toHaveTextContent('job-ok')
+
+    for (const data of DATA_ASSET_TITLES) {
+      for (const other of OTHER_ASSET_TITLES) {
+        expect(isBefore(within(panel).getByText(data), within(panel).getByText(other))).toBe(true)
+      }
+    }
+    expect(downloadButtons(panel)).toHaveLength(4)
+    expect(within(panel).queryByRole('heading', { name: /S2A_OUT_1/ })).not.toBeInTheDocument()
+
+    const cogRow = within(panel).getByText('NDVI GeoTIFF').closest('li')!
+    await user.click(within(cogRow).getByRole('button', { name: /download/i }))
+    await waitFor(() => expect(download).toHaveBeenCalled())
+    expect(String((download.mock.calls[0] as unknown[])[0])).toBe(
+      assetHref('S2A_OUT_1', 'ndvi.tif'),
+    )
+  })
+
+  it('shows each of several result items under its own heading with its own asset list', async () => {
+    vi.mocked(fetchJobResults).mockResolvedValue(resultCollection(['S2A_OUT_1', 'S2A_OUT_2']))
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-ok', 'successful'))
+
+    const first = await within(panel).findByRole('heading', { name: /S2A_OUT_1/ })
+    const second = await within(panel).findByRole('heading', { name: /S2A_OUT_2/ })
+    expect(fetchItemByUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ itemUrl: resultItemHref('S2A_OUT_2') }),
+    )
+    const assetLists = within(panel)
+      .getAllByRole('list')
+      .filter((list) => !list.querySelector('ul, ol, [role="list"]'))
+      .filter((list) => downloadButtons(list).length > 0)
+    expect(assetLists).toHaveLength(2)
+    expect(isBefore(first, assetLists[0])).toBe(true)
+    expect(isBefore(assetLists[0], second)).toBe(true)
+    expect(isBefore(second, assetLists[1])).toBe(true)
+    for (const list of assetLists) {
+      expect(downloadButtons(list)).toHaveLength(4)
+      expect(
+        isBefore(within(list).getByText('Cloud mask'), within(list).getByText('Thumbnail')),
+      ).toBe(true)
+    }
+  })
+
+  it('opens the job details modal from Technical details', async () => {
+    const user = userEvent.setup()
+    const panel = await viewJob(user, viewedJob('job-fail', 'failed', { message: 'Broken' }))
+
+    await user.click(within(panel).getByRole('button', { name: /technical details/i }))
+    expect(await screen.findByRole('dialog', { name: /job details/i })).toBeInTheDocument()
+  })
+
+  it("opens the job's view from View in Workflow outputs after a run of one job", async () => {
+    const user = userEvent.setup()
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+      jobsResponse([listedJob('job-1', 'ndvi', 'running')]),
+    )
+    const panel = await openForm('item', { item: fanOutItem('S2A_ONE') })
+    await user.click(runWorkflowButton(panel))
+
+    await user.click(await within(panel).findByRole('button', { name: 'View in Workflow outputs' }))
+    expect(outputsTab(panel)).toHaveAttribute('aria-selected', 'true')
+    expect(await within(panel).findByRole('button', { name: /^back/i })).toBeInTheDocument()
+    expect(panel).toHaveTextContent('S2A_ONE')
+    expect(jobRowsIn(panel)).toHaveLength(0)
+  })
+
+  it('stays open on the job and shows its outputs when the 30-second refresh finds it finished', async () => {
+    const REFRESH_MS = 30_000
+    const wait = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms))
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    const panel = await viewJob(user, viewedJob('job-1', 'running'))
+    await wait(100)
+    const back = backButton(panel)
+    const before = sharedListCalls()
+
+    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+      jobsResponse([viewedJob('job-1', 'successful')]),
+    )
+    await wait(REFRESH_MS)
+    expect(sharedListCalls()).toBe(before + 1)
+    expect(await within(panel).findByText('NDVI GeoTIFF')).toBeInTheDocument()
+    expect(await runPanel()).toBe(panel)
+    expect(backButton(panel)).toBe(back)
+    expect(panel).not.toHaveTextContent('Outputs appear here when the job finishes.')
   })
 })
 
