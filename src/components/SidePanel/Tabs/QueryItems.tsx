@@ -1,13 +1,10 @@
-import { useContext } from 'react'
-import { Button, Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
-import { PlayIcon } from '@radix-ui/react-icons'
+import { Flex, Grid, IconButton, Select, Text, Tooltip } from '@radix-ui/themes'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import FilterAltOutlined from '@/assets/icons/filter-alt-outlined.svg?react'
 import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
 import { useSelector } from '@xstate/store/react'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useItemsQuery, MAX_TOTAL_ITEMS, PAGE_SIZE } from '@/hooks/useItemsQuery'
-import { AuthenticationContext } from '@/context/AuthenticationContext'
 import ItemList from '../ItemList'
 import ItemCard from '../../ItemCard/ItemCard'
 
@@ -78,24 +75,6 @@ const RenderSelectionButton = () => {
   )
 }
 
-/** Opens the run panel to run a workflow once on every result of the search. */
-const RunOnResultsButton = ({ onClick }: { onClick: () => void }) => {
-  const { isAuthenticated } = useContext(AuthenticationContext)
-
-  return (
-    <Tooltip
-      content={
-        isAuthenticated ? 'Run a workflow on each result of this search' : 'Log in to run workflows'
-      }
-    >
-      <Button variant="ghost" size="2" disabled={!isAuthenticated} onClick={onClick}>
-        <PlayIcon width="16px" height="16px" />
-        <Text>Run on results</Text>
-      </Button>
-    </Tooltip>
-  )
-}
-
 const QueryItemsTab = () => {
   const isLoading = useSelector(dataFinderStore, ({ context }) => context.isLoading)
   const secondaryPanel = useSelector(dataFinderStore, ({ context }) => context.secondaryPanel)
@@ -136,12 +115,7 @@ const QueryItemsTab = () => {
         ) : (
           <Flex width="100%" gap="2" align="center">
             {!error && allItems.length > 0 && (
-              <>
-                <PageIndicator page={page} totalItemsCount={allItems.length} />
-                <RunOnResultsButton
-                  onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'results' })}
-                />
-              </>
+              <PageIndicator page={page} totalItemsCount={allItems.length} />
             )}
           </Flex>
         )}

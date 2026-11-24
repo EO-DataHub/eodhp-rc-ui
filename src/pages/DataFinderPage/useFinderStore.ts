@@ -29,6 +29,9 @@ export type SecondaryPanel =
   | 'integration-tools'
   | undefined
 
+/** Which of the run panel and the secondary panel is drawn above the other where they overlap */
+export type TopPanel = 'run' | 'secondary'
+
 export type InfoPanelTab = 'metadata' | 'assets' | 'resources' | 'download'
 
 export type CollectionInfoTab =
@@ -70,6 +73,7 @@ interface AppContext {
   /** Counts "Open in" requests so the panel can return to the chosen notebook each time */
   integrationToolsOpenCount: number
   isRunPanelOpen: boolean
+  topPanel: TopPanel
   /** What a workflow runs on, kept while the run panel is hidden or no workflow is chosen */
   runSource?: RunSource
   /** The item for the "This item" source */
@@ -110,6 +114,7 @@ const dataFinderStore = createStore({
     chosenTool: undefined,
     integrationToolsOpenCount: 0,
     isRunPanelOpen: false,
+    topPanel: 'run',
     runSource: undefined,
     runItem: undefined,
     visitJobs: [],
@@ -145,10 +150,11 @@ const dataFinderStore = createStore({
         page: 0,
       }
     },
-    setSecondaryPanel: (context, event: { panel: SecondaryPanel }) => {
+    setSecondaryPanel: (context, event: { panel: SecondaryPanel }): typeof context => {
       return {
         ...context,
         secondaryPanel: event.panel,
+        topPanel: event.panel ? 'secondary' : context.topPanel,
         // Opening the collection info panel generically always starts on the first tab
         collectionInfoTab:
           event.panel === 'collection-info' ? 'metadata' : context.collectionInfoTab,
@@ -166,6 +172,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'collection-info',
+        topPanel: 'secondary',
         collectionInfoTab: event.tab,
       }
     },
@@ -194,6 +201,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'item-info',
+        topPanel: 'secondary',
         infoPanelItem: event.item,
         infoPanelTab: tab,
       }
@@ -220,12 +228,14 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'integration-tools',
+        topPanel: 'secondary',
         infoPanelItem: event.item,
       }
     },
     openIntegrationToolsPanel: (context, event: { item: Item }): typeof context => ({
       ...context,
       secondaryPanel: 'integration-tools',
+      topPanel: 'secondary',
       infoPanelItem: event.item,
       integrationToolsOpenCount: context.integrationToolsOpenCount + 1,
     }),
@@ -567,13 +577,17 @@ const dataFinderStore = createStore({
       runItem: undefined,
       runSource: context.runSource === 'item' ? undefined : context.runSource,
     }),
-    openRunPanel: (context, event: { source?: RunSource; item?: Item }) => ({
+    openRunPanel: (context, event: { source?: RunSource; item?: Item }): typeof context => ({
       ...context,
       isRunPanelOpen: true,
+      topPanel: 'run',
       runSource: event.source ?? context.runSource,
       runItem: event.item ?? context.runItem,
     }),
     hideRunPanel: (context) => ({ ...context, isRunPanelOpen: false }),
+    /** A press inside a panel brings it above the other */
+    bringPanelToTop: (context, event: { panel: TopPanel }): typeof context =>
+      context.topPanel === event.panel ? context : { ...context, topPanel: event.panel },
     setRunSource: (context, event: { source: RunSource }) => ({
       ...context,
       runSource: event.source,

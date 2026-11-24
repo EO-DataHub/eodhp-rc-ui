@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useContext, useState } from 'react'
 import { Button, Flex, Grid, Text, Tooltip } from '@radix-ui/themes'
 import { useSelector } from '@xstate/store/react'
-import { BookmarkIcon, ListBulletIcon, PlayIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
+import { BookmarkIcon, ListBulletIcon, PlusIcon, Share1Icon } from '@radix-ui/react-icons'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { SaveToSetDialog, SaveToSetMode } from '@/components/SavedSets/SaveToSetDialog'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -202,29 +202,6 @@ const SavedSetButtons = () => {
   )
 }
 
-/** Opens the run panel to run on the pinned items, with the chosen workflow or the tool list. */
-const RunWorkflowButton = () => {
-  const { isAuthenticated } = useContext(AuthenticationContext)
-
-  return (
-    <Tooltip
-      content={isAuthenticated ? 'Run a workflow on each pinned item' : 'Log in to run workflows'}
-    >
-      <Flex width="fit-content" px="2">
-        <Button
-          variant="ghost"
-          size="2"
-          disabled={!isAuthenticated}
-          onClick={() => dataFinderStore.send({ type: 'openRunPanel', source: 'pinned' })}
-        >
-          <PlayIcon width="16px" height="16px" />
-          <Text>Run workflow</Text>
-        </Button>
-      </Flex>
-    </Tooltip>
-  )
-}
-
 // The list only reorders vertically, so don't let cards drift sideways while dragging
 const restrictToVerticalAxis: Modifier = ({ transform }) => ({ ...transform, x: 0 })
 
@@ -303,7 +280,6 @@ const PinnedItemsTab = () => {
           <Flex gap="2" wrap="wrap" align="center">
             <ClearAllButton />
             <ShareViewButton />
-            <RunWorkflowButton />
           </Flex>
         )}
         <Flex gap="2" wrap="wrap" align="center">

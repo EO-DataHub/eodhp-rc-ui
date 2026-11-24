@@ -53,6 +53,7 @@ type PanelTab = 'tools' | 'outputs'
 /** The Data Finder's panel for choosing and running a tool, docked on the right of the map. */
 export const RunPanel: React.FC = () => {
   const isOpen = useSelector(dataFinderStore, (state) => state.context.isRunPanelOpen)
+  const isOnTop = useSelector(dataFinderStore, (state) => state.context.topPanel === 'run')
   const chosenTool = useSelector(dataFinderStore, (state) => state.context.chosenTool)
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const runSource = useSelector(dataFinderStore, (state) => state.context.runSource)
@@ -136,7 +137,15 @@ export const RunPanel: React.FC = () => {
         </Box>
       )}
       {(isOpen || (hasOpened && isWorkflow)) && (
-        <aside aria-label="Tools" className={styles.panel} hidden={!isOpen}>
+        <aside
+          aria-label="Tools"
+          className={styles.panel}
+          hidden={!isOpen}
+          data-on-top={isOnTop}
+          onPointerDownCapture={() =>
+            dataFinderStore.send({ type: 'bringPanelToTop', panel: 'run' })
+          }
+        >
           <Tabs.Root
             value={tab}
             onValueChange={(value) => setTab(value as PanelTab)}
