@@ -293,7 +293,7 @@ export const useWorkflowRun = ({
       )
     } catch (err) {
       setLaunchError(
-        err instanceof Error ? err.message : 'Failed to launch workflow. Please try again.',
+        err instanceof Error ? err.message : "Couldn't start the workflow. Please try again.",
       )
       return null
     } finally {
