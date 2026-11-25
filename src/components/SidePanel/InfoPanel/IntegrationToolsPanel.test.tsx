@@ -92,7 +92,7 @@ describe('IntegrationToolsPanel Workflows tab opens the run panel', () => {
     user: ReturnType<typeof userEvent.setup>,
     panel: HTMLElement,
   ) => {
-    await within(panel).findByRole('heading', { name: /^processes for /i })
+    await within(panel).findByRole('heading', { name: /^all processes$/i })
     expect(dataFinderStore.getSnapshot().context.chosenTool).toBeUndefined()
 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
@@ -109,14 +109,16 @@ describe('IntegrationToolsPanel Workflows tab opens the run panel', () => {
     expect(panel).toHaveTextContent('NDVI')
     expect(panel).toHaveTextContent(item.id)
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(within(panel).queryByRole('heading', { name: /^processes for /i })).toBeNull()
+    expect(
+      within(panel).queryByRole('heading', { name: /^(all processes|processes for )/i }),
+    ).toBeNull()
     expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe(ndviWorkflow.id)
   })
 
   it('opens on the process list with no process selected, and keeps this item for the workflow chosen next', async () => {
     const user = userEvent.setup()
     const panel = await runFromWorkflowsTab(user)
-    await within(panel).findByRole('heading', { name: /^processes for /i })
+    await within(panel).findByRole('heading', { name: /^all processes$/i })
 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
     expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
