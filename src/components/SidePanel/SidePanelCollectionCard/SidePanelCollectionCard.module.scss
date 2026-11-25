@@ -11,7 +11,6 @@
   overflow: hidden;
   margin: 2px;
   position: relative;
-  cursor: pointer;
 
   .text {
     color: var(--blue-contrast);
@@ -22,7 +21,6 @@
     display: block;
     cursor: pointer;
     text-align: left;
-    overflow-wrap: anywhere;
 
     // Stretches the button's click area over the whole card.
     &::after {
