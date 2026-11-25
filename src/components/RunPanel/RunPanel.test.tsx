@@ -598,23 +598,52 @@ describe('Run form details', () => {
     expect(launchWorkflow).not.toHaveBeenCalled()
   })
 
-  it('shows the error when the only job fails to start, and keeps the form and its inputs', async () => {
-    const user = userEvent.setup()
-    vi.mocked(launchWorkflow).mockRejectedValueOnce(
-      new Error('Insufficient permissions to launch this workflow.'),
+  const failWithCode = (code: string) => async () => {
+    const { launchWorkflow: realLaunch } = await vi.importActual<
+      typeof import('@/services/workflowLaunchService')
+    >('@/services/workflowLaunchService')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve(Response.json({ error: 'denied', code }, { status: 401 }))),
     )
-    const panel = await openForm('item', { item })
-    const threshold = within(panel).getByLabelText('Threshold')
-    await user.clear(threshold)
-    await user.type(threshold, '0.5')
-    await user.click(runWorkflowButton(panel))
+    vi.mocked(launchWorkflow).mockImplementationOnce(realLaunch)
+  }
 
-    expect(
-      await within(panel).findByText('Insufficient permissions to launch this workflow.'),
-    ).toBeInTheDocument()
-    expect(runWorkflowButton(panel)).toBeInTheDocument()
-    expect(within(panel).getByLabelText('Threshold')).toHaveValue(0.5)
-  })
+  it.each([
+    {
+      reason: 'sign-in is needed',
+      arrange: failWithCode('AUTH_ERROR'),
+      message: 'Authentication required. Please sign in and try again.',
+    },
+    {
+      reason: 'the user lacks permission',
+      arrange: failWithCode('AUTHZ_ERROR'),
+      message: "You don't have permission to run this workflow.",
+    },
+    {
+      reason: 'the run fails without an Error',
+      arrange: () => {
+        vi.mocked(fetchWorkspaceTokens).mockRejectedValueOnce('boom')
+        return Promise.resolve()
+      },
+      message: "Couldn't start the workflow. Please try again.",
+    },
+  ])(
+    'shows the error when the only job fails to start because $reason, and keeps the form and its inputs',
+    async ({ arrange, message }) => {
+      const user = userEvent.setup()
+      await arrange()
+      const panel = await openForm('item', { item })
+      const threshold = within(panel).getByLabelText('Threshold')
+      await user.clear(threshold)
+      await user.type(threshold, '0.5')
+      await user.click(runWorkflowButton(panel))
+
+      expect(await within(panel).findByText(message)).toBeInTheDocument()
+      expect(runWorkflowButton(panel)).toBeInTheDocument()
+      expect(within(panel).getByLabelText('Threshold')).toHaveValue(0.5)
+    },
+  )
 
   it('disables the Run on choices that cannot be used, with the reason', async () => {
     const panel = await openForm('results')
