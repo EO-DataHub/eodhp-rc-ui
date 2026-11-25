@@ -164,6 +164,6 @@ describe('DataFinderPage tool parameter and the run panel', () => {
     renderFinder('/finder/sentinel2_ard?tool=no-such-tool')
     await waitFor(() => expect(toolParam()).toBeNull())
     expect(queryRunPanel()).toBeNull()
-    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Processes' })).toBeInTheDocument()
   })
 })

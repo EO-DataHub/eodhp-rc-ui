@@ -75,10 +75,10 @@ describe('Pinned Items tab has no Run button', () => {
 })
 
 describe('Run panel on pinned items next to the Pinned Items tab', () => {
-  it('opens on the tool list with no chosen tool, and keeps Pinned items for the workflow chosen next', async () => {
+  it('opens on the process list with no process selected, and keeps Pinned items for the workflow chosen next', async () => {
     const user = userEvent.setup()
     const panel = await openOnPinned()
-    await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' })
+    await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' })
 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
     expect(await within(panel).findByRole('radio', { name: /pinned items/i })).toBeChecked()

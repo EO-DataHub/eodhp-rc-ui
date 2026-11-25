@@ -272,7 +272,7 @@ describe('ItemCard Open in button sets the item in the run panel', () => {
     const panel = await runPanel()
     expect(panel).toHaveTextContent('NDVI notebook')
     expect(panel).toHaveTextContent(item.id)
-    expect(within(panel).getByRole('button', { name: 'Launch' })).toBeEnabled()
+    expect(within(panel).getByRole('button', { name: 'Open in Jupyter' })).toBeEnabled()
     expect(dataFinderStore.getSnapshot().context.secondaryPanel).toBeUndefined()
   })
 })

@@ -87,12 +87,12 @@ describe('IntegrationToolsPanel Workflows tab opens the run panel', () => {
     return runPanel()
   }
 
-  // The panel opens on the tool list, and This item is kept for the workflow chosen from it
+  // The panel opens on the process list, and This item is kept for the workflow chosen from it
   const expectToolListForThisItem = async (
     user: ReturnType<typeof userEvent.setup>,
     panel: HTMLElement,
   ) => {
-    await within(panel).findByRole('heading', { name: /^tools for /i })
+    await within(panel).findByRole('heading', { name: /^processes for /i })
     expect(dataFinderStore.getSnapshot().context.chosenTool).toBeUndefined()
 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
@@ -109,28 +109,28 @@ describe('IntegrationToolsPanel Workflows tab opens the run panel', () => {
     expect(panel).toHaveTextContent('NDVI')
     expect(panel).toHaveTextContent(item.id)
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(within(panel).queryByRole('heading', { name: /^tools for /i })).toBeNull()
+    expect(within(panel).queryByRole('heading', { name: /^processes for /i })).toBeNull()
     expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe(ndviWorkflow.id)
   })
 
-  it('opens on the tool list with no chosen tool, and keeps this item for the workflow chosen next', async () => {
+  it('opens on the process list with no process selected, and keeps this item for the workflow chosen next', async () => {
     const user = userEvent.setup()
     const panel = await runFromWorkflowsTab(user)
-    await within(panel).findByRole('heading', { name: /^tools for /i })
+    await within(panel).findByRole('heading', { name: /^processes for /i })
 
     await user.click(await within(panel).findByText('NDVI', { exact: true }))
     expect(await within(panel).findByRole('radio', { name: /this item/i })).toBeChecked()
     expect(panel).toHaveTextContent(item.id)
   })
 
-  it('drops a chosen workflow that does not apply to the item and opens on the tool list', async () => {
+  it('drops a chosen workflow that does not apply to the item and opens on the process list', async () => {
     const user = userEvent.setup()
     choose(landsatWorkflow)
     const panel = await runFromWorkflowsTab(user)
     await expectToolListForThisItem(user, panel)
   })
 
-  it('drops a chosen notebook and opens on the tool list', async () => {
+  it('drops a chosen notebook and opens on the process list', async () => {
     const user = userEvent.setup()
     choose(itemNotebook)
     const panel = await runFromWorkflowsTab(user)

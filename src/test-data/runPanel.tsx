@@ -39,9 +39,9 @@ export const renderWithRunPanel = async (
 }
 
 /** The open run panel. */
-export const runPanel = () => screen.findByRole('complementary', { name: 'Tools' })
+export const runPanel = () => screen.findByRole('complementary', { name: 'Processes' })
 
-export const queryRunPanel = () => screen.queryByRole('complementary', { name: 'Tools' })
+export const queryRunPanel = () => screen.queryByRole('complementary', { name: 'Processes' })
 
 /**
  * Opens the run panel through the store, as the Data Finder's Run buttons do. A source or saved

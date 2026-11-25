@@ -160,11 +160,11 @@ describe('Run panel on the Data Finder page', () => {
   const cloudFilter = { op: '<=', args: [{ property: 'eo:cloud_cover' }, 20] }
 
   const openPanel = async (user: User) => {
-    await user.click(await screen.findByRole('button', { name: 'Tools' }))
+    await user.click(await screen.findByRole('button', { name: 'Processes' }))
     return runPanel()
   }
 
-  /** Chooses the Landsat-only tool, listed under Tools for other collections on Sentinel-2. */
+  /** Chooses the Landsat-only process, listed under Processes for other datasets on Sentinel-2. */
   const chooseOtherCollectionTool = async (user: User) => {
     const panel = await openPanel(user)
     await user.click(await within(panel).findByText('Landsat surface temperature'))
@@ -185,7 +185,7 @@ describe('Run panel on the Data Finder page', () => {
     expect(screen.getByText('Item results')).toBeInTheDocument()
   })
 
-  it("opens the dataset list filtered to the tool's datasets for a tool for other collections", async () => {
+  it("opens the dataset list filtered to the process's datasets for a process for other datasets", async () => {
     const user = userEvent.setup()
     renderFinder('/finder/sentinel2_ard')
     await chooseOtherCollectionTool(user)
@@ -196,7 +196,7 @@ describe('Run panel on the Data Finder page', () => {
     expect(screen.queryByText('MODIS land surface temperature')).toBeNull()
   })
 
-  it('clears the query filter when a dataset is picked from the list the tool opened', async () => {
+  it('clears the query filter when a dataset is picked from the list the process opened', async () => {
     const user = userEvent.setup()
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
     renderFinder('/finder/sentinel2_ard')
@@ -207,7 +207,7 @@ describe('Run panel on the Data Finder page', () => {
     expect(queryFilter()).toBeUndefined()
   })
 
-  it('keeps the query filter when the list the tool opened is closed with Back', async () => {
+  it('keeps the query filter when the list the process opened is closed with Back', async () => {
     const user = userEvent.setup()
     dataFinderStore.send({ type: 'queryFilterChange', queryFilter: cloudFilter })
     renderFinder('/finder/sentinel2_ard')

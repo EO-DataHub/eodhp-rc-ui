@@ -79,7 +79,9 @@ const pressInFilter = (user: User) => user.click(screen.getByText('Reset'))
 
 const pressInRunPanel = async (user: User) => {
   const panel = await runPanel()
-  await user.click(await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' }))
+  await user.click(
+    await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' }),
+  )
 }
 
 beforeAll(() => {

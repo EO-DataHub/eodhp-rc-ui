@@ -183,7 +183,7 @@ const withDetails = (record: ProcessDetail, title: string, description: string):
   properties: { ...record.properties, title, description },
 })
 
-/** A notebook that runs on one item, as listed in the Data Finder's Tools tab. */
+/** A notebook that runs on one item, as listed in the run panel's Processes tab. */
 export const itemNotebook = withDetails(
   notebookRecord('ndvi_notebook', { STAC_ITEM_LINK: { hubType: 'stac-item', type: 'text' } }),
   'NDVI notebook',

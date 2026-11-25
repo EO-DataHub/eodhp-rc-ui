@@ -119,8 +119,8 @@ const results = fanOutItems(PAGE_SIZE + 1, 'S2A_RESULT')
 const set = savedSet([setItem('S2A_SET_1'), setItem('S2A_SET_2'), setItem('S2A_SET_3')])
 const launchNotebook = vi.fn()
 
-/** The list entry for a tool, found by its exact title. */
-const toolEntry = async (panel: HTMLElement, title: string) => {
+/** The list entry for a process, found by its exact title. */
+const processEntry = async (panel: HTMLElement, title: string) => {
   const titleText = await within(panel).findByText(title, { exact: true })
   const entry = titleText.closest('button, a, [role="button"]')
   expect(entry).not.toBeNull()
@@ -130,8 +130,8 @@ const toolEntry = async (panel: HTMLElement, title: string) => {
 const isBefore = (first: HTMLElement, second: HTMLElement) =>
   !!(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING)
 
-const otherCollectionsHeading = (panel: HTMLElement) =>
-  within(panel).findByRole('heading', { name: /^tools for other collections$/i })
+const otherDatasetsHeading = (panel: HTMLElement) =>
+  within(panel).findByRole('heading', { name: /^processes for other datasets$/i })
 
 /** The smallest element whose whole text matches. */
 const textElement = (container: HTMLElement, pattern: RegExp) =>
@@ -170,7 +170,7 @@ const runAndWait = async (user: User, panel: HTMLElement) => {
 const outputsTab = (panel: HTMLElement) =>
   within(panel).getByRole('tab', { name: 'Workflow outputs' })
 
-const toolsTab = (panel: HTMLElement) => within(panel).getByRole('tab', { name: 'Tools' })
+const processesTab = (panel: HTMLElement) => within(panel).getByRole('tab', { name: 'Processes' })
 
 const sharedListCalls = () => vi.mocked(fetchJobsForSharedWorkspace).mock.calls.length
 const userListCalls = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
@@ -232,39 +232,41 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('Run panel and tool list', () => {
-  it('opens from the Tools button as a landmark, and × hides it again', async () => {
+describe('Run panel and process list', () => {
+  it('opens from the Processes button as a landmark, and × hides it again', async () => {
     const user = userEvent.setup()
     await renderWithRunPanel()
     expect(queryRunPanel()).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Tools' }))
+    await user.click(screen.getByRole('button', { name: 'Processes' }))
     const panel = await runPanel()
     expect(panel.tagName).toBe('ASIDE')
     expect(screen.queryByRole('dialog')).toBeNull()
 
     await user.click(hideButton(panel))
     expect(queryRunPanel()).toBeNull()
-    expect(screen.getByRole('button', { name: 'Tools' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Processes' })).toBeInTheDocument()
   })
 
-  it('lists the tools for the open dataset, then Tools for other collections, without set notebooks', async () => {
+  it('lists the processes for the open dataset, then Processes for other datasets, without set notebooks', async () => {
     openRunPanel()
     await renderWithRunPanel()
     const panel = await runPanel()
 
-    const title = await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' })
-    const other = await otherCollectionsHeading(panel)
+    const title = await within(panel).findByRole('heading', {
+      name: 'Processes for Sentinel-2 ARD',
+    })
+    const other = await otherDatasetsHeading(panel)
     for (const name of ['NDVI', 'Clip', 'Footprint', 'Area mask', 'Change detection']) {
-      const entry = await toolEntry(panel, name)
+      const entry = await processEntry(panel, name)
       expect(isBefore(title, entry) && isBefore(entry, other)).toBe(true)
     }
-    const notebook = await toolEntry(panel, 'NDVI notebook')
+    const notebook = await processEntry(panel, 'NDVI notebook')
     expect(isBefore(notebook, other)).toBe(true)
-    expect(isBefore(other, await toolEntry(panel, 'Landsat surface temperature'))).toBe(true)
+    expect(isBefore(other, await processEntry(panel, 'Landsat surface temperature'))).toBe(true)
     expect(within(panel).queryByText('Set statistics')).toBeNull()
 
-    const workflow = await toolEntry(panel, 'NDVI')
+    const workflow = await processEntry(panel, 'NDVI')
     expect(workflow).toHaveTextContent(/workflow/i)
     expect(workflow).toHaveTextContent('Calculates NDVI for one Sentinel-2 item.')
     expect(notebook).toHaveTextContent(/notebook/i)
@@ -275,40 +277,40 @@ describe('Run panel and tool list', () => {
     openRunPanel()
     await renderWithRunPanel()
     const panel = await runPanel()
-    await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' })
+    await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' })
 
     act(() => {
       dataFinderStore.send({ type: 'setCollection', collection: landsat })
     })
 
     expect(
-      await within(panel).findByRole('heading', { name: 'Tools for Landsat C2 L2' }),
+      await within(panel).findByRole('heading', { name: 'Processes for Landsat C2 L2' }),
     ).toBeInTheDocument()
-    const other = await otherCollectionsHeading(panel)
-    expect(isBefore(await toolEntry(panel, 'Landsat surface temperature'), other)).toBe(true)
-    expect(isBefore(other, await toolEntry(panel, 'NDVI'))).toBe(true)
+    const other = await otherDatasetsHeading(panel)
+    expect(isBefore(await processEntry(panel, 'Landsat surface temperature'), other)).toBe(true)
+    expect(isBefore(other, await processEntry(panel, 'NDVI'))).toBe(true)
   })
 
-  it('chooses a tool from the list, and Clear tool shows the list again', async () => {
+  it('chooses a process from the list, and Clear NDVI shows the list again', async () => {
     const user = userEvent.setup()
     openRunPanel()
     await renderWithRunPanel()
     const panel = await runPanel()
 
-    await user.click(await toolEntry(panel, 'NDVI'))
+    await user.click(await processEntry(panel, 'NDVI'))
     expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe('ndvi')
     await waitFor(() =>
-      expect(within(panel).queryByRole('heading', { name: /^tools for /i })).toBeNull(),
+      expect(within(panel).queryByRole('heading', { name: /^processes for /i })).toBeNull(),
     )
 
-    await user.click(within(panel).getByRole('button', { name: /clear tool/i }))
+    await user.click(within(panel).getByRole('button', { name: 'Clear NDVI' }))
     expect(dataFinderStore.getSnapshot().context.chosenTool).toBeUndefined()
     expect(
-      await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' }),
+      await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' }),
     ).toBeInTheDocument()
   })
 
-  it('shows a badge with the tool and its source when hidden, which opens the panel again', async () => {
+  it('shows a badge with the selected process and its source when hidden, which opens the panel again', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3))
     chooseTool(ndviWorkflow)
@@ -316,12 +318,36 @@ describe('Run panel and tool list', () => {
     await renderWithRunPanel()
 
     await user.click(hideButton(await runPanel()))
-    const badge = screen.getByRole('button', { name: /NDVI · 3 pinned items/i })
+    const badge = screen.getByRole('button', { name: /NDVI selected · 3 pinned items/i })
 
     await user.click(badge)
     const panel = await runPanel()
     expect(dataFinderStore.getSnapshot().context.chosenTool?.id).toBe('ndvi')
     expect(panel).toHaveTextContent('NDVI')
+  })
+
+  it('says "process", not "tool", in the open panel, with or without a process selected', async () => {
+    const user = userEvent.setup()
+    openRunPanel()
+    await renderWithRunPanel()
+    const panel = await runPanel()
+    const words = () =>
+      [
+        panel.textContent ?? '',
+        ...Array.from(panel.querySelectorAll('[aria-label], [title]')).flatMap((element) => [
+          element.getAttribute('aria-label') ?? '',
+          element.getAttribute('title') ?? '',
+        ]),
+      ]
+        .join(' ')
+        .replace(/Integration Tools/g, '')
+
+    await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' })
+    expect(words()).not.toMatch(/\btools?\b/i)
+
+    await user.click(await processEntry(panel, 'NDVI'))
+    await within(panel).findByRole('button', { name: 'Run workflow' })
+    expect(words()).not.toMatch(/\btools?\b/i)
   })
 })
 
@@ -355,6 +381,15 @@ describe('Run form in the panel', () => {
     expect(new Set(sentItemLinks(vi.mocked(launchWorkflow).mock.calls))).toEqual(
       new Set(pinned.slice(1).map((entry) => fanOutItemHref(entry.id))),
     )
+  })
+
+  it('shows Starting… on the Run workflow button while the run is sent', async () => {
+    const user = userEvent.setup()
+    vi.mocked(launchWorkflow).mockImplementation(() => new Promise(() => undefined))
+    const panel = await openForm('item', { item: fanOutItem('S2A_SENDING') })
+
+    await user.click(runWorkflowButton(panel))
+    expect(await within(panel).findByRole('button', { name: 'Starting…' })).toBeDisabled()
   })
 
   it('runs on a saved set', async () => {
@@ -452,7 +487,7 @@ describe('Run form in the panel', () => {
     )
   })
 
-  it('shows the started and failed jobs with their errors, and Retry these sends only the failed items', async () => {
+  it('shows the started and failed jobs with their errors, and Retry failed jobs sends only the failed items', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(3, 'S2A_RETRY'))
     vi.mocked(launchWorkflow).mockImplementation((_url, variables) =>
@@ -474,10 +509,10 @@ describe('Run form in the panel', () => {
       status: 'accepted',
       submittedAt: '',
     })
-    await user.click(within(panel).getByRole('button', { name: 'Retry these' }))
+    await user.click(within(panel).getByRole('button', { name: 'Retry failed jobs' }))
 
     await waitFor(() =>
-      expect(within(panel).queryByRole('button', { name: 'Retry these' })).toBeNull(),
+      expect(within(panel).queryByRole('button', { name: 'Retry failed jobs' })).toBeNull(),
     )
     expect(sentItemLinks(vi.mocked(launchWorkflow).mock.calls)).toEqual([
       fanOutItemHref('S2A_RETRY_2'),
@@ -711,8 +746,8 @@ describe('Saved set in the run panel', () => {
   })
 })
 
-describe('Dataset list from the tool list', () => {
-  it('opens the dataset list for a tool for other collections, not for a tool for this dataset', async () => {
+describe('Dataset list from the process list', () => {
+  it('opens the dataset list for a process for other datasets, not for a process for this dataset', async () => {
     const user = userEvent.setup()
     const isDatasetListOpen = () => dataFinderStore.getSnapshot().context.isDatasetListOpen
     act(() => {
@@ -722,11 +757,11 @@ describe('Dataset list from the tool list', () => {
     await renderWithRunPanel()
     const panel = await runPanel()
 
-    await user.click(await toolEntry(panel, 'NDVI'))
+    await user.click(await processEntry(panel, 'NDVI'))
     expect(isDatasetListOpen()).toBe(false)
 
-    await user.click(within(panel).getByRole('button', { name: /clear tool/i }))
-    await user.click(await toolEntry(panel, 'Landsat surface temperature'))
+    await user.click(within(panel).getByRole('button', { name: 'Clear NDVI' }))
+    await user.click(await processEntry(panel, 'Landsat surface temperature'))
     expect(isDatasetListOpen()).toBe(true)
   })
 })
@@ -846,13 +881,13 @@ describe('Workflow outputs tab', () => {
     await user.click(outputsTab(panel))
     expect(outputsLink()).toHaveAttribute('href', '/my-data/workflow-outputs?workflow=ndvi')
 
-    await user.click(toolsTab(panel))
-    await user.click(within(panel).getByRole('button', { name: /clear tool/i }))
+    await user.click(processesTab(panel))
+    await user.click(within(panel).getByRole('button', { name: 'Clear NDVI' }))
     await user.click(outputsTab(panel))
     expect(outputsLink()).toHaveAttribute('href', '/my-data/workflow-outputs')
   })
 
-  it('shows an error with Try again when the jobs do not load, and the Tools tab still works', async () => {
+  it('shows an error with Try again when the jobs do not load, and the Processes tab still works', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchJobsForWorkspace).mockRejectedValue(new Error('Jobs service unavailable'))
     openRunPanel()
@@ -868,9 +903,9 @@ describe('Workflow outputs tab', () => {
       expect(vi.mocked(fetchJobsForWorkspace).mock.calls.length).toBe(callsBefore + 1),
     )
 
-    await user.click(toolsTab(panel))
+    await user.click(processesTab(panel))
     expect(
-      await within(panel).findByRole('heading', { name: 'Tools for Sentinel-2 ARD' }),
+      await within(panel).findByRole('heading', { name: 'Processes for Sentinel-2 ARD' }),
     ).toBeInTheDocument()
   })
 })
@@ -1049,7 +1084,7 @@ describe('Job view in the panel', () => {
     const panel = await viewJob(user, viewedJob('job-run', 'running'))
     expect(dataFinderStore.getSnapshot().context.openJobId).toBe('job-run')
 
-    await user.click(toolsTab(panel))
+    await user.click(processesTab(panel))
     await user.click(outputsTab(panel))
     expect(await within(panel).findByRole('button', { name: /^back/i })).toBeInTheDocument()
     expect(panel).toHaveTextContent('S2A_IN_1')
@@ -1227,15 +1262,13 @@ describe('Notebooks in the run panel', () => {
     const panel = await runPanel()
 
     expect(
-      await within(panel).findByText(
-        /choose an item, then select open in NDVI notebook on its card/i,
-      ),
+      await within(panel).findByText(/NDVI notebook selected\. Open it from an item's card\./i),
     ).toBeInTheDocument()
-    const launch = within(panel).queryByRole('button', { name: 'Launch' })
-    expect(launch === null || launch.hasAttribute('disabled')).toBe(true)
+    const open = within(panel).queryByRole('button', { name: 'Open in Jupyter' })
+    expect(open === null || open.hasAttribute('disabled')).toBe(true)
   })
 
-  it('launches the notebook with the item through useNotebookLaunch', async () => {
+  it('opens the notebook in Jupyter with the item through useNotebookLaunch', async () => {
     const user = userEvent.setup()
     const one = fanOutItem('S2A_NOTEBOOK')
     chooseTool(itemNotebook)
@@ -1250,16 +1283,30 @@ describe('Notebooks in the run panel', () => {
         context: expect.objectContaining({ item: expect.objectContaining({ id: 'S2A_NOTEBOOK' }) }),
       }),
     )
-    await user.click(within(panel).getByRole('button', { name: 'Launch' }))
+    await user.click(within(panel).getByRole('button', { name: 'Open in Jupyter' }))
     expect(launchNotebook).toHaveBeenCalledTimes(1)
   })
 
-  /** Run workflow on an item from Integration Tools with no tool chosen, then the notebook from the list. */
+  it('shows Opening… on the button while the notebook opens', async () => {
+    const launching = vi.mocked(useNotebookLaunch).getMockImplementation()!
+    vi.mocked(useNotebookLaunch).mockImplementation((params) => ({
+      ...launching(params),
+      isLaunching: true,
+    }))
+    chooseTool(itemNotebook)
+    openRunPanel({ item: fanOutItem('S2A_OPENING') })
+    await renderWithRunPanel()
+    const panel = await runPanel()
+
+    expect(await within(panel).findByRole('button', { name: 'Opening…' })).toBeDisabled()
+  })
+
+  /** Run workflow on an item from Integration Tools with no process chosen, then the notebook from the list. */
   const chooseNotebookForItem = async (user: User, item: Item) => {
     dataFinderStore.send({ type: 'clearTool' })
     openRunPanel({ source: 'item', item })
     await renderWithRunPanel()
-    await user.click(await toolEntry(await runPanel(), 'NDVI notebook'))
+    await user.click(await processEntry(await runPanel(), 'NDVI notebook'))
     return runPanel()
   }
 
@@ -1274,16 +1321,14 @@ describe('Notebooks in the run panel', () => {
     )
 
     expect(
-      await within(panel).findByText(
-        /choose an item, then select open in NDVI notebook on its card/i,
-      ),
+      await within(panel).findByText(/NDVI notebook selected\. Open it from an item's card\./i),
     ).toBeInTheDocument()
     expect(panel).not.toHaveTextContent('LC09_OTHER')
-    const launch = within(panel).queryByRole('button', { name: 'Launch' })
-    expect(launch === null || launch.hasAttribute('disabled')).toBe(true)
+    const open = within(panel).queryByRole('button', { name: 'Open in Jupyter' })
+    expect(open === null || open.hasAttribute('disabled')).toBe(true)
 
     await user.click(hideButton(panel))
-    expect(screen.getByRole('button', { name: /^NDVI notebook$/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^NDVI notebook selected$/i })).toBeInTheDocument()
   })
 
   it('keeps an item the chosen notebook applies to, on the form and the badge', async () => {
@@ -1291,9 +1336,11 @@ describe('Notebooks in the run panel', () => {
     const panel = await chooseNotebookForItem(user, fanOutItem('S2A_FITS'))
 
     expect(await within(panel).findByText('S2A_FITS')).toBeInTheDocument()
-    expect(within(panel).getByRole('button', { name: 'Launch' })).toBeEnabled()
+    expect(within(panel).getByRole('button', { name: 'Open in Jupyter' })).toBeEnabled()
 
     await user.click(hideButton(panel))
-    expect(screen.getByRole('button', { name: /^NDVI notebook · S2A_FITS$/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /^NDVI notebook selected · S2A_FITS$/i }),
+    ).toBeInTheDocument()
   })
 })
