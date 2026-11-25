@@ -3,14 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
+  fetchCalledJobs,
   fetchJobById,
   fetchJobsForWorkspace,
-  fetchJobsForSharedWorkspace,
+  getNextCalledJobsAfter,
   getNextJobsSkip,
   JOBS_PAGE_SIZE,
 } from '@/services/workflowJobService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
-import { transformJobForDisplay, sortJobsByCreated } from '@/library/jobUtils'
+import {
+  getJobWorkspaceFromLinks,
+  mergePagedJobLists,
+  pagedListHasMore,
+  transformJobForDisplay,
+} from '@/library/jobUtils'
 import { WorkflowJob } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
@@ -58,9 +64,9 @@ export const WorkflowOutputsPage: React.FC = () => {
     data: ownJobsPages,
     isLoading: isLoadingJobs,
     error: jobsError,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
+    fetchNextPage: fetchNextOwnPage,
+    hasNextPage: hasMoreOwnJobs,
+    isFetchingNextPage: isFetchingNextOwnPage,
   } = useInfiniteQuery({
     queryKey: ['WorkflowJobs', workflowWorkspace, userInfo?.sub],
     queryFn: ({ pageParam }) =>
@@ -74,47 +80,94 @@ export const WorkflowOutputsPage: React.FC = () => {
     enabled: queriesEnabled,
   })
 
-  // The user's jobs in the shared results workspace. Most jobs there belong to other users
-  // and are removed by the API after paging, so pages would be mostly empty. Fetch them in
-  // full, in a separate query, so the user's own jobs are not held up.
-  const { data: sharedJobs = [], isLoading: isLoadingSharedJobs } = useQuery<WorkflowJob[]>({
-    queryKey: ['WorkflowSharedJobs', sharedResultsWorkspaceName, workflowWorkspace, userInfo?.sub],
-    queryFn: async () => {
-      try {
-        const shared = await fetchJobsForSharedWorkspace(
-          sharedResultsWorkspaceName ?? '',
-          workflowWorkspace,
-          token ?? '',
-        )
-        return shared.jobs.map((job) => ({ ...job, workspace: sharedResultsWorkspaceName }))
-      } catch {
-        // If the shared workspace cannot be read, show the workspace's own jobs only
-        return []
-      }
-    },
+  // The jobs this workspace started on workflows in other workspaces (for example the shared
+  // results workspace), newest first, one page at a time
+  const {
+    data: calledJobsPages,
+    isLoading: isLoadingCalledJobs,
+    error: calledJobsError,
+    fetchNextPage: fetchNextCalledPage,
+    hasNextPage: hasMoreCalledJobs,
+    isFetchingNextPage: isFetchingNextCalledPage,
+  } = useInfiniteQuery({
+    queryKey: ['WorkflowCalledJobs', workflowWorkspace, userInfo?.sub],
+    queryFn: ({ pageParam }) => fetchCalledJobs(workflowWorkspace, token ?? '', pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => getNextCalledJobsAfter(lastPage.links),
     refetchOnWindowFocus: false,
-    enabled: queriesEnabled && !!sharedResultsWorkspaceName,
+    enabled: queriesEnabled,
   })
 
-  const allJobs = useMemo(() => {
-    const ownJobs = (ownJobsPages?.pages ?? []).flatMap((page) =>
-      page.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
-    )
-    return sortJobsByCreated([...ownJobs, ...sharedJobs])
-  }, [ownJobsPages, sharedJobs, workflowWorkspace])
+  const ownJobs = useMemo(
+    () =>
+      (ownJobsPages?.pages ?? []).flatMap((page) =>
+        page.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
+      ),
+    [ownJobsPages, workflowWorkspace],
+  )
 
-  const isLoadingAnyJobs = isLoadingJobs || (!!sharedResultsWorkspaceName && isLoadingSharedJobs)
+  // Each called job's links point at the workspace it ran in. Without one, say so rather than
+  // let the table show this workspace.
+  const calledJobs = useMemo(
+    () =>
+      (calledJobsPages?.pages ?? []).flatMap((page) =>
+        page.jobs.map((job) => ({ ...job, workspace: getJobWorkspaceFromLinks(job) ?? 'Unknown' })),
+      ),
+    [calledJobsPages],
+  )
+  const hasLoadedCalledPages = (calledJobsPages?.pages.length ?? 0) > 0
+
+  // Both lists come newest first, a page at a time. Show only the jobs that are in order so far;
+  // "Load more" fetches the next page of the list that holds the rest back.
+  const { jobs: allJobs, listsToLoad } = useMemo(
+    () =>
+      mergePagedJobLists([
+        { jobs: ownJobs, hasMore: !!hasMoreOwnJobs },
+        {
+          jobs: calledJobs,
+          hasMore: pagedListHasMore({
+            hasNextPage: !!hasMoreCalledJobs,
+            isError: !!calledJobsError,
+            hasLoadedPages: hasLoadedCalledPages,
+          }),
+        },
+      ]),
+    [ownJobs, calledJobs, hasMoreOwnJobs, hasMoreCalledJobs, calledJobsError, hasLoadedCalledPages],
+  )
+  const hasNextPage = listsToLoad.length > 0
+  const isFetchingNextPage = isFetchingNextOwnPage || isFetchingNextCalledPage
+  const fetchNextPage = () => {
+    if (listsToLoad.includes(0)) void fetchNextOwnPage()
+    if (listsToLoad.includes(1)) void fetchNextCalledPage()
+  }
+
+  const isLoadingAnyJobs = isLoadingJobs || isLoadingCalledJobs
+  const loadedJobs = useMemo(() => [...ownJobs, ...calledJobs], [ownJobs, calledJobs])
   const loadedJobFromUrl = jobIdParam
-    ? allJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
+    ? loadedJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
     : undefined
 
-  // A job linked from elsewhere may be older than the jobs loaded so far, so fetch it on its own
+  // A job linked from elsewhere may be older than the jobs loaded so far, so fetch it on its own.
+  // Links name this workspace, but jobs started on shared workflows ran in the shared results
+  // workspace, so look there next.
   const { data: fetchedJobFromUrl } = useQuery<WorkflowJob>({
     queryKey: ['WorkflowJob', workflowWorkspace, jobIdParam, userInfo?.sub],
     queryFn: async () => {
       const workspaceTokens = await fetchWorkspaceTokens(workflowWorkspace, token ?? '')
-      const job = await fetchJobById(workflowWorkspace, jobIdParam ?? '', workspaceTokens.access)
-      return { ...job, workspace: workflowWorkspace }
+      try {
+        const job = await fetchJobById(workflowWorkspace, jobIdParam ?? '', workspaceTokens.access)
+        return { ...job, workspace: workflowWorkspace }
+      } catch (error) {
+        if (!sharedResultsWorkspaceName || sharedResultsWorkspaceName === workflowWorkspace) {
+          throw error
+        }
+        const job = await fetchJobById(
+          sharedResultsWorkspaceName,
+          jobIdParam ?? '',
+          workspaceTokens.access,
+        )
+        return { ...job, workspace: sharedResultsWorkspaceName }
+      }
     },
     retry: false,
     refetchOnWindowFocus: false,
@@ -220,9 +273,16 @@ export const WorkflowOutputsPage: React.FC = () => {
               {(selectedStatus !== 'all' || searchText.trim()) && ' (filtered)'}
               {hasNextPage && ', newest first. Load more to see older jobs.'}
             </Text>
-            {sharedResultsWorkspaceName && isLoadingSharedJobs && !isLoadingJobs && (
+            {isLoadingCalledJobs && !isLoadingJobs && (
               <Text size="2" color="gray">
-                Loading jobs from shared workflows…
+                Loading jobs run on shared workflows…
+              </Text>
+            )}
+            {calledJobsError && (
+              <Text size="2" color="red">
+                {hasLoadedCalledPages
+                  ? 'Could not load more jobs run on shared workflows. Try Load more again.'
+                  : 'Could not load jobs run on shared workflows.'}
               </Text>
             )}
           </Flex>
@@ -257,7 +317,7 @@ export const WorkflowOutputsPage: React.FC = () => {
                 </Table.Header>
                 <Table.Body>
                   {displayJobs.map((displayJob) => {
-                    const job = allJobs.find((j) => j.id === displayJob.id)
+                    const job = loadedJobs.find((j) => j.id === displayJob.id)
                     return (
                       <Table.Row
                         key={displayJob.id}
@@ -293,12 +353,7 @@ export const WorkflowOutputsPage: React.FC = () => {
           )}
           {hasNextPage && !isLoadingJobs && (
             <Flex justify="center">
-              <Button
-                size="3"
-                variant="soft"
-                onClick={() => void fetchNextPage()}
-                loading={isFetchingNextPage}
-              >
+              <Button size="3" variant="soft" onClick={fetchNextPage} loading={isFetchingNextPage}>
                 Load more
               </Button>
             </Flex>

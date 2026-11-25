@@ -30,17 +30,30 @@ export const getNextJobsSkip = (links: JobLink[]): number | undefined => {
   }
 }
 
+/** The shape of the `after` cursor of a `scope=called` jobs list: reverse time, workspace, job ID */
+const CALLED_AFTER_PATTERN = /^\d{13}\/[^/]+\/[^/]+$/
+
 /**
- * Fetches workflow execution jobs for a specific workspace, newest first
- * @param workspaceName - The workspace name
- * @param token - User authentication token
- * @param options - Optional `limit` and `skip` to fetch one page of jobs
- * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
+ * Returns the `after` value of a `scope=called` jobs list's `next` link, or undefined when there
+ * are no more jobs. Only the value is used, so the workspace token is never sent to a URL taken
+ * from the response.
  */
-export const fetchJobsForWorkspace = async (
+export const getNextCalledJobsAfter = (links: JobLink[]): string | undefined => {
+  const next = links.find((link) => link.rel === 'next')
+  if (!next?.href) return undefined
+  try {
+    const after = new URL(next.href, 'http://localhost').searchParams.get('after')
+    return after && CALLED_AFTER_PATTERN.test(after) ? after : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Fetches one jobs list response for a workspace, with a workspace-scoped token */
+const fetchJobsList = async (
   workspaceName: string,
   token: string,
-  options: JobsPageOptions = {},
+  params: URLSearchParams,
 ): Promise<JobsApiResponse> => {
   if (!token || !workspaceName) {
     return {
@@ -61,9 +74,6 @@ export const fetchJobsForWorkspace = async (
       )
     }
 
-    const params = new URLSearchParams()
-    if (options.limit) params.set('limit', String(options.limit))
-    if (options.skip) params.set('skip', String(options.skip))
     const query = params.toString()
 
     // Fetch jobs from API endpoint
@@ -104,6 +114,42 @@ export const fetchJobsForWorkspace = async (
     }
     throw new Error('Failed to fetch workflow jobs')
   }
+}
+
+/**
+ * Fetches workflow execution jobs for a specific workspace, newest first
+ * @param workspaceName - The workspace name
+ * @param token - User authentication token
+ * @param options - Optional `limit` and `skip` to fetch one page of jobs
+ * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
+ */
+export const fetchJobsForWorkspace = async (
+  workspaceName: string,
+  token: string,
+  options: JobsPageOptions = {},
+): Promise<JobsApiResponse> => {
+  const params = new URLSearchParams()
+  if (options.limit) params.set('limit', String(options.limit))
+  if (options.skip) params.set('skip', String(options.skip))
+  return fetchJobsList(workspaceName, token, params)
+}
+
+/**
+ * Fetches one page of the jobs a workspace started on workflows in other workspaces, newest
+ * first (`scope=called`). The jobs' links point at the workspace each job ran in.
+ * @param workspaceName - The workspace that started the jobs
+ * @param token - User authentication token
+ * @param after - The `after` value from the previous page's `next` link; unset for the first page
+ * @returns Promise resolving to JobsApiResponse. `numberTotal` is the number of jobs on the page.
+ */
+export const fetchCalledJobs = async (
+  workspaceName: string,
+  token: string,
+  after?: string,
+): Promise<JobsApiResponse> => {
+  const params = new URLSearchParams({ scope: 'called', limit: String(JOBS_PAGE_SIZE) })
+  if (after) params.set('after', after)
+  return fetchJobsList(workspaceName, token, params)
 }
 
 /**

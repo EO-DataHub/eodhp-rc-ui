@@ -1,6 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { fetchJobsForWorkspace, getNextJobsSkip } from './workflowJobService'
+import {
+  fetchCalledJobs,
+  fetchJobsForWorkspace,
+  getNextCalledJobsAfter,
+  getNextJobsSkip,
+} from './workflowJobService'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
 
 vi.mock('./workspaceTokenService', () => ({
@@ -86,6 +91,82 @@ describe('fetchJobsForWorkspace', () => {
 
     await fetchJobsForWorkspace('ws1', 'token', { limit: 20 })
 
+    const init = fetchSpy.mock.calls[0][1]!
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer ws-token')
+  })
+})
+
+describe('getNextCalledJobsAfter', () => {
+  it('returns the after value of the next link', () => {
+    expect(
+      getNextCalledJobsAfter([
+        { rel: 'self', href: 'https://hub.example/jobs?scope=called&limit=20' },
+        {
+          rel: 'next',
+          href: 'https://hub.example/jobs?scope=called&limit=20&after=8235000000001/publisher/job-3',
+        },
+      ]),
+    ).toBe('8235000000001/publisher/job-3')
+  })
+
+  it('reads an encoded after value', () => {
+    expect(
+      getNextCalledJobsAfter([
+        { rel: 'next', href: '/jobs?scope=called&after=8235000000001%2Fpublisher%2Fjob-3' },
+      ]),
+    ).toBe('8235000000001/publisher/job-3')
+  })
+
+  it.each([
+    ['no next link', [{ rel: 'self', href: 'https://hub.example/jobs?scope=called' }]],
+    ['no after', [{ rel: 'next', href: 'https://hub.example/jobs?scope=called&limit=20' }]],
+    ['an after that is not a cursor', [{ rel: 'next', href: '/jobs?after=job-3' }]],
+    ['an after with an extra part', [{ rel: 'next', href: '/jobs?after=8235000000001/a/b/c' }]],
+    ['an empty href', [{ rel: 'next', href: '' }]],
+  ])('returns undefined for %s', (_, links) => {
+    expect(getNextCalledJobsAfter(links)).toBeUndefined()
+  })
+})
+
+describe('fetchCalledJobs', () => {
+  beforeEach(() => {
+    vi.mocked(fetchWorkspaceTokens).mockResolvedValue({ access: 'ws-token' } as Awaited<
+      ReturnType<typeof fetchWorkspaceTokens>
+    >)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('asks for the first page of jobs started in other workspaces', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(jobsBody))
+
+    await fetchCalledJobs('ws1', 'token')
+
+    const url = requestedUrl(fetchSpy.mock.calls)
+    expect(url.pathname).toMatch(/\/catalogs\/user\/catalogs\/ws1\/jobs$/)
+    expect(url.searchParams.get('scope')).toBe('called')
+    expect(url.searchParams.get('limit')).toBe('20')
+    expect(url.searchParams.has('after')).toBe(false)
+    expect(url.searchParams.has('skip')).toBe(false)
+  })
+
+  it('continues after the given cursor', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(jobsBody))
+
+    await fetchCalledJobs('ws1', 'token', '8235000000001/publisher/job-3')
+
+    const url = requestedUrl(fetchSpy.mock.calls)
+    expect(url.searchParams.get('after')).toBe('8235000000001/publisher/job-3')
+  })
+
+  it('sends the workspace-scoped token of the calling workspace', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(jobsBody))
+
+    await fetchCalledJobs('ws1', 'token')
+
+    expect(fetchWorkspaceTokens).toHaveBeenCalledWith('ws1', 'token')
     const init = fetchSpy.mock.calls[0][1]!
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer ws-token')
   })
