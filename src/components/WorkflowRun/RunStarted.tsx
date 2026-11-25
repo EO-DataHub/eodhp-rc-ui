@@ -7,7 +7,7 @@ import styles from './WorkflowRun.module.scss'
 
 interface RunStartedProps {
   run: WorkflowRun
-  /** Buttons shown after Retry these. */
+  /** Buttons shown after Retry failed jobs. */
   actions?: React.ReactNode
 }
 
@@ -75,7 +75,7 @@ export const RunStarted: React.FC<RunStartedProps> = ({ run, actions }) => {
             disabled={isLaunching}
             onClick={() => void retryFailed()}
           >
-            {isLaunching ? 'Retrying…' : 'Retry these'}
+            {isLaunching ? 'Retrying…' : 'Retry failed jobs'}
           </Button>
         )}
         {actions}

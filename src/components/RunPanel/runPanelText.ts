@@ -28,9 +28,9 @@ const sourceText = (source: RunSource, pinnedCount: number) => {
 }
 
 /**
- * The text of the badge that stands for the hidden run panel, for example "NDVI · 3 pinned items"
- * before a run or "NDVI · 1 running, 1 finished" after one. Undefined with no tool chosen and no
- * job from this visit running, when the panel's plain Tools button shows instead.
+ * The text of the badge that stands for the hidden run panel, for example "NDVI selected · 3 pinned items"
+ * before a run or "NDVI · 1 running, 1 finished" after one. Undefined with no process selected and no
+ * job from this visit running, when the panel's plain Processes button shows instead.
  */
 export const runPanelBadgeText = ({
   tool,
@@ -41,7 +41,7 @@ export const runPanelBadgeText = ({
   jobs = [],
 }: BadgeState) => {
   const lastRun = visitJobs.at(-1)
-  // After a run of the chosen workflow, or with jobs still running once the tool is cleared
+  // After a run of the chosen workflow, or with jobs still running once the process is cleared
   if (lastRun && (!tool || tool.id === lastRun.workflowId)) {
     const counts = countStartedJobs(
       jobs,
@@ -52,7 +52,7 @@ export const runPanelBadgeText = ({
     }
   }
   if (!tool) return undefined
-  const title = tool.properties.title
+  const title = `${tool.properties.title} selected`
   if (tool.properties.type === 'notebook') {
     // An item from another dataset is not one the notebook opens
     return item && toolAppliesTo(tool, item.collection) ? `${title} · ${item.id}` : title

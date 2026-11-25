@@ -37,7 +37,7 @@ const ChosenTool = ({
         color="gray"
         onClick={() => dataFinderStore.send({ type: 'clearTool' })}
       >
-        Clear tool
+        Clear {tool.properties.title}
       </Button>
     </Flex>
     {tool.properties.description && (
@@ -50,7 +50,7 @@ const ChosenTool = ({
 
 type PanelTab = 'tools' | 'outputs'
 
-/** The Data Finder's panel for choosing and running a tool, docked on the right of the map. */
+/** The Data Finder's panel for choosing and running a process, docked on the right of the map. */
 export const RunPanel: React.FC = () => {
   const isOpen = useSelector(dataFinderStore, (state) => state.context.isRunPanelOpen)
   const isOnTop = useSelector(dataFinderStore, (state) => state.context.topPanel === 'run')
@@ -69,7 +69,7 @@ export const RunPanel: React.FC = () => {
     if (sharedQuery.isError) void sharedQuery.refetch()
   }
 
-  // The tool, what it runs on and the jobs of this visit are forgotten on leaving the Data Finder
+  // The selected process, what it runs on and the jobs of this visit are forgotten on leaving the Data Finder
   useEffect(() => () => dataFinderStore.send({ type: 'resetRunPanel' }), [])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -88,7 +88,7 @@ export const RunPanel: React.FC = () => {
     }
   }, [isOpen])
 
-  // Choosing or clearing a tool replaces the focused button, so focus the new heading
+  // Choosing or clearing a process replaces the focused button, so focus the new heading
   useEffect(() => {
     if (shownToolRef.current === chosenTool?.id) return
     shownToolRef.current = chosenTool?.id
@@ -101,7 +101,7 @@ export const RunPanel: React.FC = () => {
 
   const chooseTool = (tool: ProcessRecord) => {
     dataFinderStore.send({ type: 'chooseTool', tool })
-    // A tool for other datasets opens the dataset list, filtered to the datasets it runs on
+    // A process for other datasets opens the dataset list, filtered to the datasets it runs on
     if (!toolRunsOnOpenDataset(tool, collection)) {
       dataFinderStore.send({ type: 'openDatasetList' })
     }
@@ -127,7 +127,7 @@ export const RunPanel: React.FC = () => {
             {badgeText ?? (
               <>
                 <MixerHorizontalIcon aria-hidden />
-                Tools
+                Processes
               </>
             )}
           </Button>
@@ -135,7 +135,7 @@ export const RunPanel: React.FC = () => {
       )}
       {(isOpen || (hasOpened && isWorkflow)) && (
         <aside
-          aria-label="Tools"
+          aria-label="Processes"
           className={styles.panel}
           hidden={!isOpen}
           data-on-top={isOnTop}
@@ -151,8 +151,8 @@ export const RunPanel: React.FC = () => {
             <Flex align="center" justify="between" pr="3" className={styles.header}>
               <Tabs.List>
                 {/* Radix Themes repeats a trigger's text inside it, so name each tab once */}
-                <Tabs.Trigger value="tools" aria-label="Tools">
-                  Tools
+                <Tabs.Trigger value="tools" aria-label="Processes">
+                  Processes
                 </Tabs.Trigger>
                 <Tabs.Trigger value="outputs" aria-label="Workflow outputs">
                   Workflow outputs
@@ -162,7 +162,7 @@ export const RunPanel: React.FC = () => {
                 size="1"
                 variant="ghost"
                 color="gray"
-                aria-label="Hide tools panel"
+                aria-label="Hide processes panel"
                 onClick={() => dataFinderStore.send({ type: 'hideRunPanel' })}
               >
                 <Cross1Icon />

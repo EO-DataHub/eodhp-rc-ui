@@ -17,7 +17,7 @@ const anyNotebook = () => true
 export const NotebookLaunchForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const runItem = useSelector(dataFinderStore, (state) => state.context.runItem)
-  // An item chosen for another tool may be from a dataset this notebook does not open
+  // An item chosen for another process may be from a dataset this notebook does not open
   const item = runItem && toolAppliesTo(tool, runItem.collection) ? runItem : undefined
   const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
   const title = tool.properties.title
@@ -54,7 +54,7 @@ export const NotebookLaunchForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) 
   if (!item) {
     return (
       <Text size="2" color="gray">
-        Choose an item, then select Open in {title} on its card.
+        {`${title} selected. Open it from an item's card.`}
       </Text>
     )
   }
@@ -89,11 +89,11 @@ export const NotebookLaunchForm: React.FC<{ tool: ProcessRecord }> = ({ tool }) 
       )}
       {!isAuthenticated || !currentWorkspace ? (
         <Text size="2" color="gray">
-          Log in and select a workspace to launch this notebook.
+          Log in and select a workspace to open this notebook.
         </Text>
       ) : null}
       <Button disabled={!canLaunch} onClick={() => void launch()}>
-        {isLaunching ? 'Launching...' : 'Launch'}
+        {isLaunching ? 'Opening…' : 'Open in Jupyter'}
       </Button>
       {launchError && (
         <Text size="2" color="red" role="alert">

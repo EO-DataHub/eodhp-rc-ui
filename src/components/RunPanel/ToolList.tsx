@@ -53,10 +53,8 @@ export const ToolList: React.FC<ToolListProps> = ({ collection, onChooseTool, he
     queryFn: () => fetchTools('notebook'),
   })
 
-  // With no dataset open, every tool is listed together
-  const title = collection
-    ? `Tools for ${collection.title ?? collection.id}`
-    : 'Tools for all collections'
+  // With no dataset open, every process is listed together
+  const title = collection ? `Processes for ${collection.title ?? collection.id}` : 'All processes'
   const heading = (
     <Heading as="h2" size="4" tabIndex={-1} ref={headingRef}>
       {title}
@@ -93,7 +91,7 @@ export const ToolList: React.FC<ToolListProps> = ({ collection, onChooseTool, he
       {forOtherDatasets.length > 0 && (
         <>
           <Heading as="h3" size="3" mt="3">
-            Tools for other collections
+            Processes for other datasets
           </Heading>
           {renderTools(forOtherDatasets)}
         </>

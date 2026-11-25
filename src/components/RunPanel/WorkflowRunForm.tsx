@@ -142,7 +142,7 @@ export const WorkflowRunForm: React.FC<{
       </Section>
       <Flex justify="end">
         <Button disabled={!run.canRun} onClick={() => void startRun()}>
-          {run.isLaunching ? 'Running…' : 'Run workflow'}
+          {run.isLaunching ? 'Starting…' : 'Run workflow'}
         </Button>
       </Flex>
     </Flex>
