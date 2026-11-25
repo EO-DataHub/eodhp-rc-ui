@@ -203,7 +203,7 @@ describe('Run panel on the Data Finder page', () => {
     await chooseOtherCollectionTool(user)
 
     await screen.findByText('Landsat C2 L2')
-    await user.click(screen.getByText(/open collection/i))
+    await user.click(screen.getByRole('button', { name: 'Open Landsat C2 L2' }))
     expect(queryFilter()).toBeUndefined()
   })
 
