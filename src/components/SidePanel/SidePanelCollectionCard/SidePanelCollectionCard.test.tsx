@@ -34,7 +34,7 @@ const renderCard = (collection: Collection = landsat) => {
   return { ...props, container, user: userEvent.setup() }
 }
 
-describe('Stage 11: Click anywhere on a dataset card', () => {
+describe('Click anywhere on a dataset card', () => {
   beforeEach(stubBrowserGlobals)
   afterEach(() => {
     vi.unstubAllGlobals()
