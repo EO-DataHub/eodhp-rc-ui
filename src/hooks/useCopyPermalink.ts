@@ -34,6 +34,7 @@ function computePermalink(
   items: Item[],
   mapInstance: { getBounds: () => LngLatBounds } | null | undefined,
   useLimit: boolean,
+  toolId: string | undefined,
 ): PermalinkComputationResult {
   const canShare = !!primaryCollectionId && items.length > 0 && !!mapInstance
 
@@ -58,7 +59,12 @@ function computePermalink(
   const mapBounds = getMapBounds(mapInstance)
 
   if (useLimit) {
-    const { url, itemsIncluded } = buildPermalinkUrlWithLimit(primaryCollectionId, items, mapBounds)
+    const { url, itemsIncluded } = buildPermalinkUrlWithLimit(
+      primaryCollectionId,
+      items,
+      mapBounds,
+      toolId,
+    )
     return {
       url,
       itemsIncluded,
@@ -67,7 +73,7 @@ function computePermalink(
     }
   }
 
-  const url = buildPermalinkUrl(primaryCollectionId, items, mapBounds)
+  const url = buildPermalinkUrl(primaryCollectionId, items, mapBounds, toolId)
 
   return {
     url,
@@ -84,10 +90,11 @@ export function usePermalink(
 ): PermalinkComputationResult {
   const { useLimit = false } = options
   const mapInstance = useSelector(dataFinderStore, (state) => state.context.mapInstance)
+  const toolId = useSelector(dataFinderStore, (state) => state.context.chosenTool?.id)
 
   return useMemo(
-    () => computePermalink(primaryCollectionId, items, mapInstance, useLimit),
-    [primaryCollectionId, items, mapInstance, useLimit],
+    () => computePermalink(primaryCollectionId, items, mapInstance, useLimit, toolId),
+    [primaryCollectionId, items, mapInstance, useLimit, toolId],
   )
 }
 

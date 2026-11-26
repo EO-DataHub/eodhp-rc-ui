@@ -164,17 +164,22 @@ export function parsePermalinkParams(searchParams: URLSearchParams): ParsedPerma
 /**
  * Build the hash part of a permalink URL (path + query).
  * primaryCollectionId is the route param (e.g. "sentinel-2" or "my-xyz"); items are encoded as collectionId/itemId for multi-collection support.
+ * toolId is the chosen workflow or notebook record id, if any.
  */
 export function buildPermalinkHash(
   primaryCollectionId: string,
   items: Item[],
   bounds: MapBounds,
+  toolId?: string,
 ): string {
   const params = new URLSearchParams()
   if (items.length > 0) {
     params.set('items', encodeItemsParam(items, primaryCollectionId))
   }
   params.set('bounds', bounds.join(','))
+  if (toolId) {
+    params.set('tool', toolId)
+  }
   const query = params.toString()
   return `#/finder/${encodeURIComponent(primaryCollectionId)}${query ? `?${query}` : ''}`
 }
@@ -186,8 +191,9 @@ export function buildPermalinkUrl(
   primaryCollectionId: string,
   items: Item[],
   bounds: MapBounds,
+  toolId?: string,
 ): string {
-  const hash = buildPermalinkHash(primaryCollectionId, items, bounds)
+  const hash = buildPermalinkHash(primaryCollectionId, items, bounds, toolId)
   return `${window.location.origin}${window.location.pathname}${hash}`
 }
 
@@ -204,14 +210,15 @@ export function buildPermalinkUrlWithLimit(
   primaryCollectionId: string,
   items: Item[],
   bounds: MapBounds,
+  toolId?: string,
   maxLength: number = MAX_PERMALINK_URL_LENGTH,
 ): BuildPermalinkResult {
   const base = `${window.location.origin}${window.location.pathname}`
   let n = items.length
-  let url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds)
+  let url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds, toolId)
   while (url.length > maxLength && n > 1) {
     n -= 1
-    url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds)
+    url = base + buildPermalinkHash(primaryCollectionId, items.slice(0, n), bounds, toolId)
   }
   return { url, itemsIncluded: n }
 }

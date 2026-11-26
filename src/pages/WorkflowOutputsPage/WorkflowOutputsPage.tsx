@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Flex, Text, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
@@ -25,12 +25,23 @@ import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../MyDataPage/MyDataPage.module.scss'
 
+/** Shown as the workspace of a called job whose links do not name the workspace it ran in */
+const UNKNOWN_JOB_WORKSPACE = 'Unknown'
+
 export const WorkflowOutputsPage: React.FC = () => {
   const { workspace: workspaceParam, jobId: jobIdParam } = useParams<{
     workspace?: string
     jobId?: string
   }>()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // Set by the run panel's Open Workflow outputs link, to show one workflow's jobs
+  const workflowFilter = searchParams.get('workflow') ?? ''
+  // Keeps the workflow filter when a job opens and closes
+  const filterQuery = workflowFilter ? `?workflow=${encodeURIComponent(workflowFilter)}` : ''
+  // The workspace an opened job ran in, when it is not the listed workspace: jobs started on
+  // shared workflows run in the workflow's own workspace
+  const jobWorkspaceParam = searchParams.get('jobWorkspace') ?? ''
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
@@ -43,12 +54,20 @@ export const WorkflowOutputsPage: React.FC = () => {
   const handleJobModalOpenChange = (open: boolean) => {
     setIsJobModalOpen(open)
     if (!open && jobIdParam) {
-      void navigate('/my-data/workflow-outputs')
+      void navigate(`/my-data/workflow-outputs${filterQuery}`)
     }
   }
 
   const handleResetFilters = () => {
     setSelectedStatus('all')
+    if (workflowFilter) clearWorkflowFilter()
+  }
+
+  const clearWorkflowFilter = () => {
+    setSearchParams((params) => {
+      params.delete('workflow')
+      return params
+    })
   }
 
   const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
@@ -92,6 +111,9 @@ export const WorkflowOutputsPage: React.FC = () => {
     queryFn: ({ pageParam }) => fetchCalledJobs(workflowWorkspace, token ?? '', pageParam),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => getNextCalledJobsAfter(lastPage.links),
+    // The page waits for this list before showing any jobs, so give up after one retry rather
+    // than the default three, which hold the user's own jobs back for about 7 s
+    retry: 1,
     refetchOnWindowFocus: false,
     enabled: queriesEnabled,
   })
@@ -109,7 +131,10 @@ export const WorkflowOutputsPage: React.FC = () => {
   const calledJobs = useMemo(
     () =>
       (calledJobsPages?.pages ?? []).flatMap((page) =>
-        page.jobs.map((job) => ({ ...job, workspace: getJobWorkspaceFromLinks(job) ?? 'Unknown' })),
+        page.jobs.map((job) => ({
+          ...job,
+          workspace: getJobWorkspaceFromLinks(job) ?? UNKNOWN_JOB_WORKSPACE,
+        })),
       ),
     [calledJobsPages],
   )
@@ -147,13 +172,17 @@ export const WorkflowOutputsPage: React.FC = () => {
     ? loadedJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
     : undefined
 
-  // A job linked from elsewhere may be older than the jobs loaded so far, so fetch it on its own.
-  // Links name this workspace, but jobs started on shared workflows ran in the shared results
-  // workspace, so look there next.
+  // A job linked from elsewhere may be older than the jobs loaded so far, so fetch it on its own,
+  // from the workspace the link says it ran in. Links made before that was in the address name
+  // only this workspace; for those, look in the shared results workspace next.
   const { data: fetchedJobFromUrl } = useQuery<WorkflowJob>({
-    queryKey: ['WorkflowJob', workflowWorkspace, jobIdParam, userInfo?.sub],
+    queryKey: ['WorkflowJob', workflowWorkspace, jobIdParam, jobWorkspaceParam, userInfo?.sub],
     queryFn: async () => {
       const workspaceTokens = await fetchWorkspaceTokens(workflowWorkspace, token ?? '')
+      if (jobWorkspaceParam) {
+        const job = await fetchJobById(jobWorkspaceParam, jobIdParam ?? '', workspaceTokens.access)
+        return { ...job, workspace: jobWorkspaceParam }
+      }
       try {
         const job = await fetchJobById(workflowWorkspace, jobIdParam ?? '', workspaceTokens.access)
         return { ...job, workspace: workflowWorkspace }
@@ -183,13 +212,18 @@ export const WorkflowOutputsPage: React.FC = () => {
     }
   }, [jobFromUrl])
 
-  // The status filter covers the jobs loaded so far. There is no search: with paging it could
-  // only search loaded jobs, and an older job would look missing.
-  const filteredJobs = useMemo(
-    () =>
-      selectedStatus === 'all' ? allJobs : allJobs.filter((job) => job.status === selectedStatus),
-    [allJobs, selectedStatus],
-  )
+  // The workflow and status filters cover the jobs loaded so far. There is no search: with
+  // paging it could only search loaded jobs, and an older job would look missing.
+  const filteredJobs = useMemo(() => {
+    let filtered = allJobs
+    if (workflowFilter) {
+      filtered = filtered.filter((job) => job.processID === workflowFilter)
+    }
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter((job) => job.status === selectedStatus)
+    }
+    return filtered
+  }, [allJobs, selectedStatus, workflowFilter])
 
   // A failed later page is shown next to Load more, so the main error is only for the first page
   const firstPageError = isOwnNextPageError ? null : jobsError
@@ -250,9 +284,19 @@ export const WorkflowOutputsPage: React.FC = () => {
           <Flex justify="between" align="center" mb="3">
             <Text size="2" color="gray">
               {`Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
-              {selectedStatus !== 'all' && ' (filtered)'}
+              {(selectedStatus !== 'all' || workflowFilter) && ' (filtered)'}
               {hasNextPage && ', newest first. Load more to see older jobs.'}
             </Text>
+            {workflowFilter && (
+              <Flex align="center" gap="2">
+                <Text size="2">
+                  Workflow: <strong>{workflowFilter}</strong>
+                </Text>
+                <Button size="1" variant="soft" color="gray" onClick={clearWorkflowFilter}>
+                  Show all workflows
+                </Button>
+              </Flex>
+            )}
             {isOwnNextPageError && (
               <Text size="2" color="red">
                 Could not load more jobs. Try Load more again.
@@ -308,8 +352,20 @@ export const WorkflowOutputsPage: React.FC = () => {
                             setSelectedJob(job)
                             setIsJobModalOpen(true)
                             if (workflowWorkspace) {
+                              const query = new URLSearchParams()
+                              if (workflowFilter) query.set('workflow', workflowFilter)
+                              if (
+                                job.workspace &&
+                                job.workspace !== workflowWorkspace &&
+                                job.workspace !== UNKNOWN_JOB_WORKSPACE
+                              ) {
+                                query.set('jobWorkspace', job.workspace)
+                              }
+                              const queryText = query.toString()
                               void navigate(
-                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}`,
+                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}${
+                                  queryText ? `?${queryText}` : ''
+                                }`,
                               )
                             }
                           }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom'
 import { Button, Checkbox, Flex, IconButton, Link, Table, Text, Tooltip } from '@radix-ui/themes'
-import { ArrowLeftIcon, CodeIcon, TrashIcon } from '@radix-ui/react-icons'
+import { ArrowLeftIcon, CodeIcon, PlayIcon, TrashIcon } from '@radix-ui/react-icons'
 import { useCanEditSavedSet, useSavedSet, useSavedSetMutations } from '@/hooks/useSavedSets'
 import { Callout } from '@/components/Callout/Callout'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
@@ -112,6 +112,14 @@ export const SavedSetDetailPage: React.FC = () => {
         >
           <CodeIcon /> Open in Jupyter
         </Button>
+        <OpenSetOnMapButton
+          setId={set.id}
+          setName={set.name}
+          disabled={set.items.length === 0}
+          label="Run workflow"
+          icon={<PlayIcon />}
+          openRunPanel
+        />
         {editable && (
           <>
             <Button variant="soft" color="gray" onClick={() => setIsEditOpen(true)}>

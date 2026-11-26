@@ -20,15 +20,14 @@ import {
   getHubApiOrigin,
   getTitilerXyzUrl,
   supportsIntegrationTools,
+  toolAppliesTo,
 } from '@/library/integrationTools'
 import { toast } from 'react-toastify'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
 import { useSelector } from '@xstate/store/react'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
 import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
-import { useWorkflowLaunch } from '@/hooks/useWorkflowLaunch'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
-import { WorkflowLaunchModal } from '@/components/WorkflowLaunchModal/WorkflowLaunchModal'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 
 interface IntegrationToolsPanelProps {
@@ -274,60 +273,8 @@ const DesktopGisTab: React.FC<{ item: Item }> = ({ item }) => {
 }
 
 // Workflows Tab Component
-const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
-  const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
-  const username = userInfo?.preferred_username
-
-  // Retrieve AOI from store
-  const aoi = useSelector(dataFinderStore, (state) => state.context.aoi)
-
-  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false)
-
-  const {
-    workflows,
-    selectedWorkflow,
-    setSelectedWorkflow,
-    launch,
-    isLoadingWorkflows,
-    isLaunching,
-    workflowsError,
-    launchError,
-    workflowId,
-    clearWorkflowId,
-    retry,
-  } = useWorkflowLaunch({
-    item,
-    collection,
-    token,
-    currentWorkspace,
-    username,
-  })
-
-  const canOpenLaunchModal = isAuthenticated && !!currentWorkspace && !!item && !!selectedWorkflow
-  const showContent = isAuthenticated && !!currentWorkspace && !!item
-  const hasWorkflows = workflows.length > 0
-  const isEmpty = !isLoadingWorkflows && !workflowsError && workflows.length === 0
-
-  const handleLaunchModalOpenChange = (open: boolean) => {
-    setIsLaunchModalOpen(open)
-    if (!open) clearWorkflowId()
-  }
-
-  if (!showContent) {
-    return (
-      <Card>
-        <Flex direction="column" gap="3" p="4">
-          <Text weight="medium" size="3">
-            Workflow Integration
-          </Text>
-          <Text size="2" color="gray">
-            Start data processing workflows directly with this item. Log in and select a workspace
-            to use this feature.
-          </Text>
-        </Flex>
-      </Card>
-    )
-  }
+const WorkflowsTab: React.FC<{ item: Item; workflow?: ProcessRecord }> = ({ item, workflow }) => {
+  const { isAuthenticated } = useContext(AuthenticationContext)
 
   return (
     <Flex direction="column" gap="4">
@@ -337,94 +284,26 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
             Workflow Integration
           </Text>
           <Text size="2" color="gray">
-            Start data processing workflows directly with this item. Select a workflow below and
-            click Launch to configure and run it.
+            {isAuthenticated
+              ? workflow
+                ? `Run ${workflow.properties.title} on this item. Check its inputs before it runs.`
+                : 'Start a data processing workflow on this item. Choose the workflow and check its inputs before it runs.'
+              : 'Start data processing workflows directly with this item. Log in to use this feature.'}
           </Text>
-
-          {isLoadingWorkflows && (
-            <Flex pt="4" pb="4">
-              <LoadingIndicator size="2" />
-            </Flex>
-          )}
-
-          {workflowsError && (
-            <Flex direction="column" gap="2" pt="2">
-              <Text size="2" color="red">
-                Unable to load workflows
-              </Text>
-              <Text size="2" color="gray">
-                {workflowsError}
-              </Text>
-              <Button variant="soft" size="2" onClick={retry}>
-                Retry
-              </Button>
-            </Flex>
-          )}
-
-          {!isLoadingWorkflows && !workflowsError && (
-            <>
-              {isEmpty && (
-                <Text size="2" color="gray">
-                  No workflows available for this dataset
-                </Text>
-              )}
-
-              {hasWorkflows && (
-                <Flex direction="column" gap="3" pt="2">
-                  <RadioGroup.Root
-                    value={selectedWorkflow?.id ?? ''}
-                    onValueChange={(id) => {
-                      const wf = workflows.find((w) => w.id === id) ?? null
-                      setSelectedWorkflow(wf)
-                    }}
-                  >
-                    <Flex direction="column" gap="2">
-                      {workflows.map((wf) => (
-                        <label key={wf.id} style={{ cursor: 'pointer' }}>
-                          <Flex gap="2" align="center">
-                            <RadioGroup.Item value={wf.id} />
-                            <Flex direction="column" gap="0">
-                              <Text size="2" weight="medium">
-                                {wf.properties?.title ?? wf.id}
-                              </Text>
-                              {wf.properties?.description && (
-                                <Text size="1" color="gray">
-                                  {wf.properties.description}
-                                </Text>
-                              )}
-                            </Flex>
-                          </Flex>
-                        </label>
-                      ))}
-                    </Flex>
-                  </RadioGroup.Root>
-
-                  <Button
-                    variant="soft"
-                    size="2"
-                    disabled={!canOpenLaunchModal}
-                    onClick={() => setIsLaunchModalOpen(true)}
-                  >
-                    Launch
-                  </Button>
-                </Flex>
-              )}
-            </>
-          )}
+          <Button
+            variant="soft"
+            size="2"
+            disabled={!isAuthenticated}
+            onClick={() => {
+              // A chosen tool that doesn't apply here would open the panel on it, so drop it
+              if (!workflow) dataFinderStore.send({ type: 'clearTool' })
+              dataFinderStore.send({ type: 'openRunPanel', item })
+            }}
+          >
+            Run workflow
+          </Button>
         </Flex>
       </Card>
-      <WorkflowLaunchModal
-        open={isLaunchModalOpen}
-        onOpenChange={handleLaunchModalOpenChange}
-        workflow={selectedWorkflow}
-        item={item}
-        aoi={aoi}
-        launch={launch}
-        isLaunching={isLaunching}
-        launchError={launchError}
-        workflowId={workflowId}
-        currentWorkspace={currentWorkspace}
-      />
     </Flex>
   )
 }
@@ -433,7 +312,11 @@ const WorkflowsTab: React.FC<{ item: Item; collection?: Collection }> = ({ item,
 const isItemNotebook = (record: ProcessRecord) => !isPinSetNotebook(record)
 
 // Jupyter Tab Component
-const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, collection }) => {
+const JupyterTab: React.FC<{ item: Item; collection?: Collection; notebook?: ProcessRecord }> = ({
+  item,
+  collection,
+  notebook,
+}) => {
   const { isAuthenticated, currentWorkspace, token, userInfo } = useContext(AuthenticationContext)
   const username = userInfo?.preferred_username
 
@@ -473,6 +356,7 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
     enabled: !!collection?.id,
     applicableCollections: collection?.id,
     filterNotebooks: isItemNotebook,
+    notebook,
     context: launchContext,
     token,
     currentWorkspace,
@@ -482,8 +366,8 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
   const canLaunch =
     isAuthenticated && !!currentWorkspace && !!item && !!selectedNotebook && !isLaunching
   const showContent = isAuthenticated && !!currentWorkspace && !!item
-  const hasNotebooks = notebooks.length > 0
-  const isEmpty = !isLoadingNotebooks && !notebooksError && notebooks.length === 0
+  const hasNotebooks = !!notebook || notebooks.length > 0
+  const isEmpty = !notebook && !isLoadingNotebooks && !notebooksError && notebooks.length === 0
 
   if (!showContent) {
     return (
@@ -509,8 +393,8 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
             Jupyter Notebook Integration
           </Text>
           <Text size="2" color="gray">
-            Launch Jupyter notebooks with this data already loaded and ready for analysis. Select a
-            notebook below and click Launch.
+            Launch Jupyter notebooks with this data already loaded and ready for analysis.{' '}
+            {notebook ? 'Click Launch to open it.' : 'Select a notebook below and click Launch.'}
           </Text>
 
           {isLoadingNotebooks && (
@@ -543,33 +427,46 @@ const JupyterTab: React.FC<{ item: Item; collection?: Collection }> = ({ item, c
 
               {hasNotebooks && (
                 <Flex direction="column" gap="3" pt="2">
-                  <RadioGroup.Root
-                    value={selectedNotebook?.id ?? ''}
-                    onValueChange={(id) => {
-                      const nb = notebooks.find((n) => n.id === id) ?? null
-                      setSelectedNotebook(nb)
-                    }}
-                  >
-                    <Flex direction="column" gap="2">
-                      {notebooks.map((nb) => (
-                        <label key={nb.id} style={{ cursor: 'pointer' }}>
-                          <Flex gap="2" align="center">
-                            <RadioGroup.Item value={nb.id} />
-                            <Flex direction="column" gap="0">
-                              <Text size="2" weight="medium">
-                                {nb.properties?.title ?? nb.id}
-                              </Text>
-                              {nb.properties?.description && (
-                                <Text size="1" color="gray">
-                                  {nb.properties.description}
-                                </Text>
-                              )}
-                            </Flex>
-                          </Flex>
-                        </label>
-                      ))}
+                  {notebook ? (
+                    <Flex direction="column" gap="0">
+                      <Text size="2" weight="medium">
+                        {notebook.properties?.title ?? notebook.id}
+                      </Text>
+                      {notebook.properties?.description && (
+                        <Text size="1" color="gray">
+                          {notebook.properties.description}
+                        </Text>
+                      )}
                     </Flex>
-                  </RadioGroup.Root>
+                  ) : (
+                    <RadioGroup.Root
+                      value={selectedNotebook?.id ?? ''}
+                      onValueChange={(id) => {
+                        const nb = notebooks.find((n) => n.id === id) ?? null
+                        setSelectedNotebook(nb)
+                      }}
+                    >
+                      <Flex direction="column" gap="2">
+                        {notebooks.map((nb) => (
+                          <label key={nb.id} style={{ cursor: 'pointer' }}>
+                            <Flex gap="2" align="center">
+                              <RadioGroup.Item value={nb.id} />
+                              <Flex direction="column" gap="0">
+                                <Text size="2" weight="medium">
+                                  {nb.properties?.title ?? nb.id}
+                                </Text>
+                                {nb.properties?.description && (
+                                  <Text size="1" color="gray">
+                                    {nb.properties.description}
+                                  </Text>
+                                )}
+                              </Flex>
+                            </Flex>
+                          </label>
+                        ))}
+                      </Flex>
+                    </RadioGroup.Root>
+                  )}
 
                   {hasNotebooks && aoi && (
                     <Flex align="center" gap="2">
@@ -622,6 +519,18 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
   // Get the item's render if it exists (for pinned items or items with attached render)
   const itemRender = item?.render
   const collection = useSelector(dataFinderStore, ({ context }) => context.collection)
+  const chosenTool = useSelector(dataFinderStore, ({ context }) => context.chosenTool)
+  const notebookCollection = item?.collectionRef ?? collection
+  const itemDatasetId = item?.collectionRef?.id ?? item?.collection
+  // A chosen tool that does not apply to the item's dataset is not preselected
+  const chosenWorkflow =
+    chosenTool?.properties.type === 'workflow' && toolAppliesTo(chosenTool, itemDatasetId)
+      ? chosenTool
+      : undefined
+  const chosenNotebook =
+    chosenTool?.properties.type === 'notebook' && toolAppliesTo(chosenTool, itemDatasetId)
+      ? chosenTool
+      : undefined
 
   // Don't render if item doesn't support integration tools
   // For time-variable items, this will check if itemRender is valid
@@ -653,7 +562,11 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
           </Flex>
 
           <Box pt="6">
-            <Tabs.Root defaultValue="desktop-gis">
+            {/* Keyed so a new item or a new chosen notebook opens on its tab again */}
+            <Tabs.Root
+              key={`${item.id}-${chosenTool?.id ?? ''}`}
+              defaultValue={chosenNotebook ? 'jupyter' : 'desktop-gis'}
+            >
               <Tabs.List>
                 <Tabs.Trigger value="desktop-gis">Desktop GIS</Tabs.Trigger>
                 <Tabs.Trigger value="workflows">Workflows</Tabs.Trigger>
@@ -668,13 +581,17 @@ export const IntegrationToolsPanel: React.FC<IntegrationToolsPanelProps> = ({ it
 
               <Tabs.Content value="workflows">
                 <Box pt="4">
-                  <WorkflowsTab item={item} collection={item.collectionRef ?? collection} />
+                  <WorkflowsTab item={item} workflow={chosenWorkflow} />
                 </Box>
               </Tabs.Content>
 
               <Tabs.Content value="jupyter">
                 <Box pt="4">
-                  <JupyterTab item={item} collection={item.collectionRef ?? collection} />
+                  <JupyterTab
+                    item={item}
+                    collection={notebookCollection}
+                    notebook={chosenNotebook}
+                  />
                 </Box>
               </Tabs.Content>
             </Tabs.Root>

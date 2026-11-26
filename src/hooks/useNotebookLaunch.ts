@@ -18,6 +18,8 @@ export interface UseNotebookLaunchParams {
   filterNotebooks: (record: ProcessRecord) => boolean
   /** Select the notebook automatically when it's the only one. */
   autoSelectSingle?: boolean
+  /** Use this notebook instead of one picked from the list. The list is not fetched. */
+  notebook?: ProcessRecord
   context: NotebookLaunchContext | null
   token: string | undefined
   currentWorkspace: string | undefined
@@ -122,6 +124,7 @@ export function useNotebookLaunch({
   applicableCollections,
   filterNotebooks,
   autoSelectSingle = false,
+  notebook,
   context,
   token,
   currentWorkspace,
@@ -135,7 +138,7 @@ export function useNotebookLaunch({
   const [launchError, setLaunchError] = useState<string | null>(null)
 
   const loadNotebooks = useCallback(async () => {
-    if (!enabled) {
+    if (!enabled || notebook) {
       setNotebooks([])
       setNotebooksError(null)
       setLaunchError(null)
@@ -166,14 +169,16 @@ export function useNotebookLaunch({
     setNotebooks(items)
     setNotebooksError(null)
     setSelectedNotebook(autoSelectSingle && items.length === 1 ? items[0] : null)
-  }, [enabled, applicableCollections, filterNotebooks, autoSelectSingle])
+  }, [enabled, notebook, applicableCollections, filterNotebooks, autoSelectSingle])
 
   useEffect(() => {
     void loadNotebooks()
   }, [loadNotebooks])
 
+  const notebookToLaunch = notebook ?? selectedNotebook
+
   const launch = useCallback(async () => {
-    if (!context || !selectedNotebook || !token || !currentWorkspace || !username) return
+    if (!context || !notebookToLaunch || !token || !currentWorkspace || !username) return
 
     setLaunchError(null)
     setIsLaunching(true)
@@ -182,7 +187,7 @@ export function useNotebookLaunch({
       await launchNotebookInNewTab({
         // List items don't include links; fetch full item to get template URL (rel="template")
         loadNotebook: async () => {
-          const { data, error } = await fetchItemById(selectedNotebook.id)
+          const { data, error } = await fetchItemById(notebookToLaunch.id)
           if (error != null || data == null) {
             throw new Error(error ?? 'Could not load notebook details. Please try again.')
           }
@@ -200,7 +205,7 @@ export function useNotebookLaunch({
     } finally {
       setIsLaunching(false)
     }
-  }, [context, selectedNotebook, token, currentWorkspace, username])
+  }, [context, notebookToLaunch, token, currentWorkspace, username])
 
   const retry = useCallback(() => {
     void loadNotebooks()
@@ -208,7 +213,8 @@ export function useNotebookLaunch({
 
   return {
     notebooks,
-    selectedNotebook,
+    // A notebook passed in overrides the user's selection
+    selectedNotebook: notebookToLaunch,
     setSelectedNotebook,
     launch,
     isLoadingNotebooks,

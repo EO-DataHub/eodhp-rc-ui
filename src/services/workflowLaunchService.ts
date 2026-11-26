@@ -17,8 +17,8 @@ export interface WorkflowLaunchResponse {
 
 const ERROR_MESSAGES: Record<string, string> = {
   VALIDATION_ERROR: 'Invalid input parameters. Please check all fields are filled correctly.',
-  AUTH_ERROR: 'Authentication required. Please log in and try again.',
-  AUTHZ_ERROR: 'Insufficient permissions to launch this workflow.',
+  AUTH_ERROR: 'Authentication required. Please sign in and try again.',
+  AUTHZ_ERROR: "You don't have permission to run this workflow.",
   NOT_FOUND: 'Workflow not found. Please try selecting a different workflow.',
   INTERNAL_ERROR: 'An unexpected error occurred. Please try again later.',
   SERVICE_UNAVAILABLE: 'Workflow service is temporarily unavailable. Please try again later.',

@@ -1,9 +1,24 @@
 /* eslint-disable react/prop-types */
-import React, { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import React, { useContext, useEffect, useState } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { Flex, Box, Text, Container, Button, Badge } from '@radix-ui/themes'
 import { fetchItemById } from '@/services/processCatalogueService'
 import type { ProcessDetail } from '@/types'
+import { AuthenticationContext } from '@/context/AuthenticationContext'
+import { isPinSetNotebook } from '@/services/notebookVariableResolvers'
+
+/**
+ * The Data Finder at the tool's first dataset with the tool chosen, or the dataset list.
+ * A tool with several datasets opens the Data Finder's dataset list so the user can pick one.
+ */
+const finderUrlFor = (tool: ProcessDetail) => {
+  const collections = tool.properties.applicableCollections ?? []
+  if (collections.length === 0) return '/'
+
+  const params = new URLSearchParams({ tool: tool.id })
+  if (collections.length > 1) params.set('pickDataset', '1')
+  return `/finder/${collections[0]}?${params.toString()}`
+}
 
 export const ProcessDetailPage: React.FC = () => {
   const { itemId } = useParams<{ itemId: string }>()
@@ -11,6 +26,8 @@ export const ProcessDetailPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [notFound, setNotFound] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const { isAuthenticated } = useContext(AuthenticationContext)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!itemId) {
@@ -97,11 +114,7 @@ export const ProcessDetailPage: React.FC = () => {
   const applicableCollections = props?.applicableCollections ?? []
   const contacts = props?.contacts ?? []
   const links = data.links ?? []
-
-  const launchGuidanceMessage =
-    type === 'notebook'
-      ? 'To launch this notebook, go to the Data Catalogue, find your data, open Integration tools, and then select the Notebook tab.'
-      : 'To run this workflow, go to the Data Catalogue, find your data, open Integration tools, and then select the Workflow tab.'
+  const isSetNotebook = type === 'notebook' && isPinSetNotebook(data)
 
   return (
     <Container align="center" maxWidth="1640px">
@@ -206,12 +219,33 @@ export const ProcessDetailPage: React.FC = () => {
           </Box>
         ) : null}
 
-        <Box>
-          <Text size="2" color="gray">
-            {launchGuidanceMessage}
-          </Text>
-        </Box>
+        {isSetNotebook ? (
+          <Box>
+            <Text size="2" color="gray">
+              To launch this notebook, go to the Data Catalogue, find your data, open Integration
+              tools, and then select the Notebook tab.
+            </Text>
+          </Box>
+        ) : null}
         <Flex gap="3" align="center">
+          {isSetNotebook ? null : (
+            <>
+              <Button
+                size="2"
+                disabled={!isAuthenticated}
+                onClick={() => void navigate(finderUrlFor(data))}
+              >
+                {type === 'notebook' ? 'Open in Data Finder' : 'Run workflow'}
+              </Button>
+              {!isAuthenticated && (
+                <Text size="2" color="gray">
+                  {type === 'notebook'
+                    ? 'Sign in to open this notebook'
+                    : 'Sign in to run this workflow'}
+                </Text>
+              )}
+            </>
+          )}
           <Link to="/catalogue/processes">
             <Button variant="soft" size="2">
               Back to Processes Catalogue

@@ -4,6 +4,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box } from '@radix-ui/themes'
 import { Map } from '@/components/Map/Map'
 import { SidePanel } from '@/components/SidePanel/SidePanel'
+import { RunPanel } from '@/components/RunPanel/RunPanel'
 import { useCollectionFromPath } from '@/hooks/useCollectionFromPath'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
 import { useSelector } from '@xstate/store/react'
@@ -15,8 +16,20 @@ import {
   restoreFromPermalinkSingleCollection,
 } from './permalinkRestore'
 import { isCollectionPurchasable } from '@/library/purchasabilityConfig'
+import { fetchItemById } from '@/services/processCatalogueService'
+import { isDataFinderTool } from '@/services/notebookVariableResolvers'
 
 import styles from './DataFinderPage.module.scss'
+
+const withToolParam = (params: URLSearchParams, toolId: string | undefined) => {
+  const next = new URLSearchParams(params)
+  if (toolId) {
+    next.set('tool', toolId)
+  } else {
+    next.delete('tool')
+  }
+  return next
+}
 
 export const DataFinderPage: React.FC = () => {
   const { currentWorkspace } = useContext(AuthenticationContext)
@@ -24,11 +37,21 @@ export const DataFinderPage: React.FC = () => {
   const params = useParams<{ '*': string }>()
   const collectionPath = params['*'] ?? ''
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const permalinkRestoreDoneRef = useRef(false)
+  // The tool id the page opened with; the URL is left alone until its lookup finishes
+  const initialToolIdRef = useRef(searchParams.get('tool'))
+  // The saved set to open the run panel on, from the saved set page's Run workflow
+  const initialRunSetIdRef = useRef(searchParams.get('runSet'))
+  // A ref, not state: it only gates the URL sync effect and must not cause a render of its own
+  const isToolLookupPendingRef = useRef(false)
+  // setSearchParams changes with every URL change, so the mount-only effect reads it from a ref
+  const setSearchParamsRef = useRef(setSearchParams)
+  setSearchParamsRef.current = setSearchParams
 
   const collection = useSelector(dataFinderStore, (state) => state.context.collection)
   const collectionRender = useSelector(dataFinderStore, (state) => state.context.collectionRender)
+  const chosenToolId = useSelector(dataFinderStore, (state) => state.context.chosenTool?.id)
 
   const {
     status: collectionStatus,
@@ -64,6 +87,65 @@ export const DataFinderPage: React.FC = () => {
     }
     // Otherwise still loading, or waiting for sign-in
   }, [collectionPath, collectionStatus, resolvedCollection, isResolvedUserCollection, navigate])
+
+  // Choose the tool named in the URL and open the run panel on it
+  useEffect(() => {
+    const toolId = initialToolIdRef.current
+    let isCancelled = false
+
+    if (toolId) {
+      isToolLookupPendingRef.current = true
+      void fetchItemById(toolId).then(({ data, notFound }) => {
+        if (isCancelled) return
+        isToolLookupPendingRef.current = false
+
+        // The user chose a tool in the run panel while the lookup ran, so keep their choice
+        const toolChosenMeanwhile = dataFinderStore.getSnapshot().context.chosenTool
+        if (toolChosenMeanwhile) {
+          setSearchParamsRef.current((prev) => withToolParam(prev, toolChosenMeanwhile.id), {
+            replace: true,
+          })
+        } else if (data && isDataFinderTool(data)) {
+          dataFinderStore.send({ type: 'chooseTool', tool: data })
+          dataFinderStore.send({ type: 'openRunPanel' })
+        } else if (notFound || data) {
+          // A record the run panel would not list is treated as unknown
+          setSearchParamsRef.current((prev) => withToolParam(prev, undefined), { replace: true })
+        }
+        // On other failures the parameter stays only until the URL next changes
+      })
+    }
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
+
+  // Open the run panel on the saved set named in the URL, then drop the parameter
+  useEffect(() => {
+    const runSetId = initialRunSetIdRef.current
+    if (!runSetId) return
+
+    dataFinderStore.send({ type: 'setRunSource', source: 'set' })
+    dataFinderStore.send({ type: 'setRunSetId', setId: runSetId })
+    dataFinderStore.send({ type: 'openRunPanel' })
+    setSearchParamsRef.current(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('runSet')
+        return next
+      },
+      { replace: true },
+    )
+  }, [])
+
+  // Keep the tool parameter in step with the chosen tool, including after a dataset change
+  useEffect(() => {
+    if (isToolLookupPendingRef.current) return
+    if ((searchParams.get('tool') ?? undefined) === chosenToolId) return
+
+    setSearchParams((prev) => withToolParam(prev, chosenToolId), { replace: true })
+  }, [chosenToolId, searchParams, setSearchParams])
 
   // Remove AOI from local storage on mount
   useEffect(() => {
@@ -219,12 +301,19 @@ export const DataFinderPage: React.FC = () => {
 
   return (
     <Box height="var(--content-height)" position="relative">
-      <Box className={styles.floatingContainer}>
+      {/* A press in the sidebar, Filter or an info panel brings them above the run panel */}
+      <Box
+        className={styles.floatingContainer}
+        onPointerDownCapture={() =>
+          dataFinderStore.send({ type: 'bringPanelToTop', panel: 'secondary' })
+        }
+      >
         <SidePanel collection={collection ?? undefined} />
       </Box>
       <Box height="100%">
         <Map />
       </Box>
+      <RunPanel />
     </Box>
   )
 }

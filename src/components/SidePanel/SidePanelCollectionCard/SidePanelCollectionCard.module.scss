@@ -10,18 +10,30 @@
   border-radius: 4px;
   overflow: hidden;
   margin: 2px;
+  position: relative;
 
   .text {
     color: var(--blue-contrast);
   }
 
-  .link {
-    color: var(--blue-contrast);
-    text-decoration: none;
+  .openButton {
+    all: unset;
+    display: block;
     cursor: pointer;
+    text-align: left;
 
-    &:hover {
-      text-decoration: underline;
+    // Stretches the button's click area over the whole card.
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    &:focus-visible::after {
+      outline: 2px solid var(--accent-8);
+      outline-offset: -2px;
+      border-radius: 4px;
     }
   }
 
@@ -35,7 +47,8 @@
   content: none;
   background: none;
 }
-.card:hover {
+.card:hover,
+.card:focus-within {
   cursor: pointer;
   outline: 2px solid var(--app-background-dark-2);
 }
@@ -46,6 +59,8 @@
   border: 1.5px solid var(--blue-contrast);
   width: 19px;
   height: 19px;
+  position: relative;
+  z-index: 2;
 }
 
 .infoButton {
@@ -54,4 +69,6 @@
   color: var(--blue-contrast);
   width: 20px;
   height: 20px;
+  position: relative;
+  z-index: 2;
 }

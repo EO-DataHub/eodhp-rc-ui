@@ -17,9 +17,8 @@ import { collectionHasQAIndicators, getDefaultQATab } from '@/library/collection
 
 interface ItemPanelProps {
   collection?: Collection
-  setShowCollectionPanel: (show: boolean) => void
 }
-export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollectionPanel }) => {
+export const ItemPanel: React.FC<ItemPanelProps> = ({ collection }) => {
   const secondaryPanel = useSelector(dataFinderStore, (state) => state.context.secondaryPanel)
   const collectionInfoTab = useSelector(dataFinderStore, (state) => state.context.collectionInfoTab)
   const infoPanelItem = useSelector(dataFinderStore, (state) => state.context.infoPanelItem)
@@ -74,13 +73,7 @@ export const ItemPanel: React.FC<ItemPanelProps> = ({ collection, setShowCollect
         }}
         isLicenseProprietary={isLicenseProprietary}
         hasQA={hasQA}
-        onChangeCollection={() => {
-          // For now, just clear the query filter every time we change collections.
-          // TODO: We need to 1) Store the filter by collection, and 2) Populate the form with the filter if one exists.
-          dataFinderStore.send({ type: 'queryFilterChange', queryFilter: undefined })
-
-          setShowCollectionPanel(true)
-        }}
+        onChangeCollection={() => dataFinderStore.send({ type: 'openDatasetList' })}
         disabled={isSmallCollectionCardDisabled}
       />
     </div>

@@ -161,6 +161,14 @@ describe('fetchCalledJobs', () => {
     expect(url.searchParams.get('after')).toBe('8235000000001/publisher/job-3')
   })
 
+  it('asks for a bigger page when given a limit', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(jobsBody))
+
+    await fetchCalledJobs('ws1', 'token', undefined, 60)
+
+    expect(requestedUrl(fetchSpy.mock.calls).searchParams.get('limit')).toBe('60')
+  })
+
   it('sends the workspace-scoped token of the calling workspace', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(jobsBody))
 

@@ -1,7 +1,7 @@
 import MapboxDraw, { DrawCreateEvent, DrawMode, DrawModeChangeEvent } from '@mapbox/mapbox-gl-draw'
 import { createStore } from '@xstate/store'
 import { MapInstance } from 'react-map-gl/maplibre'
-import { Collection, StacRender, Item } from '@/types'
+import { Collection, StacRender, Item, ProcessRecord } from '@/types'
 import {
   collectionRenderingConfig,
   resolveTilesUrl,
@@ -9,6 +9,8 @@ import {
   PLACEHOLDER_RENDER,
 } from '@/library/collectionRenderingConfig'
 import { movePinnedItem } from '@/library/pinnedLayerOrder'
+import type { RunSource } from '@/hooks/useWorkflowRun'
+import type { VisitJob } from '@/library/runPanelJobs'
 import { getPinnedItemId, refreshPinnedItems } from '@/library/pinnedItemRenders'
 import * as turf from '@turf/turf'
 
@@ -28,6 +30,9 @@ export type SecondaryPanel =
   | 'collection-info'
   | 'integration-tools'
   | undefined
+
+/** Which of the run panel and the secondary panel is drawn above the other where they overlap */
+type TopPanel = 'run' | 'secondary'
 
 export type InfoPanelTab = 'metadata' | 'assets' | 'resources' | 'download'
 
@@ -60,6 +65,21 @@ interface AppContext {
   collectionRenderOptions: StacRender[]
   collectionRender?: StacRender
   isUserCollection: boolean
+  chosenTool?: ProcessRecord
+  isRunPanelOpen: boolean
+  topPanel: TopPanel
+  /** What a workflow runs on, kept while the run panel is hidden or no workflow is chosen */
+  runSource?: RunSource
+  /** The item for the "This item" source */
+  runItem?: Item
+  /** The saved set for the "Saved set" source */
+  runSetId?: string
+  /** Jobs started from the run panel in this visit, for the badge and the Workflow outputs tab */
+  visitJobs: VisitJob[]
+  /** The job shown in place of the list in the Workflow outputs tab */
+  openJobId?: string
+  /** The sidebar shows the dataset list in place of the items */
+  isDatasetListOpen: boolean
 }
 
 export { getPinnedItemId }
@@ -87,6 +107,15 @@ const dataFinderStore = createStore({
     collectionRenderOptions: [],
     collectionRender: undefined,
     isUserCollection: false,
+    chosenTool: undefined,
+    isRunPanelOpen: false,
+    topPanel: 'run',
+    runSource: undefined,
+    runItem: undefined,
+    runSetId: undefined,
+    visitJobs: [],
+    openJobId: undefined,
+    isDatasetListOpen: false,
   } as AppContext,
   // Transitions
   on: {
@@ -120,10 +149,11 @@ const dataFinderStore = createStore({
         page: 0,
       }
     },
-    setSecondaryPanel: (context, event: { panel: SecondaryPanel }) => {
+    setSecondaryPanel: (context, event: { panel: SecondaryPanel }): typeof context => {
       return {
         ...context,
         secondaryPanel: event.panel,
+        topPanel: event.panel ? 'secondary' : context.topPanel,
         // Opening the collection info panel generically always starts on the first tab
         collectionInfoTab:
           event.panel === 'collection-info' ? 'metadata' : context.collectionInfoTab,
@@ -141,6 +171,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'collection-info',
+        topPanel: 'secondary',
         collectionInfoTab: event.tab,
       }
     },
@@ -169,6 +200,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'item-info',
+        topPanel: 'secondary',
         infoPanelItem: event.item,
         infoPanelTab: tab,
       }
@@ -195,6 +227,7 @@ const dataFinderStore = createStore({
       return {
         ...context,
         secondaryPanel: 'integration-tools',
+        topPanel: 'secondary',
         infoPanelItem: event.item,
       }
     },
@@ -525,6 +558,53 @@ const dataFinderStore = createStore({
       }
       return { ...context, aoi: event.aoi }
     },
+    chooseTool: (context, event: { tool: ProcessRecord }) => ({
+      ...context,
+      chosenTool: event.tool,
+    }),
+    /** Clears the tool and the item chosen for it, so the next tool does not open on a stale item */
+    clearTool: (context) => ({
+      ...context,
+      chosenTool: undefined,
+      runItem: undefined,
+      runSource: context.runSource === 'item' ? undefined : context.runSource,
+    }),
+    /** Opens the run panel. An item makes it run on that item. */
+    openRunPanel: (context, event: { item?: Item }): typeof context => ({
+      ...context,
+      isRunPanelOpen: true,
+      topPanel: 'run',
+      ...(event.item && { runSource: 'item', runItem: event.item }),
+    }),
+    hideRunPanel: (context) => ({ ...context, isRunPanelOpen: false }),
+    /** A press inside a panel brings it above the other */
+    bringPanelToTop: (context, event: { panel: TopPanel }): typeof context =>
+      context.topPanel === event.panel ? context : { ...context, topPanel: event.panel },
+    setRunSource: (context, event: { source: RunSource }) => ({
+      ...context,
+      runSource: event.source,
+    }),
+    setRunSetId: (context, event: { setId: string }) => ({ ...context, runSetId: event.setId }),
+    /** Forgets the tool, what it runs on and the jobs of this visit, for example on leaving the page */
+    resetRunPanel: (context): typeof context => ({
+      ...context,
+      chosenTool: undefined,
+      isRunPanelOpen: false,
+      topPanel: 'run',
+      runSource: undefined,
+      runItem: undefined,
+      runSetId: undefined,
+      visitJobs: [],
+      openJobId: undefined,
+    }),
+    addVisitJobs: (context, event: { jobs: VisitJob[] }) => ({
+      ...context,
+      visitJobs: [...context.visitJobs, ...event.jobs],
+    }),
+    openJob: (context, event: { jobId: string }) => ({ ...context, openJobId: event.jobId }),
+    closeJob: (context) => ({ ...context, openJobId: undefined }),
+    openDatasetList: (context) => ({ ...context, isDatasetListOpen: true }),
+    closeDatasetList: (context) => ({ ...context, isDatasetListOpen: false }),
   },
 })
 

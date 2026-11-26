@@ -1,0 +1,83 @@
+@use './runPanelLayout' as layout;
+
+// Docked on the right edge of the map, the full height of the content area. Not modal.
+.panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: layout.$run-panel-width;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -2px 0 8px rgb(0 0 0 / 10%);
+
+  // Below about 1,280px it overlaps the secondary panel (z-index 10); the one used last is above
+  &[data-on-top='true'] {
+    z-index: 11;
+  }
+
+  &[data-on-top='false'] {
+    z-index: 9;
+  }
+
+  // Hidden, the panel keeps its form but takes no space
+  &[hidden] {
+    display: none;
+  }
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.header {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--gray-a5);
+}
+
+.content {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+// Sits left of the drawing toolbar in the map's top-right corner
+.openButton {
+  position: absolute;
+  top: 10px;
+  right: layout.$map-control-offset;
+  z-index: 6;
+}
+
+.toolEntry {
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.jobList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.jobRow {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--gray-a4);
+}
+
+.jobOpen {
+  margin: 0;
+  text-align: left;
+  font-weight: var(--font-weight-medium);
+}
+
+.jobItem {
+  font-family: monospace;
+  word-break: break-all;
+}
