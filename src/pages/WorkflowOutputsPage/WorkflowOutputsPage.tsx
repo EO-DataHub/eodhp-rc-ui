@@ -1,19 +1,32 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
-import { useQuery } from '@tanstack/react-query'
-import { fetchJobsForWorkspace, fetchJobsForSharedWorkspace } from '@/services/workflowJobService'
-import { transformJobForDisplay, sortJobsByCreated } from '@/library/jobUtils'
-import { WorkflowJob, JobsApiResponse } from '@/types'
+import { Flex, Text, Box, Table, Select, Button } from '@radix-ui/themes'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  fetchCalledJobs,
+  fetchJobById,
+  fetchJobsForWorkspace,
+  getNextCalledJobsAfter,
+  getNextJobsSkip,
+  JOBS_PAGE_SIZE,
+} from '@/services/workflowJobService'
+import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
+import {
+  getJobWorkspaceFromLinks,
+  mergePagedJobLists,
+  pagedListHasMore,
+  transformJobForDisplay,
+} from '@/library/jobUtils'
+import { WorkflowJob } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
-import { PageSelector } from '@/components/Pagination/PageSelector/PageSelector'
-import { PAGE_SIZE } from '@/hooks/useItemsQuery'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
 import { PageHeading } from '@/components/PageHeading/PageHeading'
 import styles from '../MyDataPage/MyDataPage.module.scss'
+
+/** Shown as the workspace of a called job whose links do not name the workspace it ran in */
+const UNKNOWN_JOB_WORKSPACE = 'Unknown'
 
 export const WorkflowOutputsPage: React.FC = () => {
   const { workspace: workspaceParam, jobId: jobIdParam } = useParams<{
@@ -26,27 +39,17 @@ export const WorkflowOutputsPage: React.FC = () => {
   const workflowFilter = searchParams.get('workflow') ?? ''
   // Keeps the workflow filter when a job opens and closes
   const filterQuery = workflowFilter ? `?workflow=${encodeURIComponent(workflowFilter)}` : ''
+  // The workspace an opened job ran in, when it is not the listed workspace: jobs started on
+  // shared workflows run in the workflow's own workspace
+  const jobWorkspaceParam = searchParams.get('jobWorkspace') ?? ''
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
-  const [searchText, setSearchText] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
   )
-  const [allJobs, setAllJobs] = useState<WorkflowJob[]>([])
-  const [workflowJobsPage, setWorkflowJobsPage] = useState(0)
   const [selectedJob, setSelectedJob] = useState<WorkflowJob | null>(null)
   const [isJobModalOpen, setIsJobModalOpen] = useState(false)
 
   const workflowWorkspace = workspaceParam ?? currentWorkspace ?? ''
-
-  // When we have jobId in URL and jobs have loaded, open the job details modal
-  useEffect(() => {
-    if (!jobIdParam || !allJobs.length) return
-    const job = allJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
-    if (job) {
-      setSelectedJob(job)
-      setIsJobModalOpen(true)
-    }
-  }, [jobIdParam, allJobs])
 
   const handleJobModalOpenChange = (open: boolean) => {
     setIsJobModalOpen(open)
@@ -57,7 +60,6 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   const handleResetFilters = () => {
     setSelectedStatus('all')
-    setSearchText('')
     if (workflowFilter) clearWorkflowFilter()
   }
 
@@ -70,74 +72,148 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
 
+  const queriesEnabled = !!token && !!workflowWorkspace && !!userInfo?.sub
+
+  // The workspace's own jobs, newest first, one page at a time. Listing every job made
+  // this page take 10-30 s for workspaces with many jobs.
   const {
-    data: jobsResponse,
+    data: ownJobsPages,
     isLoading: isLoadingJobs,
     error: jobsError,
-  } = useQuery<JobsApiResponse>({
-    queryKey: ['WorkflowJobs', workflowWorkspace, sharedResultsWorkspaceName, userInfo?.sub],
-    queryFn: async (): Promise<JobsApiResponse> => {
-      if (!token || !workflowWorkspace) {
-        return Promise.resolve({ jobs: [], links: [], numberTotal: 0 })
-      }
-
-      const primary = await fetchJobsForWorkspace(workflowWorkspace, token)
-
-      if (!sharedResultsWorkspaceName) {
-        // No shared workspace configured; behave as before
-        return {
-          ...primary,
-          jobs: primary.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
-        }
-      }
-
-      try {
-        const shared = await fetchJobsForSharedWorkspace(
-          sharedResultsWorkspaceName,
-          workflowWorkspace,
-          token,
-        )
-
-        const annotatedPrimaryJobs = primary.jobs.map((job) => ({
-          ...job,
-          workspace: workflowWorkspace,
-        }))
-
-        const annotatedSharedJobs = shared.jobs.map((job) => ({
-          ...job,
-          workspace: sharedResultsWorkspaceName,
-        }))
-
-        return {
-          jobs: [...annotatedPrimaryJobs, ...annotatedSharedJobs],
-          links: primary.links,
-          numberTotal: primary.numberTotal + shared.numberTotal,
-        }
-      } catch (error) {
-        // If shared workspace fetching fails, fall back to primary workspace jobs only
-        // while still annotating them with their workspace.
-        const annotatedPrimaryJobs = primary.jobs.map((job) => ({
-          ...job,
-          workspace: workflowWorkspace,
-        }))
-
-        return {
-          jobs: annotatedPrimaryJobs,
-          links: primary.links,
-          numberTotal: primary.numberTotal,
-        }
-      }
-    },
+    fetchNextPage: fetchNextOwnPage,
+    hasNextPage: hasMoreOwnJobs,
+    isFetchingNextPage: isFetchingNextOwnPage,
+    isFetchNextPageError: isOwnNextPageError,
+  } = useInfiniteQuery({
+    queryKey: ['WorkflowJobs', workflowWorkspace, userInfo?.sub],
+    queryFn: ({ pageParam }) =>
+      fetchJobsForWorkspace(workflowWorkspace, token ?? '', {
+        limit: JOBS_PAGE_SIZE,
+        skip: pageParam,
+      }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => getNextJobsSkip(lastPage.links),
     refetchOnWindowFocus: false,
-    enabled: !!token && !!workflowWorkspace && !!userInfo?.sub,
+    enabled: queriesEnabled,
   })
 
-  useEffect(() => {
-    if (jobsResponse) {
-      setAllJobs(sortJobsByCreated(jobsResponse.jobs))
-    }
-  }, [jobsResponse])
+  // The jobs this workspace started on workflows in other workspaces (for example the shared
+  // results workspace), newest first, one page at a time
+  const {
+    data: calledJobsPages,
+    isLoading: isLoadingCalledJobs,
+    error: calledJobsError,
+    fetchNextPage: fetchNextCalledPage,
+    hasNextPage: hasMoreCalledJobs,
+    isFetchingNextPage: isFetchingNextCalledPage,
+  } = useInfiniteQuery({
+    queryKey: ['WorkflowCalledJobs', workflowWorkspace, userInfo?.sub],
+    queryFn: ({ pageParam }) => fetchCalledJobs(workflowWorkspace, token ?? '', pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => getNextCalledJobsAfter(lastPage.links),
+    // The page waits for this list before showing any jobs, so give up after one retry rather
+    // than the default three, which hold the user's own jobs back for about 7 s
+    retry: 1,
+    refetchOnWindowFocus: false,
+    enabled: queriesEnabled,
+  })
 
+  const ownJobs = useMemo(
+    () =>
+      (ownJobsPages?.pages ?? []).flatMap((page) =>
+        page.jobs.map((job) => ({ ...job, workspace: workflowWorkspace })),
+      ),
+    [ownJobsPages, workflowWorkspace],
+  )
+
+  // Each called job's links point at the workspace it ran in. Without one, say so rather than
+  // let the table show this workspace.
+  const calledJobs = useMemo(
+    () =>
+      (calledJobsPages?.pages ?? []).flatMap((page) =>
+        page.jobs.map((job) => ({
+          ...job,
+          workspace: getJobWorkspaceFromLinks(job) ?? UNKNOWN_JOB_WORKSPACE,
+        })),
+      ),
+    [calledJobsPages],
+  )
+  const hasLoadedCalledPages = (calledJobsPages?.pages.length ?? 0) > 0
+
+  // Both lists come newest first, a page at a time. Show only the jobs that are in order so far;
+  // "Load more" fetches the next page of the list that holds the rest back.
+  const { jobs: allJobs, listsToLoad } = useMemo(
+    () =>
+      mergePagedJobLists([
+        { jobs: ownJobs, hasMore: !!hasMoreOwnJobs },
+        {
+          jobs: calledJobs,
+          hasMore: pagedListHasMore({
+            hasNextPage: !!hasMoreCalledJobs,
+            isError: !!calledJobsError,
+            hasLoadedPages: hasLoadedCalledPages,
+          }),
+        },
+      ]),
+    [ownJobs, calledJobs, hasMoreOwnJobs, hasMoreCalledJobs, calledJobsError, hasLoadedCalledPages],
+  )
+  const hasNextPage = listsToLoad.length > 0
+  const isFetchingNextPage = isFetchingNextOwnPage || isFetchingNextCalledPage
+  const fetchNextPage = () => {
+    if (listsToLoad.includes(0)) void fetchNextOwnPage()
+    if (listsToLoad.includes(1)) void fetchNextCalledPage()
+  }
+
+  // Wait for the first page of both lists before showing any jobs. Otherwise the first list's
+  // rows show, then some disappear when the second list moves the cutoff.
+  const isLoadingAnyJobs = isLoadingJobs || isLoadingCalledJobs
+  const loadedJobs = useMemo(() => [...ownJobs, ...calledJobs], [ownJobs, calledJobs])
+  const loadedJobFromUrl = jobIdParam
+    ? loadedJobs.find((j) => j.id === jobIdParam || j.jobID === jobIdParam)
+    : undefined
+
+  // A job linked from elsewhere may be older than the jobs loaded so far, so fetch it on its own,
+  // from the workspace the link says it ran in. Links made before that was in the address name
+  // only this workspace; for those, look in the shared results workspace next.
+  const { data: fetchedJobFromUrl } = useQuery<WorkflowJob>({
+    queryKey: ['WorkflowJob', workflowWorkspace, jobIdParam, jobWorkspaceParam, userInfo?.sub],
+    queryFn: async () => {
+      const workspaceTokens = await fetchWorkspaceTokens(workflowWorkspace, token ?? '')
+      if (jobWorkspaceParam) {
+        const job = await fetchJobById(jobWorkspaceParam, jobIdParam ?? '', workspaceTokens.access)
+        return { ...job, workspace: jobWorkspaceParam }
+      }
+      try {
+        const job = await fetchJobById(workflowWorkspace, jobIdParam ?? '', workspaceTokens.access)
+        return { ...job, workspace: workflowWorkspace }
+      } catch (error) {
+        if (!sharedResultsWorkspaceName || sharedResultsWorkspaceName === workflowWorkspace) {
+          throw error
+        }
+        const job = await fetchJobById(
+          sharedResultsWorkspaceName,
+          jobIdParam ?? '',
+          workspaceTokens.access,
+        )
+        return { ...job, workspace: sharedResultsWorkspaceName }
+      }
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
+    enabled: queriesEnabled && !!jobIdParam && !isLoadingAnyJobs && !loadedJobFromUrl,
+  })
+
+  // When we have jobId in URL and the job is found, open the job details modal
+  const jobFromUrl = loadedJobFromUrl ?? fetchedJobFromUrl
+  useEffect(() => {
+    if (jobFromUrl) {
+      setSelectedJob(jobFromUrl)
+      setIsJobModalOpen(true)
+    }
+  }, [jobFromUrl])
+
+  // The workflow and status filters cover the jobs loaded so far. There is no search: with
+  // paging it could only search loaded jobs, and an older job would look missing.
   const filteredJobs = useMemo(() => {
     let filtered = allJobs
     if (workflowFilter) {
@@ -146,33 +222,16 @@ export const WorkflowOutputsPage: React.FC = () => {
     if (selectedStatus !== 'all') {
       filtered = filtered.filter((job) => job.status === selectedStatus)
     }
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase()
-      filtered = filtered.filter(
-        (job) =>
-          job.id.toLowerCase().includes(searchLower) ||
-          job.jobID.toLowerCase().includes(searchLower) ||
-          job.processID.toLowerCase().includes(searchLower) ||
-          job.message.toLowerCase().includes(searchLower),
-      )
-    }
     return filtered
-  }, [allJobs, searchText, selectedStatus, workflowFilter])
+  }, [allJobs, selectedStatus, workflowFilter])
+
+  // A failed later page is shown next to Load more, so the main error is only for the first page
+  const firstPageError = isOwnNextPageError ? null : jobsError
 
   const displayJobs = useMemo(() => {
     const workspace = workflowWorkspace || ''
     return filteredJobs.map((job) => transformJobForDisplay(job, workspace))
   }, [filteredJobs, workflowWorkspace])
-
-  const workflowJobsPageCount = Math.ceil(displayJobs.length / PAGE_SIZE)
-  const paginatedJobs = useMemo(() => {
-    const startIndex = workflowJobsPage * PAGE_SIZE
-    return displayJobs.slice(startIndex, startIndex + PAGE_SIZE)
-  }, [displayJobs, workflowJobsPage])
-
-  useEffect(() => {
-    setWorkflowJobsPage(0)
-  }, [selectedStatus, searchText, currentWorkspace, workflowFilter])
 
   return (
     <>
@@ -181,19 +240,6 @@ export const WorkflowOutputsPage: React.FC = () => {
           title="Workflow Outputs"
           subtitle="View workflow execution jobs and their status"
         />
-        <Flex justify="between" align="center">
-          <Box />
-          <TextField.Root
-            placeholder="Search"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            size="3"
-          >
-            <TextField.Slot>
-              <MagnifyingGlassIcon />
-            </TextField.Slot>
-          </TextField.Root>
-        </Flex>
         <Flex direction="column" gap="5">
           <Flex
             p="5"
@@ -237,13 +283,9 @@ export const WorkflowOutputsPage: React.FC = () => {
           </Flex>
           <Flex justify="between" align="center" mb="3">
             <Text size="2" color="gray">
-              {workflowJobsPageCount > 1
-                ? `Showing ${workflowJobsPage * PAGE_SIZE + 1}-${Math.min(
-                    (workflowJobsPage + 1) * PAGE_SIZE,
-                    displayJobs.length,
-                  )} of ${displayJobs.length} jobs`
-                : `Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
-              {(selectedStatus !== 'all' || searchText.trim() || workflowFilter) && ' (filtered)'}
+              {`Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
+              {(selectedStatus !== 'all' || workflowFilter) && ' (filtered)'}
+              {hasNextPage && ', newest first. Load more to see older jobs.'}
             </Text>
             {workflowFilter && (
               <Flex align="center" gap="2">
@@ -255,24 +297,38 @@ export const WorkflowOutputsPage: React.FC = () => {
                 </Button>
               </Flex>
             )}
+            {isOwnNextPageError && (
+              <Text size="2" color="red">
+                Could not load more jobs. Try Load more again.
+              </Text>
+            )}
+            {calledJobsError && (
+              <Text size="2" color="red">
+                {hasLoadedCalledPages
+                  ? 'Could not load more jobs run on shared workflows. Try Load more again.'
+                  : 'Could not load jobs run on shared workflows.'}
+              </Text>
+            )}
           </Flex>
-          {isLoadingJobs ? (
+          {isLoadingAnyJobs ? (
             <LoadingIndicator size="3" />
           ) : (
-            (jobsError ?? displayJobs.length === 0) && (
+            // When the shared-workflow jobs failed to load, an empty list does not mean there are
+            // no outputs, so leave the error line above to explain it
+            (firstPageError ?? (displayJobs.length === 0 && !hasNextPage && !calledJobsError)) && (
               <Callout
-                type={jobsError ? 'error' : 'info'}
+                type={firstPageError ? 'error' : 'info'}
                 message={
-                  jobsError
-                    ? jobsError instanceof Error
-                      ? jobsError.message
+                  firstPageError
+                    ? firstPageError instanceof Error
+                      ? firstPageError.message
                       : 'Unable to load workflow outputs. Please try again later.'
                     : 'You currently have no workflow outputs. Your workflow execution jobs will appear here once you run a workflow.'
                 }
               />
             )
           )}
-          {paginatedJobs.length > 0 && (
+          {!isLoadingAnyJobs && displayJobs.length > 0 && (
             <>
               <Table.Root className={styles.ordersTable}>
                 <Table.Header>
@@ -286,8 +342,8 @@ export const WorkflowOutputsPage: React.FC = () => {
                   </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                  {paginatedJobs.map((displayJob) => {
-                    const job = allJobs.find((j) => j.id === displayJob.id)
+                  {displayJobs.map((displayJob) => {
+                    const job = loadedJobs.find((j) => j.id === displayJob.id)
                     return (
                       <Table.Row
                         key={displayJob.id}
@@ -296,8 +352,20 @@ export const WorkflowOutputsPage: React.FC = () => {
                             setSelectedJob(job)
                             setIsJobModalOpen(true)
                             if (workflowWorkspace) {
+                              const query = new URLSearchParams()
+                              if (workflowFilter) query.set('workflow', workflowFilter)
+                              if (
+                                job.workspace &&
+                                job.workspace !== workflowWorkspace &&
+                                job.workspace !== UNKNOWN_JOB_WORKSPACE
+                              ) {
+                                query.set('jobWorkspace', job.workspace)
+                              }
+                              const queryText = query.toString()
                               void navigate(
-                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}${filterQuery}`,
+                                `/my-data/workflow-outputs/${workflowWorkspace}/${job.id}${
+                                  queryText ? `?${queryText}` : ''
+                                }`,
                               )
                             }
                           }
@@ -319,20 +387,14 @@ export const WorkflowOutputsPage: React.FC = () => {
                   })}
                 </Table.Body>
               </Table.Root>
-              {workflowJobsPageCount > 1 && (
-                <Flex justify="center" mt="auto">
-                  <PageSelector
-                    currentPageIndex={workflowJobsPage}
-                    nextDisabled={workflowJobsPage === workflowJobsPageCount - 1}
-                    onGoToPage={setWorkflowJobsPage}
-                    onNextClick={() => setWorkflowJobsPage(workflowJobsPage + 1)}
-                    onPreviousClick={() => setWorkflowJobsPage(workflowJobsPage - 1)}
-                    pageCount={workflowJobsPageCount}
-                    previousDisabled={workflowJobsPage === 0}
-                  />
-                </Flex>
-              )}
             </>
+          )}
+          {hasNextPage && !isLoadingAnyJobs && (
+            <Flex justify="center">
+              <Button size="3" variant="soft" onClick={fetchNextPage} loading={isFetchingNextPage}>
+                Load more
+              </Button>
+            </Flex>
           )}
         </Flex>
       </Flex>

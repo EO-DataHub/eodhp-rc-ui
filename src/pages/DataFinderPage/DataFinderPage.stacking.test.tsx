@@ -2,7 +2,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
-import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { fetchCalledJobs, fetchJobsForWorkspace } from '@/services/workflowJobService'
 import { fetchToolsFromFixtures, stubBrowserGlobals } from '@/test-data/runWorkflow'
 import { fanOutItem, sentinelCollection } from '@/test-data/runWorkflowFanOut'
 import { withProviders } from '@/test-data/runWorkflowRender'
@@ -20,9 +20,10 @@ vi.mock('@/services/processCatalogueService', () => ({
   fetchItems: vi.fn(),
   fetchItemById: vi.fn(),
 }))
-vi.mock('@/services/workflowJobService', () => ({
+vi.mock('@/services/workflowJobService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/workflowJobService')>()),
   fetchJobsForWorkspace: vi.fn(),
-  fetchJobsForSharedWorkspace: vi.fn(),
+  fetchCalledJobs: vi.fn(),
   fetchJobById: vi.fn(),
 }))
 vi.mock('@/services/workspaceTokenService', () => ({
@@ -98,7 +99,7 @@ beforeEach(() => {
   vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
   vi.mocked(fetchItemById).mockImplementation(fetchAnyToolById)
   vi.mocked(fetchJobsForWorkspace).mockResolvedValue(jobsResponse([]))
-  vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(jobsResponse([]))
+  vi.mocked(fetchCalledJobs).mockResolvedValue(jobsResponse([]))
 })
 
 afterEach(() => {

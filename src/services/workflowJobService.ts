@@ -1,18 +1,62 @@
-import { JobsApiResponse, WorkflowJob } from '@/types'
+import { JobLink, JobsApiResponse, WorkflowJob } from '@/types'
 import { fetchWorkspaceTokens } from './workspaceTokenService'
 import { resolveApiUrl } from './apiUrlUtils'
 
 const API_URL = import.meta.env.VITE_HUB_BASE_URL
 
+/** Number of jobs to fetch per page of a workspace's jobs list */
+export const JOBS_PAGE_SIZE = 20
+
+/** The most jobs the API returns on one `scope=called` page */
+export const CALLED_JOBS_MAX_LIMIT = 100
+
+export interface JobsPageOptions {
+  /** Maximum number of jobs to return. Leave unset to fetch all jobs. */
+  limit?: number
+  /** Number of jobs to skip */
+  skip?: number
+}
+
 /**
- * Fetches workflow execution jobs for a specific workspace
- * @param workspaceName - The workspace name
- * @param token - User authentication token
- * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
+ * Returns the `skip` value of the jobs list's `next` link, or undefined when there are no
+ * more jobs. Only the number is used, so the workspace token is never sent to a URL taken
+ * from the response.
  */
-export const fetchJobsForWorkspace = async (
+export const getNextJobsSkip = (links: JobLink[]): number | undefined => {
+  const next = links.find((link) => link.rel === 'next')
+  if (!next?.href) return undefined
+  try {
+    const skip = Number(new URL(next.href, 'http://localhost').searchParams.get('skip'))
+    return Number.isInteger(skip) && skip > 0 ? skip : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** The shape of the `after` cursor of a `scope=called` jobs list: reverse time, workspace, job ID */
+const CALLED_AFTER_PATTERN = /^\d{13}\/[^/]+\/[^/]+$/
+
+/**
+ * Returns the `after` value of a `scope=called` jobs list's `next` link, or undefined when there
+ * are no more jobs. Only the value is used, so the workspace token is never sent to a URL taken
+ * from the response.
+ */
+export const getNextCalledJobsAfter = (links: JobLink[]): string | undefined => {
+  const next = links.find((link) => link.rel === 'next')
+  if (!next?.href) return undefined
+  try {
+    const after = new URL(next.href, 'http://localhost').searchParams.get('after')
+    return after && CALLED_AFTER_PATTERN.test(after) ? after : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/** Fetches one jobs list response for a workspace, with a workspace-scoped token */
+const fetchJobsList = async (
   workspaceName: string,
   token: string,
+  params: URLSearchParams,
 ): Promise<JobsApiResponse> => {
   if (!token || !workspaceName) {
     return {
@@ -33,9 +77,13 @@ export const fetchJobsForWorkspace = async (
       )
     }
 
+    const query = params.toString()
+
     // Fetch jobs from API endpoint
     const response = await fetch(
-      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${workspaceName}/jobs`,
+      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${workspaceName}/jobs${
+        query ? `?${query}` : ''
+      }`,
       {
         method: 'GET',
         headers: {
@@ -72,71 +120,41 @@ export const fetchJobsForWorkspace = async (
 }
 
 /**
- * Fetches workflow execution jobs for a shared results workspace, using a
- * workspace-scoped token obtained for the currently selected workspace.
- * @param sharedWorkspaceName - The shared results workspace name
- * @param tokenWorkspaceName - The workspace name used to obtain the scoped token (typically the currently selected workspace)
+ * Fetches workflow execution jobs for a specific workspace, newest first
+ * @param workspaceName - The workspace name
  * @param token - User authentication token
+ * @param options - Optional `limit` and `skip` to fetch one page of jobs
  * @returns Promise resolving to JobsApiResponse with jobs array, links, and numberTotal
  */
-export const fetchJobsForSharedWorkspace = async (
-  sharedWorkspaceName: string,
-  tokenWorkspaceName: string,
+export const fetchJobsForWorkspace = async (
+  workspaceName: string,
   token: string,
+  options: JobsPageOptions = {},
 ): Promise<JobsApiResponse> => {
-  if (!token || !sharedWorkspaceName || !tokenWorkspaceName) {
-    return {
-      jobs: [],
-      links: [],
-      numberTotal: 0,
-    }
-  }
+  const params = new URLSearchParams()
+  if (options.limit) params.set('limit', String(options.limit))
+  if (options.skip) params.set('skip', String(options.skip))
+  return fetchJobsList(workspaceName, token, params)
+}
 
-  try {
-    // Get workspace-scoped token for the selected workspace
-    let workspaceTokens
-    try {
-      workspaceTokens = await fetchWorkspaceTokens(tokenWorkspaceName, token)
-    } catch (tokenError) {
-      throw new Error(
-        `Failed to obtain workspace-scoped token for ${tokenWorkspaceName}. Please ensure you have access to this workspace.`,
-      )
-    }
-
-    // Fetch jobs for the shared workspace using the selected workspace token
-    const response = await fetch(
-      `${API_URL}/api/catalogue/stac/catalogs/user/catalogs/${sharedWorkspaceName}/jobs`,
-      {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-          Authorization: `Bearer ${workspaceTokens.access}`,
-        },
-      },
-    )
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error(
-          `Unauthorized: Unable to access workflow jobs for shared workspace "${sharedWorkspaceName}". Please check your workspace permissions.`,
-        )
-      }
-      throw new Error(`Failed to fetch jobs: ${response.status} ${response.statusText}`)
-    }
-
-    const data = await response.json()
-
-    return {
-      jobs: data.jobs || [],
-      links: data.links || [],
-      numberTotal: data.numberTotal ?? 0,
-    }
-  } catch (error) {
-    if (error instanceof Error) {
-      throw error
-    }
-    throw new Error('Failed to fetch workflow jobs for shared workspace')
-  }
+/**
+ * Fetches one page of the jobs a workspace started on workflows in other workspaces, newest
+ * first (`scope=called`). The jobs' links point at the workspace each job ran in.
+ * @param workspaceName - The workspace that started the jobs
+ * @param token - User authentication token
+ * @param after - The `after` value from the previous page's `next` link; unset for the first page
+ * @param limit - Jobs per page, at most `CALLED_JOBS_MAX_LIMIT`
+ * @returns Promise resolving to JobsApiResponse. `numberTotal` is the number of jobs on the page.
+ */
+export const fetchCalledJobs = async (
+  workspaceName: string,
+  token: string,
+  after?: string,
+  limit: number = JOBS_PAGE_SIZE,
+): Promise<JobsApiResponse> => {
+  const params = new URLSearchParams({ scope: 'called', limit: String(limit) })
+  if (after) params.set('after', after)
+  return fetchJobsList(workspaceName, token, params)
 }
 
 /**

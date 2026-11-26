@@ -11,7 +11,7 @@ import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
 import {
   fetchJobResults,
-  fetchJobsForSharedWorkspace,
+  fetchCalledJobs,
   fetchJobsForWorkspace,
 } from '@/services/workflowJobService'
 import { useNotebookLaunch } from '@/hooks/useNotebookLaunch'
@@ -93,9 +93,10 @@ vi.mock('@/services/savedSetsService', async (importOriginal) => ({
   fetchSavedSets: vi.fn(),
   fetchSavedSet: vi.fn(),
 }))
-vi.mock('@/services/workflowJobService', () => ({
+vi.mock('@/services/workflowJobService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/workflowJobService')>()),
   fetchJobsForWorkspace: vi.fn(),
-  fetchJobsForSharedWorkspace: vi.fn(),
+  fetchCalledJobs: vi.fn(),
   fetchJobById: vi.fn(),
   fetchJobResults: vi.fn(),
   fetchJobLog: vi.fn(),
@@ -172,7 +173,7 @@ const outputsTab = (panel: HTMLElement) =>
 
 const processesTab = (panel: HTMLElement) => within(panel).getByRole('tab', { name: 'Processes' })
 
-const sharedListCalls = () => vi.mocked(fetchJobsForSharedWorkspace).mock.calls.length
+const sharedListCalls = () => vi.mocked(fetchCalledJobs).mock.calls.length
 const userListCalls = () => vi.mocked(fetchJobsForWorkspace).mock.calls.length
 
 beforeAll(() => {
@@ -199,7 +200,7 @@ beforeEach(() => {
   vi.mocked(fetchSavedSet).mockResolvedValue(set)
   vi.mocked(fetchWorkspaceTokens).mockResolvedValue({ access: 'ws-token' } as never)
   vi.mocked(fetchJobsForWorkspace).mockResolvedValue(jobsResponse([]))
-  vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(jobsResponse([]))
+  vi.mocked(fetchCalledJobs).mockResolvedValue(jobsResponse([]))
   let jobNumber = 0
   vi.mocked(launchWorkflow).mockImplementation(() => {
     jobNumber += 1
@@ -832,7 +833,7 @@ describe('Workflow outputs tab', () => {
   it('lists the jobs from both lists with the jobs from this visit at the top, newest first', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2, 'S2A_VISIT'))
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([
         listedJob('job-1', 'ndvi', 'running', '2026-11-02T10:00:01Z'),
         listedJob('colleague-1', 'clip', 'failed', '2026-11-02T12:00:00Z'),
@@ -868,7 +869,7 @@ describe('Workflow outputs tab', () => {
     await user.click(outputsTab(panel))
     await waitFor(() => expect(jobRowsIn(panel)).toHaveLength(1))
     expect(jobRowsIn(panel)[0]).toHaveTextContent(/clip/)
-    expect(fetchJobsForWorkspace).toHaveBeenCalledWith('my-ws', 'token')
+    expect(fetchJobsForWorkspace).toHaveBeenCalledWith('my-ws', 'token', { limit: 20 })
   })
 
   it('opens the list in the Workflow outputs tab from View in Workflow outputs after a run of several jobs', async () => {
@@ -886,7 +887,7 @@ describe('Workflow outputs tab', () => {
   it('shows the running and finished jobs of the run on the badge', async () => {
     const user = userEvent.setup()
     pinItems(fanOutItems(2))
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([
         listedJob('job-1', 'ndvi', 'running'),
         listedJob('job-2', 'ndvi', 'successful'),
@@ -947,7 +948,7 @@ describe('Job status refresh', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
     pinItems(fanOutItems(2))
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([listedJob('job-1', 'ndvi', 'running'), listedJob('job-2', 'ndvi', 'running')]),
     )
     const panel = await openForm('pinned')
@@ -970,7 +971,7 @@ describe('Job status refresh', () => {
     expect(await runPanel()).toBe(panel)
     expect(outputsTab(panel)).toHaveAttribute('aria-selected', 'true')
 
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([
         listedJob('job-1', 'ndvi', 'successful'),
         listedJob('job-2', 'ndvi', 'failed'),
@@ -990,7 +991,8 @@ describe('Job status refresh', () => {
 
     await wait(REFRESH_MS)
     expect(sharedListCalls()).toBe(sharedBefore + 1)
-    expect(fetchJobsForSharedWorkspace).toHaveBeenLastCalledWith('wf-ws', 'my-ws', 'token')
+    // Jobs started on shared workflows are listed under the user's workspace, newest first
+    expect(fetchCalledJobs).toHaveBeenLastCalledWith('my-ws', 'token', undefined, 20)
     await wait(REFRESH_MS)
     expect(sharedListCalls()).toBe(sharedBefore + 2)
     expect(userListCalls()).toBe(userBefore)
@@ -999,7 +1001,7 @@ describe('Job status refresh', () => {
   it('moves the badge from running to finished for a job listed only in the shared list, then stops', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([listedJob('job-1', 'ndvi', 'running')]),
     )
     const panel = await openForm('item', { item: fanOutItem('S2A_SHARED') })
@@ -1008,7 +1010,7 @@ describe('Job status refresh', () => {
     await user.click(hideButton(panel))
     expect(await screen.findByRole('button', { name: /NDVI · 1 running/i })).toBeInTheDocument()
 
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([listedJob('job-1', 'ndvi', 'successful')]),
     )
     await wait(REFRESH_MS)
@@ -1056,9 +1058,7 @@ describe('Job view in the panel', () => {
         })),
       })
     })
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
-      jobsResponse(entries.map(([job]) => job)),
-    )
+    vi.mocked(fetchCalledJobs).mockResolvedValue(jobsResponse(entries.map(([job]) => job)))
   }
 
   const openOutputs = async (user: User) => {
@@ -1248,7 +1248,7 @@ describe('Job view in the panel', () => {
 
   it("opens the job's view from View in Workflow outputs after a run of one job", async () => {
     const user = userEvent.setup()
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
+    vi.mocked(fetchCalledJobs).mockResolvedValue(
       jobsResponse([listedJob('job-1', 'ndvi', 'running')]),
     )
     const panel = await openForm('item', { item: fanOutItem('S2A_ONE') })
@@ -1271,9 +1271,7 @@ describe('Job view in the panel', () => {
     const back = backButton(panel)
     const before = sharedListCalls()
 
-    vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(
-      jobsResponse([viewedJob('job-1', 'successful')]),
-    )
+    vi.mocked(fetchCalledJobs).mockResolvedValue(jobsResponse([viewedJob('job-1', 'successful')]))
     await wait(REFRESH_MS)
     expect(sharedListCalls()).toBe(before + 1)
     expect(await within(panel).findByText('NDVI GeoTIFF')).toBeInTheDocument()

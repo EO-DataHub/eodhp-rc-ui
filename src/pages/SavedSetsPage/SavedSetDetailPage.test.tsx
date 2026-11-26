@@ -22,7 +22,7 @@ import { withProviders } from '@/test-data/runWorkflowRender'
 import { fetchToolsFromFixtures } from '@/test-data/runWorkflow'
 import { fetchAnyToolById, jobsResponse, queryRunPanel } from '@/test-data/runPanel'
 import { fetchItemById, fetchItems } from '@/services/processCatalogueService'
-import { fetchJobsForSharedWorkspace, fetchJobsForWorkspace } from '@/services/workflowJobService'
+import { fetchCalledJobs, fetchJobsForWorkspace } from '@/services/workflowJobService'
 import { DataFinderPage } from '@/pages/DataFinderPage/DataFinderPage'
 import { SavedSetDetailPage } from './SavedSetDetailPage'
 
@@ -39,9 +39,10 @@ vi.mock('@/services/processCatalogueService', () => ({
   fetchItems: vi.fn(),
   fetchItemById: vi.fn(),
 }))
-vi.mock('@/services/workflowJobService', () => ({
+vi.mock('@/services/workflowJobService', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/services/workflowJobService')>()),
   fetchJobsForWorkspace: vi.fn(),
-  fetchJobsForSharedWorkspace: vi.fn(),
+  fetchCalledJobs: vi.fn(),
   fetchJobById: vi.fn(),
 }))
 vi.mock('@/hooks/useGoogleAnalyticsActions', () => ({
@@ -133,7 +134,7 @@ beforeEach(() => {
   vi.mocked(fetchItems).mockImplementation(fetchToolsFromFixtures)
   vi.mocked(fetchItemById).mockImplementation(fetchAnyToolById)
   vi.mocked(fetchJobsForWorkspace).mockResolvedValue(jobsResponse([]))
-  vi.mocked(fetchJobsForSharedWorkspace).mockResolvedValue(jobsResponse([]))
+  vi.mocked(fetchCalledJobs).mockResolvedValue(jobsResponse([]))
 })
 
 afterEach(() => {
