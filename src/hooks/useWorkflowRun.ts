@@ -34,6 +34,7 @@ import {
   isDateRangeInput,
   isFullRecord,
   isHalfFilledRange,
+  missingRequiredInputs,
   toLaunchValues,
   userValueText,
   type UserValues,
@@ -218,6 +219,9 @@ export const useWorkflowRun = ({
     ([key, def]) => isDateRangeInput(def) && isHalfFilledRange(values[key]),
   )
 
+  /** Required inputs with no value. The workflow fails without them, so they block the run. */
+  const missingInputs = missingRequiredInputs(inputs, values, !!aoi && includeAoi)
+
   const areaText = () => {
     if (!aoi) return 'No area drawn on the map'
     return includeAoi ? 'The area drawn on the map' : 'Not included, so the full scene'
@@ -308,6 +312,7 @@ export const useWorkflowRun = ({
     itemsWithoutLink.length > 0 ||
     privateItemCount > 0 ||
     halfFilledRange ||
+    missingInputs.length > 0 ||
     aboveCeiling ||
     (needsConfirmation && !confirmed)
 
@@ -377,6 +382,7 @@ export const useWorkflowRun = ({
     setIncludeAoi,
     hubValueText,
     inputValueText,
+    missingInputs,
 
     canRun,
     isLaunching,

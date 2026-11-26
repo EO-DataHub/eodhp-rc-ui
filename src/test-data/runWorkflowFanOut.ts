@@ -145,7 +145,29 @@ export const datesWorkflow = workflowRecord('composite', {
   },
 })
 
-export const fanOutWorkflows = [...allWorkflows, optionalAreaWorkflow, datesWorkflow]
+/** A change workflow, like eodh-dnbr, that cannot run without its area and its baseline range. */
+export const requiredInputsWorkflow = workflowRecord('burn-change', {
+  title: 'Burn change',
+  description: 'Compares an item with the clearest item from a baseline range.',
+  inputParameters: {
+    stac_item: { label: 'STAC item', hubType: 'stac-item', cwlType: 'string', required: true },
+    aoi: { label: 'Area of interest', hubType: 'aoi', cwlType: 'string', required: true },
+    baseline: {
+      label: 'Baseline date range',
+      type: 'date',
+      hubType: 'date-range',
+      cwlType: 'string',
+      required: true,
+    },
+  },
+})
+
+export const fanOutWorkflows = [
+  ...allWorkflows,
+  optionalAreaWorkflow,
+  datesWorkflow,
+  requiredInputsWorkflow,
+]
 
 export const workflowJob = (id: string, processID: string): WorkflowJob => ({
   id,

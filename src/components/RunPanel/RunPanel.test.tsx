@@ -35,6 +35,7 @@ import {
   fanOutItems,
   pinItems,
   privateSetItem,
+  requiredInputsWorkflow,
   savedSet,
   sentinelCollection,
   sentItemLinks,
@@ -729,6 +730,41 @@ describe('Run form details', () => {
     expect(sentVariables(0).start).toBe('2025-06-01')
     expect(String(sentVariables(0).period)).toContain('2025-06-01')
     expect(String(sentVariables(0).period)).toContain('2025-06-30')
+  })
+
+  it('blocks a run while a required input is empty and names it', async () => {
+    const user = userEvent.setup()
+    pinItems(fanOutItems(2))
+    const panel = await openForm('pinned', { tool: requiredInputsWorkflow })
+
+    expect(runWorkflowButton(panel)).toBeDisabled()
+    expect(
+      within(panel).getByText(
+        'Burn change needs Baseline date range, Area of interest. Set them to run.',
+      ),
+    ).toBeInTheDocument()
+
+    const [rangeStart, rangeEnd] = Array.from(
+      panel.querySelectorAll<HTMLInputElement>('input[type="date"]'),
+    )
+    fireEvent.change(rangeStart, { target: { value: '2023-05-01' } })
+    expect(within(panel).getByText('Set both dates.')).toBeInTheDocument()
+    fireEvent.change(rangeEnd, { target: { value: '2023-05-31' } })
+    expect(
+      within(panel).getByText('Burn change needs Area of interest. Set it to run.'),
+    ).toBeInTheDocument()
+    expect(runWorkflowButton(panel)).toBeDisabled()
+
+    act(() => {
+      dataFinderStore.send({ type: 'storeAoi', aoi })
+    })
+    await waitFor(() => expect(runWorkflowButton(panel)).toBeEnabled())
+    expect(within(panel).queryByText(/Burn change needs/)).not.toBeInTheDocument()
+    await user.click(runWorkflowButton(panel))
+
+    await waitFor(() => expect(launchWorkflow).toHaveBeenCalledTimes(2))
+    expect(sentVariables(0).baseline).toBe('2023-05-01/2023-05-31')
+    expect(sentVariables(0).aoi).toBeDefined()
   })
 })
 

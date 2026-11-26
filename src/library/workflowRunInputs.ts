@@ -51,6 +51,34 @@ export const isHalfFilledRange = (value: string | undefined) => {
   return !!start !== !!end
 }
 
+/** The record marks the input as one the workflow cannot run without. */
+export const isRequiredInput = (def: InputParameterEntry) => def.required === true
+
+const isEmptyUserValue = (def: InputParameterEntry, value: string | undefined) => {
+  if (!isDateRangeInput(def)) return !value
+  const [start, end] = splitDateRange(value ?? '')
+  return !start || !end
+}
+
+/**
+ * The labels of required inputs that have no value, so the run cannot start: user inputs left empty,
+ * and a required area that is not drawn or not included.
+ */
+export const missingRequiredInputs = (
+  inputs: WorkflowInputs,
+  values: UserValues,
+  areaIncluded: boolean,
+): string[] => {
+  const missing = getUserInputs(inputs)
+    .filter(([key, def]) => isRequiredInput(def) && isEmptyUserValue(def, values[key]))
+    .map(([key, def]) => inputLabel(key, def))
+  const areaInputs = Object.entries(inputs).filter(
+    ([key, def]) => getHubInputKind(key, def) === 'area' && isRequiredInput(def),
+  )
+  if (!areaIncluded) missing.push(...areaInputs.map(([key, def]) => inputLabel(key, def)))
+  return missing
+}
+
 export const userValueText = (def: InputParameterEntry, value: string | undefined) => {
   if (!value) return 'Not set'
   if (isDateRangeInput(def)) {

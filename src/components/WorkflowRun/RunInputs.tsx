@@ -8,6 +8,7 @@ import {
   inputLabel,
   isDateInput,
   isDateRangeInput,
+  isRequiredInput,
   joinDateRange,
   splitDateRange,
 } from '@/library/workflowRunInputs'
@@ -105,7 +106,7 @@ export const RunInputs: React.FC<{ run: WorkflowRun }> = ({ run }) => {
               </Flex>
               {!!start !== !!end && (
                 <Text size="1" color="red">
-                  Set both dates, or neither.
+                  {isRequiredInput(def) ? 'Set both dates.' : 'Set both dates, or neither.'}
                 </Text>
               )}
             </fieldset>

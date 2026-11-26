@@ -8,13 +8,20 @@ import { launchWorkflow } from '@/services/workflowLaunchService'
 import { fetchWorkspaceTokens } from '@/services/workspaceTokenService'
 import { fetchSavedSet, fetchSavedSets } from '@/services/savedSetsService'
 import { PAGE_SIZE } from '@/hooks/useItemsQuery'
-import { anyDatasetWorkflow, item, ndviWorkflow, stubBrowserGlobals } from '@/test-data/runWorkflow'
+import {
+  anyDatasetWorkflow,
+  aoi,
+  item,
+  ndviWorkflow,
+  stubBrowserGlobals,
+} from '@/test-data/runWorkflow'
 import {
   clearPins,
   fanOutItem,
   fanOutItemHref,
   fanOutItems,
   pinItems,
+  requiredInputsWorkflow,
   savedSet,
   sentinelCollection,
   sentItemLinks,
@@ -186,6 +193,32 @@ describe('useWorkflowRun', () => {
     const { result: stagedIn } = renderRun({ workflow: ndviWorkflow, source: 'pinned' })
     await waitFor(() => expect(stagedIn.current.canRun).toBe(true))
     expect(stagedIn.current.privateItemCount).toBe(0)
+  })
+
+  it('blocks a run until every required input is set, naming the ones that are missing', async () => {
+    const { result } = renderRun({ workflow: requiredInputsWorkflow, item, source: 'item' })
+    await waitFor(() => expect(result.current.detail).toBeTruthy())
+    expect(result.current.missingInputs).toEqual(['Baseline date range', 'Area of interest'])
+    expect(result.current.canRun).toBe(false)
+
+    act(() => result.current.setValue('baseline', '2023-05-01/'))
+    expect(result.current.missingInputs).toEqual(['Baseline date range', 'Area of interest'])
+
+    act(() => result.current.setValue('baseline', '2023-05-01/2023-05-31'))
+    act(() => dataFinderStore.send({ type: 'storeAoi', aoi }))
+    act(() => result.current.setIncludeAoi(true))
+    expect(result.current.missingInputs).toEqual([])
+    expect(result.current.canRun).toBe(true)
+
+    act(() => result.current.setIncludeAoi(false))
+    expect(result.current.missingInputs).toEqual(['Area of interest'])
+    expect(result.current.canRun).toBe(false)
+  })
+
+  it('lets a run start with optional inputs left empty', async () => {
+    const { result } = renderRun({ workflow: ndviWorkflow, item, source: 'item' })
+    await waitFor(() => expect(result.current.canRun).toBe(true))
+    expect(result.current.missingInputs).toEqual([])
   })
 
   it('retries only the items whose jobs failed to start', async () => {

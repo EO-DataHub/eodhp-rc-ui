@@ -25,6 +25,7 @@ export const RunReview: React.FC<{ run: WorkflowRun }> = ({ run }) => {
     itemInputs,
     itemsWithoutLink,
     privateItemCount,
+    missingInputs,
     launchError,
   } = run
 
@@ -127,6 +128,18 @@ export const RunReview: React.FC<{ run: WorkflowRun }> = ({ run }) => {
             {`${workflowTitle} cannot read private data, and ${
               privateItemCount === 1 ? '1 item is private' : `${privateItemCount} items are private`
             }. Choose public items only.`}
+          </Callout.Text>
+        </Callout.Root>
+      )}
+      {missingInputs.length > 0 && (
+        <Callout.Root color="red" size="1">
+          <Callout.Icon>
+            <InfoCircledIcon />
+          </Callout.Icon>
+          <Callout.Text>
+            {`${workflowTitle} needs ${missingInputs.join(', ')}. Set ${
+              missingInputs.length === 1 ? 'it' : 'them'
+            } to run.`}
           </Callout.Text>
         </Callout.Root>
       )}
