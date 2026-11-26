@@ -25,7 +25,8 @@ export const RUN_PANEL_SHARED_JOBS_KEY = 'RunPanelSharedJobs'
  * The newest jobs come first, so the jobs of this visit are on the first page as long as it holds
  * them all. The page grows with the jobs started in this visit, up to the API's limit of 100.
  *
- * The user's own list is read once when the jobs are shown, and on Try again. It is not refreshed.
+ * The user's own list is read when the jobs are shown, and on Try again or Refresh. It is not
+ * polled.
  *
  * @param wanted - The jobs are shown, for example on the Workflow outputs tab. The shared list is
  *   always read while there are jobs started in this visit, for the badge.

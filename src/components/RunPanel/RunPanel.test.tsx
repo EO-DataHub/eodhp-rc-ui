@@ -917,6 +917,24 @@ describe('Workflow outputs tab', () => {
     expect(outputsLink()).toHaveAttribute('href', '/my-data/workflow-outputs')
   })
 
+  it('reads both jobs lists again on Refresh', async () => {
+    const user = userEvent.setup()
+    openRunPanel()
+    await renderWithRunPanel()
+    const panel = await runPanel()
+
+    await user.click(outputsTab(panel))
+    const refresh = await within(panel).findByRole('button', { name: 'Refresh' })
+    await waitFor(() => expect(refresh).toBeEnabled())
+    const userCallsBefore = vi.mocked(fetchJobsForWorkspace).mock.calls.length
+    const sharedCallsBefore = vi.mocked(fetchCalledJobs).mock.calls.length
+    await user.click(refresh)
+    await waitFor(() => {
+      expect(vi.mocked(fetchJobsForWorkspace).mock.calls.length).toBe(userCallsBefore + 1)
+      expect(vi.mocked(fetchCalledJobs).mock.calls.length).toBe(sharedCallsBefore + 1)
+    })
+  })
+
   it('shows an error with Try again when the jobs do not load, and the Processes tab still works', async () => {
     const user = userEvent.setup()
     vi.mocked(fetchJobsForWorkspace).mockRejectedValue(new Error('Jobs service unavailable'))

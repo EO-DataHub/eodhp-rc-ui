@@ -68,6 +68,10 @@ export const RunPanel: React.FC = () => {
     void userQuery.refetch()
     if (sharedQuery.isError) void sharedQuery.refetch()
   }
+  const refreshJobs = () => {
+    void userQuery.refetch()
+    void sharedQuery.refetch()
+  }
 
   // The selected process, what it runs on and the jobs of this visit are forgotten on leaving the Data Finder
   useEffect(() => () => dataFinderStore.send({ type: 'resetRunPanel' }), [])
@@ -202,6 +206,8 @@ export const RunPanel: React.FC = () => {
                 isLoading={userQuery.isLoading || sharedQuery.isLoading}
                 error={userQuery.error ?? sharedQuery.error ?? undefined}
                 onRetry={retryJobs}
+                onRefresh={refreshJobs}
+                isRefreshing={userQuery.isFetching || sharedQuery.isFetching}
                 visitJobs={visitJobs}
                 workflowId={isWorkflow ? chosenTool.id : undefined}
               />

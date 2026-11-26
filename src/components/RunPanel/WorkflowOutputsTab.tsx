@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useSelector } from '@xstate/store/react'
+import { ReloadIcon } from '@radix-ui/react-icons'
 import { Button, Flex, Text } from '@radix-ui/themes'
 import type { WorkflowJob } from '@/types'
 import dataFinderStore from '@/pages/DataFinderPage/useFinderStore'
@@ -43,6 +44,10 @@ interface WorkflowOutputsTabProps {
   /** Why the jobs did not load, if they did not. */
   error?: unknown
   onRetry: () => void
+  /** Reads both jobs lists again. */
+  onRefresh: () => void
+  /** A list is being read, so Refresh waits for it. */
+  isRefreshing: boolean
   visitJobs: readonly VisitJob[]
   /** The chosen workflow, to filter the Workflow outputs page to. */
   workflowId?: string
@@ -57,6 +62,8 @@ export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
   isLoading,
   error,
   onRetry,
+  onRefresh,
+  isRefreshing,
   visitJobs,
   workflowId,
 }) => {
@@ -110,6 +117,14 @@ export const WorkflowOutputsTab: React.FC<WorkflowOutputsTabProps> = ({
 
   return (
     <Flex direction="column" gap="4">
+      {!error && !isLoading && (
+        <Flex justify="end">
+          <Button variant="ghost" size="1" onClick={onRefresh} loading={isRefreshing}>
+            <ReloadIcon />
+            Refresh
+          </Button>
+        </Flex>
+      )}
       {list()}
       <Button variant="soft" color="gray" asChild>
         <Link to={pageLink}>Open Workflow outputs</Link>
