@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useContext, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Flex, Text, TextField, Box, Table, Select, Button } from '@radix-ui/themes'
+import { Flex, Text, Box, Table, Select, Button } from '@radix-ui/themes'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import {
   fetchCalledJobs,
@@ -19,7 +19,6 @@ import {
 } from '@/library/jobUtils'
 import { WorkflowJob } from '@/types'
 import { AuthenticationContext } from '@/context/AuthenticationContext'
-import { MagnifyingGlassIcon } from '@radix-ui/react-icons'
 import { LoadingIndicator } from '@/components/LoadingIndicator/LoadingIndicator'
 import { Callout } from '@/components/Callout/Callout'
 import { JobDetailsModal } from '@/components/JobDetailsModal/JobDetailsModal'
@@ -33,7 +32,6 @@ export const WorkflowOutputsPage: React.FC = () => {
   }>()
   const navigate = useNavigate()
   const { token, currentWorkspace, userInfo } = useContext(AuthenticationContext)
-  const [searchText, setSearchText] = useState('')
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'successful' | 'failed' | 'running'>(
     'all',
   )
@@ -51,7 +49,6 @@ export const WorkflowOutputsPage: React.FC = () => {
 
   const handleResetFilters = () => {
     setSelectedStatus('all')
-    setSearchText('')
   }
 
   const sharedResultsWorkspaceName = import.meta.env.VITE_WORKFLOW_RESULTS_WORKSPACE_NAME
@@ -67,6 +64,7 @@ export const WorkflowOutputsPage: React.FC = () => {
     fetchNextPage: fetchNextOwnPage,
     hasNextPage: hasMoreOwnJobs,
     isFetchingNextPage: isFetchingNextOwnPage,
+    isFetchNextPageError: isOwnNextPageError,
   } = useInfiniteQuery({
     queryKey: ['WorkflowJobs', workflowWorkspace, userInfo?.sub],
     queryFn: ({ pageParam }) =>
@@ -141,6 +139,8 @@ export const WorkflowOutputsPage: React.FC = () => {
     if (listsToLoad.includes(1)) void fetchNextCalledPage()
   }
 
+  // Wait for the first page of both lists before showing any jobs. Otherwise the first list's
+  // rows show, then some disappear when the second list moves the cutoff.
   const isLoadingAnyJobs = isLoadingJobs || isLoadingCalledJobs
   const loadedJobs = useMemo(() => [...ownJobs, ...calledJobs], [ownJobs, calledJobs])
   const loadedJobFromUrl = jobIdParam
@@ -183,23 +183,16 @@ export const WorkflowOutputsPage: React.FC = () => {
     }
   }, [jobFromUrl])
 
-  const filteredJobs = useMemo(() => {
-    let filtered = allJobs
-    if (selectedStatus !== 'all') {
-      filtered = filtered.filter((job) => job.status === selectedStatus)
-    }
-    if (searchText.trim()) {
-      const searchLower = searchText.toLowerCase()
-      filtered = filtered.filter(
-        (job) =>
-          job.id.toLowerCase().includes(searchLower) ||
-          job.jobID.toLowerCase().includes(searchLower) ||
-          job.processID.toLowerCase().includes(searchLower) ||
-          job.message.toLowerCase().includes(searchLower),
-      )
-    }
-    return filtered
-  }, [allJobs, searchText, selectedStatus])
+  // The status filter covers the jobs loaded so far. There is no search: with paging it could
+  // only search loaded jobs, and an older job would look missing.
+  const filteredJobs = useMemo(
+    () =>
+      selectedStatus === 'all' ? allJobs : allJobs.filter((job) => job.status === selectedStatus),
+    [allJobs, selectedStatus],
+  )
+
+  // A failed later page is shown next to Load more, so the main error is only for the first page
+  const firstPageError = isOwnNextPageError ? null : jobsError
 
   const displayJobs = useMemo(() => {
     const workspace = workflowWorkspace || ''
@@ -213,19 +206,6 @@ export const WorkflowOutputsPage: React.FC = () => {
           title="Workflow Outputs"
           subtitle="View workflow execution jobs and their status"
         />
-        <Flex justify="between" align="center">
-          <Box />
-          <TextField.Root
-            placeholder="Search"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            size="3"
-          >
-            <TextField.Slot>
-              <MagnifyingGlassIcon />
-            </TextField.Slot>
-          </TextField.Root>
-        </Flex>
         <Flex direction="column" gap="5">
           <Flex
             p="5"
@@ -270,12 +250,12 @@ export const WorkflowOutputsPage: React.FC = () => {
           <Flex justify="between" align="center" mb="3">
             <Text size="2" color="gray">
               {`Showing ${displayJobs.length} job${displayJobs.length !== 1 ? 's' : ''}`}
-              {(selectedStatus !== 'all' || searchText.trim()) && ' (filtered)'}
+              {selectedStatus !== 'all' && ' (filtered)'}
               {hasNextPage && ', newest first. Load more to see older jobs.'}
             </Text>
-            {isLoadingCalledJobs && !isLoadingJobs && (
-              <Text size="2" color="gray">
-                Loading jobs run on shared workflows…
+            {isOwnNextPageError && (
+              <Text size="2" color="red">
+                Could not load more jobs. Try Load more again.
               </Text>
             )}
             {calledJobsError && (
@@ -286,23 +266,25 @@ export const WorkflowOutputsPage: React.FC = () => {
               </Text>
             )}
           </Flex>
-          {isLoadingJobs ? (
+          {isLoadingAnyJobs ? (
             <LoadingIndicator size="3" />
           ) : (
-            (jobsError ?? (displayJobs.length === 0 && !hasNextPage && !isLoadingAnyJobs)) && (
+            // When the shared-workflow jobs failed to load, an empty list does not mean there are
+            // no outputs, so leave the error line above to explain it
+            (firstPageError ?? (displayJobs.length === 0 && !hasNextPage && !calledJobsError)) && (
               <Callout
-                type={jobsError ? 'error' : 'info'}
+                type={firstPageError ? 'error' : 'info'}
                 message={
-                  jobsError
-                    ? jobsError instanceof Error
-                      ? jobsError.message
+                  firstPageError
+                    ? firstPageError instanceof Error
+                      ? firstPageError.message
                       : 'Unable to load workflow outputs. Please try again later.'
                     : 'You currently have no workflow outputs. Your workflow execution jobs will appear here once you run a workflow.'
                 }
               />
             )
           )}
-          {displayJobs.length > 0 && (
+          {!isLoadingAnyJobs && displayJobs.length > 0 && (
             <>
               <Table.Root className={styles.ordersTable}>
                 <Table.Header>
@@ -351,7 +333,7 @@ export const WorkflowOutputsPage: React.FC = () => {
               </Table.Root>
             </>
           )}
-          {hasNextPage && !isLoadingJobs && (
+          {hasNextPage && !isLoadingAnyJobs && (
             <Flex justify="center">
               <Button size="3" variant="soft" onClick={fetchNextPage} loading={isFetchingNextPage}>
                 Load more
